@@ -50,12 +50,20 @@ def remove_outliers(df):
     """Remove empresas com métricas absurdas que distorcem as médias."""
     for col in ["ROE", "ROIC", "MARGEM BRUTA", "MARGEM EBIT", "MARG. LIQUIDA"]:
         if col in df.columns:
-            df = df[(df[col] > -100) & (df[col] < 100)]
+            mask = (
+                    df["P/L"].isna() |
+                    ((df["P/L"] > -100) & (df["P/L"] < 100))
+            )
+            df = df[mask]
     if "P/L" in df.columns:
-        df = df[(df["P/L"] > 0) & (df["P/L"] < 100)]
+        mask = (
+                df["P/L"].isna() |
+                ((df["P/L"] > -20) & (df["P/L"] < 100))
+        )
+        df = df[mask]
     return df
 
-def build_clean_dataset(output_path="status_invest_sector_clean.csv"):
+def build_clean_dataset(output_path="status_invest_fundamentals.csv"):
     all_dfs = []
     for sector, file_path in sector_files.items():
         df_sector = clean_sector_file(file_path, sector)
