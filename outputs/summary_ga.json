@@ -1,0 +1,71 @@
+{
+  "universe": {
+    "median_metrics": {
+      "DY": 0.0,
+      "ROE": 0.0280579467643371,
+      "CAGR RECEITAS 5 ANOS": -0.18094392817159125,
+      "LIQ. CORRENTE": -0.3184448600430052,
+      "DIVIDA LIQUIDA / EBIT": -0.1483685569662574
+    }
+  },
+  "conservador": {
+    "num_assets": 10,
+    "hhi": 0.2,
+    "median_metrics": {
+      "DY": 0.5814615851066144,
+      "ROE": -0.309660232295379,
+      "CAGR RECEITAS 5 ANOS": -0.4276757548146881,
+      "LIQ. CORRENTE": 0.973791944791183,
+      "DIVIDA LIQUIDA / EBIT": -0.1813948254716779
+    },
+    "sector_weights": {
+      "Saúde": 0.3,
+      "Financeiro e Outros": 0.2,
+      "Consumo Cíclico": 0.2,
+      "Comunicações": 0.1,
+      "Utilidade Pública": 0.1,
+      "Consumo não Cíclico": 0.1
+    }
+  },
+  "moderado": {
+    "num_assets": 12,
+    "hhi": 0.153,
+    "median_metrics": {
+      "DY": 0.0,
+      "ROE": 0.27686237066488584,
+      "CAGR RECEITAS 5 ANOS": 0.231762998971838,
+      "LIQ. CORRENTE": -0.11089893566676835,
+      "DIVIDA LIQUIDA / EBIT": -0.04230876963440404
+    },
+    "sector_weights": {
+      "Consumo Cíclico": 0.25,
+      "Saúde": 0.167,
+      "Utilidade Pública": 0.167,
+      "Comunicações": 0.083,
+      "Bens Industriais": 0.083,
+      "Materiais Básicos": 0.083,
+      "Consumo não Cíclico": 0.083,
+      "Petróleo, Gás e Biocombustíveis": 0.083
+    }
+  },
+  "arrojado": {
+    "num_assets": 15,
+    "hhi": 0.182,
+    "median_metrics": {
+      "DY": 0.0178532540404041,
+      "ROE": 0.1844698662067685,
+      "CAGR RECEITAS 5 ANOS": -0.2910542536060085,
+      "LIQ. CORRENTE": -0.0923043810729322,
+      "DIVIDA LIQUIDA / EBIT": -0.19624127727652568
+    },
+    "sector_weights": {
+      "Financeiro e Outros": 0.267,
+      "Consumo Cíclico": 0.2,
+      "Bens Industriais": 0.2,
+      "Consumo não Cíclico": 0.133,
+      "Materiais Básicos": 0.067,
+      "Comunicações": 0.067,
+      "Petróleo, Gás e Biocombustíveis": 0.067
+    }
+  }
+}
