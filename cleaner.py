@@ -74,7 +74,7 @@ def build_clean_dataset(output_path="status_invest_fundamentals.csv"):
     df_final.dropna(how='all', inplace=True)
 
     # Consolida por empresa e remove outliers
-    df_final = unify_tickers(df_final)
+    #df_final = unify_tickers(df_final)
     df_final = remove_outliers(df_final)
 
     df_final.to_csv(output_path, index=False)

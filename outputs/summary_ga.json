@@ -1,50 +1,75 @@
 {
-  "universe": {
+  "ibovespa": {
     "median_metrics": {
       "DY": 0.0,
-      "ROE": 0.0280579467643371,
-      "CAGR RECEITAS 5 ANOS": -0.18094392817159125,
-      "LIQ. CORRENTE": -0.3184448600430052,
-      "DIVIDA LIQUIDA / EBIT": -0.1483685569662574
+      "P/VP": 0.070627388054783,
+      "EV/EBIT": 0.0356184975255242,
+      "ROE": 0.1867259595747583,
+      "ROIC": 0.06906419127729925,
+      "MARGEM EBIT": -0.0357161409304273,
+      "MARG. LIQUIDA": -0.1173517398517506,
+      "CAGR RECEITAS 5 ANOS": -0.24881167676346935,
+      "CAGR LUCROS 5 ANOS": -0.0467960507673995,
+      "PEG RATIO": 0.1321292895342558,
+      "LIQ. CORRENTE": -0.3701130479795409,
+      "DIVIDA LIQUIDA / EBIT": -0.1116129530253242,
+      "DIV. LIQ. / PATRI.": -0.22500945138988926
     }
   },
   "conservador": {
     "num_assets": 10,
-    "hhi": 0.2,
+    "hhi": 0.16,
     "median_metrics": {
-      "DY": 0.5814615851066144,
-      "ROE": -0.309660232295379,
-      "CAGR RECEITAS 5 ANOS": -0.4276757548146881,
-      "LIQ. CORRENTE": 0.973791944791183,
-      "DIVIDA LIQUIDA / EBIT": -0.1813948254716779
+      "DY": 0.3145127699927654,
+      "P/VP": -0.0954856919993361,
+      "EV/EBIT": -0.2456000699561667,
+      "ROE": 0.09030973507577035,
+      "ROIC": 0.5951982652706675,
+      "MARGEM EBIT": -0.43827484171612113,
+      "MARG. LIQUIDA": 0.3628348758620595,
+      "CAGR RECEITAS 5 ANOS": -0.0340797307642479,
+      "CAGR LUCROS 5 ANOS": 0.0563879681728552,
+      "PEG RATIO": -0.094192906988909,
+      "LIQ. CORRENTE": -0.0357460672636374,
+      "DIVIDA LIQUIDA / EBIT": 0.3259071651356688,
+      "DIV. LIQ. / PATRI.": -0.325501077661099
     },
     "sector_weights": {
-      "Saúde": 0.3,
+      "Bens Industriais": 0.2,
       "Financeiro e Outros": 0.2,
-      "Consumo Cíclico": 0.2,
-      "Comunicações": 0.1,
-      "Utilidade Pública": 0.1,
-      "Consumo não Cíclico": 0.1
+      "Utilidade Pública": 0.2,
+      "Consumo Cíclico": 0.1,
+      "Consumo não Cíclico": 0.1,
+      "Materiais Básicos": 0.1,
+      "Petróleo, Gás e Biocombustíveis": 0.1
     }
   },
   "moderado": {
     "num_assets": 12,
-    "hhi": 0.153,
+    "hhi": 0.139,
     "median_metrics": {
-      "DY": 0.0,
-      "ROE": 0.27686237066488584,
-      "CAGR RECEITAS 5 ANOS": 0.231762998971838,
-      "LIQ. CORRENTE": -0.11089893566676835,
-      "DIVIDA LIQUIDA / EBIT": -0.04230876963440404
+      "DY": 0.6295003738901366,
+      "P/VP": 0.23081025137023142,
+      "EV/EBIT": 0.09723345483978629,
+      "ROE": 0.28810847472895396,
+      "ROIC": 0.2256104237994742,
+      "MARGEM EBIT": 0.5654791291023116,
+      "MARG. LIQUIDA": 0.5524053961013509,
+      "CAGR RECEITAS 5 ANOS": 0.11515664659980515,
+      "CAGR LUCROS 5 ANOS": -0.346443915104636,
+      "PEG RATIO": -0.2679772201397852,
+      "LIQ. CORRENTE": 0.058537363851476454,
+      "DIVIDA LIQUIDA / EBIT": -0.1296525417574336,
+      "DIV. LIQ. / PATRI.": -0.1686561016085637
     },
     "sector_weights": {
-      "Consumo Cíclico": 0.25,
-      "Saúde": 0.167,
+      "Consumo Cíclico": 0.167,
+      "Materiais Básicos": 0.167,
       "Utilidade Pública": 0.167,
-      "Comunicações": 0.083,
-      "Bens Industriais": 0.083,
-      "Materiais Básicos": 0.083,
+      "Bens Industriais": 0.167,
+      "Saúde": 0.083,
       "Consumo não Cíclico": 0.083,
+      "Financeiro e Outros": 0.083,
       "Petróleo, Gás e Biocombustíveis": 0.083
     }
   },
@@ -52,20 +77,27 @@
     "num_assets": 15,
     "hhi": 0.182,
     "median_metrics": {
-      "DY": 0.0178532540404041,
-      "ROE": 0.1844698662067685,
-      "CAGR RECEITAS 5 ANOS": -0.2910542536060085,
-      "LIQ. CORRENTE": -0.0923043810729322,
-      "DIVIDA LIQUIDA / EBIT": -0.19624127727652568
+      "DY": 0.0,
+      "P/VP": 0.1645590995089054,
+      "EV/EBIT": 0.038426543625998,
+      "ROE": 0.184309694658008,
+      "ROIC": 0.1517006611123355,
+      "MARGEM EBIT": -0.1261015223276329,
+      "MARG. LIQUIDA": 0.1423297619280274,
+      "CAGR RECEITAS 5 ANOS": -0.151005960558062,
+      "CAGR LUCROS 5 ANOS": 0.1937367604555571,
+      "PEG RATIO": 0.1226810470896566,
+      "LIQ. CORRENTE": -0.2993956966698452,
+      "DIVIDA LIQUIDA / EBIT": -0.1969099698909399,
+      "DIV. LIQ. / PATRI.": -0.115304049900445
     },
     "sector_weights": {
-      "Financeiro e Outros": 0.267,
+      "Consumo não Cíclico": 0.2,
+      "Financeiro e Outros": 0.2,
       "Consumo Cíclico": 0.2,
-      "Bens Industriais": 0.2,
-      "Consumo não Cíclico": 0.133,
-      "Materiais Básicos": 0.067,
-      "Comunicações": 0.067,
-      "Petróleo, Gás e Biocombustíveis": 0.067
+      "Saúde": 0.2,
+      "Bens Industriais": 0.133,
+      "Utilidade Pública": 0.067
     }
   }
 }

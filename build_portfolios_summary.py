@@ -30,11 +30,10 @@ DATA_DIR = Path("data/processed")
 OUT_DIR  = Path("outputs"); OUT_DIR.mkdir(exist_ok=True)
 
 METRIC_COLS = [
-    "DY",
-    "ROE",
-    "CAGR RECEITAS 5 ANOS",
-    "LIQ. CORRENTE",
-    "DIVIDA LIQUIDA / EBIT",
+    "DY", "P/VP", "EV/EBIT",
+    "ROE", "ROIC", "MARGEM EBIT", "MARG. LIQUIDA",
+    "CAGR RECEITAS 5 ANOS", "CAGR LUCROS 5 ANOS", "PEG RATIO",
+    "LIQ. CORRENTE", "DIVIDA LIQUIDA / EBIT", "DIV. LIQ. / PATRI.",
 ]
 
 summary = {}
@@ -55,8 +54,9 @@ def robust_filter(df: pd.DataFrame) -> pd.DataFrame:
 # usa o arquivo moderado como proxy; ele já tem filtros de cap/liq aplicados
 df_universe = pd.read_csv(DATA_DIR / "fundamentals_clean_moderado.csv")
 df_universe = robust_filter(df_universe)
-summary["universe"] = {
-    "median_metrics": df_universe[METRIC_COLS].median().to_dict()
+df_ibov = df_universe[df_universe["IN_IBOV"]]
+summary["ibovespa"] = {
+    "median_metrics": df_ibov[METRIC_COLS].median().to_dict()
 }
 
 # -------- processa cada perfil ---------
