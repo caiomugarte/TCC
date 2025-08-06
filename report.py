@@ -69,6 +69,15 @@ def build_metric_df(summary: dict) -> pd.DataFrame:
     }
     return pd.DataFrame(data, index=METRICS)
 
+def build_zscore_df(summary: dict) -> pd.DataFrame:
+    """DataFrame (rows = métricas, cols = perfis) com medianas z-score."""
+    data = {
+        p: [summary[p].get("zscore_metrics", {}).get(m, float("nan")) for m in METRICS]
+        for p in PROFILES if p != "ibovespa"  # Ibovespa não tem zscore_metrics
+    }
+    return pd.DataFrame(data, index=METRICS)
+
+
 
 def save_show(fig: plt.Figure, name: str):
     fig.tight_layout()
@@ -95,6 +104,23 @@ def main():
     ax.legend(handles=legend_handles, bbox_to_anchor=(1.02, 1), loc="upper left",
               title="Indicadores (cor = grupo)")
     save_show(fig, "metrics_comparison")
+
+    # ---------- Gráfico de barras das métricas (z-score) ------------------------ #
+    zscore_df = build_zscore_df(summary)
+    colors = [COLOR_MAP[m] for m in METRICS]
+    fig_z = plt.figure(figsize=(14, 7))
+    ax_z = plt.gca()
+    zscore_df.T.plot(kind="bar", color=colors, edgecolor="black", ax=ax_z)
+    ax_z.set_ylabel("z-score")
+    ax_z.set_xticklabels(ax_z.get_xticklabels(), rotation=0)
+    ax_z.set_title("Métricas fundamentais — Z-Score das Carteiras GA")
+
+    # Legenda individual por métrica (13 entradas)
+    legend_handles = [mpatches.Patch(color=COLOR_MAP[m], label=m) for m in METRICS]
+    ax_z.legend(handles=legend_handles, bbox_to_anchor=(1.02, 1), loc="upper left",
+                title="Indicadores (z-score)")
+    save_show(fig_z, "metrics_comparison_zscore")
+
 
     # ---------- Gráficos setoriais ----------------------------------- #
     for perfil in ("conservador", "moderado", "arrojado"):
