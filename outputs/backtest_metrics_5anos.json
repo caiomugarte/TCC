@@ -1,0 +1,60 @@
+{
+  "periodo": "5anos",
+  "anos": 5,
+  "data_inicio": "2020-11-09",
+  "data_fim": "2025-11-08",
+  "capital_inicial": 10000.0,
+  "conservador": {
+    "retorno_total_pct": 159.6,
+    "retorno_anualizado_pct": 21.02,
+    "volatilidade_anual_pct": 21.2,
+    "sharpe_ratio": 0.52,
+    "drawdown_maximo_pct": -24.07,
+    "calmar_ratio": 0.873,
+    "retorno_mensal_medio_pct": 1.84,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "AESB3.SA"
+    ]
+  },
+  "moderado": {
+    "retorno_total_pct": 176.73,
+    "retorno_anualizado_pct": 22.58,
+    "volatilidade_anual_pct": 19.16,
+    "sharpe_ratio": 0.656,
+    "drawdown_maximo_pct": -21.37,
+    "calmar_ratio": 1.056,
+    "retorno_mensal_medio_pct": 1.91,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": []
+  },
+  "arrojado": {
+    "retorno_total_pct": 145.51,
+    "retorno_anualizado_pct": 19.68,
+    "volatilidade_anual_pct": 18.96,
+    "sharpe_ratio": 0.51,
+    "drawdown_maximo_pct": -16.62,
+    "calmar_ratio": 1.184,
+    "retorno_mensal_medio_pct": 1.73,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "BRST3.SA"
+    ]
+  },
+  "ibovespa": {
+    "retorno_total_pct": 56.41,
+    "retorno_anualizado_pct": 9.36,
+    "volatilidade_anual_pct": 17.99,
+    "sharpe_ratio": -0.036,
+    "drawdown_maximo_pct": -26.5,
+    "calmar_ratio": 0.353,
+    "retorno_mensal_medio_pct": 0.95,
+    "ativos_faltantes": []
+  }
+}

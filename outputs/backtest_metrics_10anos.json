@@ -1,0 +1,67 @@
+{
+  "periodo": "10anos",
+  "anos": 10,
+  "data_inicio": "2015-11-11",
+  "data_fim": "2025-11-08",
+  "capital_inicial": 10000.0,
+  "conservador": {
+    "retorno_total_pct": 1162.32,
+    "retorno_anualizado_pct": 28.86,
+    "volatilidade_anual_pct": 23.44,
+    "sharpe_ratio": 0.804,
+    "drawdown_maximo_pct": -42.7,
+    "calmar_ratio": 0.676,
+    "retorno_mensal_medio_pct": 2.4,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "STBP3.SA",
+      "CMIN3.SA",
+      "AESB3.SA"
+    ]
+  },
+  "moderado": {
+    "retorno_total_pct": 621.46,
+    "retorno_anualizado_pct": 21.85,
+    "volatilidade_anual_pct": 23.71,
+    "sharpe_ratio": 0.5,
+    "drawdown_maximo_pct": -44.25,
+    "calmar_ratio": 0.494,
+    "retorno_mensal_medio_pct": 1.89,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "FIQE3.SA",
+      "SOJA3.SA"
+    ]
+  },
+  "arrojado": {
+    "retorno_total_pct": 706.05,
+    "retorno_anualizado_pct": 23.21,
+    "volatilidade_anual_pct": 25.17,
+    "sharpe_ratio": 0.525,
+    "drawdown_maximo_pct": -51.25,
+    "calmar_ratio": 0.453,
+    "retorno_mensal_medio_pct": 2.0,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "BRST3.SA",
+      "TRAD3.SA",
+      "BRAV3.SA"
+    ]
+  },
+  "ibovespa": {
+    "retorno_total_pct": 225.28,
+    "retorno_anualizado_pct": 12.52,
+    "volatilidade_anual_pct": 23.43,
+    "sharpe_ratio": 0.108,
+    "drawdown_maximo_pct": -46.82,
+    "calmar_ratio": 0.267,
+    "retorno_mensal_medio_pct": 1.21,
+    "ativos_faltantes": []
+  }
+}

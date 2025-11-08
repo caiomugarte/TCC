@@ -31,7 +31,7 @@ PERFIL_CONFIG: Dict[str, Dict[str, int | float]] = {
 # ---------- parâmetros de GA ----------
 NCROSS_RATE = 0.8   # probabilidade de crossover
 MUT_RATE   = 0.02   # probabilidade de mutação por gene
-seed(42)            # reprodutibilidade
+# seed(42)            # reprodutibilidade
 # --------------------------------------
 # ------------------------- Funções auxiliares ---------------------- #
 

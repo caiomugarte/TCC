@@ -26,6 +26,7 @@ import pandas as pd
 import profiles as pf
 import ga
 from cleaner import to_float  # função de conversão br->float
+import os
 
 DATA_DIR     = Path("data/processed")
 DATA_DIR_RAW = Path("data/raw")
@@ -49,6 +50,9 @@ IBOV_LIST = {
     "SLCE3","SMFT3","SMTO3","STBP3","SUZB3","TAEE11","TIMS3","TOTS3","UGPA3","USIM5",
     "VALE3","VAMO3","VBBR3","VIVA3","VIVT3","WEGE3","YDUQ3"
 }
+
+MULTI_RUN_SUMMARY = OUT_DIR / "multiple_runs_summary.json"
+
 
 summary = {}
 
@@ -129,3 +133,15 @@ with open(OUT_DIR / "summary_ga.json", "w", encoding="utf-8") as f:
     json.dump(summary, f, ensure_ascii=False, indent=2)
 
 print("Resumo salvo em", OUT_DIR / "summary_ga.json")
+
+if os.path.exists(MULTI_RUN_SUMMARY):
+    with open(MULTI_RUN_SUMMARY, "r", encoding="utf-8") as f:
+        multi_run_data = json.load(f)
+
+    # Adiciona estatísticas de múltiplas execuções ao summary
+    for perfil in ("conservador", "moderado", "arrojado"):
+        if perfil in multi_run_data:
+            summary[perfil]["multi_run_stats"] = multi_run_data[perfil]["stability_metrics"]
+            summary[perfil]["consensus_portfolio"] = multi_run_data[perfil]["consensus_portfolio"]
+
+    print("✓ Estatísticas de múltiplas execuções integradas ao summary")
