@@ -71,6 +71,329 @@ COLORS = {
 # FUNÇÕES DE CARREGAMENTO DE DADOS
 # ============================================================================
 
+
+def analyze_asset_performance(
+        tickers: List[str],
+        start_date: str,
+        end_date: str,
+        period_years: int
+) -> pd.DataFrame:
+    """
+    Analisa performance individual de cada ativo com e sem dividendos.
+
+    Args:
+        tickers: Lista de tickers brasileiros (sem .SA)
+        start_date: Data inicial
+        end_date: Data final
+        period_years: Número de anos
+
+    Returns:
+        DataFrame com métricas por ativo
+    """
+    results = []
+
+    for ticker in tickers:
+        ticker_yf = f"{ticker}.SA"
+
+        try:
+            # 1. COM DIVIDENDOS (auto_adjust=True)
+            data_adjusted = yf.Ticker(ticker_yf).history(
+                start=start_date,
+                end=end_date,
+                auto_adjust=True
+            )
+
+            if data_adjusted.empty or len(data_adjusted) < 30:
+                print(f"    ⚠ {ticker}: Dados insuficientes")
+                continue
+
+            # 2. SEM DIVIDENDOS (auto_adjust=False)
+            data_raw = yf.Ticker(ticker_yf).history(
+                start=start_date,
+                end=end_date,
+                auto_adjust=False
+            )
+
+            # 3. DIVIDENDOS PAGOS
+            dividends = yf.Ticker(ticker_yf).dividends
+            dividends_period = dividends[
+                (dividends.index >= start_date) &
+                (dividends.index <= end_date)
+                ]
+
+            # Cálculos - COM DIVIDENDOS
+            price_initial_adj = data_adjusted['Close'].iloc[0]
+            price_final_adj = data_adjusted['Close'].iloc[-1]
+
+            total_return_adj = (price_final_adj / price_initial_adj - 1) * 100
+            annual_return_adj = ((price_final_adj / price_initial_adj) ** (1 / period_years) - 1) * 100
+
+            # Cálculos - SEM DIVIDENDOS
+            price_initial_raw = data_raw['Close'].iloc[0]
+            price_final_raw = data_raw['Close'].iloc[-1]
+
+            total_return_raw = (price_final_raw / price_initial_raw - 1) * 100
+            annual_return_raw = ((price_final_raw / price_initial_raw) ** (1 / period_years) - 1) * 100
+
+            # Efeito dos dividendos
+            dividend_effect_total = total_return_adj - total_return_raw
+            dividend_effect_annual = annual_return_adj - annual_return_raw
+
+            # Total de dividendos pagos
+            total_dividends = dividends_period.sum()
+            dividend_yield_period = (total_dividends / price_initial_raw) * 100 if price_initial_raw > 0 else 0
+
+            # Volatilidade
+            returns_adj = data_adjusted['Close'].pct_change().dropna()
+            volatility = returns_adj.std() * np.sqrt(TRADING_DAYS) * 100
+
+            results.append({
+                'TICKER': ticker,
+                'preco_inicial': round(price_initial_raw, 2),
+                'preco_final': round(price_final_raw, 2),
+                'retorno_total_sem_div_pct': round(total_return_raw, 2),
+                'retorno_total_com_div_pct': round(total_return_adj, 2),
+                'retorno_anual_sem_div_pct': round(annual_return_raw, 2),
+                'retorno_anual_com_div_pct': round(annual_return_adj, 2),
+                'efeito_dividendos_total_pct': round(dividend_effect_total, 2),
+                'efeito_dividendos_anual_pct': round(dividend_effect_annual, 2),
+                'dividendos_totais_pagos': round(total_dividends, 2),
+                'dividend_yield_periodo_pct': round(dividend_yield_period, 2),
+                'volatilidade_anual_pct': round(volatility, 2),
+                'n_dias_negociacao': len(data_adjusted)
+            })
+
+        except Exception as e:
+            print(f"    ✗ {ticker}: Erro - {e}")
+            continue
+
+    df = pd.DataFrame(results)
+
+    # Ordena por retorno total com dividendos (decrescente)
+    if not df.empty:
+        df = df.sort_values('retorno_total_com_div_pct', ascending=False)
+
+    return df
+
+def plot_asset_comparison(
+        asset_data: pd.DataFrame,
+        perfil: str,
+        period: str
+):
+    """
+    Gráfico: Comparação de retornos por ativo (com vs. sem dividendos).
+    """
+    if asset_data.empty:
+        return
+
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+
+    # ===== GRÁFICO 1: Retorno Total (Barras Comparativas) =====
+    ax1 = axes[0]
+
+    x = np.arange(len(asset_data))
+    width = 0.35
+
+    bars1 = ax1.bar(
+        x - width/2,
+        asset_data['retorno_total_sem_div_pct'],
+        width,
+        label='Sem Dividendos (Preço)',
+        color='steelblue',
+        alpha=0.7
+    )
+
+    bars2 = ax1.bar(
+        x + width/2,
+        asset_data['retorno_total_com_div_pct'],
+        width,
+        label='Com Dividendos (Total Return)',
+        color='darkgreen',
+        alpha=0.7
+    )
+
+    ax1.set_xlabel('Ativo', fontsize=11, fontweight='bold')
+    ax1.set_ylabel('Retorno Total (%)', fontsize=11, fontweight='bold')
+    ax1.set_title(
+        f'Retorno Total por Ativo - {perfil.capitalize()} ({period})',
+        fontsize=13,
+        fontweight='bold',
+        pad=15
+    )
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(asset_data['TICKER'], rotation=45, ha='right')
+    ax1.axhline(0, color='black', linewidth=0.8, linestyle='--', alpha=0.5)
+    ax1.legend(fontsize=10)
+    ax1.grid(axis='y', alpha=0.3)
+
+    # Annotations nos valores
+    for i, (bar1, bar2) in enumerate(zip(bars1, bars2)):
+        height1 = bar1.get_height()
+        height2 = bar2.get_height()
+
+        # Só anota se houver espaço
+        if abs(height2 - height1) > 5:
+            ax1.text(
+                bar2.get_x() + bar2.get_width() / 2,
+                height2,
+                f'{height2:.0f}%',
+                ha='center',
+                va='bottom' if height2 > 0 else 'top',
+                fontsize=8,
+                fontweight='bold'
+            )
+
+    # ===== GRÁFICO 2: Efeito dos Dividendos (Barras Empilhadas) =====
+    ax2 = axes[1]
+
+    bars_price = ax2.barh(
+        asset_data['TICKER'],
+        asset_data['retorno_total_sem_div_pct'],
+        label='Valorização de Preço',
+        color='steelblue',
+        alpha=0.7
+    )
+
+    bars_div = ax2.barh(
+        asset_data['TICKER'],
+        asset_data['efeito_dividendos_total_pct'],
+        left=asset_data['retorno_total_sem_div_pct'],
+        label='Efeito dos Dividendos',
+        color='orange',
+        alpha=0.7
+    )
+
+    ax2.set_xlabel('Retorno Total (%)', fontsize=11, fontweight='bold')
+    ax2.set_ylabel('Ativo', fontsize=11, fontweight='bold')
+    ax2.set_title(
+        f'Decomposição: Preço vs. Dividendos - {perfil.capitalize()} ({period})',
+        fontsize=13,
+        fontweight='bold',
+        pad=15
+    )
+    ax2.axvline(0, color='black', linewidth=0.8, linestyle='--', alpha=0.5)
+    ax2.legend(fontsize=10, loc='lower right')
+    ax2.grid(axis='x', alpha=0.3)
+
+    # Annotations no total
+    for i, (ticker, total, div_effect) in enumerate(zip(
+            asset_data['TICKER'],
+            asset_data['retorno_total_com_div_pct'],
+            asset_data['efeito_dividendos_total_pct']
+    )):
+        ax2.text(
+            total + 2,
+            i,
+            f'{total:.1f}% (div: {div_effect:.1f}%)',
+            va='center',
+            fontsize=8,
+            fontweight='bold'
+        )
+
+    plt.tight_layout()
+    plt.savefig(
+        OUTPUTS_DIR / f"backtest_assets_{perfil}_{period}.png",
+        dpi=150,
+        bbox_inches='tight'
+    )
+    plt.close()
+
+    print(f"  ✓ Gráfico de ativos salvo: backtest_assets_{perfil}_{period}.png")
+
+def plot_dividend_contribution(
+        asset_data: pd.DataFrame,
+        perfil: str,
+        period: str
+):
+    """
+    Gráfico: Contribuição dos dividendos para o retorno total (pizza).
+    """
+    if asset_data.empty:
+        return
+
+    # Calcula contribuição percentual dos dividendos
+    asset_data['contrib_dividendos'] = (
+            asset_data['efeito_dividendos_total_pct'] /
+            asset_data['retorno_total_com_div_pct'] * 100
+    ).fillna(0)
+
+    # Limita entre 0 e 100%
+    asset_data['contrib_dividendos'] = asset_data['contrib_dividendos'].clip(0, 100)
+
+    fig, ax = plt.subplots(figsize=(10, 8))
+
+    # Top 10 ativos por contribuição de dividendos
+    top_10 = asset_data.nlargest(10, 'efeito_dividendos_total_pct')
+
+    colors = plt.cm.RdYlGn(np.linspace(0.3, 0.9, len(top_10)))
+
+    wedges, texts, autotexts = ax.pie(
+        top_10['efeito_dividendos_total_pct'],
+        labels=top_10['TICKER'],
+        autopct='%1.1f%%',
+        startangle=90,
+        colors=colors,
+        textprops={'fontsize': 10, 'fontweight': 'bold'}
+    )
+
+    ax.set_title(
+        f'Contribuição dos Dividendos por Ativo\n{perfil.capitalize()} ({period})',
+        fontsize=14,
+        fontweight='bold',
+        pad=20
+    )
+
+    plt.tight_layout()
+    plt.savefig(
+        OUTPUTS_DIR / f"backtest_dividends_{perfil}_{period}.png",
+        dpi=150,
+        bbox_inches='tight'
+    )
+    plt.close()
+
+    print(f"  ✓ Gráfico de dividendos salvo: backtest_dividends_{perfil}_{period}.png")
+
+def save_asset_metrics(
+        asset_data: pd.DataFrame,
+        perfil: str,
+        period: str
+):
+    """
+    Salva métricas individuais de ativos em CSV e JSON.
+    """
+    if asset_data.empty:
+        return
+
+    # CSV (para análise em Excel)
+    csv_file = OUTPUTS_DIR / f"backtest_assets_{perfil}_{period}.csv"
+    asset_data.to_csv(csv_file, index=False, encoding='utf-8-sig')
+    print(f"  ✓ CSV de ativos salvo: {csv_file.name}")
+
+    # JSON (para integração)
+    json_file = OUTPUTS_DIR / f"backtest_assets_{perfil}_{period}.json"
+    asset_data.to_json(json_file, orient='records', indent=2, force_ascii=False)
+    print(f"  ✓ JSON de ativos salvo: {json_file.name}")
+
+    # Estatísticas resumidas
+    summary = {
+        'perfil': perfil,
+        'periodo': period,
+        'n_ativos': len(asset_data),
+        'estatisticas': {
+            'retorno_medio_com_div_pct': round(asset_data['retorno_total_com_div_pct'].mean(), 2),
+            'retorno_medio_sem_div_pct': round(asset_data['retorno_total_sem_div_pct'].mean(), 2),
+            'efeito_dividendos_medio_pct': round(asset_data['efeito_dividendos_total_pct'].mean(), 2),
+            'melhor_ativo_com_div': asset_data.iloc[0]['TICKER'],
+            'melhor_retorno_com_div_pct': round(asset_data.iloc[0]['retorno_total_com_div_pct'], 2),
+            'pior_ativo_com_div': asset_data.iloc[-1]['TICKER'],
+            'pior_retorno_com_div_pct': round(asset_data.iloc[-1]['retorno_total_com_div_pct'], 2),
+            'maior_pagador_dividendos': asset_data.nlargest(1, 'dividendos_totais_pagos').iloc[0]['TICKER'],
+            'dividendos_totais_periodo': round(asset_data['dividendos_totais_pagos'].sum(), 2),
+        }
+    }
+
+    return summary
+
 def load_portfolio(perfil: str) -> List[str]:
     """
     Carrega lista de tickers de uma carteira GA.
@@ -89,13 +412,75 @@ def load_portfolio(perfil: str) -> List[str]:
             f"Execute build_portfolios_summary.py primeiro."
         )
 
-    with open(portfolio_file, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    # Verifica se o arquivo não está vazio
+    if portfolio_file.stat().st_size == 0:
+        raise ValueError(
+            f"Arquivo de carteira está vazio: {portfolio_file}\n"
+            f"Execute build_portfolios_summary.py novamente."
+        )
 
-    tickers = [asset["TICKER"] for asset in data]
-    print(f"  ✓ {perfil.capitalize()}: {len(tickers)} ativos carregados")
+    try:
+        with open(portfolio_file, "r", encoding="utf-8") as f:
+            content = f.read()
 
-    return tickers
+            # Debug: mostra primeiros caracteres
+            if not content.strip():
+                raise ValueError(
+                    f"Arquivo contém apenas espaços em branco: {portfolio_file}"
+                )
+
+            # Tenta fazer parse do JSON
+            data = json.loads(content)
+
+            if not data:
+                raise ValueError(
+                    f"JSON válido mas vazio: {portfolio_file}\n"
+                    f"Execute build_portfolios_summary.py novamente."
+                )
+
+            # Extrai tickers
+            if isinstance(data, list):
+                tickers = [asset["TICKER"] for asset in data]
+            elif isinstance(data, dict):
+                # Caso o formato seja diferente
+                tickers = [asset["TICKER"] for asset in data.get("ativos", [])]
+            else:
+                raise ValueError(
+                    f"Formato JSON não reconhecido em {portfolio_file}\n"
+                    f"Esperado: lista de objetos com campo 'TICKER'"
+                )
+
+            if not tickers:
+                raise ValueError(
+                    f"Nenhum ticker encontrado em {portfolio_file}\n"
+                    f"Execute build_portfolios_summary.py novamente."
+                )
+
+            print(f"  ✓ {perfil.capitalize()}: {len(tickers)} ativos carregados")
+            return tickers
+
+    except json.JSONDecodeError as e:
+        print(f"\n❌ ERRO: Arquivo JSON corrompido ou inválido")
+        print(f"   Arquivo: {portfolio_file}")
+        print(f"   Erro: {e}")
+        print(f"\n💡 SOLUÇÃO: Execute os seguintes comandos na ordem:")
+        print(f"   1. python data_preprocessing.py")
+        print(f"   2. python build_portfolios_summary.py")
+        print(f"   3. python backtest_analysis.py")
+        raise
+
+    except KeyError as e:
+        print(f"\n❌ ERRO: Campo obrigatório não encontrado no JSON")
+        print(f"   Arquivo: {portfolio_file}")
+        print(f"   Campo faltando: {e}")
+        print(f"\n💡 SOLUÇÃO: Execute build_portfolios_summary.py novamente")
+        raise
+
+    except Exception as e:
+        print(f"\n❌ ERRO inesperado ao carregar carteira")
+        print(f"   Arquivo: {portfolio_file}")
+        print(f"   Erro: {e}")
+        raise
 
 
 def fetch_historical_data(
@@ -385,7 +770,8 @@ def calculate_benchmark_metrics(
 def run_backtest(
         perfil: str,
         period_years: int,
-        end_date: Optional[datetime] = None
+        end_date: Optional[datetime] = None,
+        analyze_assets: bool = True  # ← NOVO PARÂMETRO
 ) -> Dict:
     """
     Executa backtesting completo para uma carteira.
@@ -394,14 +780,15 @@ def run_backtest(
         perfil: Nome do perfil (conservador, moderado, arrojado, ibovespa)
         period_years: Número de anos para simular
         end_date: Data final (default: hoje)
+        analyze_assets: Se True, analisa ativos individualmente
 
     Returns:
-        Dicionário com valores, retornos e métricas
+        Dicionário com valores, retornos, métricas e análise de ativos
     """
     if end_date is None:
         end_date = datetime.now()
 
-    start_date = end_date - timedelta(days=period_years * 365 + 30)  # Margem
+    start_date = end_date - timedelta(days=period_years * 365 + 30)
 
     start_str = start_date.strftime("%Y-%m-%d")
     end_str = end_date.strftime("%Y-%m-%d")
@@ -423,10 +810,12 @@ def run_backtest(
                 "returns": pd.Series(dtype=float),
                 "metrics": {},
                 "benchmark_metrics": {},
-                "missing_tickers": ["^BVSP"]
+                "missing_tickers": ["^BVSP"],
+                "asset_analysis": pd.DataFrame()  # ← NOVO
             }
 
         values = calculate_portfolio_value(prices)
+        asset_analysis = pd.DataFrame()  # Ibovespa não tem análise individual
 
     # Carteiras GA
     else:
@@ -440,10 +829,23 @@ def run_backtest(
                 "returns": pd.Series(dtype=float),
                 "metrics": {},
                 "benchmark_metrics": {},
-                "missing_tickers": missing
+                "missing_tickers": missing,
+                "asset_analysis": pd.DataFrame()  # ← NOVO
             }
 
         values = calculate_portfolio_value(prices)
+
+        # ===== ANÁLISE INDIVIDUAL DE ATIVOS =====
+        if analyze_assets:
+            print(f"    Analisando {len(tickers)} ativos individualmente...")
+            asset_analysis = analyze_asset_performance(
+                tickers,
+                start_str,
+                end_str,
+                period_years
+            )
+        else:
+            asset_analysis = pd.DataFrame()
 
     # Cálculos
     returns = calculate_returns(values)
@@ -458,7 +860,8 @@ def run_backtest(
         "returns": returns,
         "metrics": metrics,
         "benchmark_metrics": {},
-        "missing_tickers": missing if perfil != "ibovespa" else []
+        "missing_tickers": missing if perfil != "ibovespa" else [],
+        "asset_analysis": asset_analysis  # ← NOVO
     }
 
 
@@ -678,11 +1081,11 @@ def plot_drawdowns(results: Dict, period: str):
 
 def plot_radar_metrics(results: Dict, period: str):
     """
-    Gráfico 5: Radar chart comparativo de métricas normalizadas.
+    Gráfico 5: Radar chart comparativo de métricas normalizadas INDIVIDUALMENTE.
     """
     from math import pi
 
-    # Métricas para comparar (4 dimensões)
+    # Métricas para comparar
     metrics_keys = [
         "retorno_anualizado_pct",
         "sharpe_ratio",
@@ -697,30 +1100,42 @@ def plot_radar_metrics(results: Dict, period: str):
         "Info\nRatio"
     ]
 
-    # Normalização 0-10 para cada métrica
-    def normalize(values_list):
-        min_val = min(values_list)
-        max_val = max(values_list)
-        range_val = max_val - min_val
-        if range_val == 0:
-            return [5.0] * len(values_list)
-        return [((v - min_val) / range_val) * 10 for v in values_list]
+    # Ranges de referência por métrica (mercado brasileiro)
+    metric_ranges = {
+        "retorno_anualizado_pct": {"min": -10, "max": 30},
+        "sharpe_ratio": {"min": -0.5, "max": 2.0},
+        "calmar_ratio": {"min": -0.5, "max": 1.5},
+        "information_ratio": {"min": -1.0, "max": 1.0}
+    }
 
-    # Coleta dados
+    def normalize_individual(value, metric_key):
+        """Normaliza valor individual baseado no range da métrica."""
+        range_def = metric_ranges.get(metric_key, {"min": 0, "max": 10})
+        min_val = range_def["min"]
+        max_val = range_def["max"]
+
+        # Clip para evitar valores fora do range
+        value = max(min_val, min(value, max_val))
+
+        # Normaliza 0-10
+        if max_val == min_val:
+            return 5.0
+        normalized = ((value - min_val) / (max_val - min_val)) * 10
+        return normalized
+
+    # Coleta e normaliza dados
     data = {perfil: [] for perfil in PROFILES + ["ibovespa"]}
 
     for key in metrics_keys:
-        values = []
         for perfil in PROFILES + ["ibovespa"]:
             if key == "information_ratio":
                 val = results[perfil].get("benchmark_metrics", {}).get(key, 0)
             else:
                 val = results[perfil]["metrics"].get(key, 0)
-            values.append(val)
 
-        normalized = normalize(values)
-        for perfil, norm_val in zip(PROFILES + ["ibovespa"], normalized):
-            data[perfil].append(norm_val)
+            # Normaliza individualmente por métrica
+            normalized = normalize_individual(val, key)
+            data[perfil].append(normalized)
 
     # Plotagem
     num_vars = len(labels)
@@ -733,26 +1148,36 @@ def plot_radar_metrics(results: Dict, period: str):
         values = data[perfil]
         values += values[:1]
 
+        linewidth = 2.5 if perfil != "ibovespa" else 2
+        linestyle = '-' if perfil != "ibovespa" else '--'
+        alpha_fill = 0.15 if perfil != "ibovespa" else 0.05
+
         ax.plot(
             angles,
             values,
             'o-',
-            linewidth=2,
+            linewidth=linewidth,
+            linestyle=linestyle,
             label=perfil.capitalize(),
-            color=COLORS[perfil]
+            color=COLORS[perfil],
+            markersize=8 if perfil != "ibovespa" else 6
         )
-        ax.fill(angles, values, alpha=0.15, color=COLORS[perfil])
+        ax.fill(angles, values, alpha=alpha_fill, color=COLORS[perfil])
 
     ax.set_xticks(angles[:-1])
-    ax.set_xticklabels(labels, fontsize=11)
+    ax.set_xticklabels(labels, fontsize=11, fontweight='bold')
     ax.set_ylim(0, 10)
     ax.set_yticks([2, 4, 6, 8, 10])
     ax.set_yticklabels(['2', '4', '6', '8', '10'], fontsize=9, color='gray')
     ax.grid(True, linestyle='--', alpha=0.5)
 
+    # Linha de referência (valor neutro = 5)
+    ax.plot(angles, [5]*len(angles), 'k:', alpha=0.3, linewidth=1)
+
     ax.set_title(
-        f"Comparação Multidimensional de Métricas ({period})\n(Escala normalizada 0-10)",
-        fontsize=14,
+        f"Comparação Multidimensional de Métricas ({period})\n"
+        f"(Normalização individual por métrica - Ranges: Sharpe [-0.5, 2.0], Calmar [-0.5, 1.5], IR [-1, 1], Retorno [-10%, 30%])",
+        fontsize=12,
         fontweight='bold',
         pad=30
     )
@@ -782,9 +1207,9 @@ def plot_all(results: Dict, period: str):
 # SALVAMENTO DE MÉTRICAS
 # ============================================================================
 
-def save_metrics(results: Dict, period: str):
+def save_metrics(results: Dict, period: str, asset_summaries: Dict = None):
     """
-    Salva métricas em JSON.
+    Salva métricas em JSON (agora inclui resumo de ativos).
     """
     end_date = datetime.now()
     period_years = PERIODS[period]
@@ -804,6 +1229,10 @@ def save_metrics(results: Dict, period: str):
             **results[perfil].get("benchmark_metrics", {}),
             "ativos_faltantes": results[perfil].get("missing_tickers", [])
         }
+
+        # Adiciona resumo de ativos (se disponível)
+        if asset_summaries and perfil in asset_summaries:
+            output[perfil]["analise_ativos"] = asset_summaries[perfil]
 
     output_file = OUTPUTS_DIR / f"backtest_metrics_{period}.json"
 
@@ -831,15 +1260,28 @@ def main():
         print(f"{'='*70}\n")
 
         results = {}
+        asset_summaries = {}  # ← NOVO
 
         # Executa backtesting para cada perfil
         for perfil in PROFILES:
             print(f"\n📊 Processando: {perfil.upper()}")
-            results[perfil] = run_backtest(perfil, years)
+            results[perfil] = run_backtest(
+                perfil,
+                years,
+                analyze_assets=True  # ← ATIVA ANÁLISE DE ATIVOS
+            )
+
+            # Gera gráficos e salva dados de ativos
+            asset_data = results[perfil]["asset_analysis"]
+            if not asset_data.empty:
+                print(f"\n  📈 Gerando análise de ativos para {perfil}...")
+                plot_asset_comparison(asset_data, perfil, period_name)
+                plot_dividend_contribution(asset_data, perfil, period_name)
+                asset_summaries[perfil] = save_asset_metrics(asset_data, perfil, period_name)
 
         # Adiciona Ibovespa como benchmark
         print(f"\n📊 Processando: IBOVESPA (Benchmark)")
-        results["ibovespa"] = run_backtest("ibovespa", years)
+        results["ibovespa"] = run_backtest("ibovespa", years, analyze_assets=False)
 
         # Calcula métricas relativas ao benchmark
         print("\n  Calculando métricas relativas ao benchmark...")
@@ -856,11 +1298,11 @@ def main():
                       f"Alpha={bench_metrics['alpha_anualizado_pct']:.2f}%, "
                       f"IR={bench_metrics['information_ratio']:.2f}")
 
-        # Gera visualizações
+        # Gera visualizações consolidadas
         plot_all(results, period_name)
 
-        # Salva métricas
-        save_metrics(results, period_name)
+        # Salva métricas (agora incluindo resumo de ativos)
+        save_metrics(results, period_name, asset_summaries)  # ← MODIFICADO
 
     print("\n" + "="*70)
     print(" ✅ ANÁLISE COMPLETA!")

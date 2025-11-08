@@ -17,7 +17,23 @@
     "information_ratio": 0.0,
     "ativos_faltantes": [
       "AESB3.SA"
-    ]
+    ],
+    "analise_ativos": {
+      "perfil": "conservador",
+      "periodo": "5anos",
+      "n_ativos": 9,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 200.66,
+        "retorno_medio_sem_div_pct": 96.03,
+        "efeito_dividendos_medio_pct": 104.63,
+        "melhor_ativo_com_div": "DIRR3",
+        "melhor_retorno_com_div_pct": 443.0,
+        "pior_ativo_com_div": "CMIN3",
+        "pior_retorno_com_div_pct": 10.87,
+        "maior_pagador_dividendos": "BRAP4",
+        "dividendos_totais_periodo": 72.48
+      }
+    }
   },
   "moderado": {
     "retorno_total_pct": 176.73,
@@ -30,7 +46,23 @@
     "beta": 0.0,
     "alpha_anualizado_pct": 0.0,
     "information_ratio": 0.0,
-    "ativos_faltantes": []
+    "ativos_faltantes": [],
+    "analise_ativos": {
+      "perfil": "moderado",
+      "periodo": "5anos",
+      "n_ativos": 12,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 142.75,
+        "retorno_medio_sem_div_pct": 58.4,
+        "efeito_dividendos_medio_pct": 84.35,
+        "melhor_ativo_com_div": "PETR4",
+        "melhor_retorno_com_div_pct": 439.63,
+        "pior_ativo_com_div": "SOJA3",
+        "pior_retorno_com_div_pct": -27.65,
+        "maior_pagador_dividendos": "PETR4",
+        "dividendos_totais_periodo": 110.67
+      }
+    }
   },
   "arrojado": {
     "retorno_total_pct": 145.51,
@@ -45,7 +77,23 @@
     "information_ratio": 0.0,
     "ativos_faltantes": [
       "BRST3.SA"
-    ]
+    ],
+    "analise_ativos": {
+      "perfil": "arrojado",
+      "periodo": "5anos",
+      "n_ativos": 15,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 108.29,
+        "retorno_medio_sem_div_pct": 25.18,
+        "efeito_dividendos_medio_pct": 83.11,
+        "melhor_ativo_com_div": "PETR3",
+        "melhor_retorno_com_div_pct": 459.02,
+        "pior_ativo_com_div": "TRAD3",
+        "pior_retorno_com_div_pct": -92.8,
+        "maior_pagador_dividendos": "MOAR3",
+        "dividendos_totais_periodo": 242.89
+      }
+    }
   },
   "ibovespa": {
     "retorno_total_pct": 56.41,

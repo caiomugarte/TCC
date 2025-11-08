@@ -5,21 +5,36 @@
   "data_fim": "2025-11-08",
   "capital_inicial": 10000.0,
   "conservador": {
-    "retorno_total_pct": 1162.32,
-    "retorno_anualizado_pct": 28.86,
-    "volatilidade_anual_pct": 23.44,
-    "sharpe_ratio": 0.804,
-    "drawdown_maximo_pct": -42.7,
-    "calmar_ratio": 0.676,
-    "retorno_mensal_medio_pct": 2.4,
+    "retorno_total_pct": 1004.53,
+    "retorno_anualizado_pct": 27.15,
+    "volatilidade_anual_pct": 24.81,
+    "sharpe_ratio": 0.691,
+    "drawdown_maximo_pct": -46.56,
+    "calmar_ratio": 0.583,
+    "retorno_mensal_medio_pct": 2.31,
     "beta": 0.0,
     "alpha_anualizado_pct": 0.0,
     "information_ratio": 0.0,
     "ativos_faltantes": [
-      "STBP3.SA",
       "CMIN3.SA",
       "AESB3.SA"
-    ]
+    ],
+    "analise_ativos": {
+      "perfil": "conservador",
+      "periodo": "10anos",
+      "n_ativos": 9,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 1145.35,
+        "retorno_medio_sem_div_pct": 517.74,
+        "efeito_dividendos_medio_pct": 627.6,
+        "melhor_ativo_com_div": "DIRR3",
+        "melhor_retorno_com_div_pct": 2301.67,
+        "pior_ativo_com_div": "CMIN3",
+        "pior_retorno_com_div_pct": 10.87,
+        "maior_pagador_dividendos": "ISAE4",
+        "dividendos_totais_periodo": 114.88
+      }
+    }
   },
   "moderado": {
     "retorno_total_pct": 621.46,
@@ -35,7 +50,23 @@
     "ativos_faltantes": [
       "FIQE3.SA",
       "SOJA3.SA"
-    ]
+    ],
+    "analise_ativos": {
+      "perfil": "moderado",
+      "periodo": "10anos",
+      "n_ativos": 12,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 408.84,
+        "retorno_medio_sem_div_pct": 142.86,
+        "efeito_dividendos_medio_pct": 265.99,
+        "melhor_ativo_com_div": "PETR4",
+        "melhor_retorno_com_div_pct": 1340.17,
+        "pior_ativo_com_div": "SOJA3",
+        "pior_retorno_com_div_pct": -27.65,
+        "maior_pagador_dividendos": "PETR4",
+        "dividendos_totais_periodo": 161.57
+      }
+    }
   },
   "arrojado": {
     "retorno_total_pct": 706.05,
@@ -52,7 +83,23 @@
       "BRST3.SA",
       "TRAD3.SA",
       "BRAV3.SA"
-    ]
+    ],
+    "analise_ativos": {
+      "perfil": "arrojado",
+      "periodo": "10anos",
+      "n_ativos": 15,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 473.24,
+        "retorno_medio_sem_div_pct": 196.39,
+        "efeito_dividendos_medio_pct": 276.85,
+        "melhor_ativo_com_div": "DIRR3",
+        "melhor_retorno_com_div_pct": 2301.67,
+        "pior_ativo_com_div": "TRAD3",
+        "pior_retorno_com_div_pct": -92.8,
+        "maior_pagador_dividendos": "MOAR3",
+        "dividendos_totais_periodo": 311.8
+      }
+    }
   },
   "ibovespa": {
     "retorno_total_pct": 225.28,
