@@ -762,6 +762,30 @@ def calculate_benchmark_metrics(
         "information_ratio": round(info_ratio, 3)
     }
 
+def get_ibovespa_tickers() -> List[str]:
+    """
+    Retorna lista de tickers que compõem o Ibovespa.
+
+    Returns:
+        Lista de tickers (sem .SA)
+    """
+    # Composição do Ibovespa (atualizada 2024)
+    # Fonte: B3 - http://www.b3.com.br/pt_br/market-data-e-indices/indices/indices-amplos/ibovespa.htm
+    ibov_tickers = [
+        "ABEV3", "ALPA4", "AMER3", "ASAI3", "AZUL4", "B3SA3", "BBAS3", "BBDC3",
+        "BBDC4", "BBSE3", "BEEF3", "BPAC11", "BRAP4", "BRFS3", "BRKM5", "CASH3",
+        "CCRO3", "CIEL3", "CMIG4", "CMIN3", "COGN3", "CPFE3", "CPLE6", "CRFB3",
+        "CSAN3", "CSNA3", "CVCB3", "CYRE3", "DXCO3", "ECOR3", "EGIE3", "ELET3",
+        "ELET6", "EMBR3", "ENBR3", "ENEV3", "ENGI11", "EQTL3", "EZTC3", "FLRY3",
+        "GGBR4", "GOAU4", "GOLL4", "HAPV3", "HYPE3", "IGTI11", "IRBR3", "ITSA4",
+        "ITUB4", "JBSS3", "KLBN11", "LREN3", "LWSA3", "MGLU3", "MRFG3", "MRVE3",
+        "MULT3", "NTCO3", "PCAR3", "PETR3", "PETR4", "PETZ3", "PRIO3", "RADL3",
+        "RAIL3", "RAIZ4", "RDOR3", "RECV3", "RENT3", "RRRP3", "SANB11", "SBSP3",
+        "SLCE3", "SMTO3", "SOMA3", "SUZB3", "TAEE11", "TIMS3", "TOTS3", "UGPA3",
+        "USIM5", "VALE3", "VAMO3", "VBBR3", "VIVT3", "WEGE3", "YDUQ3"
+    ]
+
+    return ibov_tickers
 
 # ============================================================================
 # PIPELINE DE BACKTESTING
@@ -771,7 +795,7 @@ def run_backtest(
         perfil: str,
         period_years: int,
         end_date: Optional[datetime] = None,
-        analyze_assets: bool = True  # ← NOVO PARÂMETRO
+        analyze_assets: bool = True
 ) -> Dict:
     """
     Executa backtesting completo para uma carteira.
@@ -793,6 +817,7 @@ def run_backtest(
     start_str = start_date.strftime("%Y-%m-%d")
     end_str = end_date.strftime("%Y-%m-%d")
 
+    # ============ MODIFICAÇÃO AQUI ============
     # Ibovespa (benchmark)
     if perfil == "ibovespa":
         print("  Carregando Ibovespa (^BVSP)...")
@@ -811,11 +836,23 @@ def run_backtest(
                 "metrics": {},
                 "benchmark_metrics": {},
                 "missing_tickers": ["^BVSP"],
-                "asset_analysis": pd.DataFrame()  # ← NOVO
+                "asset_analysis": pd.DataFrame()
             }
 
         values = calculate_portfolio_value(prices)
-        asset_analysis = pd.DataFrame()  # Ibovespa não tem análise individual
+
+        # ===== NOVO: Análise dos ativos do Ibovespa =====
+        if analyze_assets:
+            print(f"    Analisando composição do Ibovespa...")
+            ibov_tickers = get_ibovespa_tickers()  # Lista dos ativos do índice
+            asset_analysis = analyze_asset_performance(
+                ibov_tickers,
+                start_str,
+                end_str,
+                period_years
+            )
+        else:
+            asset_analysis = pd.DataFrame()
 
     # Carteiras GA
     else:
@@ -830,12 +867,12 @@ def run_backtest(
                 "metrics": {},
                 "benchmark_metrics": {},
                 "missing_tickers": missing,
-                "asset_analysis": pd.DataFrame()  # ← NOVO
+                "asset_analysis": pd.DataFrame()
             }
 
         values = calculate_portfolio_value(prices)
 
-        # ===== ANÁLISE INDIVIDUAL DE ATIVOS =====
+        # Análise individual de ativos
         if analyze_assets:
             print(f"    Analisando {len(tickers)} ativos individualmente...")
             asset_analysis = analyze_asset_performance(
@@ -861,7 +898,7 @@ def run_backtest(
         "metrics": metrics,
         "benchmark_metrics": {},
         "missing_tickers": missing if perfil != "ibovespa" else [],
-        "asset_analysis": asset_analysis  # ← NOVO
+        "asset_analysis": asset_analysis
     }
 
 
@@ -1195,12 +1232,15 @@ def plot_all(results: Dict, period: str):
     """
     Gera todos os gráficos.
     """
-    print(f"\n  Gerando gráficos para {period}...")
+    print(f"\n  Gerando gráficos consolidados para {period}...")
     plot_evolution(results, period)
     plot_returns_comparison(results, period)
     plot_risk_return(results, period)
     plot_drawdowns(results, period)
     plot_radar_metrics(results, period)
+
+    # ===== NOVO: Gráfico comparativo de ativos =====
+    plot_portfolios_vs_ibov_assets(results, period)
 
 
 # ============================================================================
@@ -1241,7 +1281,62 @@ def save_metrics(results: Dict, period: str, asset_summaries: Dict = None):
 
     print(f"  ✓ Métricas salvas: backtest_metrics_{period}.json")
 
+def verify_portfolio_files():
+    """Verifica se os arquivos de carteira existem e são válidos."""
+    print("\n🔍 Verificando arquivos de carteira...\n")
 
+    all_ok = True
+
+    for perfil in PROFILES:
+        arquivo = OUTPUTS_DIR / f"carteira_{perfil}_ga.json"
+
+        if not arquivo.exists():
+            print(f"❌ {perfil}: Arquivo não encontrado")
+            all_ok = False
+        elif arquivo.stat().st_size == 0:
+            print(f"❌ {perfil}: Arquivo vazio")
+            all_ok = False
+        else:
+            try:
+                with open(arquivo, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    if data:
+                        print(f"✅ {perfil}: {len(data)} ativos encontrados")
+                    else:
+                        print(f"❌ {perfil}: JSON vazio")
+                        all_ok = False
+            except Exception as e:
+                print(f"❌ {perfil}: Erro ao ler - {e}")
+                all_ok = False
+
+    if not all_ok:
+        print("\n" + "="*70)
+        print("⚠️  ATENÇÃO: Alguns arquivos de carteira estão faltando ou inválidos")
+        print("="*70)
+        print("\nExecute os seguintes comandos na ordem:")
+        print("  1. python data_preprocessing.py")
+        print("  2. python build_portfolios_summary.py")
+        print("  3. python backtest_analysis.py")
+        print("\n" + "="*70 + "\n")
+        return False
+
+    print("\n✅ Todos os arquivos de carteira estão OK!\n")
+    return True
+
+
+def main():
+    """
+    Executa análise completa de backtesting para todos os perfis e períodos.
+    """
+    print("\n" + "="*70)
+    print(" BACKTESTING DE CARTEIRAS OTIMIZADAS POR ALGORITMO GENÉTICO")
+    print("="*70)
+
+    # Verifica arquivos antes de começar
+    if not verify_portfolio_files():
+        return  # Interrompe se houver problema
+
+    # ... resto do código ...
 # ============================================================================
 # PIPELINE PRINCIPAL
 # ============================================================================
@@ -1254,13 +1349,17 @@ def main():
     print(" BACKTESTING DE CARTEIRAS OTIMIZADAS POR ALGORITMO GENÉTICO")
     print("="*70)
 
+    # Verifica arquivos antes de começar
+    if not verify_portfolio_files():
+        return
+
     for period_name, years in PERIODS.items():
         print(f"\n{'='*70}")
         print(f" PERÍODO: {period_name.upper()} ({years} anos)")
         print(f"{'='*70}\n")
 
         results = {}
-        asset_summaries = {}  # ← NOVO
+        asset_summaries = {}
 
         # Executa backtesting para cada perfil
         for perfil in PROFILES:
@@ -1268,7 +1367,7 @@ def main():
             results[perfil] = run_backtest(
                 perfil,
                 years,
-                analyze_assets=True  # ← ATIVA ANÁLISE DE ATIVOS
+                analyze_assets=True
             )
 
             # Gera gráficos e salva dados de ativos
@@ -1279,9 +1378,31 @@ def main():
                 plot_dividend_contribution(asset_data, perfil, period_name)
                 asset_summaries[perfil] = save_asset_metrics(asset_data, perfil, period_name)
 
-        # Adiciona Ibovespa como benchmark
+        # ============ MODIFICAÇÃO AQUI ============
+        # Adiciona Ibovespa como benchmark (COM análise de ativos)
         print(f"\n📊 Processando: IBOVESPA (Benchmark)")
-        results["ibovespa"] = run_backtest("ibovespa", years, analyze_assets=False)
+        results["ibovespa"] = run_backtest(
+            "ibovespa",
+            years,
+            analyze_assets=True  # ← MUDOU DE False PARA True
+        )
+
+        # ===== NOVO: Gera gráficos dos ativos do Ibovespa =====
+        asset_data_ibov = results["ibovespa"]["asset_analysis"]
+        if not asset_data_ibov.empty:
+            print(f"\n  📈 Gerando análise de ativos do Ibovespa...")
+
+            # Limita aos top 15 ativos para visualização
+            top_15_ibov = asset_data_ibov.head(15)
+
+            plot_asset_comparison(top_15_ibov, "ibovespa_top15", period_name)
+            plot_dividend_contribution(top_15_ibov, "ibovespa_top15", period_name)
+            asset_summaries["ibovespa"] = save_asset_metrics(asset_data_ibov, "ibovespa", period_name)
+
+            print(f"  📊 Top 5 ativos do Ibovespa por retorno:")
+            for i, row in asset_data_ibov.head(5).iterrows():
+                print(f"    {i+1}. {row['TICKER']}: {row['retorno_total_com_div_pct']:.2f}% "
+                      f"(dividendos: {row['efeito_dividendos_total_pct']:.2f}%)")
 
         # Calcula métricas relativas ao benchmark
         print("\n  Calculando métricas relativas ao benchmark...")
@@ -1301,14 +1422,100 @@ def main():
         # Gera visualizações consolidadas
         plot_all(results, period_name)
 
-        # Salva métricas (agora incluindo resumo de ativos)
-        save_metrics(results, period_name, asset_summaries)  # ← MODIFICADO
+        # Salva métricas
+        save_metrics(results, period_name, asset_summaries)
 
     print("\n" + "="*70)
     print(" ✅ ANÁLISE COMPLETA!")
     print(" 📁 Todos os arquivos salvos em: outputs/")
     print("="*70 + "\n")
 
+def plot_portfolios_vs_ibov_assets(
+        results: Dict,
+        period: str
+):
+    """
+    Gráfico comparativo: Melhores ativos de cada carteira vs. Ibovespa.
+    """
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    axes = axes.flatten()
+
+    profiles_to_compare = PROFILES + ["ibovespa"]
+
+    for idx, perfil in enumerate(profiles_to_compare):
+        asset_data = results[perfil]["asset_analysis"]
+
+        if asset_data.empty:
+            continue
+
+        # Top 10 ativos por retorno total
+        top_10 = asset_data.head(10)
+
+        ax = axes[idx]
+
+        # Barras empilhadas: Preço + Dividendos
+        y_pos = np.arange(len(top_10))
+
+        bars_price = ax.barh(
+            y_pos,
+            top_10['retorno_total_sem_div_pct'],
+            label='Valorização de Preço',
+            color='steelblue',
+            alpha=0.7
+        )
+
+        bars_div = ax.barh(
+            y_pos,
+            top_10['efeito_dividendos_total_pct'],
+            left=top_10['retorno_total_sem_div_pct'],
+            label='Contribuição de Dividendos',
+            color='orange',
+            alpha=0.7
+        )
+
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(top_10['TICKER'])
+        ax.set_xlabel('Retorno Total (%)', fontsize=10, fontweight='bold')
+        ax.set_title(
+            f'{perfil.capitalize()} - Top 10 Ativos',
+            fontsize=12,
+            fontweight='bold'
+        )
+        ax.axvline(0, color='black', linewidth=0.8, linestyle='--', alpha=0.5)
+        ax.legend(fontsize=9, loc='lower right')
+        ax.grid(axis='x', alpha=0.3)
+
+        # Annotations
+        for i, (price_ret, div_ret) in enumerate(zip(
+                top_10['retorno_total_sem_div_pct'],
+                top_10['efeito_dividendos_total_pct']
+        )):
+            total = price_ret + div_ret
+            ax.text(
+                total + 5,
+                i,
+                f'{total:.0f}%',
+                va='center',
+                fontsize=8,
+                fontweight='bold'
+            )
+
+    fig.suptitle(
+        f'Comparação: Melhores Ativos por Carteira ({period})',
+        fontsize=14,
+        fontweight='bold',
+        y=0.995
+    )
+
+    plt.tight_layout()
+    plt.savefig(
+        OUTPUTS_DIR / f"backtest_comparison_all_assets_{period}.png",
+        dpi=150,
+        bbox_inches='tight'
+    )
+    plt.close()
+
+    print(f"  ✓ Gráfico comparativo salvo: backtest_comparison_all_assets_{period}.png")
 
 if __name__ == "__main__":
     main()

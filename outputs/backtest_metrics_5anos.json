@@ -103,6 +103,22 @@
     "drawdown_maximo_pct": -26.5,
     "calmar_ratio": 0.353,
     "retorno_mensal_medio_pct": 0.95,
-    "ativos_faltantes": []
+    "ativos_faltantes": [],
+    "analise_ativos": {
+      "perfil": "ibovespa",
+      "periodo": "5anos",
+      "n_ativos": 78,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 60.74,
+        "retorno_medio_sem_div_pct": 21.93,
+        "efeito_dividendos_medio_pct": 38.81,
+        "melhor_ativo_com_div": "EMBR3",
+        "melhor_retorno_com_div_pct": 1231.11,
+        "pior_ativo_com_div": "AMER3",
+        "pior_retorno_com_div_pct": -99.94,
+        "maior_pagador_dividendos": "AMER3",
+        "dividendos_totais_periodo": 516.79
+      }
+    }
   }
 }

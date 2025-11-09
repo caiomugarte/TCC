@@ -1,0 +1,386 @@
+#!/usr/bin/env python
+"""report_consensus.py
+Visualiza comparativos das carteiras CONSENSO (múltiplas execuções) vs Ibovespa.
+
+- Lê `outputs/summary_ga_consensus.json` (gerado pelo ga_multiple_runs.py)
+- Gera os mesmos gráficos do report.py, mas para as carteiras consenso
+- Adiciona gráficos de estabilidade das múltiplas execuções
+
+Requisitos: pandas, matplotlib
+"""
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import pandas as pd
+import numpy as np
+
+# ======================== Config ========================================
+SUMMARY_PATH = Path("outputs/summary_ga_consensus.json")
+OUT_DIR = Path("outputs")
+OUT_DIR.mkdir(exist_ok=True, parents=True)
+
+# Métricas e cores agrupadas por tipo
+COLOR_MAP = {
+    # Dividendos / Value (amarelos)
+    "DY": "#ffc107",
+    "P/VP": "#ffca28",
+    "EV/EBIT": "#ffd54f",
+
+    # Qualidade / Rentabilidade (verdes)
+    "ROE": "#388e3c",
+    "ROIC": "#4caf50",
+    "MARGEM EBIT": "#66bb6a",
+    "MARG. LIQUIDA": "#81c784",
+
+    # Crescimento (azuis)
+    "CAGR RECEITAS 5 ANOS": "#2196f3",
+    "CAGR LUCROS 5 ANOS": "#42a5f5",
+    "PEG RATIO": "#64b5f6",
+
+    # Liquidez / Alavancagem (vermelhos-rosados)
+    "LIQ. CORRENTE": "#e57373",
+    "DIVIDA LIQUIDA / EBIT": "#ef5350",
+    "DIV. LIQ. / PATRI.": "#f06292",
+}
+
+METRICS = list(COLOR_MAP.keys())
+PROFILES = ["ibovespa", "conservador", "moderado", "arrojado"]
+
+# ======================== Helpers =======================================
+
+def load_summary(path: Path) -> dict:
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Resumo não encontrado em {path!s}.\n"
+            f"Execute ga_multiple_runs.py primeiro."
+        )
+    with path.open(encoding="utf-8") as f:
+        return json.load(f)
+
+
+def build_metric_df(summary: dict) -> pd.DataFrame:
+    """DataFrame (rows = métricas, cols = perfis) com medianas em valores brutos."""
+    data = {
+        p: [summary[p]["median_metrics"].get(m, float("nan")) for m in METRICS]
+        for p in PROFILES
+    }
+    return pd.DataFrame(data, index=METRICS)
+
+
+def build_zscore_df(summary: dict) -> pd.DataFrame:
+    """DataFrame (rows = métricas, cols = perfis) com medianas z-score."""
+    data = {
+        p: [summary[p].get("zscore_metrics", {}).get(m, float("nan")) for m in METRICS]
+        for p in PROFILES if p != "ibovespa"
+    }
+    return pd.DataFrame(data, index=METRICS)
+
+
+def save_show(fig: plt.Figure, name: str):
+    fig.tight_layout()
+    output_file = OUT_DIR / f"fig_consensus_{name}.png"
+    fig.savefig(output_file, dpi=120, bbox_inches='tight')
+    print(f"  ✓ Gráfico salvo: {output_file.name}")
+    plt.close()
+
+
+# ======================== Gráficos ======================================
+
+def plot_metrics_comparison(summary: dict):
+    """Gráfico de barras: Métricas fundamentais em valores brutos."""
+    df_metrics = build_metric_df(summary)
+
+    colors = [COLOR_MAP[m] for m in METRICS]
+    fig = plt.figure(figsize=(14, 7))
+    ax = plt.gca()
+
+    df_metrics.T.plot(kind="bar", color=colors, edgecolor="black", ax=ax, alpha=0.8)
+    ax.set_ylabel("Valor da Métrica", fontsize=12, fontweight='bold')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
+    ax.set_title(
+        "Métricas Fundamentais - Carteiras Consenso vs Ibovespa",
+        fontsize=14,
+        fontweight='bold',
+        pad=20
+    )
+
+    # Legenda individual por métrica
+    legend_handles = [mpatches.Patch(color=COLOR_MAP[m], label=m) for m in METRICS]
+    ax.legend(
+        handles=legend_handles,
+        bbox_to_anchor=(1.02, 1),
+        loc="upper left",
+        title="Indicadores",
+        fontsize=9
+    )
+    ax.grid(axis='y', alpha=0.3)
+
+    save_show(fig, "metrics_comparison")
+
+
+def plot_zscore_comparison(summary: dict):
+    """Gráfico de barras: Z-scores das métricas."""
+    zscore_df = build_zscore_df(summary)
+
+    colors = [COLOR_MAP[m] for m in METRICS]
+    fig = plt.figure(figsize=(14, 7))
+    ax = plt.gca()
+
+    zscore_df.T.plot(kind="bar", color=colors, edgecolor="black", ax=ax, alpha=0.8)
+    ax.set_ylabel("Z-Score", fontsize=12, fontweight='bold')
+    ax.set_xticklabels(ax.get_xticklabels(), rotation=0)
+    ax.set_title(
+        "Métricas Fundamentais - Z-Score das Carteiras Consenso",
+        fontsize=14,
+        fontweight='bold',
+        pad=20
+    )
+    ax.axhline(0, color='black', linewidth=0.8, linestyle='--', alpha=0.5)
+
+    # Legenda individual por métrica
+    legend_handles = [mpatches.Patch(color=COLOR_MAP[m], label=m) for m in METRICS]
+    ax.legend(
+        handles=legend_handles,
+        bbox_to_anchor=(1.02, 1),
+        loc="upper left",
+        title="Indicadores (z-score)",
+        fontsize=9
+    )
+    ax.grid(axis='y', alpha=0.3)
+
+    save_show(fig, "zscore_comparison")
+
+
+def plot_sector_distribution(summary: dict):
+    """Gráficos de distribuição setorial para cada perfil."""
+    for perfil in ["conservador", "moderado", "arrojado"]:
+        if perfil not in summary:
+            continue
+
+        sector_w = summary[perfil]["sector_weights"]
+        sectors = list(sector_w.keys())
+        weights = [w * 100 for w in sector_w.values()]
+
+        fig = plt.figure(figsize=(10, 6))
+        ax = plt.gca()
+
+        bars = ax.barh(sectors, weights, color="#42a5f5", edgecolor="black", alpha=0.8)
+        ax.set_xlabel("Peso (%)", fontsize=12, fontweight='bold')
+        ax.set_title(
+            f"Distribuição Setorial - {perfil.capitalize()} (Carteira Consenso)",
+            fontsize=13,
+            fontweight='bold',
+            pad=15
+        )
+        ax.invert_yaxis()
+        ax.grid(axis='x', alpha=0.3)
+
+        # Annotations
+        for bar, weight in zip(bars, weights):
+            width = bar.get_width()
+            ax.text(
+                width + 1,
+                bar.get_y() + bar.get_height() / 2,
+                f'{weight:.1f}%',
+                ha='left',
+                va='center',
+                fontsize=10,
+                fontweight='bold'
+            )
+
+        save_show(fig, f"sector_{perfil}")
+
+
+def plot_stability_metrics(summary: dict):
+    """Gráfico de estabilidade: CV e Jaccard por perfil."""
+    fig, axes = plt.subplots(1, 2, figsize=(14, 6))
+
+    profiles = ["conservador", "moderado", "arrojado"]
+
+    # Coeficiente de Variação do Fitness
+    cv_values = []
+    for perfil in profiles:
+        if perfil in summary and "multi_run_stats" in summary[perfil]:
+            cv = summary[perfil]["multi_run_stats"]["fitness"]["cv"]
+            cv_values.append(cv * 100)  # Converte para %
+        else:
+            cv_values.append(0)
+
+    axes[0].bar(
+        [p.capitalize() for p in profiles],
+        cv_values,
+        color=['#2E7D32', '#1976D2', '#D32F2F'],
+        edgecolor='black',
+        alpha=0.7
+    )
+    axes[0].set_ylabel("CV do Fitness (%)", fontsize=11, fontweight='bold')
+    axes[0].set_title("Variabilidade do Fitness", fontsize=12, fontweight='bold')
+    axes[0].axhline(5, color='orange', linestyle='--', alpha=0.7, label='Limite Bom (5%)')
+    axes[0].legend()
+    axes[0].grid(axis='y', alpha=0.3)
+
+    # Annotations
+    for i, cv in enumerate(cv_values):
+        axes[0].text(
+            i,
+            cv + 0.3,
+            f'{cv:.2f}%',
+            ha='center',
+            fontsize=10,
+            fontweight='bold'
+        )
+
+    # Índice de Jaccard
+    jaccard_values = []
+    for perfil in profiles:
+        if perfil in summary and "multi_run_stats" in summary[perfil]:
+            jaccard = summary[perfil]["multi_run_stats"]["portfolio_similarity"]["jaccard_mean"]
+            jaccard_values.append(jaccard)
+        else:
+            jaccard_values.append(0)
+
+    axes[1].bar(
+        [p.capitalize() for p in profiles],
+        jaccard_values,
+        color=['#2E7D32', '#1976D2', '#D32F2F'],
+        edgecolor='black',
+        alpha=0.7
+    )
+    axes[1].set_ylabel("Índice de Jaccard", fontsize=11, fontweight='bold')
+    axes[1].set_title("Similaridade entre Carteiras", fontsize=12, fontweight='bold')
+    axes[1].set_ylim(0, 1)
+    axes[1].axhline(0.7, color='green', linestyle='--', alpha=0.7, label='Limite Bom (0.7)')
+    axes[1].legend()
+    axes[1].grid(axis='y', alpha=0.3)
+
+    # Annotations
+    for i, jaccard in enumerate(jaccard_values):
+        axes[1].text(
+            i,
+            jaccard + 0.03,
+            f'{jaccard:.3f}',
+            ha='center',
+            fontsize=10,
+            fontweight='bold'
+        )
+
+    fig.suptitle(
+        "Métricas de Estabilidade das Múltiplas Execuções",
+        fontsize=14,
+        fontweight='bold',
+        y=1.02
+    )
+
+    save_show(fig, "stability_metrics")
+
+
+def plot_hhi_comparison(summary: dict):
+    """Gráfico de HHI (concentração setorial) por perfil."""
+    profiles = ["conservador", "moderado", "arrojado"]
+    hhi_values = []
+
+    for perfil in profiles:
+        if perfil in summary:
+            hhi_values.append(summary[perfil]["hhi"])
+        else:
+            hhi_values.append(0)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    bars = ax.bar(
+        [p.capitalize() for p in profiles],
+        hhi_values,
+        color=['#2E7D32', '#1976D2', '#D32F2F'],
+        edgecolor='black',
+        alpha=0.7
+    )
+
+    ax.set_ylabel("HHI (Herfindahl-Hirschman Index)", fontsize=11, fontweight='bold')
+    ax.set_title(
+        "Concentração Setorial - Carteiras Consenso",
+        fontsize=13,
+        fontweight='bold',
+        pad=15
+    )
+    ax.set_ylim(0, 1)
+    ax.axhline(0.25, color='orange', linestyle='--', alpha=0.7, label='Moderadamente Concentrado')
+    ax.axhline(0.15, color='green', linestyle='--', alpha=0.7, label='Bem Diversificado')
+    ax.legend()
+    ax.grid(axis='y', alpha=0.3)
+
+    # Annotations
+    for bar, hhi in zip(bars, hhi_values):
+        height = bar.get_height()
+        ax.text(
+            bar.get_x() + bar.get_width() / 2,
+            height + 0.02,
+            f'{hhi:.3f}',
+            ha='center',
+            fontsize=11,
+            fontweight='bold'
+        )
+
+    save_show(fig, "hhi_comparison")
+
+
+# ======================== Main ==========================================
+
+def main():
+    print("\n" + "="*70)
+    print(" RELATÓRIO DAS CARTEIRAS CONSENSO (MÚLTIPLAS EXECUÇÕES)")
+    print("="*70 + "\n")
+
+    try:
+        summary = load_summary(SUMMARY_PATH)
+    except FileNotFoundError as e:
+        print(f"❌ {e}")
+        print("\n💡 Execute primeiro: python ga_multiple_runs.py")
+        return
+
+    print("📊 Gerando gráficos...\n")
+
+    # Gráficos de métricas fundamentais
+    plot_metrics_comparison(summary)
+    plot_zscore_comparison(summary)
+
+    # Distribuição setorial
+    plot_sector_distribution(summary)
+
+    # Métricas de estabilidade
+    plot_stability_metrics(summary)
+
+    # Concentração setorial (HHI)
+    plot_hhi_comparison(summary)
+
+    print("\n" + "="*70)
+    print(f"✅ Gráficos salvos em: {OUT_DIR.resolve()}")
+    print("="*70 + "\n")
+
+    # Resumo estatístico
+    print("📋 RESUMO DAS CARTEIRAS CONSENSO:")
+    print("-" * 70)
+
+    for perfil in ["conservador", "moderado", "arrojado"]:
+        if perfil not in summary:
+            continue
+
+        data = summary[perfil]
+        print(f"\n{perfil.upper()}:")
+        print(f"  • N° de ativos: {data['num_assets']}")
+        print(f"  • HHI: {data['hhi']:.3f}")
+
+        if "consensus_info" in data:
+            print(f"  • Frequência média: {data['consensus_info']['avg_frequency']:.1%}")
+            print(f"  • Baseado em: {data['consensus_info']['n_runs']} execuções")
+
+        if "multi_run_stats" in data:
+            stats = data["multi_run_stats"]
+            print(f"  • CV Fitness: {stats['fitness']['cv']:.2%}")
+            print(f"  • Jaccard: {stats['portfolio_similarity']['jaccard_mean']:.3f}")
+
+
+if __name__ == "__main__":
+    main()
