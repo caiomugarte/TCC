@@ -48,7 +48,7 @@ PERIODS = {
     "10anos": 10
 }
 
-PROFILES = ["conservador", "moderado", "arrojado"]
+PROFILES = ["conservador", "moderado", "arrojado", "caio"]
 
 INITIAL_CAPITAL = 10_000.0  # Capital inicial hipotético
 SELIC_PROXY = 0.10  # 10% aa como taxa livre de risco simplificada
@@ -64,7 +64,8 @@ COLORS = {
     "conservador": "#2E7D32",  # Verde escuro
     "moderado": "#1976D2",     # Azul
     "arrojado": "#D32F2F",     # Vermelho
-    "ibovespa": "#757575"      # Cinza
+    "ibovespa": "#757575",      # Cinza
+    "caio": "#3503ff"
 }
 
 # ============================================================================
@@ -1067,7 +1068,7 @@ def plot_drawdowns(results: Dict, period: str):
     """
     Gráfico 4: Drawdown ao longo do tempo (subplots).
     """
-    fig, axes = plt.subplots(2, 2, figsize=(16, 10))
+    fig, axes = plt.subplots(2, 3, figsize=(20, 10))
     axes = axes.flatten()
 
     for idx, perfil in enumerate(PROFILES + ["ibovespa"]):
@@ -1101,6 +1102,11 @@ def plot_drawdowns(results: Dict, period: str):
             axes[idx].grid(True, alpha=0.3)
             axes[idx].xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
             plt.setp(axes[idx].xaxis.get_majorticklabels(), rotation=45)
+
+    # Oculta o subplot vazio (temos 5 perfis em 6 subplots)
+    if len(PROFILES + ["ibovespa"]) < len(axes):
+        for idx in range(len(PROFILES + ["ibovespa"]), len(axes)):
+            axes[idx].set_visible(False)
 
     fig.suptitle(
         f"Análise de Drawdown - {period}",
@@ -1288,7 +1294,7 @@ def verify_portfolio_files():
     all_ok = True
 
     for perfil in PROFILES:
-        arquivo = OUTPUTS_DIR / f"carteira_{perfil}_ga.json"
+        arquivo = OUTPUTS_DIR / f"carteira_{perfil}_consensus.json"
 
         if not arquivo.exists():
             print(f"❌ {perfil}: Arquivo não encontrado")
@@ -1437,7 +1443,7 @@ def plot_portfolios_vs_ibov_assets(
     """
     Gráfico comparativo: Melhores ativos de cada carteira vs. Ibovespa.
     """
-    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    fig, axes = plt.subplots(2, 3, figsize=(20, 12))
     axes = axes.flatten()
 
     profiles_to_compare = PROFILES + ["ibovespa"]
@@ -1499,6 +1505,11 @@ def plot_portfolios_vs_ibov_assets(
                 fontsize=8,
                 fontweight='bold'
             )
+
+    # Oculta o subplot vazio (temos 5 perfis em 6 subplots)
+    if len(profiles_to_compare) < len(axes):
+        for idx in range(len(profiles_to_compare), len(axes)):
+            axes[idx].set_visible(False)
 
     fig.suptitle(
         f'Comparação: Melhores Ativos por Carteira ({period})',

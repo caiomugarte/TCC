@@ -10,7 +10,7 @@ sector_files = {
     "Materiais Básicos": "data/materiais_basicos_raw.csv",
     "Financeiro e Outros": "data/financeiros_outros_raw.csv",
     "Tecnologia da Informação": "data/tecnologia_informacao_raw.csv",
-    "Saúde": "data/sauda_raw.csv",
+    "Saúde": "data/saude_raw.csv",
     "Petróleo, Gás e Biocombustíveis": "data/petroleo_gas_biocombustivel_raw.csv",
     "Comunicações": "data/comunicacoes_raw.csv"
 }

@@ -47,7 +47,7 @@ COLOR_MAP = {
 }
 
 METRICS = list(COLOR_MAP.keys())
-PROFILES = ["ibovespa", "conservador", "moderado", "arrojado"]
+PROFILES = ["ibovespa", "caio"]
 
 # ======================== Helpers =======================================
 
@@ -156,7 +156,7 @@ def plot_zscore_comparison(summary: dict):
 
 def plot_sector_distribution(summary: dict):
     """Gráficos de distribuição setorial para cada perfil."""
-    for perfil in ["conservador", "moderado", "arrojado"]:
+    for perfil in ["caio"]:
         if perfil not in summary:
             continue
 
@@ -198,7 +198,7 @@ def plot_stability_metrics(summary: dict):
     """Gráfico de estabilidade: CV e Jaccard por perfil."""
     fig, axes = plt.subplots(1, 2, figsize=(14, 6))
 
-    profiles = ["conservador", "moderado", "arrojado"]
+    profiles = ["caio"]
 
     # Coeficiente de Variação do Fitness
     cv_values = []
@@ -279,7 +279,7 @@ def plot_stability_metrics(summary: dict):
 
 def plot_hhi_comparison(summary: dict):
     """Gráfico de HHI (concentração setorial) por perfil."""
-    profiles = ["conservador", "moderado", "arrojado"]
+    profiles = ["caio"]
     hhi_values = []
 
     for perfil in profiles:
@@ -363,7 +363,7 @@ def main():
     print("📋 RESUMO DAS CARTEIRAS CONSENSO:")
     print("-" * 70)
 
-    for perfil in ["conservador", "moderado", "arrojado"]:
+    for perfil in ["caio"]:
         if perfil not in summary:
             continue
 

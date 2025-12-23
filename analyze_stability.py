@@ -16,7 +16,7 @@ with open(SUMMARY_FILE, "r") as f:
 
 # 1. Boxplot de Fitness por Perfil
 fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-for idx, perfil in enumerate(["conservador", "moderado", "arrojado"]):
+for idx, perfil in enumerate(["conservador", "moderado", "arrojado", "caio"]):
     df = pd.read_csv(OUT_DIR / f"metrics_stability_{perfil}.csv")
     axes[idx].boxplot(df["fitness"])
     axes[idx].set_title(f"{perfil.capitalize()}")

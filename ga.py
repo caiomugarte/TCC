@@ -27,6 +27,12 @@ PERFIL_CONFIG: Dict[str, Dict[str, int | float]] = {
     "conservador": {"n_assets": 10, "lambda": 0.50, "generations": 300, "pop_size": 200},
     "moderado":    {"n_assets": 12, "lambda": 0.25, "generations": 400, "pop_size": 250},
     "arrojado":    {"n_assets": 15, "lambda": 0.10, "generations": 500, "pop_size": 300},
+    "caio":        {
+    "n_assets": 10,
+    "lambda": 0.49,
+    "generations": 460,
+    "pop_size": 276
+},
 }
 # ---------- parâmetros de GA ----------
 NCROSS_RATE = 0.8   # probabilidade de crossover

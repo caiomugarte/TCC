@@ -70,6 +70,13 @@ PROFILE_WEIGHTS: Dict[str, Dict[str, float]] = {
         "growth": 0.40,
         "div": 0.10,
     },
+    "caio": {
+        "liquidez": 0.22,
+        "rent": 0.35,
+        "value": 0.08,
+        "growth": 0.05,
+        "div": 0.30
+    },
 }
 
 # ------------------------- Funções públicas -------------------- #

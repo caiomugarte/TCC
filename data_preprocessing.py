@@ -23,6 +23,10 @@ FILTERS = {
     "conservador": {"cap_min": 5_000_000_000, "liq_min": 2_000_000},
     "moderado":    {"cap_min": 1_000_000_000, "liq_min":   500_000},
     "arrojado":    {"cap_min":   200_000_000, "liq_min":    50_000},
+    "caio":        {
+    "cap_min": 3.000_000_000,
+    "liq_min": 1_050_000
+},
 }
 
 INVERT_METRICS = [

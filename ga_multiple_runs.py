@@ -24,7 +24,7 @@ DATA_DIR = Path("data/processed")
 OUT_DIR = Path("outputs")
 OUT_DIR.mkdir(exist_ok=True)
 
-PROFILES = ["conservador", "moderado", "arrojado"]
+PROFILES = ["conservador", "moderado", "arrojado", "caio"]
 
 # ==================== FUNÇÕES AUXILIARES ====================
 
@@ -243,7 +243,7 @@ def generate_consensus_summary(
     }
 
     # ===== CADA PERFIL =====
-    for perfil in ["conservador", "moderado", "arrojado"]:
+    for perfil in ["conservador", "moderado", "arrojado", "caio"]:
         if perfil not in all_results:
             continue
 
