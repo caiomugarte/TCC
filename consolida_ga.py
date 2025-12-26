@@ -1,7 +1,7 @@
 import profiles as pf, ga, pandas as pd, json
 from pathlib import Path
 
-DATA_DIR = Path("data/processed")
+DATA_DIR = Path("../data/processed")
 OUT_DIR  = Path("outputs"); OUT_DIR.mkdir(exist_ok=True)
 
 for perfil in ("conservador", "moderado", "arrojado"):

@@ -3,7 +3,7 @@ import pandas as pd
 from pathlib import Path
 
 TOP_N = {"conservador": 10, "moderado": 12, "arrojado": 15}
-DATA_DIR = Path("data/processed")
+DATA_DIR = Path("../data/processed")
 OUT_DIR  = Path("outputs"); OUT_DIR.mkdir(exist_ok=True)
 
 for perfil, n in TOP_N.items():

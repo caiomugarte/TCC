@@ -20,7 +20,7 @@ import ga
 
 # ==================== CONFIGURAÇÃO ====================
 N_RUNS = 30  # Número de execuções independentes (padrão acadêmico)
-DATA_DIR = Path("data/processed")
+DATA_DIR = Path("../data/processed")
 OUT_DIR = Path("outputs")
 OUT_DIR.mkdir(exist_ok=True)
 
@@ -369,7 +369,7 @@ def main():
         print(f"  💾 Métricas: {metrics_file}")
 
     # ===== NOVO: Gera summary consolidado =====
-    raw_data_path = Path("data/raw/status_invest_fundamentals.csv")
+    raw_data_path = Path("../data/raw/status_invest_fundamentals.csv")
 
     if raw_data_path.exists():
         consensus_summary = generate_consensus_summary(

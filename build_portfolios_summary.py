@@ -28,8 +28,8 @@ import ga
 from cleaner import to_float  # função de conversão br->float
 import os
 
-DATA_DIR     = Path("data/processed")
-DATA_DIR_RAW = Path("data/raw")
+DATA_DIR     = Path("../data/processed")
+DATA_DIR_RAW = Path("../data/raw")
 OUT_DIR      = Path("outputs"); OUT_DIR.mkdir(exist_ok=True)
 
 METRIC_COLS = [

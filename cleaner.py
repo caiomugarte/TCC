@@ -3,16 +3,16 @@ import numpy as np
 
 # Arquivos brutos organizados por setor
 sector_files = {
-    "Consumo Cíclico": "data/consumo_ciclico_raw.csv",
-    "Consumo não Cíclico": "data/consumo_nao_ciclico_raw.csv",
-    "Utilidade Pública": "data/utilidade_publica_raw.csv",
-    "Bens Industriais": "data/bens_industriais_raw.csv",
-    "Materiais Básicos": "data/materiais_basicos_raw.csv",
-    "Financeiro e Outros": "data/financeiros_outros_raw.csv",
-    "Tecnologia da Informação": "data/tecnologia_informacao_raw.csv",
-    "Saúde": "data/saude_raw.csv",
-    "Petróleo, Gás e Biocombustíveis": "data/petroleo_gas_biocombustivel_raw.csv",
-    "Comunicações": "data/comunicacoes_raw.csv"
+    "Consumo Cíclico": "../data/consumo_ciclico_raw.csv",
+    "Consumo não Cíclico": "../data/consumo_nao_ciclico_raw.csv",
+    "Utilidade Pública": "../data/utilidade_publica_raw.csv",
+    "Bens Industriais": "../data/bens_industriais_raw.csv",
+    "Materiais Básicos": "../data/materiais_basicos_raw.csv",
+    "Financeiro e Outros": "../data/financeiros_outros_raw.csv",
+    "Tecnologia da Informação": "../data/tecnologia_informacao_raw.csv",
+    "Saúde": "../data/saude_raw.csv",
+    "Petróleo, Gás e Biocombustíveis": "../data/petroleo_gas_biocombustivel_raw.csv",
+    "Comunicações": "../data/comunicacoes_raw.csv"
 }
 
 def to_float(x):
@@ -63,7 +63,7 @@ def remove_outliers(df):
         df = df[mask]
     return df
 
-def build_clean_dataset(output_path="status_invest_fundamentals.csv"):
+def build_clean_dataset(output_path="../data/raw/status_invest_fundamentals.csv"):
     all_dfs = []
     for sector, file_path in sector_files.items():
         df_sector = clean_sector_file(file_path, sector)

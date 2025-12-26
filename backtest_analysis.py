@@ -40,7 +40,9 @@ except ImportError:
 # CONFIGURAÇÕES GLOBAIS
 # ============================================================================
 
-OUTPUTS_DIR = Path("outputs")
+# Usa o mesmo caminho que config.py (raiz do projeto)
+PROJECT_ROOT = Path(__file__).parent.parent
+OUTPUTS_DIR = PROJECT_ROOT / "outputs"
 OUTPUTS_DIR.mkdir(exist_ok=True)
 
 PERIODS = {
@@ -48,7 +50,7 @@ PERIODS = {
     "10anos": 10
 }
 
-PROFILES = ["conservador", "moderado", "arrojado", "caio"]
+PROFILES = ["conservador", "moderado", "arrojado", "caio", "caio2"]
 
 INITIAL_CAPITAL = 10_000.0  # Capital inicial hipotético
 SELIC_PROXY = 0.10  # 10% aa como taxa livre de risco simplificada
@@ -65,7 +67,8 @@ COLORS = {
     "moderado": "#1976D2",     # Azul
     "arrojado": "#D32F2F",     # Vermelho
     "ibovespa": "#757575",      # Cinza
-    "caio": "#3503ff"
+    "caio": "#3503ff",
+    "caio2": "#3CDBD3"
 }
 
 # ============================================================================
