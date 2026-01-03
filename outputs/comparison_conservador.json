@@ -1,0 +1,99 @@
+{
+  "metrics_comparison": {
+    "profile": "conservador",
+    "overlap": {
+      "jaccard_index": 0.3333333333333333,
+      "common_tickers": [
+        "BBDC3",
+        "FLRY3",
+        "POMO3",
+        "UNIP6",
+        "VULC3"
+      ],
+      "n_common": 5,
+      "only_consensus": [
+        "BRFS3",
+        "CXSE3",
+        "ISAE4",
+        "STBP3",
+        "VIVT3"
+      ],
+      "n_only_consensus": 5,
+      "only_best_individual": [
+        "ABEV3",
+        "ECOR3",
+        "ENGI11",
+        "KLBN3",
+        "NATU3"
+      ],
+      "n_only_best": 5
+    },
+    "fitness": {
+      "consensus": 4.7394348192695075,
+      "best_individual": 4.962290577947891,
+      "difference": 0.22285575867838325,
+      "percent_difference": 4.702158953052807
+    },
+    "hhi": {
+      "consensus": 0.14,
+      "best_individual": 0.16000000000000006,
+      "difference": 0.020000000000000046
+    },
+    "score_stats": {
+      "consensus": {
+        "mean": 0.5439434819269507,
+        "median": 0.5002832407954553,
+        "std": 0.23517142162387292
+      },
+      "best_individual": {
+        "mean": 0.40654749668086027,
+        "median": 0.3593624811368991,
+        "std": 0.29209952841115605
+      }
+    },
+    "sector_composition": {
+      "consensus": {
+        "Bens Industriais": 2,
+        "Financeiro e Outros": 2,
+        "Utilidade Pública": 1,
+        "Consumo Cíclico": 1,
+        "Materiais Básicos": 1,
+        "Consumo não Cíclico": 1,
+        "Comunicações": 1,
+        "Saúde": 1
+      },
+      "best_individual": {
+        "Materiais Básicos": 2,
+        "Consumo não Cíclico": 2,
+        "Bens Industriais": 2,
+        "Financeiro e Outros": 1,
+        "Consumo Cíclico": 1,
+        "Saúde": 1,
+        "Utilidade Pública": 1
+      }
+    }
+  },
+  "backtest_comparison": {
+    "period_years": 5,
+    "start_date": "2020-12-05",
+    "end_date": "2026-01-03",
+    "consensus": {
+      "total_return_pct": 149.98,
+      "annual_return_pct": 20.11,
+      "volatility_pct": 19.54,
+      "sharpe_ratio": 0.518,
+      "max_drawdown_pct": -21.62,
+      "n_assets": 8
+    },
+    "best_individual": {
+      "total_return_pct": 107.57,
+      "annual_return_pct": 15.73,
+      "volatility_pct": 19.6,
+      "sharpe_ratio": 0.292,
+      "max_drawdown_pct": -22.58,
+      "n_assets": 9
+    },
+    "winner": "consensus",
+    "return_difference_pct": 42.41
+  }
+}

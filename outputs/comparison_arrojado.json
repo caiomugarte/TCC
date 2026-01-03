@@ -1,0 +1,112 @@
+{
+  "metrics_comparison": {
+    "profile": "arrojado",
+    "overlap": {
+      "jaccard_index": 0.07142857142857142,
+      "common_tickers": [
+        "ENGI4",
+        "VULC3"
+      ],
+      "n_common": 2,
+      "only_consensus": [
+        "AURE3",
+        "BALM4",
+        "BIOM3",
+        "CBAV3",
+        "CEAB3",
+        "DESK3",
+        "FIQE3",
+        "LAVV3",
+        "MTRE3",
+        "OPCT3",
+        "PRIO3",
+        "SANB11",
+        "TGMA3"
+      ],
+      "n_only_consensus": 13,
+      "only_best_individual": [
+        "ALLD3",
+        "GEPA4",
+        "GGBR4",
+        "HBRE3",
+        "IGTI11",
+        "MBRF3",
+        "PLPL3",
+        "POMO4",
+        "PTBL3",
+        "RENT3",
+        "SBFG3",
+        "TAEE4",
+        "VIVT3"
+      ],
+      "n_only_best": 13
+    },
+    "fitness": {
+      "consensus": 3.3441939281020274,
+      "best_individual": 5.806538952735385,
+      "difference": 2.462345024633357,
+      "percent_difference": 73.63044959629009
+    },
+    "hhi": {
+      "consensus": 0.15555555555555556,
+      "best_individual": 0.2,
+      "difference": 0.04444444444444445
+    },
+    "score_stats": {
+      "consensus": {
+        "mean": 0.32522975103957824,
+        "median": 0.423787652026983,
+        "std": 0.3451490652239756
+      },
+      "best_individual": {
+        "mean": 0.17728646410316973,
+        "median": 0.15099582284277668,
+        "std": 0.2814942671771999
+      }
+    },
+    "sector_composition": {
+      "consensus": {
+        "Consumo Cíclico": 4,
+        "Utilidade Pública": 2,
+        "Bens Industriais": 2,
+        "Comunicações": 2,
+        "Saúde": 2,
+        "Materiais Básicos": 1,
+        "Petróleo, Gás e Biocombustíveis": 1,
+        "Financeiro e Outros": 1
+      },
+      "best_individual": {
+        "Consumo Cíclico": 5,
+        "Utilidade Pública": 3,
+        "Bens Industriais": 2,
+        "Financeiro e Outros": 2,
+        "Consumo não Cíclico": 1,
+        "Materiais Básicos": 1,
+        "Comunicações": 1
+      }
+    }
+  },
+  "backtest_comparison": {
+    "period_years": 5,
+    "start_date": "2020-12-05",
+    "end_date": "2026-01-03",
+    "consensus": {
+      "total_return_pct": 95.92,
+      "annual_return_pct": 14.4,
+      "volatility_pct": 21.95,
+      "sharpe_ratio": 0.2,
+      "max_drawdown_pct": -31.08,
+      "n_assets": 15
+    },
+    "best_individual": {
+      "total_return_pct": 94.69,
+      "annual_return_pct": 14.25,
+      "volatility_pct": 20.71,
+      "sharpe_ratio": 0.205,
+      "max_drawdown_pct": -27.03,
+      "n_assets": 15
+    },
+    "winner": "consensus",
+    "return_difference_pct": 1.23
+  }
+}

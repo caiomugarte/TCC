@@ -1,0 +1,22 @@
+{
+  "preprocessing_conservador": {
+    "format": "csv",
+    "dependencies_hash": "48b55d7e8d23092dfb2005db17d82eca"
+  },
+  "preprocessing_moderado": {
+    "format": "csv",
+    "dependencies_hash": "48b55d7e8d23092dfb2005db17d82eca"
+  },
+  "preprocessing_arrojado": {
+    "format": "csv",
+    "dependencies_hash": "48b55d7e8d23092dfb2005db17d82eca"
+  },
+  "preprocessing_caio": {
+    "format": "csv",
+    "dependencies_hash": "48b55d7e8d23092dfb2005db17d82eca"
+  },
+  "preprocessing_caio2": {
+    "format": "csv",
+    "dependencies_hash": "48b55d7e8d23092dfb2005db17d82eca"
+  }
+}

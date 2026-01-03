@@ -1,0 +1,236 @@
+{
+  "ibovespa": {
+    "median_metrics": {
+      "DY": 5.45,
+      "P/VP": 1.41,
+      "EV/EBIT": 8.46,
+      "ROE": 13.04,
+      "ROIC": 10.52,
+      "MARGEM EBIT": 18.07,
+      "MARG. LIQUIDA": 8.81,
+      "CAGR RECEITAS 5 ANOS": 13.85,
+      "CAGR LUCROS 5 ANOS": 13.97,
+      "PEG RATIO": 0.11,
+      "LIQ. CORRENTE": 1.665,
+      "DIVIDA LIQUIDA / EBIT": 2.34,
+      "DIV. LIQ. / PATRI.": 0.59
+    }
+  },
+  "conservador": {
+    "num_assets": 10,
+    "hhi": 0.26,
+    "fitness": 4.29,
+    "median_metrics": {
+      "DY": 7.855,
+      "P/VP": 1.6400000000000001,
+      "EV/EBIT": 9.605,
+      "ROE": 15.174999999999999,
+      "ROIC": 7.93,
+      "MARGEM EBIT": 21.09,
+      "MARG. LIQUIDA": 8.89,
+      "CAGR RECEITAS 5 ANOS": 10.51,
+      "CAGR LUCROS 5 ANOS": 22.3,
+      "PEG RATIO": -0.015,
+      "LIQ. CORRENTE": 2.205,
+      "DIVIDA LIQUIDA / EBIT": 0.6,
+      "DIV. LIQ. / PATRI.": 0.09
+    },
+    "zscore_metrics": {
+      "DY": 0.03512199697010265,
+      "P/VP": 0.31540763363201785,
+      "EV/EBIT": -0.0978549766565917,
+      "ROE": 0.3285592634515016,
+      "ROIC": -0.23211775160487444,
+      "MARGEM EBIT": -0.11204198778276236,
+      "MARG. LIQUIDA": 0.06860522871027185,
+      "CAGR RECEITAS 5 ANOS": -0.7553083232419899,
+      "CAGR LUCROS 5 ANOS": 0.26236156536882466,
+      "PEG RATIO": -0.3392080324311253,
+      "LIQ. CORRENTE": 0.041806849445519566,
+      "DIVIDA LIQUIDA / EBIT": 0.34983725496022416,
+      "DIV. LIQ. / PATRI.": -0.477302153760321
+    },
+    "sector_weights": {
+      "Consumo Cíclico": 0.3,
+      "Financeiro e Outros": 0.3,
+      "Consumo não Cíclico": 0.2,
+      "Materiais Básicos": 0.2
+    }
+  },
+  "moderado": {
+    "num_assets": 12,
+    "hhi": 0.181,
+    "fitness": 3.84,
+    "median_metrics": {
+      "DY": 4.765000000000001,
+      "P/VP": 1.025,
+      "EV/EBIT": 7.77,
+      "ROE": 11.735,
+      "ROIC": 10.395,
+      "MARGEM EBIT": 20.064999999999998,
+      "MARG. LIQUIDA": 10.285,
+      "CAGR RECEITAS 5 ANOS": 17.22,
+      "CAGR LUCROS 5 ANOS": 15.870000000000001,
+      "PEG RATIO": -0.265,
+      "LIQ. CORRENTE": 1.83,
+      "DIVIDA LIQUIDA / EBIT": 2.2800000000000002,
+      "DIV. LIQ. / PATRI.": 0.445
+    },
+    "zscore_metrics": {
+      "DY": 0.0,
+      "P/VP": 0.5616227899566104,
+      "EV/EBIT": -0.047637325517538215,
+      "ROE": 0.10794497718527035,
+      "ROIC": 0.04228767117890176,
+      "MARGEM EBIT": 0.27453267897297806,
+      "MARG. LIQUIDA": 0.3456160535821914,
+      "CAGR RECEITAS 5 ANOS": 0.024860079737829315,
+      "CAGR LUCROS 5 ANOS": -0.05961960224982624,
+      "PEG RATIO": -0.057885328719413716,
+      "LIQ. CORRENTE": -0.1778292103843743,
+      "DIVIDA LIQUIDA / EBIT": 0.0206958055951023,
+      "DIV. LIQ. / PATRI.": -0.314821565218548
+    },
+    "sector_weights": {
+      "Utilidade Pública": 0.25,
+      "Materiais Básicos": 0.25,
+      "Saúde": 0.167,
+      "Comunicações": 0.083,
+      "Financeiro e Outros": 0.083,
+      "Consumo Cíclico": 0.083,
+      "Consumo não Cíclico": 0.083
+    }
+  },
+  "arrojado": {
+    "num_assets": 15,
+    "hhi": 0.12,
+    "fitness": 5.28,
+    "median_metrics": {
+      "DY": 5.04,
+      "P/VP": 0.99,
+      "EV/EBIT": 7.54,
+      "ROE": 13.47,
+      "ROIC": 8.57,
+      "MARGEM EBIT": 18.02,
+      "MARG. LIQUIDA": 9.24,
+      "CAGR RECEITAS 5 ANOS": 14.28,
+      "CAGR LUCROS 5 ANOS": 21.85,
+      "PEG RATIO": 0.04,
+      "LIQ. CORRENTE": 1.76,
+      "DIVIDA LIQUIDA / EBIT": 2.25,
+      "DIV. LIQ. / PATRI.": 0.56
+    },
+    "zscore_metrics": {
+      "DY": 0.0,
+      "P/VP": 0.3771481511210688,
+      "EV/EBIT": 0.01632735586096206,
+      "ROE": 0.30171197356713264,
+      "ROIC": -0.01333237592772092,
+      "MARGEM EBIT": -0.01909388669088408,
+      "MARG. LIQUIDA": -0.07997029110840487,
+      "CAGR RECEITAS 5 ANOS": -0.05037817122538079,
+      "CAGR LUCROS 5 ANOS": 0.25358531723893424,
+      "PEG RATIO": -0.08260267469736819,
+      "LIQ. CORRENTE": -0.2670272462266201,
+      "DIVIDA LIQUIDA / EBIT": 0.01654470479839349,
+      "DIV. LIQ. / PATRI.": -0.2896028161016574
+    },
+    "sector_weights": {
+      "Financeiro e Outros": 0.2,
+      "Bens Industriais": 0.133,
+      "Consumo não Cíclico": 0.133,
+      "Consumo Cíclico": 0.133,
+      "Utilidade Pública": 0.067,
+      "Comunicações": 0.067,
+      "Saúde": 0.067,
+      "Petróleo, Gás e Biocombustíveis": 0.067,
+      "Materiais Básicos": 0.067,
+      "Tecnologia da Informação": 0.067
+    }
+  },
+  "caio": {
+    "num_assets": 10,
+    "hhi": 0.18,
+    "fitness": 6.0,
+    "median_metrics": {
+      "DY": 7.82,
+      "P/VP": 1.855,
+      "EV/EBIT": 7.6,
+      "ROE": 21.035,
+      "ROIC": 13.905000000000001,
+      "MARGEM EBIT": 14.415000000000001,
+      "MARG. LIQUIDA": 11.42,
+      "CAGR RECEITAS 5 ANOS": 14.35,
+      "CAGR LUCROS 5 ANOS": 11.46,
+      "PEG RATIO": 0.7050000000000001,
+      "LIQ. CORRENTE": 1.67,
+      "DIVIDA LIQUIDA / EBIT": 0.94,
+      "DIV. LIQ. / PATRI.": 0.53
+    },
+    "zscore_metrics": {
+      "DY": 0.7045157755375758,
+      "P/VP": -0.26623804346796764,
+      "EV/EBIT": -0.25367998972763506,
+      "ROE": 0.4661896196462532,
+      "ROIC": 0.4292824934666042,
+      "MARGEM EBIT": 0.09667497276055668,
+      "MARG. LIQUIDA": 0.20062765996947934,
+      "CAGR RECEITAS 5 ANOS": 0.08047502092677251,
+      "CAGR LUCROS 5 ANOS": -0.058350811648361325,
+      "PEG RATIO": 0.15414177512728486,
+      "LIQ. CORRENTE": -0.14892637297347144,
+      "DIVIDA LIQUIDA / EBIT": 0.14864585494645466,
+      "DIV. LIQ. / PATRI.": -0.21075974954437074
+    },
+    "sector_weights": {
+      "Financeiro e Outros": 0.2,
+      "Utilidade Pública": 0.2,
+      "Consumo não Cíclico": 0.2,
+      "Consumo Cíclico": 0.2,
+      "Bens Industriais": 0.1,
+      "Materiais Básicos": 0.1
+    }
+  },
+  "caio2": {
+    "num_assets": 10,
+    "hhi": 0.22,
+    "fitness": 5.85,
+    "median_metrics": {
+      "DY": 6.62,
+      "P/VP": 1.7249999999999999,
+      "EV/EBIT": 7.975,
+      "ROE": 16.72,
+      "ROIC": 12.739999999999998,
+      "MARGEM EBIT": 19.98,
+      "MARG. LIQUIDA": 12.08,
+      "CAGR RECEITAS 5 ANOS": 16.195,
+      "CAGR LUCROS 5 ANOS": 17.57,
+      "PEG RATIO": 0.225,
+      "LIQ. CORRENTE": 2.2199999999999998,
+      "DIVIDA LIQUIDA / EBIT": 0.775,
+      "DIV. LIQ. / PATRI.": 0.225
+    },
+    "zscore_metrics": {
+      "DY": 0.0,
+      "P/VP": -0.3267168670791938,
+      "EV/EBIT": 0.21423349537527914,
+      "ROE": 0.3623628123755034,
+      "ROIC": 0.6488487875638358,
+      "MARGEM EBIT": 0.3350092085399156,
+      "MARG. LIQUIDA": 0.37865838353714976,
+      "CAGR RECEITAS 5 ANOS": -0.3918896352730342,
+      "CAGR LUCROS 5 ANOS": -0.1425597068559157,
+      "PEG RATIO": -0.048175000937317594,
+      "LIQ. CORRENTE": -0.055256257203515874,
+      "DIVIDA LIQUIDA / EBIT": -0.14956293285259045,
+      "DIV. LIQ. / PATRI.": -0.3612491553789736
+    },
+    "sector_weights": {
+      "Consumo Cíclico": 0.3,
+      "Tecnologia da Informação": 0.2,
+      "Saúde": 0.2,
+      "Petróleo, Gás e Biocombustíveis": 0.2,
+      "Consumo não Cíclico": 0.1
+    }
+  }
+}
