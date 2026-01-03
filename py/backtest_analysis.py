@@ -22,6 +22,10 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import numpy as np
+
+# Configura matplotlib para backend não-interativo (evita problemas com Tkinter)
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from matplotlib.patches import Patch

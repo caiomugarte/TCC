@@ -174,9 +174,18 @@ def build_consensus_portfolio(
 
     ticker_counts = Counter(all_tickers)
 
-    # Seleciona os N mais frequentes
-    most_common = ticker_counts.most_common(n_assets)
-    consensus_tickers = [ticker for ticker, _ in most_common]
+    # Seleciona os N mais frequentes com critério de desempate por SCORE
+    # Cria lista de (ticker, frequência, score) para ordenação
+    ticker_data = []
+    for ticker, count in ticker_counts.items():
+        score = df_ranked[df_ranked["TICKER"] == ticker]["SCORE"].iloc[0]
+        ticker_data.append((ticker, count, score))
+
+    # Ordena por: 1) frequência (desc), 2) score (desc), 3) ticker (alfabético)
+    ticker_data.sort(key=lambda x: (-x[1], -x[2], x[0]))
+
+    # Seleciona os N primeiros
+    consensus_tickers = [ticker for ticker, _, _ in ticker_data[:n_assets]]
 
     # Constrói DataFrame da carteira consenso
     consensus_portfolio = df_ranked[
@@ -308,6 +317,121 @@ def compare_portfolios(
             "best_individual": best_sectors,
         },
     }
+
+
+def compare_fundamental_metrics(
+    consensus: pd.DataFrame,
+    best_individual: pd.DataFrame,
+    profile: str
+) -> Dict:
+    """
+    Compara métricas fundamentalistas entre carteira consensual e melhor indivíduo.
+
+    Parameters
+    ----------
+    consensus : pd.DataFrame
+        Carteira consensual.
+    best_individual : pd.DataFrame
+        Melhor indivíduo.
+    profile : str
+        Perfil do investidor.
+
+    Returns
+    -------
+    Dict
+        Comparação de métricas fundamentalistas.
+    """
+    from config import METRIC_COLS
+
+    # Métricas disponíveis em ambas as carteiras
+    available_metrics = [col for col in METRIC_COLS if col in consensus.columns]
+
+    comparison = {
+        "profile": profile,
+        "metrics": {},
+        "summary": {}
+    }
+
+    for metric in available_metrics:
+        consensus_values = consensus[metric].dropna()
+        best_values = best_individual[metric].dropna()
+
+        if len(consensus_values) == 0 or len(best_values) == 0:
+            continue
+
+        comparison["metrics"][metric] = {
+            "consensus": {
+                "mean": float(consensus_values.mean()),
+                "median": float(consensus_values.median()),
+                "std": float(consensus_values.std()),
+                "min": float(consensus_values.min()),
+                "max": float(consensus_values.max()),
+            },
+            "best_individual": {
+                "mean": float(best_values.mean()),
+                "median": float(best_values.median()),
+                "std": float(best_values.std()),
+                "min": float(best_values.min()),
+                "max": float(best_values.max()),
+            },
+            "difference": {
+                "mean": float(consensus_values.mean() - best_values.mean()),
+                "median": float(consensus_values.median() - best_values.median()),
+            }
+        }
+
+    # Análise resumida: qual carteira é "melhor" em cada grupo de métricas
+    metric_groups = {
+        "valuation": ["P/L", "P/VP", "EV/EBIT", "PSR"],
+        "profitability": ["ROE", "ROA", "ROIC", "MARG. LIQUIDA", "MARGEM EBIT"],
+        "growth": ["CAGR RECEITAS 5 ANOS", "CAGR LUCROS 5 ANOS"],
+        "dividend": ["DY"],
+        "liquidity": ["LIQ. CORRENTE", "DIVIDA LIQUIDA / EBIT", "DIV. LIQ. / PATRI."]
+    }
+
+    for group_name, metrics in metric_groups.items():
+        consensus_wins = 0
+        best_wins = 0
+
+        for metric in metrics:
+            if metric not in comparison["metrics"]:
+                continue
+
+            # Para métricas de valuation, menor é melhor
+            # Para outras, maior é melhor
+            is_lower_better = metric in ["P/L", "P/VP", "EV/EBIT", "PSR", "DIVIDA LIQUIDA / EBIT"]
+
+            consensus_mean = comparison["metrics"][metric]["consensus"]["mean"]
+            best_mean = comparison["metrics"][metric]["best_individual"]["mean"]
+
+            if is_lower_better:
+                if consensus_mean < best_mean:
+                    consensus_wins += 1
+                else:
+                    best_wins += 1
+            else:
+                if consensus_mean > best_mean:
+                    consensus_wins += 1
+                else:
+                    best_wins += 1
+
+        comparison["summary"][group_name] = {
+            "consensus_wins": consensus_wins,
+            "best_individual_wins": best_wins,
+            "winner": "consensus" if consensus_wins > best_wins else ("best_individual" if best_wins > consensus_wins else "tie")
+        }
+
+    # Vencedor geral
+    total_consensus_wins = sum(g["consensus_wins"] for g in comparison["summary"].values())
+    total_best_wins = sum(g["best_individual_wins"] for g in comparison["summary"].values())
+
+    comparison["overall_winner"] = "consensus" if total_consensus_wins > total_best_wins else ("best_individual" if total_best_wins > total_consensus_wins else "tie")
+    comparison["overall_score"] = {
+        "consensus": total_consensus_wins,
+        "best_individual": total_best_wins
+    }
+
+    return comparison
 
 
 def run_backtest_comparison(
@@ -698,8 +822,12 @@ def run_multi_execution_profile(
     # Comparação entre carteiras
     comparison = compare_portfolios(consensus, best_individual, profile)
 
-    # Backtest comparativo
-    backtest_comparison = run_backtest_comparison(consensus, best_individual, profile, period_years=5)
+    # Comparação de métricas fundamentalistas
+    fundamental_comparison = compare_fundamental_metrics(consensus, best_individual, profile)
+
+    # Backtest comparativo (5 e 10 anos)
+    backtest_5y = run_backtest_comparison(consensus, best_individual, profile, period_years=5)
+    backtest_10y = run_backtest_comparison(consensus, best_individual, profile, period_years=10)
 
     # Salva carteira consenso
     consensus_file = OUTPUTS_DIR / f"carteira_{profile}_consensus.json"
@@ -719,25 +847,32 @@ def run_multi_execution_profile(
         force_ascii=False
     )
 
-    # Salva comparação (inclui métricas e backtest)
+    # Salva comparação (inclui métricas, fundamentals e backtest)
     # Remove as séries temporais do backtest para tornar serializável
-    backtest_comparison_serializable = backtest_comparison.copy()
-    if backtest_comparison_serializable:
-        for key in ["consensus", "best_individual"]:
-            if key in backtest_comparison_serializable and backtest_comparison_serializable[key]:
-                if "values" in backtest_comparison_serializable[key]:
-                    del backtest_comparison_serializable[key]["values"]
+    def make_backtest_serializable(backtest_data):
+        backtest_copy = backtest_data.copy()
+        if backtest_copy:
+            for key in ["consensus", "best_individual"]:
+                if key in backtest_copy and backtest_copy[key]:
+                    if "values" in backtest_copy[key]:
+                        del backtest_copy[key]["values"]
+        return backtest_copy
+
+    backtest_5y_serializable = make_backtest_serializable(backtest_5y)
+    backtest_10y_serializable = make_backtest_serializable(backtest_10y)
 
     full_comparison = {
         "metrics_comparison": comparison,
-        "backtest_comparison": backtest_comparison_serializable
+        "fundamental_comparison": fundamental_comparison,
+        "backtest_5y": backtest_5y_serializable,
+        "backtest_10y": backtest_10y_serializable
     }
     comparison_file = OUTPUTS_DIR / f"comparison_{profile}.json"
     with open(comparison_file, "w", encoding="utf-8") as f:
         json.dump(full_comparison, f, ensure_ascii=False, indent=2)
 
     # Gera gráficos comparativos
-    plot_comparison_charts(comparison, backtest_comparison, profile)
+    plot_comparison_charts(comparison, backtest_5y, profile)
 
     # Salva métricas detalhadas
     df_metrics = pd.DataFrame(results)
@@ -752,7 +887,14 @@ def run_multi_execution_profile(
     print(f"     • Fitness Consenso: {comparison['fitness']['consensus']:.2f}")
     print(f"     • Fitness Melhor: {comparison['fitness']['best_individual']:.2f}")
     print(f"     • Diferença: {comparison['fitness']['difference']:+.2f} ({comparison['fitness']['percent_difference']:+.1f}%)")
-    print(f"  💾 Carteira consenso: {consensus_file}")
+
+    print(f"\n  📈 MÉTRICAS FUNDAMENTALISTAS:")
+    print(f"     • Vencedor: {fundamental_comparison['overall_winner'].upper()}")
+    print(f"     • Score: Consenso {fundamental_comparison['overall_score']['consensus']} x {fundamental_comparison['overall_score']['best_individual']} Melhor Indivíduo")
+    for group, stats in fundamental_comparison['summary'].items():
+        print(f"     • {group.capitalize()}: {stats['winner'].upper()} ({stats['consensus_wins']}-{stats['best_individual_wins']})")
+
+    print(f"\n  💾 Carteira consenso: {consensus_file}")
     print(f"  💾 Melhor indivíduo: {best_individual_file}")
     print(f"  💾 Comparação: {comparison_file}")
     print(f"  💾 Métricas: {metrics_file}")
@@ -774,7 +916,9 @@ def run_multi_execution_profile(
             "seed": int(best_individual.attrs["seed"]),
         },
         "comparison": comparison,
-        "backtest_comparison": backtest_comparison,
+        "fundamental_comparison": fundamental_comparison,
+        "backtest_5y": backtest_5y,
+        "backtest_10y": backtest_10y,
         "all_runs": results
     }
 

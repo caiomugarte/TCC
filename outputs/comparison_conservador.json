@@ -2,98 +2,419 @@
   "metrics_comparison": {
     "profile": "conservador",
     "overlap": {
-      "jaccard_index": 0.3333333333333333,
+      "jaccard_index": 0.05263157894736842,
       "common_tickers": [
-        "BBDC3",
-        "FLRY3",
-        "POMO3",
+        "ISAE4"
+      ],
+      "n_common": 1,
+      "only_consensus": [
+        "BBAS3",
+        "CXSE3",
+        "ITSA3",
+        "ITSA4",
+        "JHSF3",
+        "ODPV3",
+        "POMO4",
         "UNIP6",
         "VULC3"
       ],
-      "n_common": 5,
-      "only_consensus": [
-        "BRFS3",
-        "CXSE3",
-        "ISAE4",
-        "STBP3",
-        "VIVT3"
-      ],
-      "n_only_consensus": 5,
+      "n_only_consensus": 9,
       "only_best_individual": [
-        "ABEV3",
-        "ECOR3",
-        "ENGI11",
-        "KLBN3",
-        "NATU3"
+        "BEEF3",
+        "BRFS3",
+        "BRKM5",
+        "CPFE3",
+        "CYRE3",
+        "MBRF3",
+        "MOTV3",
+        "MULT3",
+        "WEGE3"
       ],
-      "n_only_best": 5
+      "n_only_best": 9
     },
     "fitness": {
-      "consensus": 4.7394348192695075,
-      "best_individual": 4.962290577947891,
-      "difference": 0.22285575867838325,
-      "percent_difference": 4.702158953052807
+      "consensus": 4.359972446614039,
+      "best_individual": 5.253070079518522,
+      "difference": 0.8930976329044826,
+      "percent_difference": 20.484020113431303
     },
     "hhi": {
-      "consensus": 0.14,
-      "best_individual": 0.16000000000000006,
-      "difference": 0.020000000000000046
+      "consensus": 0.24000000000000007,
+      "best_individual": 0.20000000000000004,
+      "difference": -0.040000000000000036
     },
     "score_stats": {
       "consensus": {
-        "mean": 0.5439434819269507,
-        "median": 0.5002832407954553,
-        "std": 0.23517142162387292
+        "mean": 0.5559972446614039,
+        "median": 0.5562154738559876,
+        "std": 0.22055297730372989
       },
       "best_individual": {
-        "mean": 0.40654749668086027,
-        "median": 0.3593624811368991,
-        "std": 0.29209952841115605
+        "mean": 0.2348959373118893,
+        "median": 0.21954468084767553,
+        "std": 0.30604444509964235
       }
     },
     "sector_composition": {
       "consensus": {
-        "Bens Industriais": 2,
-        "Financeiro e Outros": 2,
+        "Financeiro e Outros": 4,
+        "Consumo Cíclico": 2,
         "Utilidade Pública": 1,
-        "Consumo Cíclico": 1,
         "Materiais Básicos": 1,
-        "Consumo não Cíclico": 1,
-        "Comunicações": 1,
+        "Bens Industriais": 1,
         "Saúde": 1
       },
       "best_individual": {
-        "Materiais Básicos": 2,
-        "Consumo não Cíclico": 2,
+        "Consumo não Cíclico": 3,
+        "Utilidade Pública": 2,
         "Bens Industriais": 2,
-        "Financeiro e Outros": 1,
         "Consumo Cíclico": 1,
-        "Saúde": 1,
-        "Utilidade Pública": 1
+        "Financeiro e Outros": 1,
+        "Materiais Básicos": 1
       }
     }
   },
-  "backtest_comparison": {
+  "fundamental_comparison": {
+    "profile": "conservador",
+    "metrics": {
+      "DY": {
+        "consensus": {
+          "mean": 1.2193844847295552,
+          "median": 1.7825729332968927,
+          "std": 0.9771308397570025,
+          "min": 0.0,
+          "max": 2.4236823176211493
+        },
+        "best_individual": {
+          "mean": 0.6866822167538986,
+          "median": 0.0,
+          "std": 0.8937624363685149,
+          "min": 0.0,
+          "max": 2.118738086688402
+        },
+        "difference": {
+          "mean": 0.5327022679756566,
+          "median": 1.7825729332968927
+        }
+      },
+      "P/VP": {
+        "consensus": {
+          "mean": 0.10717716283430004,
+          "median": 0.43597098920420824,
+          "std": 0.9629044739668412,
+          "min": -1.488260835220064,
+          "max": 1.270080994545799
+        },
+        "best_individual": {
+          "mean": -0.31499248031636634,
+          "median": -0.43040572588780873,
+          "std": 1.5772668119969115,
+          "min": -2.869805333342146,
+          "max": 2.4074238319694223
+        },
+        "difference": {
+          "mean": 0.4221696431506664,
+          "median": 0.866376715092017
+        }
+      },
+      "EV/EBIT": {
+        "consensus": {
+          "mean": -0.4663936267668632,
+          "median": -0.2440492776042807,
+          "std": 0.5330779592490067,
+          "min": -1.302415128501894,
+          "max": 0.3612497098591209
+        },
+        "best_individual": {
+          "mean": -0.3193682360765592,
+          "median": -0.5776111542710203,
+          "std": 1.3184034890449978,
+          "min": -2.228425472563528,
+          "max": 2.3797605126441206
+        },
+        "difference": {
+          "mean": -0.14702539069030401,
+          "median": 0.3335618766667396
+        }
+      },
+      "ROE": {
+        "consensus": {
+          "mean": 0.5080240096042015,
+          "median": 0.13898179056148316,
+          "std": 0.8361190259633409,
+          "min": -0.7060402423425877,
+          "max": 1.8820810603259743
+        },
+        "best_individual": {
+          "mean": -0.31525910787136774,
+          "median": 0.16555809429571544,
+          "std": 1.4635560631111806,
+          "min": -3.3230255180625785,
+          "max": 1.1351663643750447
+        },
+        "difference": {
+          "mean": 0.8232831174755693,
+          "median": -0.02657630373423228
+        }
+      },
+      "ROIC": {
+        "consensus": {
+          "mean": 0.48449269145070023,
+          "median": 0.4068098533229974,
+          "std": 0.716022976886749,
+          "min": -0.2890638400976437,
+          "max": 1.8717932880510944
+        },
+        "best_individual": {
+          "mean": 0.07178063331003157,
+          "median": 0.22506054757940414,
+          "std": 1.2301614935255327,
+          "min": -2.203620660093505,
+          "max": 1.858813963180891
+        },
+        "difference": {
+          "mean": 0.4127120581406687,
+          "median": 0.18174930574359327
+        }
+      },
+      "MARGEM EBIT": {
+        "consensus": {
+          "mean": 1.1265315956104784,
+          "median": 0.778488304871027,
+          "std": 1.482659026901537,
+          "min": -0.6671845652653117,
+          "max": 3.225458853176061
+        },
+        "best_individual": {
+          "mean": -0.10333076717402581,
+          "median": -0.09410158858359335,
+          "std": 0.7780648775383778,
+          "min": -1.6080792403800874,
+          "max": 1.055157613000668
+        },
+        "difference": {
+          "mean": 1.2298623627845042,
+          "median": 0.8725898934546203
+        }
+      },
+      "MARG. LIQUIDA": {
+        "consensus": {
+          "mean": 1.477468493842331,
+          "median": 1.177659479037682,
+          "std": 1.1590278544068484,
+          "min": -0.5493681043572733,
+          "max": 2.817362909482586
+        },
+        "best_individual": {
+          "mean": 0.1502331316650715,
+          "median": 0.16144982245791875,
+          "std": 0.641047922152968,
+          "min": -1.1056296148246991,
+          "max": 1.177659479037682
+        },
+        "difference": {
+          "mean": 1.3272353621772595,
+          "median": 1.0162096565797631
+        }
+      },
+      "CAGR RECEITAS 5 ANOS": {
+        "consensus": {
+          "mean": -0.11356192127662126,
+          "median": 0.1369850063556134,
+          "std": 1.0012205594780412,
+          "min": -1.6305202591686745,
+          "max": 1.6947520797141418
+        },
+        "best_individual": {
+          "mean": -0.1284009878478975,
+          "median": -0.27250837460535654,
+          "std": 0.9055165155901659,
+          "min": -1.421873127688869,
+          "max": 1.6947520797141418
+        },
+        "difference": {
+          "mean": 0.014839066571276233,
+          "median": 0.40949338096096993
+        }
+      },
+      "CAGR LUCROS 5 ANOS": {
+        "consensus": {
+          "mean": 0.28509480494762307,
+          "median": 0.13149318339144864,
+          "std": 0.6414298925168418,
+          "min": -0.6029633587414467,
+          "max": 1.359236881613369
+        },
+        "best_individual": {
+          "mean": 0.44466314797781925,
+          "median": 0.3893450865308843,
+          "std": 0.8437089435335267,
+          "min": -0.7168515993965258,
+          "max": 1.7291589942834824
+        },
+        "difference": {
+          "mean": -0.15956834303019618,
+          "median": -0.2578519031394356
+        }
+      },
+      "PEG RATIO": {
+        "consensus": {
+          "mean": 0.18479695336218427,
+          "median": 0.15594245646908833,
+          "std": 0.441838286174568,
+          "min": -0.3366045691668574,
+          "max": 1.0463836069796315
+        },
+        "best_individual": {
+          "mean": 0.07658560779619679,
+          "median": -0.0024878428581162505,
+          "std": 1.7220079637736512,
+          "min": -3.805488076525712,
+          "max": 3.007008490897582
+        },
+        "difference": {
+          "mean": 0.10821134556598748,
+          "median": 0.1584302993272046
+        }
+      },
+      "LIQ. CORRENTE": {
+        "consensus": {
+          "mean": 0.4914275683167821,
+          "median": 0.2725588400810739,
+          "std": 1.3019219800970205,
+          "min": -1.0888344051839245,
+          "max": 3.682437309426179
+        },
+        "best_individual": {
+          "mean": 0.06608645356733586,
+          "median": -0.41350340487620385,
+          "std": 1.4337450174302078,
+          "min": -1.2219597512543945,
+          "max": 3.682437309426179
+        },
+        "difference": {
+          "mean": 0.42534111474944625,
+          "median": 0.6860622449572777
+        }
+      },
+      "DIVIDA LIQUIDA / EBIT": {
+        "consensus": {
+          "mean": 0.3228823434300444,
+          "median": 0.3219051653994112,
+          "std": 0.4152414110010476,
+          "min": -0.4925385001766667,
+          "max": 1.0510019157859978
+        },
+        "best_individual": {
+          "mean": 0.16962197510376834,
+          "median": 0.1145137471890639,
+          "std": 1.3693420703416472,
+          "min": -2.295699434536722,
+          "max": 2.667115118311945
+        },
+        "difference": {
+          "mean": 0.15326036832627607,
+          "median": 0.20739141821034732
+        }
+      },
+      "DIV. LIQ. / PATRI.": {
+        "consensus": {
+          "mean": -0.21975757570994092,
+          "median": -0.23634447344466,
+          "std": 0.7409281173034659,
+          "min": -1.697541674209148,
+          "max": 0.7810323989992417
+        },
+        "best_individual": {
+          "mean": 0.48088066197408175,
+          "median": 0.1384785848241458,
+          "std": 1.2784907916377608,
+          "min": -0.9470195339333348,
+          "max": 3.1729073752561896
+        },
+        "difference": {
+          "mean": -0.7006382376840227,
+          "median": -0.3748230582688058
+        }
+      }
+    },
+    "summary": {
+      "valuation": {
+        "consensus_wins": 1,
+        "best_individual_wins": 1,
+        "winner": "tie"
+      },
+      "profitability": {
+        "consensus_wins": 4,
+        "best_individual_wins": 0,
+        "winner": "consensus"
+      },
+      "growth": {
+        "consensus_wins": 1,
+        "best_individual_wins": 1,
+        "winner": "tie"
+      },
+      "dividend": {
+        "consensus_wins": 1,
+        "best_individual_wins": 0,
+        "winner": "consensus"
+      },
+      "liquidity": {
+        "consensus_wins": 1,
+        "best_individual_wins": 2,
+        "winner": "best_individual"
+      }
+    },
+    "overall_winner": "consensus",
+    "overall_score": {
+      "consensus": 8,
+      "best_individual": 4
+    }
+  },
+  "backtest_5y": {
     "period_years": 5,
     "start_date": "2020-12-05",
     "end_date": "2026-01-03",
     "consensus": {
-      "total_return_pct": 149.98,
-      "annual_return_pct": 20.11,
-      "volatility_pct": 19.54,
-      "sharpe_ratio": 0.518,
-      "max_drawdown_pct": -21.62,
-      "n_assets": 8
+      "total_return_pct": 137.82,
+      "annual_return_pct": 18.92,
+      "volatility_pct": 19.33,
+      "sharpe_ratio": 0.461,
+      "max_drawdown_pct": -18.2,
+      "n_assets": 10
     },
     "best_individual": {
-      "total_return_pct": 107.57,
-      "annual_return_pct": 15.73,
-      "volatility_pct": 19.6,
-      "sharpe_ratio": 0.292,
-      "max_drawdown_pct": -22.58,
-      "n_assets": 9
+      "total_return_pct": 39.12,
+      "annual_return_pct": 6.83,
+      "volatility_pct": 21.14,
+      "sharpe_ratio": -0.15,
+      "max_drawdown_pct": -28.25,
+      "n_assets": 8
     },
     "winner": "consensus",
-    "return_difference_pct": 42.41
+    "return_difference_pct": 98.7
+  },
+  "backtest_10y": {
+    "period_years": 10,
+    "start_date": "2015-12-07",
+    "end_date": "2026-01-03",
+    "consensus": {
+      "total_return_pct": 1548.41,
+      "annual_return_pct": 32.34,
+      "volatility_pct": 27.86,
+      "sharpe_ratio": 0.802,
+      "max_drawdown_pct": -52.25,
+      "n_assets": 9
+    },
+    "best_individual": {
+      "total_return_pct": 407.5,
+      "annual_return_pct": 17.64,
+      "volatility_pct": 21.87,
+      "sharpe_ratio": 0.349,
+      "max_drawdown_pct": -43.71,
+      "n_assets": 8
+    },
+    "winner": "consensus",
+    "return_difference_pct": 1140.91
   }
 }
