@@ -79,8 +79,8 @@ GA_CONFIG: Dict[str, Dict[str, int | float]] = {
     "caio": {
     "n_assets": 10,
     "lambda": 0.37,
-    "generations": 460,
-    "pop_size": 276
+    "generations": 600,
+    "pop_size": 400 #AUMENTEI, TENHO QUE AUMENTAR NO QUESITIONARIO
 },
 }
 

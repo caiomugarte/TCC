@@ -129,11 +129,24 @@ def multi_run_menu():
     parallel_choice = input("\nEscolha [1]: ").strip() or "1"
     parallel = parallel_choice == "1"
 
-    print(f"\nExecutando {n_runs} rodadas em modo {'PARALELO' if parallel else 'SEQUENCIAL'}...\n")
+    print("\n🚀 Modo Adaptativo (NOVO!):")
+    print("  Para automaticamente quando atingir estabilidade suficiente")
+    print("  (economiza tempo sem perder qualidade)")
+    adaptive_choice = input("\nUsar modo adaptativo? (s/n) [s]: ").strip().lower()
+    adaptive = adaptive_choice != "n"
+
+    if adaptive:
+        print(f"\n  ✓ Modo adaptativo ativado")
+        print(f"    • Rodará até {n_runs} execuções (ou menos se convergir)")
+        print(f"    • Mínimo: 30 runs antes de verificar convergência")
+        print(f"    • Alvo: CV < 3% e Jaccard > 70%")
+
+    print(f"\nExecutando até {n_runs} rodadas em modo {'PARALELO' if parallel else 'SEQUENCIAL'}...\n")
 
     run_multi_execution_all_profiles(
         n_runs=n_runs,
         parallel=parallel,
+        adaptive_mode=adaptive,
         save_summary=True
     )
 
@@ -256,11 +269,22 @@ def cli_mode(args):
 
     if args.multi:
         print(f"Executando múltiplas execuções (n={args.n_runs})...")
-        run_multi_execution_all_profiles(
-            n_runs=args.n_runs,
-            parallel=args.parallel,
-            save_summary=True
-        )
+        if args.profile:
+            # Roda apenas para o perfil especificado
+            print(f"Perfil: {args.profile}")
+            from pipelines.multi_run import run_multi_execution_profile
+            run_multi_execution_profile(
+                profile=args.profile,
+                n_runs=args.n_runs,
+                parallel=args.parallel
+            )
+        else:
+            # Roda para todos os perfis
+            run_multi_execution_all_profiles(
+                n_runs=args.n_runs,
+                parallel=args.parallel,
+                save_summary=True
+            )
 
     if args.clear_cache:
         print("Limpando cache...")
@@ -326,6 +350,12 @@ def main():
         "--clear-cache",
         action="store_true",
         help="Limpa todo o cache"
+    )
+    parser.add_argument(
+        "--profile",
+        type=str,
+        choices=["conservador", "moderado", "arrojado", "caio"],
+        help="Perfil específico para executar (default: todos)"
     )
 
     args = parser.parse_args()

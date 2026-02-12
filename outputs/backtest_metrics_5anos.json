@@ -1,21 +1,24 @@
 {
   "periodo": "5anos",
   "anos": 5,
-  "data_inicio": "2021-01-04",
-  "data_fim": "2026-01-03",
+  "data_inicio": "2021-01-05",
+  "data_fim": "2026-01-04",
   "capital_inicial": 10000.0,
   "conservador": {
-    "retorno_total_pct": 137.82,
-    "retorno_anualizado_pct": 18.92,
-    "volatilidade_anual_pct": 19.33,
-    "sharpe_ratio": 0.461,
-    "drawdown_maximo_pct": -18.2,
-    "calmar_ratio": 1.04,
-    "retorno_mensal_medio_pct": 1.52,
+    "retorno_total_pct": 123.88,
+    "retorno_anualizado_pct": 17.49,
+    "volatilidade_anual_pct": 19.59,
+    "sharpe_ratio": 0.382,
+    "drawdown_maximo_pct": -23.68,
+    "calmar_ratio": 0.739,
+    "retorno_mensal_medio_pct": 1.42,
     "beta": 0.0,
     "alpha_anualizado_pct": 0.0,
     "information_ratio": 0.0,
-    "ativos_faltantes": [],
+    "ativos_faltantes": [
+      "BBAS3.SA",
+      "POMO4.SA"
+    ],
     "analise_ativos": {
       "perfil": "conservador",
       "periodo": "5anos",
@@ -97,13 +100,13 @@
     }
   },
   "caio": {
-    "retorno_total_pct": 150.96,
-    "retorno_anualizado_pct": 20.2,
-    "volatilidade_anual_pct": 20.25,
-    "sharpe_ratio": 0.504,
-    "drawdown_maximo_pct": -17.02,
-    "calmar_ratio": 1.187,
-    "retorno_mensal_medio_pct": 1.58,
+    "retorno_total_pct": 117.45,
+    "retorno_anualizado_pct": 16.81,
+    "volatilidade_anual_pct": 18.3,
+    "sharpe_ratio": 0.372,
+    "drawdown_maximo_pct": -17.43,
+    "calmar_ratio": 0.964,
+    "retorno_mensal_medio_pct": 1.34,
     "beta": 0.0,
     "alpha_anualizado_pct": 0.0,
     "information_ratio": 0.0,
@@ -113,15 +116,15 @@
       "periodo": "5anos",
       "n_ativos": 10,
       "estatisticas": {
-        "retorno_medio_com_div_pct": 150.96,
-        "retorno_medio_sem_div_pct": 82.87,
-        "efeito_dividendos_medio_pct": 68.09,
+        "retorno_medio_com_div_pct": 117.45,
+        "retorno_medio_sem_div_pct": 35.48,
+        "efeito_dividendos_medio_pct": 81.97,
         "melhor_ativo_com_div": "VULC3",
         "melhor_retorno_com_div_pct": 343.99,
-        "pior_ativo_com_div": "GMAT3",
-        "pior_retorno_com_div_pct": -42.88,
-        "maior_pagador_dividendos": "ISAE4",
-        "dividendos_totais_periodo": 48.3
+        "pior_ativo_com_div": "FLRY3",
+        "pior_retorno_com_div_pct": -22.05,
+        "maior_pagador_dividendos": "UNIP3",
+        "dividendos_totais_periodo": 101.6
       }
     }
   },

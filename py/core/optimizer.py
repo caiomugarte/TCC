@@ -50,7 +50,9 @@ class GeneticAlgorithm:
         pop_size: int,
         crossover_rate: float = GA_CROSSOVER_RATE,
         mutation_rate: float = GA_MUTATION_RATE,
-        random_seed: Optional[int] = None
+        random_seed: Optional[int] = None,
+        early_stopping_patience: int = 50,
+        early_stopping_min_delta: float = 1e-6
     ):
         """
         Inicializa o otimizador GA.
@@ -71,6 +73,10 @@ class GeneticAlgorithm:
             Taxa de mutação.
         random_seed : int, optional
             Seed para reprodutibilidade.
+        early_stopping_patience : int, optional
+            Número de gerações sem melhoria para parar (default: 50).
+        early_stopping_min_delta : float, optional
+            Melhoria mínima considerada significativa (default: 1e-6).
         """
         self.n_assets = n_assets
         self.lambda_hhi = lambda_hhi
@@ -78,6 +84,8 @@ class GeneticAlgorithm:
         self.pop_size = pop_size
         self.crossover_rate = crossover_rate
         self.mutation_rate = mutation_rate
+        self.early_stopping_patience = early_stopping_patience
+        self.early_stopping_min_delta = early_stopping_min_delta
 
         if random_seed is not None:
             np.random.seed(random_seed)
@@ -197,7 +205,7 @@ class GeneticAlgorithm:
 
     def optimize(self, df_ranked: pd.DataFrame) -> pd.DataFrame:
         """
-        Executa o Algoritmo Genético.
+        Executa o Algoritmo Genético com early stopping.
 
         Parameters
         ----------
@@ -214,6 +222,10 @@ class GeneticAlgorithm:
 
         best_fitness = -np.inf
         best_chrom = None
+
+        # Early stopping
+        generations_without_improvement = 0
+        last_improvement_gen = 0
 
         for generation in range(self.generations):
             # Avalia fitness
@@ -248,9 +260,24 @@ class GeneticAlgorithm:
 
             # Registra melhor
             gen_best_idx = int(scores.argmax())
-            if scores[gen_best_idx] > best_fitness:
-                best_fitness = scores[gen_best_idx]
+            current_best = scores[gen_best_idx]
+
+            if current_best > best_fitness + self.early_stopping_min_delta:
+                best_fitness = current_best
                 best_chrom = population[gen_best_idx].copy()
+                last_improvement_gen = generation
+                generations_without_improvement = 0
+            else:
+                generations_without_improvement += 1
+
+            # Early stopping: para se não houver melhoria por N gerações
+            if generations_without_improvement >= self.early_stopping_patience:
+                # Armazena geração de parada nos attrs
+                self.stopped_at_generation = generation + 1
+                break
+        else:
+            # Caso complete todas as gerações sem early stopping
+            self.stopped_at_generation = self.generations
 
         if best_chrom is None:
             raise RuntimeError("GA não convergiu para nenhuma solução válida.")
@@ -262,6 +289,8 @@ class GeneticAlgorithm:
         hhi = hhi_sector(portfolio)
         portfolio.attrs["fitness"] = best_fitness
         portfolio.attrs["hhi"] = hhi
+        portfolio.attrs["generations_run"] = self.stopped_at_generation
+        portfolio.attrs["converged_early"] = self.stopped_at_generation < self.generations
 
         return portfolio
 

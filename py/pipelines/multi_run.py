@@ -81,6 +81,8 @@ def run_single_execution(
         "score_mean": float(portfolio["SCORE"].mean()),
         "score_std": float(portfolio["SCORE"].std()),
         "sectors": portfolio["SETOR"].value_counts().to_dict(),
+        "generations_run": portfolio.attrs.get("generations_run", 0),
+        "converged_early": portfolio.attrs.get("converged_early", False),
     }
 
     return result, portfolio
@@ -184,8 +186,43 @@ def build_consensus_portfolio(
     # Ordena por: 1) frequência (desc), 2) score (desc), 3) ticker (alfabético)
     ticker_data.sort(key=lambda x: (-x[1], -x[2], x[0]))
 
-    # Seleciona os N primeiros
-    consensus_tickers = [ticker for ticker, _, _ in ticker_data[:n_assets]]
+    # Filtra duplicatas de mesma empresa (ex: POMO3 e POMO4)
+    # Remove sufixos 3, 4, 5, 6, 11 para identificar empresa base
+    def get_base_ticker(ticker):
+        """Remove sufixo de classe de ação para identificar empresa base."""
+        for suffix in ['11', '3', '4', '5', '6']:
+            if ticker.endswith(suffix):
+                return ticker[:-len(suffix)]
+        return ticker
+
+    # Seleciona ativos evitando duplicatas de mesma empresa
+    consensus_tickers = []
+    seen_companies = set()
+    skipped_duplicates = []
+
+    for ticker, freq, score in ticker_data:
+        base_ticker = get_base_ticker(ticker)
+
+        # Se ainda não temos ativo dessa empresa, adiciona
+        if base_ticker not in seen_companies:
+            consensus_tickers.append(ticker)
+            seen_companies.add(base_ticker)
+
+            # Para quando atingir o número desejado
+            if len(consensus_tickers) == n_assets:
+                break
+        else:
+            # Registra duplicata pulada
+            existing_ticker = [t for t in consensus_tickers if get_base_ticker(t) == base_ticker][0]
+            skipped_duplicates.append((ticker, existing_ticker, freq, score))
+
+    # Informa sobre duplicatas removidas
+    if skipped_duplicates:
+        print(f"\n  ⚠️  Duplicatas de mesma empresa removidas da carteira consensual:")
+        for skipped, kept, freq, score in skipped_duplicates:
+            if skipped in [t for t, _, _ in ticker_data[:n_assets * 2]]:  # Só mostra se estava entre os candidatos
+                print(f"      • {skipped} (freq: {freq/len(results):.1%}, score: {score:.3f}) "
+                      f"→ já tem {kept} da mesma empresa")
 
     # Constrói DataFrame da carteira consenso
     consensus_portfolio = df_ranked[
@@ -210,7 +247,8 @@ def build_consensus_portfolio(
 
 def get_best_individual_portfolio(
     results: List[Dict],
-    portfolios: List[pd.DataFrame]
+    portfolios: List[pd.DataFrame] = None,
+    df_ranked: pd.DataFrame = None
 ) -> pd.DataFrame:
     """
     Retorna o portfolio com maior fitness de todas as execuções.
@@ -219,8 +257,10 @@ def get_best_individual_portfolio(
     ----------
     results : List[Dict]
         Resultados de todas as execuções.
-    portfolios : List[pd.DataFrame]
-        Portfolios de todas as execuções.
+    portfolios : List[pd.DataFrame], optional
+        Portfolios de todas as execuções. Se None, reconstrói a partir de results e df_ranked.
+    df_ranked : pd.DataFrame, optional
+        DataFrame ranqueado para reconstruir portfolio. Necessário se portfolios=None.
 
     Returns
     -------
@@ -230,7 +270,18 @@ def get_best_individual_portfolio(
     # Encontra o índice do melhor fitness
     best_idx = max(range(len(results)), key=lambda i: results[i]["fitness"])
 
-    best_portfolio = portfolios[best_idx].copy()
+    # Se portfolios foi fornecido, usa diretamente
+    if portfolios is not None and best_idx < len(portfolios):
+        best_portfolio = portfolios[best_idx].copy()
+    # Caso contrário, reconstrói a partir dos tickers
+    elif df_ranked is not None:
+        best_tickers = results[best_idx]["tickers"]
+        best_portfolio = df_ranked[df_ranked["TICKER"].isin(best_tickers)].copy()
+        best_portfolio.attrs["fitness"] = results[best_idx]["fitness"]
+        best_portfolio.attrs["hhi"] = results[best_idx]["hhi"]
+    else:
+        raise ValueError("É necessário fornecer 'portfolios' ou 'df_ranked' para reconstruir o portfolio")
+
     best_portfolio.attrs["method"] = "best_individual"
     best_portfolio.attrs["run_id"] = results[best_idx]["run_id"]
     best_portfolio.attrs["seed"] = results[best_idx]["seed"]
@@ -747,7 +798,12 @@ def run_multi_execution_profile(
     profile: str,
     n_runs: int = N_RUNS,
     use_cache: bool = True,
-    parallel: bool = True
+    parallel: bool = True,
+    save_interval: int = 10,
+    adaptive_mode: bool = False,
+    min_runs: int = 30,
+    target_cv: float = 0.03,
+    target_jaccard: float = 0.70
 ) -> Dict:
     """
     Executa múltiplas rodadas do GA para um perfil.
@@ -757,11 +813,21 @@ def run_multi_execution_profile(
     profile : str
         Perfil do investidor.
     n_runs : int
-        Número de execuções.
+        Número máximo de execuções.
     use_cache : bool
         Se True, usa dados pré-processados do cache.
     parallel : bool
         Se True, executa runs em paralelo.
+    save_interval : int
+        Salva checkpoint a cada N runs (default: 10).
+    adaptive_mode : bool
+        Se True, para automaticamente quando atingir estabilidade (default: False).
+    min_runs : int
+        Número mínimo de runs antes de verificar convergência (default: 30).
+    target_cv : float
+        CV alvo do fitness para convergência (default: 0.03 = 3%).
+    target_jaccard : float
+        Jaccard médio alvo para convergência (default: 0.70 = 70%).
 
     Returns
     -------
@@ -771,6 +837,30 @@ def run_multi_execution_profile(
     print(f"\n{'='*70}")
     print(f"Perfil: {profile.upper()}")
     print(f"{'='*70}")
+
+    # Arquivo de checkpoint
+    checkpoint_file = OUTPUTS_DIR / f".checkpoint_{profile}_runs.json"
+
+    # Tenta carregar checkpoint existente
+    results = []
+    portfolios = []
+    start_run = 0
+
+    if checkpoint_file.exists():
+        try:
+            with open(checkpoint_file, "r") as f:
+                checkpoint = json.load(f)
+                if checkpoint.get("n_runs") == n_runs and checkpoint.get("profile") == profile:
+                    print(f"\n  ℹ️  Checkpoint encontrado com {len(checkpoint['results'])} runs completados")
+                    resume = input("  Deseja retomar de onde parou? (s/n) [s]: ").strip().lower()
+                    if resume != "n":
+                        results = checkpoint["results"]
+                        start_run = len(results)
+                        print(f"  ✓ Retomando a partir do run {start_run}")
+                else:
+                    print(f"  ⚠️  Checkpoint incompatível (runs diferentes). Ignorando...")
+        except Exception as e:
+            print(f"  ⚠️  Erro ao carregar checkpoint: {e}")
 
     # Carrega dados
     if use_cache:
@@ -784,40 +874,138 @@ def run_multi_execution_profile(
     df_ranked = build_scores(df, profile)
 
     # Executa múltiplas rodadas
-    results = []
-    portfolios = []
+    # Para otimizar memória, mantém apenas o melhor portfolio de cada batch
+    best_portfolio_so_far = None
+    best_fitness_so_far = -np.inf
 
     if parallel:
-        # Paralelização
-        with mp.Pool() as pool:
-            run_func = partial(
-                run_single_execution,
-                df_ranked,
-                profile
-            )
-            outputs = list(tqdm(
-                pool.imap(run_func, range(n_runs)),
-                total=n_runs,
-                desc=f"Executando {n_runs} rodadas"
-            ))
-            # Separa resultados e portfolios
-            results = [output[0] for output in outputs]
-            portfolios = [output[1] for output in outputs]
+        # Paralelização com salvamento incremental
+        remaining_runs = n_runs - start_run
+        batch_size = min(save_interval, remaining_runs)
+
+        for batch_start in range(start_run, n_runs, batch_size):
+            batch_end = min(batch_start + batch_size, n_runs)
+            batch_range = range(batch_start, batch_end)
+
+            with mp.Pool() as pool:
+                run_func = partial(
+                    run_single_execution,
+                    df_ranked,
+                    profile
+                )
+                batch_outputs = list(tqdm(
+                    pool.imap(run_func, batch_range),
+                    total=len(batch_range),
+                    desc=f"Batch {batch_start//batch_size + 1} ({batch_start+1}-{batch_end}/{n_runs})"
+                ))
+
+                # Separa resultados e portfolios
+                batch_results = [output[0] for output in batch_outputs]
+                batch_portfolios = [output[1] for output in batch_outputs]
+
+                results.extend(batch_results)
+
+                # Mantém apenas o melhor portfolio do batch (otimização de memória)
+                for i, portfolio in enumerate(batch_portfolios):
+                    if batch_results[i]["fitness"] > best_fitness_so_far:
+                        best_fitness_so_far = batch_results[i]["fitness"]
+                        best_portfolio_so_far = portfolio.copy()
+
+                # Limpa portfolios do batch para liberar memória
+                del batch_portfolios
+
+            # Salva checkpoint
+            with open(checkpoint_file, "w") as f:
+                json.dump({
+                    "profile": profile,
+                    "n_runs": n_runs,
+                    "completed_runs": len(results),
+                    "results": results
+                }, f, indent=2)
+
+            print(f"  💾 Checkpoint salvo: {len(results)}/{n_runs} runs completados")
+
+            # Verifica convergência no modo adaptativo
+            if adaptive_mode and len(results) >= min_runs:
+                stability = analyze_stability(results)
+                current_cv = stability['fitness']['cv']
+                current_jaccard = stability['portfolio_similarity']['jaccard_mean']
+
+                print(f"\n  📊 Verificação de Convergência:")
+                print(f"     • CV Fitness: {current_cv:.4f} (alvo: {target_cv:.4f})")
+                print(f"     • Jaccard Médio: {current_jaccard:.4f} (alvo: {target_jaccard:.4f})")
+
+                if current_cv <= target_cv and current_jaccard >= target_jaccard:
+                    print(f"\n  ✅ Convergência atingida após {len(results)} runs!")
+                    print(f"     • Parando antecipadamente (economia de {n_runs - len(results)} runs)")
+                    break
     else:
-        # Sequencial
-        for run_id in tqdm(range(n_runs), desc=f"Executando {n_runs} rodadas"):
+        # Sequencial com salvamento incremental
+        for run_id in tqdm(range(start_run, n_runs), desc=f"Executando {n_runs} rodadas"):
             result, portfolio = run_single_execution(df_ranked, profile, run_id)
             results.append(result)
-            portfolios.append(portfolio)
+
+            # Mantém apenas o melhor portfolio (otimização de memória)
+            if result["fitness"] > best_fitness_so_far:
+                best_fitness_so_far = result["fitness"]
+                best_portfolio_so_far = portfolio.copy()
+
+            # Salva checkpoint periodicamente
+            if (run_id + 1) % save_interval == 0 or (run_id + 1) == n_runs:
+                with open(checkpoint_file, "w") as f:
+                    json.dump({
+                        "profile": profile,
+                        "n_runs": n_runs,
+                        "completed_runs": len(results),
+                        "results": results
+                    }, f, indent=2)
+                print(f"  💾 Checkpoint salvo: {len(results)}/{n_runs} runs completados")
+
+                # Verifica convergência no modo adaptativo
+                if adaptive_mode and len(results) >= min_runs:
+                    stability = analyze_stability(results)
+                    current_cv = stability['fitness']['cv']
+                    current_jaccard = stability['portfolio_similarity']['jaccard_mean']
+
+                    print(f"\n  📊 Verificação de Convergência:")
+                    print(f"     • CV Fitness: {current_cv:.4f} (alvo: {target_cv:.4f})")
+                    print(f"     • Jaccard Médio: {current_jaccard:.4f} (alvo: {target_jaccard:.4f})")
+
+                    if current_cv <= target_cv and current_jaccard >= target_jaccard:
+                        print(f"\n  ✅ Convergência atingida após {len(results)} runs!")
+                        print(f"     • Parando antecipadamente (economia de {n_runs - len(results)} runs)")
+                        break
+
+    # Remove checkpoint após conclusão bem-sucedida
+    if checkpoint_file.exists():
+        checkpoint_file.unlink()
+        print(f"  🗑️  Checkpoint removido (execução completa)")
 
     # Análise de estabilidade
     stability = analyze_stability(results)
+
+    # Estatísticas de early stopping
+    generations_run = [r.get("generations_run", 0) for r in results if "generations_run" in r]
+    if generations_run:
+        avg_generations = np.mean(generations_run)
+        early_stopped = sum(1 for r in results if r.get("converged_early", False))
+        print(f"\n  ⚡ Early Stopping Stats:")
+        print(f"     • Gerações médias: {avg_generations:.1f}")
+        print(f"     • Convergência antecipada: {early_stopped}/{len(results)} runs ({early_stopped/len(results)*100:.1f}%)")
 
     # Carteira consenso
     consensus = build_consensus_portfolio(results, df_ranked, profile)
 
     # Melhor indivíduo (maior fitness)
-    best_individual = get_best_individual_portfolio(results, portfolios)
+    # Usa o melhor portfolio salvo ou reconstrói a partir dos results
+    if best_portfolio_so_far is not None:
+        best_individual = best_portfolio_so_far.copy()
+        best_idx = max(range(len(results)), key=lambda i: results[i]["fitness"])
+        best_individual.attrs["method"] = "best_individual"
+        best_individual.attrs["run_id"] = results[best_idx]["run_id"]
+        best_individual.attrs["seed"] = results[best_idx]["seed"]
+    else:
+        best_individual = get_best_individual_portfolio(results, portfolios=None, df_ranked=df_ranked)
 
     # Comparação entre carteiras
     comparison = compare_portfolios(consensus, best_individual, profile)
@@ -926,6 +1114,7 @@ def run_multi_execution_profile(
 def run_multi_execution_all_profiles(
     n_runs: int = N_RUNS,
     parallel: bool = True,
+    adaptive_mode: bool = False,
     save_summary: bool = True
 ) -> Dict:
     """
@@ -937,6 +1126,8 @@ def run_multi_execution_all_profiles(
         Número de execuções por perfil.
     parallel : bool
         Se True, paraleliza execuções.
+    adaptive_mode : bool
+        Se True, para automaticamente quando atingir estabilidade.
     save_summary : bool
         Se True, salva summary consolidado.
 
@@ -947,7 +1138,9 @@ def run_multi_execution_all_profiles(
     """
     print("=" * 70)
     print("PIPELINE: Múltiplas Execuções do Algoritmo Genético")
-    print(f"Número de execuções por perfil: {n_runs}")
+    print(f"Número máximo de execuções por perfil: {n_runs}")
+    if adaptive_mode:
+        print("Modo Adaptativo: ATIVADO (para quando convergir)")
     print("=" * 70)
 
     all_results = {}
@@ -956,7 +1149,8 @@ def run_multi_execution_all_profiles(
         results = run_multi_execution_profile(
             profile=profile,
             n_runs=n_runs,
-            parallel=parallel
+            parallel=parallel,
+            adaptive_mode=adaptive_mode
         )
         all_results[profile] = results
 
