@@ -1,0 +1,5 @@
+horizon,train_start,train_end,test_start,test_end,feasible,brazilian_stocks,fiis,international_equity,fixed_income,crypto
+primary,2016-07-21,2019-07-19,2019-07-22,2020-07-21,True,0.4,0.2,0.2,0.1,0.1
+primary,2019-07-22,2022-07-22,2022-07-25,2023-07-21,True,0.15,0.15,0.32,0.28,0.1
+primary,2022-07-25,2025-07-25,2025-07-28,2026-07-21,True,0.2,0.1,0.2,0.2,0.3
+robustness,2021-07-21,2024-07-19,2024-07-22,2025-07-21,True,0.27,0.13,0.14,0.24,0.22

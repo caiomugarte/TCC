@@ -1,0 +1,62 @@
+[
+  {
+    "TICKER": "ISAE4",
+    "SCORE": 0.9177,
+    "FREQUENCIA_PCT": 24.8,
+    "SETOR": "Utilidade Pública"
+  },
+  {
+    "TICKER": "BBDC3",
+    "SCORE": 0.9082,
+    "FREQUENCIA_PCT": 24.0,
+    "SETOR": "Financeiro e Outros"
+  },
+  {
+    "TICKER": "VULC3",
+    "SCORE": 0.8792,
+    "FREQUENCIA_PCT": 19.2,
+    "SETOR": "Consumo Cíclico"
+  },
+  {
+    "TICKER": "POMO3",
+    "SCORE": 0.7578,
+    "FREQUENCIA_PCT": 18.6,
+    "SETOR": "Bens Industriais"
+  },
+  {
+    "TICKER": "FLRY3",
+    "SCORE": 0.6199,
+    "FREQUENCIA_PCT": 15.0,
+    "SETOR": "Saúde"
+  },
+  {
+    "TICKER": "CMIG4",
+    "SCORE": 0.5852,
+    "FREQUENCIA_PCT": 4.9,
+    "SETOR": "Utilidade Pública"
+  },
+  {
+    "TICKER": "ITSA4",
+    "SCORE": 0.5766,
+    "FREQUENCIA_PCT": 5.3,
+    "SETOR": "Financeiro e Outros"
+  },
+  {
+    "TICKER": "BBAS3",
+    "SCORE": 0.5464,
+    "FREQUENCIA_PCT": 12.8,
+    "SETOR": "Financeiro e Outros"
+  },
+  {
+    "TICKER": "UNIP6",
+    "SCORE": 0.5084,
+    "FREQUENCIA_PCT": 4.7,
+    "SETOR": "Materiais Básicos"
+  },
+  {
+    "TICKER": "GRND3",
+    "SCORE": 0.4616,
+    "FREQUENCIA_PCT": 5.3,
+    "SETOR": "Consumo Cíclico"
+  }
+]

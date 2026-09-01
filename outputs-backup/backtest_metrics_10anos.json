@@ -1,0 +1,192 @@
+{
+  "periodo": "10anos",
+  "anos": 10,
+  "data_inicio": "2015-12-27",
+  "data_fim": "2025-12-24",
+  "capital_inicial": 10000.0,
+  "conservador": {
+    "retorno_total_pct": 1872.22,
+    "retorno_anualizado_pct": 34.74,
+    "volatilidade_anual_pct": 29.38,
+    "sharpe_ratio": 0.842,
+    "drawdown_maximo_pct": -53.77,
+    "calmar_ratio": 0.646,
+    "retorno_mensal_medio_pct": 2.9,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "CXSE3.SA",
+      "STBP3.SA"
+    ],
+    "analise_ativos": {
+      "perfil": "conservador",
+      "periodo": "10anos",
+      "n_ativos": 9,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 1465.64,
+        "retorno_medio_sem_div_pct": 471.49,
+        "efeito_dividendos_medio_pct": 994.15,
+        "melhor_ativo_com_div": "UNIP6",
+        "melhor_retorno_com_div_pct": 8523.54,
+        "pior_ativo_com_div": "GMAT3",
+        "pior_retorno_com_div_pct": -46.76,
+        "maior_pagador_dividendos": "UNIP6",
+        "dividendos_totais_periodo": 125.93
+      }
+    }
+  },
+  "moderado": {
+    "retorno_total_pct": 652.43,
+    "retorno_anualizado_pct": 22.36,
+    "volatilidade_anual_pct": 22.79,
+    "sharpe_ratio": 0.542,
+    "drawdown_maximo_pct": -45.46,
+    "calmar_ratio": 0.492,
+    "retorno_mensal_medio_pct": 1.92,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "BMOB3.SA",
+      "BRFS3.SA"
+    ],
+    "analise_ativos": {
+      "perfil": "moderado",
+      "periodo": "10anos",
+      "n_ativos": 11,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 557.27,
+        "retorno_medio_sem_div_pct": 231.05,
+        "efeito_dividendos_medio_pct": 326.23,
+        "melhor_ativo_com_div": "VULC3",
+        "melhor_retorno_com_div_pct": 1799.12,
+        "pior_ativo_com_div": "VLID3",
+        "pior_retorno_com_div_pct": -10.69,
+        "maior_pagador_dividendos": "ISAE4",
+        "dividendos_totais_periodo": 88.86
+      }
+    }
+  },
+  "arrojado": {
+    "retorno_total_pct": 767.55,
+    "retorno_anualizado_pct": 24.12,
+    "volatilidade_anual_pct": 24.41,
+    "sharpe_ratio": 0.578,
+    "drawdown_maximo_pct": -39.14,
+    "calmar_ratio": 0.616,
+    "retorno_mensal_medio_pct": 2.08,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "BMOB3.SA",
+      "STBP3.SA",
+      "IGTI11.SA",
+      "BLAU3.SA"
+    ],
+    "analise_ativos": {
+      "perfil": "arrojado",
+      "periodo": "10anos",
+      "n_ativos": 14,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 563.28,
+        "retorno_medio_sem_div_pct": 208.48,
+        "efeito_dividendos_medio_pct": 354.8,
+        "melhor_ativo_com_div": "UNIP3",
+        "melhor_retorno_com_div_pct": 4968.25,
+        "pior_ativo_com_div": "BHIA3",
+        "pior_retorno_com_div_pct": -95.36,
+        "maior_pagador_dividendos": "UNIP3",
+        "dividendos_totais_periodo": 105.87
+      }
+    }
+  },
+  "caio": {
+    "retorno_total_pct": 1055.16,
+    "retorno_anualizado_pct": 27.72,
+    "volatilidade_anual_pct": 51.94,
+    "sharpe_ratio": 0.341,
+    "drawdown_maximo_pct": -94.22,
+    "calmar_ratio": 0.294,
+    "retorno_mensal_medio_pct": 3.26,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [
+      "FIQE3.SA",
+      "ELMD3.SA"
+    ],
+    "analise_ativos": {
+      "perfil": "caio",
+      "periodo": "10anos",
+      "n_ativos": 9,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 750.25,
+        "retorno_medio_sem_div_pct": 505.08,
+        "efeito_dividendos_medio_pct": 245.17,
+        "melhor_ativo_com_div": "MGLU3",
+        "melhor_retorno_com_div_pct": 2584.61,
+        "pior_ativo_com_div": "FIQE3",
+        "pior_retorno_com_div_pct": -22.1,
+        "maior_pagador_dividendos": "VULC3",
+        "dividendos_totais_periodo": 47.13
+      }
+    }
+  },
+  "caio2": {
+    "retorno_total_pct": 1477.8,
+    "retorno_anualizado_pct": 31.77,
+    "volatilidade_anual_pct": 24.04,
+    "sharpe_ratio": 0.905,
+    "drawdown_maximo_pct": -45.45,
+    "calmar_ratio": 0.699,
+    "retorno_mensal_medio_pct": 2.55,
+    "beta": 0.0,
+    "alpha_anualizado_pct": 0.0,
+    "information_ratio": 0.0,
+    "ativos_faltantes": [],
+    "analise_ativos": {
+      "perfil": "caio2",
+      "periodo": "10anos",
+      "n_ativos": 10,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 1213.66,
+        "retorno_medio_sem_div_pct": 460.07,
+        "efeito_dividendos_medio_pct": 753.6,
+        "melhor_ativo_com_div": "UNIP3",
+        "melhor_retorno_com_div_pct": 4968.25,
+        "pior_ativo_com_div": "BRKM5",
+        "pior_retorno_com_div_pct": -55.77,
+        "maior_pagador_dividendos": "UNIP3",
+        "dividendos_totais_periodo": 140.0
+      }
+    }
+  },
+  "ibovespa": {
+    "retorno_total_pct": 249.78,
+    "retorno_anualizado_pct": 13.34,
+    "volatilidade_anual_pct": 23.37,
+    "sharpe_ratio": 0.143,
+    "drawdown_maximo_pct": -46.82,
+    "calmar_ratio": 0.285,
+    "retorno_mensal_medio_pct": 1.26,
+    "ativos_faltantes": [],
+    "analise_ativos": {
+      "perfil": "ibovespa",
+      "periodo": "10anos",
+      "n_ativos": 76,
+      "estatisticas": {
+        "retorno_medio_com_div_pct": 620.16,
+        "retorno_medio_sem_div_pct": 448.56,
+        "efeito_dividendos_medio_pct": 171.6,
+        "melhor_ativo_com_div": "PRIO3",
+        "melhor_retorno_com_div_pct": 20450.72,
+        "pior_ativo_com_div": "AMER3",
+        "pior_retorno_com_div_pct": -99.61,
+        "maior_pagador_dividendos": "AMER3",
+        "dividendos_totais_periodo": 762.21
+      }
+    }
+  }
+}

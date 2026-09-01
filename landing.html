@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Prumo ajuda você a entender seu perfil, definir uma alocação e revisar os desvios da sua carteira.">
+  <title>Prumo — decisões mais claras para sua carteira</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #14161b;
+      --muted: #626873;
+      --line: #dfe2e7;
+      --paper: #f7f7f4;
+      --surface: #ffffff;
+      --blue: #4856c7;
+      --blue-dark: #34429f;
+      --blue-soft: #eceeff;
+      --green-soft: #e6f4ef;
+      --shadow: 0 20px 60px rgba(22, 28, 55, .10);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font: 16px/1.55 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a { color: inherit; }
+    .skip-link {
+      position: absolute;
+      top: -4rem;
+      left: 1rem;
+      z-index: 10;
+      padding: .65rem .9rem;
+      color: var(--surface);
+      background: var(--ink);
+      border-radius: .6rem;
+    }
+    .skip-link:focus { top: 1rem; }
+
+    .shell { width: min(1160px, calc(100% - 40px)); margin: 0 auto; }
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      min-height: 78px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: .65rem;
+      color: var(--ink);
+      font-size: 1.35rem;
+      font-weight: 750;
+      letter-spacing: -.045em;
+      text-decoration: none;
+    }
+    .logo-mark { width: 34px; height: 34px; color: var(--blue); }
+    .site-nav { display: flex; align-items: center; gap: 1.4rem; }
+    .site-nav a {
+      color: var(--muted);
+      font-size: .94rem;
+      text-decoration: none;
+    }
+    .site-nav a:hover { color: var(--ink); }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 46px;
+      padding: .72rem 1.1rem;
+      border: 1px solid transparent;
+      border-radius: .75rem;
+      font: inherit;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform .18s ease, background-color .18s ease, border-color .18s ease;
+    }
+    .button:hover { transform: translateY(-2px); }
+    .button.primary { color: #fff; background: var(--blue); }
+    .button.primary:hover { background: var(--blue-dark); }
+    .button.secondary { color: var(--ink); background: var(--surface); border-color: var(--line); }
+    .button.secondary:hover { border-color: var(--blue); }
+    .button.small { min-height: 40px; padding: .5rem .85rem; font-size: .9rem; }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.02fr) minmax(390px, .98fr);
+      align-items: center;
+      gap: clamp(2rem, 6vw, 6rem);
+      min-height: 650px;
+      padding: 5.2rem 0 5.6rem;
+    }
+    .hero-copy { animation: rise-in .65s ease both; }
+    .eyebrow {
+      margin: 0 0 1rem;
+      color: var(--blue);
+      font-size: .76rem;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 680px;
+      margin-bottom: 1.3rem;
+      font-size: clamp(3rem, 7vw, 5.8rem);
+      line-height: .98;
+      letter-spacing: -.075em;
+    }
+    h2 {
+      margin-bottom: .8rem;
+      font-size: clamp(2rem, 4vw, 3.3rem);
+      line-height: 1.04;
+      letter-spacing: -.055em;
+    }
+    h3 { margin-bottom: .55rem; font-size: 1.14rem; line-height: 1.15; }
+    .hero-copy > p:not(.eyebrow) { max-width: 600px; color: var(--muted); font-size: 1.12rem; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin: 1.8rem 0 1.2rem; }
+    .trust-line { margin: 0; color: var(--muted); font-size: .9rem; }
+
+    .hero-visual { animation: rise-in .65s .12s ease both; }
+    .preview-card {
+      position: relative;
+      overflow: hidden;
+      padding: 1.2rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 1.4rem;
+      box-shadow: var(--shadow);
+    }
+    .preview-card::before {
+      position: absolute;
+      top: -80px;
+      right: -80px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: var(--blue-soft);
+      content: "";
+    }
+    .preview-top, .preview-total, .preview-row { position: relative; }
+    .preview-top, .preview-total, .preview-row-head, .drift-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+    }
+    .preview-top { margin-bottom: 2rem; color: var(--muted); font-size: .78rem; }
+    .preview-badge {
+      padding: .35rem .55rem;
+      color: var(--blue-dark);
+      background: var(--blue-soft);
+      border-radius: 999px;
+      font-size: .7rem;
+      font-weight: 750;
+    }
+    .preview-total { align-items: end; padding-bottom: 1.1rem; border-bottom: 1px solid var(--line); }
+    .preview-total span, .preview-total small { display: block; color: var(--muted); }
+    .preview-total strong { display: block; margin-top: .18rem; font-size: 2.8rem; line-height: 1; letter-spacing: -.07em; }
+    .preview-total small { font-size: .78rem; }
+    .allocation-list { display: grid; gap: .85rem; padding: 1.25rem 0; }
+    .preview-row-head { color: var(--muted); font-size: .85rem; }
+    .preview-row-head span { display: inline-flex; align-items: center; gap: .45rem; }
+    .preview-row-head strong { color: var(--ink); font-size: .82rem; }
+    .dot { width: .52rem; height: .52rem; border-radius: 50%; background: var(--blue); }
+    .dot.green { background: #4d9e84; }
+    .dot.violet { background: #8b82dc; }
+    .dot.blue { background: #6e91dc; }
+    .dot.gray { background: #a2a8b3; }
+    .bar { height: .42rem; margin-top: .4rem; overflow: hidden; background: #eef0f2; border-radius: 999px; }
+    .bar span { display: block; height: 100%; border-radius: inherit; background: var(--blue); }
+    .bar .green { background: #4d9e84; }
+    .bar .violet { background: #8b82dc; }
+    .bar .blue { background: #6e91dc; }
+    .bar .gray { background: #a2a8b3; }
+    .drift-box { padding: .9rem; background: #fbfbfa; border: 1px solid var(--line); border-radius: .9rem; }
+    .drift-box > span { color: var(--muted); font-size: .78rem; }
+    .drift-row { margin-top: .5rem; }
+    .drift-row strong { font-size: 1.2rem; }
+    .drift-state { color: #26785e; font-size: .78rem; font-weight: 750; }
+    .preview-note { margin: 1rem 0 0; color: var(--muted); font-size: .72rem; }
+
+    .section { padding: 6.8rem 0; }
+    .section-muted { background: var(--surface); }
+    .section-heading { max-width: 650px; margin-bottom: 2.8rem; }
+    .section-heading p { max-width: 600px; color: var(--muted); }
+    .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .step { padding: 1.45rem 0; border-top: 2px solid var(--ink); }
+    .step-number { margin-bottom: 2.4rem; color: var(--blue); font-size: .8rem; font-weight: 800; letter-spacing: .12em; }
+    .step p { margin: 0; color: var(--muted); }
+
+    .preview-section { display: grid; grid-template-columns: .78fr 1.22fr; align-items: center; gap: 4rem; }
+    .preview-section .preview-card { box-shadow: none; }
+    .callout {
+      margin-top: 1.5rem;
+      padding: 1rem 1.1rem;
+      color: var(--muted);
+      background: var(--green-soft);
+      border-left: 3px solid #4d9e84;
+      border-radius: .65rem;
+      font-size: .9rem;
+    }
+
+    .plans { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .plan {
+      display: flex;
+      flex-direction: column;
+      min-height: 350px;
+      padding: 1.8rem;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 1.2rem;
+    }
+    .plan.featured { color: #fff; background: var(--ink); border-color: var(--ink); }
+    .plan-label { margin-bottom: 2.4rem; color: var(--blue); font-size: .78rem; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .featured .plan-label { color: #aeb6ff; }
+    .plan p { color: var(--muted); }
+    .featured p { color: #c4c8d1; }
+    .plan ul { display: grid; gap: .6rem; margin: 1rem 0 2rem; padding: 0; list-style: none; }
+    .plan li::before { margin-right: .55rem; color: var(--blue); content: "✓"; font-weight: 800; }
+    .featured li::before { color: #aeb6ff; }
+    .plan .button { margin-top: auto; align-self: flex-start; }
+    .featured .button.primary { color: var(--ink); background: #fff; }
+    .featured .button.primary:hover { background: #eceeff; }
+
+    .trust-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+    .trust-item { padding-top: 1rem; border-top: 1px solid var(--line); }
+    .trust-item p { margin: 0; color: var(--muted); font-size: .92rem; }
+    .trust-item strong { display: block; margin-bottom: .45rem; }
+
+    .faq { max-width: 780px; }
+    details { border-top: 1px solid var(--line); }
+    details:last-child { border-bottom: 1px solid var(--line); }
+    summary { padding: 1.2rem 0; cursor: pointer; font-weight: 700; list-style-position: outside; }
+    details p { max-width: 680px; margin: -.35rem 0 1.25rem; color: var(--muted); }
+
+    .final-cta { padding: 6rem 0; color: #fff; background: var(--blue); }
+    .final-cta .shell { display: flex; align-items: center; justify-content: space-between; gap: 2rem; }
+    .final-cta h2 { max-width: 650px; margin-bottom: 0; }
+    .final-cta .button { color: var(--ink); background: #fff; }
+
+    footer { padding: 2rem 0; color: var(--muted); font-size: .85rem; }
+    .footer-inner { display: flex; justify-content: space-between; gap: 1rem; }
+    footer a { text-decoration: none; }
+    footer a:hover { color: var(--ink); }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 1rem; }
+
+    @keyframes rise-in {
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 820px) {
+      .hero, .preview-section { grid-template-columns: 1fr; }
+      .hero { min-height: auto; padding: 4rem 0 4.5rem; }
+      .hero-visual { max-width: 620px; }
+      .steps, .trust-grid { grid-template-columns: repeat(2, 1fr); }
+      .preview-section { gap: 2rem; }
+      .final-cta .shell { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (max-width: 600px) {
+      .shell { width: min(100% - 28px, 1160px); }
+      .site-header { align-items: flex-start; flex-wrap: wrap; padding: 1rem 0; }
+      .site-nav { order: 3; width: 100%; justify-content: space-between; gap: .7rem; }
+      .site-nav .button { display: none; }
+      h1 { font-size: clamp(2.9rem, 14vw, 4.2rem); }
+      .section { padding: 4.8rem 0; }
+      .steps, .plans, .trust-grid { grid-template-columns: 1fr; }
+      .step-number { margin-bottom: 1.2rem; }
+      .footer-inner { align-items: flex-start; flex-direction: column; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Pular para o conteúdo</a>
+
+  <header class="site-header shell">
+    <a class="brand" href="#top" aria-label="Prumo, página inicial">
+      <svg class="logo-mark" viewBox="0 0 64 64" aria-hidden="true">
+        <path d="M22 8h14c11 0 20 9 20 20s-9 20-20 20H30v8a8 8 0 1 1-16 0V16a8 8 0 0 1 8-8Z" fill="currentColor"/>
+        <path d="M30 22h6a6 6 0 0 1 0 12h-6V22Z" fill="var(--paper)"/>
+      </svg>
+      <span>prumo</span>
+    </a>
+    <nav class="site-nav" aria-label="Navegação principal">
+      <a href="#how">Como funciona</a>
+      <a href="#plans">Planos</a>
+      <a href="#trust">Metodologia</a>
+      <a class="button small secondary" href="#final-cta">Entrar</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero shell" id="top">
+      <div class="hero-copy">
+        <p class="eyebrow">Decisões para sua carteira</p>
+        <h1>Mais clareza para decidir sua carteira.</h1>
+        <p>O Prumo é um assistente de decisão para investidores individuais. Entenda seu perfil, defina uma alocação entre diferentes classes de ativos e acompanhe a distância entre sua carteira atual e seu objetivo.</p>
+        <div class="hero-actions">
+          <a class="button primary" href="#plans">Criar conta</a>
+          <a class="button secondary" href="#how">Ver como funciona</a>
+        </div>
+        <p class="trust-line">Sem custódia. Sem execução automática de ordens. Sem promessa de retorno.</p>
+      </div>
+
+      <div class="hero-visual">
+        <div class="preview-card" aria-label="Exemplo de interface do Prumo">
+          <div class="preview-top">
+            <span>Exemplo de interface</span>
+            <span class="preview-badge">Visão mensal</span>
+          </div>
+          <div class="preview-total">
+            <div><span>Alocação-alvo</span><small>Exemplo ilustrativo</small></div>
+            <strong>100%</strong>
+          </div>
+          <div class="allocation-list">
+            <div class="preview-row">
+              <div class="preview-row-head"><span><i class="dot"></i>Ações brasileiras</span><strong>32%</strong></div>
+              <div class="bar"><span style="width: 32%"></span></div>
+            </div>
+            <div class="preview-row">
+              <div class="preview-row-head"><span><i class="dot green"></i>FIIs</span><strong>12%</strong></div>
+              <div class="bar"><span class="green" style="width: 12%"></span></div>
+            </div>
+            <div class="preview-row">
+              <div class="preview-row-head"><span><i class="dot violet"></i>Exterior</span><strong>24%</strong></div>
+              <div class="bar"><span class="violet" style="width: 24%"></span></div>
+            </div>
+            <div class="preview-row">
+              <div class="preview-row-head"><span><i class="dot blue"></i>Renda fixa</span><strong>20%</strong></div>
+              <div class="bar"><span class="blue" style="width: 20%"></span></div>
+            </div>
+            <div class="preview-row">
+              <div class="preview-row-head"><span><i class="dot gray"></i>Criptoativos</span><strong>12%</strong></div>
+              <div class="bar"><span class="gray" style="width: 12%"></span></div>
+            </div>
+          </div>
+          <div class="drift-box">
+            <span>Revisão de desvios</span>
+            <div class="drift-row"><strong>+4,2 p.p.</strong><span class="drift-state">Dentro da faixa</span></div>
+          </div>
+          <p class="preview-note">Dados ilustrativos. Não representa uma recomendação personalizada.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-muted" id="how">
+      <div class="shell">
+        <div class="section-heading">
+          <p class="eyebrow">Como funciona</p>
+          <h2>Uma decisão mais clara começa por três passos.</h2>
+        </div>
+        <div class="steps">
+          <article class="step">
+            <p class="step-number">01</p>
+            <h3>Entenda seu perfil</h3>
+            <p>Organize objetivos, horizonte, liquidez, capacidade financeira, conhecimento e restrições em um perfil compreensível.</p>
+          </article>
+          <article class="step">
+            <p class="step-number">02</p>
+            <h3>Defina seu alvo</h3>
+            <p>Visualize uma alocação entre ações brasileiras, FIIs, exposição internacional, renda fixa e criptoativos.</p>
+          </article>
+          <article class="step">
+            <p class="step-number">03</p>
+            <h3>Revise seus desvios</h3>
+            <p>Com dados inseridos manualmente, compare sua carteira atual com o alvo e revise os desvios mensalmente, priorizando novos aportes.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell preview-section" id="preview">
+      <div>
+        <p class="eyebrow">Uma visão para decidir</p>
+        <h2>Veja o que importa antes de tomar a próxima decisão.</h2>
+        <p>O Prumo coloca alocação-alvo, carteira atual e desvios na mesma visão. Cada resultado mostra as premissas, o período dos dados e os limites do modelo.</p>
+        <div class="callout">Exemplo de interface. Não representa uma recomendação personalizada.</div>
+      </div>
+      <div class="preview-card" aria-label="Exemplo de revisão de carteira">
+        <div class="preview-top"><span>Carteira principal</span><span class="preview-badge">Exemplo</span></div>
+        <div class="preview-total"><div><span>Valor acompanhado</span><small>Atualização manual</small></div><strong>—</strong></div>
+        <div class="allocation-list">
+          <div class="preview-row"><div class="preview-row-head"><span><i class="dot"></i>Ações brasileiras</span><strong>Alvo 32%</strong></div><div class="bar"><span style="width: 32%"></span></div></div>
+          <div class="preview-row"><div class="preview-row-head"><span><i class="dot green"></i>FIIs</span><strong>Alvo 12%</strong></div><div class="bar"><span class="green" style="width: 12%"></span></div></div>
+          <div class="preview-row"><div class="preview-row-head"><span><i class="dot violet"></i>Exterior</span><strong>Alvo 24%</strong></div><div class="bar"><span class="violet" style="width: 24%"></span></div></div>
+        </div>
+        <div class="drift-box"><span>Próximo aporte</span><div class="drift-row"><strong>Itens abaixo do alvo</strong><span class="drift-state">Revisar</span></div></div>
+      </div>
+    </section>
+
+    <section class="section section-muted" id="plans">
+      <div class="shell">
+        <div class="section-heading">
+          <p class="eyebrow">Planos</p>
+          <h2>Comece com o nível de clareza que faz sentido para você.</h2>
+        </div>
+        <div class="plans">
+          <article class="plan">
+            <p class="plan-label">Basic</p>
+            <h3>Modelos claros para começar.</h3>
+            <p>Para conhecer modelos de alocação e entender sua carteira em nível de classes.</p>
+            <ul>
+              <li>Perfis conservador, moderado e agressivo.</li>
+              <li>Alocação entre cinco classes.</li>
+              <li>Diagnóstico básico da carteira.</li>
+            </ul>
+            <a class="button secondary" href="#final-cta">Começar grátis</a>
+          </article>
+          <article class="plan featured">
+            <p class="plan-label">Premium</p>
+            <h3>Uma visão personalizada da sua carteira.</h3>
+            <p>Para acompanhar seus alvos, sua composição e seus próximos ajustes.</p>
+            <ul>
+              <li>Perfil personalizado e contínuo.</li>
+              <li>Análise aprofundada de ações brasileiras.</li>
+              <li>Valores-alvo por classe e ação.</li>
+              <li>Revisão de desvios e rebalanceamento.</li>
+            </ul>
+            <a class="button primary" href="#final-cta">Conhecer Premium</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section shell" id="trust">
+      <div class="section-heading">
+        <p class="eyebrow">Metodologia e limites</p>
+        <h2>Transparência antes de promessa.</h2>
+        <p>O Prumo mostra como cada resultado foi produzido. Você vê as premissas, os riscos, a data de corte dos dados e a versão do modelo usada na análise.</p>
+      </div>
+      <div class="trust-grid">
+        <div class="trust-item"><strong>Dados identificados</strong><p>Período e fonte entram na leitura do resultado.</p></div>
+        <div class="trust-item"><strong>Premissas visíveis</strong><p>Limites e escolhas do modelo ficam explicados.</p></div>
+        <div class="trust-item"><strong>Sem execução</strong><p>O Prumo não mantém custódia nem executa ordens.</p></div>
+        <div class="trust-item"><strong>Revisão responsável</strong><p>Personalização depende de revisão jurídica e operacional.</p></div>
+      </div>
+    </section>
+
+    <section class="section section-muted" id="faq">
+      <div class="shell faq">
+        <div class="section-heading"><p class="eyebrow">Dúvidas comuns</p><h2>Perguntas importantes antes de começar.</h2></div>
+        <details><summary>O Prumo é uma corretora?</summary><p>Não. O Prumo é uma ferramenta de apoio à decisão. Ele não mantém a custódia dos seus investimentos.</p></details>
+        <details><summary>O Prumo executa ordens?</summary><p>Não. O MVP mostra alvos, desvios e ações para sua revisão. A decisão e a execução permanecem com você.</p></details>
+        <details><summary>O resultado garante retorno?</summary><p>Não. Resultados dependem dos dados, das premissas, do período analisado e das condições futuras do mercado.</p></details>
+        <details><summary>O que muda entre Basic e Premium?</summary><p>Basic oferece modelos genéricos e uma visão por classes. Premium adiciona perfil personalizado, análise aprofundada de ações brasileiras, valores exatos e revisão de desvios.</p></details>
+      </div>
+    </section>
+
+    <section class="final-cta" id="final-cta">
+      <div class="shell">
+        <h2>Sua próxima decisão pode começar com mais contexto.</h2>
+        <a class="button" href="#plans">Criar conta</a>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footer">
+    <div class="shell footer-inner">
+      <span>prumo · decisões mais claras para sua carteira</span>
+      <nav class="footer-links" aria-label="Links do rodapé">
+        <a href="#trust">Avisos e riscos</a>
+        <a href="#faq">Perguntas</a>
+        <span>Privacidade, termos e contato antes do lançamento.</span>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

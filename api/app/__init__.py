@@ -1,0 +1,1 @@
+"""Prumo API application package."""

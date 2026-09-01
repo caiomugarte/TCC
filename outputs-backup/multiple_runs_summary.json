@@ -1,0 +1,4882 @@
+{
+  "conservador": {
+    "n_runs": 30,
+    "stability_metrics": {
+      "fitness": {
+        "mean": 4.374518055152624,
+        "median": 4.388762291983616,
+        "std": 0.2370575853993194,
+        "min": 3.9925928528861645,
+        "max": 5.07703097434652,
+        "cv": 0.05419056051673985,
+        "ci_95": [
+          4.020948331630393,
+          4.9700326279042955
+        ]
+      },
+      "hhi": {
+        "mean": 0.20533333333333334,
+        "median": 0.20000000000000004,
+        "std": 0.036854066562894014,
+        "min": 0.16000000000000006,
+        "max": 0.30000000000000004,
+        "cv": 0.1794840904037046
+      },
+      "portfolio_similarity": {
+        "jaccard_mean": 0.0687810635445951,
+        "jaccard_std": 0.053699437551986466,
+        "jaccard_min": 0.0,
+        "jaccard_max": 0.25
+      }
+    },
+    "consensus_portfolio": {
+      "tickers": [
+        "VULC3",
+        "GMAT3",
+        "BBDC3",
+        "ISAE4",
+        "ITSA3",
+        "UNIP6",
+        "CXSE3",
+        "STBP3",
+        "BBAS3",
+        "JHSF3"
+      ],
+      "hhi": 0.24000000000000007,
+      "avg_score": 0.5605353408436361,
+      "frequency_mean": 0.2666666666666667
+    },
+    "all_runs": [
+      {
+        "run_id": 0,
+        "seed": 42,
+        "tickers": [
+          "AESB3",
+          "ASAI3",
+          "BRKM5",
+          "CURY3",
+          "EGIE3",
+          "GUAR3",
+          "IGTI11",
+          "MDIA3",
+          "STBP3",
+          "VIVT3"
+        ],
+        "fitness": 4.4554040934692,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.15267698567625504,
+        "score_mean": 0.10810604191489004,
+        "score_std": 0.23163906208207574,
+        "sectors": {
+          "Consumo Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Consumo não Cíclico": 2,
+          "Bens Industriais": 1,
+          "Comunicações": 1,
+          "Financeiro e Outros": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 1,
+        "seed": 43,
+        "tickers": [
+          "BBAS3",
+          "COGN3",
+          "CPLE5",
+          "GMAT3",
+          "ISAE4",
+          "ITSA3",
+          "NTCO3",
+          "PETR4",
+          "STBP3",
+          "VBBR3"
+        ],
+        "fitness": 4.3078617798332015,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.3140014062628904,
+        "score_mean": 0.22797572951920486,
+        "score_std": 0.40430089650711104,
+        "sectors": {
+          "Utilidade Pública": 2,
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Bens Industriais": 1,
+          "Consumo Cíclico": 1
+        }
+      },
+      {
+        "run_id": 2,
+        "seed": 44,
+        "tickers": [
+          "BEEF3",
+          "CPLE5",
+          "CSMG3",
+          "ITSA3",
+          "JHSF3",
+          "MDIA3",
+          "SANB11",
+          "USIM5",
+          "VIVA3",
+          "VULC3"
+        ],
+        "fitness": 4.223154803930291,
+        "hhi": 0.22000000000000003,
+        "score_median": 0.17202063801917683,
+        "score_mean": 0.1864561576275798,
+        "score_std": 0.4000202300703039,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 3,
+        "seed": 45,
+        "tickers": [
+          "BRFS3",
+          "CMIG4",
+          "COGN3",
+          "CURY3",
+          "ECOR3",
+          "GUAR3",
+          "KLBN4",
+          "STBP3",
+          "UNIP6",
+          "VULC3"
+        ],
+        "fitness": 4.445335427085467,
+        "hhi": 0.26000000000000006,
+        "score_median": 0.3671057647781395,
+        "score_mean": 0.2672716951187431,
+        "score_std": 0.37618032174343713,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Materiais Básicos": 2,
+          "Bens Industriais": 2,
+          "Consumo não Cíclico": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 4,
+        "seed": 46,
+        "tickers": [
+          "AURE3",
+          "BBDC3",
+          "BBDC4",
+          "BEEF3",
+          "CXSE3",
+          "FRAS3",
+          "SAPR11",
+          "USIM5",
+          "VBBR3",
+          "VULC3"
+        ],
+        "fitness": 4.418147685228976,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.14834226833739816,
+        "score_mean": 0.24584248069330553,
+        "score_std": 0.43648072506716096,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Utilidade Pública": 2,
+          "Consumo Cíclico": 1,
+          "Bens Industriais": 1,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 5,
+        "seed": 47,
+        "tickers": [
+          "AESB3",
+          "CXSE3",
+          "EMBJ3",
+          "GMAT3",
+          "ITSA3",
+          "MULT3",
+          "NEOE3",
+          "POMO3",
+          "SULA11",
+          "TAEE4"
+        ],
+        "fitness": 4.508494274485254,
+        "hhi": 0.30000000000000004,
+        "score_median": 0.3703383362030529,
+        "score_mean": 0.28970133296213796,
+        "score_std": 0.3156133426361765,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Utilidade Pública": 3,
+          "Bens Industriais": 2,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 6,
+        "seed": 48,
+        "tickers": [
+          "BRKM5",
+          "CPLE5",
+          "CXSE3",
+          "ITSA3",
+          "KLBN3",
+          "MBRF3",
+          "PETR3",
+          "POMO3",
+          "SMFT3",
+          "UGPA3"
+        ],
+        "fitness": 4.378158627907386,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.07474036037222284,
+        "score_mean": 0.16215221888871778,
+        "score_std": 0.31641520228478287,
+        "sectors": {
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo não Cíclico": 1,
+          "Bens Industriais": 1,
+          "Consumo Cíclico": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 7,
+        "seed": 49,
+        "tickers": [
+          "ALPA4",
+          "BBDC4",
+          "BPAC11",
+          "ENGI11",
+          "ITSA4",
+          "SMTO3",
+          "UNIP6",
+          "VBBR3",
+          "VULC3",
+          "WEGE3"
+        ],
+        "fitness": 4.49044001045724,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.24033621328545107,
+        "score_mean": 0.2840046241224338,
+        "score_std": 0.40181624421852324,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Consumo Cíclico": 2,
+          "Materiais Básicos": 1,
+          "Utilidade Pública": 1,
+          "Bens Industriais": 1,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 8,
+        "seed": 50,
+        "tickers": [
+          "BRSR6",
+          "EQTL3",
+          "GMAT3",
+          "ISAE4",
+          "JHSF3",
+          "KLBN11",
+          "MGLU3",
+          "PETR3",
+          "SANB11",
+          "SMTO3"
+        ],
+        "fitness": 4.571572046794282,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.05115063597051379,
+        "score_mean": 0.10541705568636932,
+        "score_std": 0.3577562534022887,
+        "sectors": {
+          "Utilidade Pública": 2,
+          "Consumo Cíclico": 2,
+          "Consumo não Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 9,
+        "seed": 51,
+        "tickers": [
+          "AESB3",
+          "BBAS3",
+          "BBDC3",
+          "BRFS3",
+          "ENAT3",
+          "GMAT3",
+          "KLBN11",
+          "LREN3",
+          "POMO3",
+          "VIVA3"
+        ],
+        "fitness": 4.43976877379936,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.38103468893823667,
+        "score_mean": 0.3360911121626016,
+        "score_std": 0.26140263453126356,
+        "sectors": {
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 2,
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 1,
+          "Materiais Básicos": 1,
+          "Utilidade Pública": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 10,
+        "seed": 52,
+        "tickers": [
+          "CPLE5",
+          "CSAN3",
+          "ISAE4",
+          "KLBN3",
+          "MBRF3",
+          "MULT3",
+          "NATU3",
+          "STBP3",
+          "TAEE4",
+          "VULC3"
+        ],
+        "fitness": 4.092816400705282,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.3121963515371524,
+        "score_mean": 0.35520355319596386,
+        "score_std": 0.40177852478991,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Consumo não Cíclico": 2,
+          "Consumo Cíclico": 1,
+          "Bens Industriais": 1,
+          "Financeiro e Outros": 1,
+          "Materiais Básicos": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 11,
+        "seed": 53,
+        "tickers": [
+          "CSNA3",
+          "GOAU4",
+          "ISAE4",
+          "ITSA3",
+          "ITUB3",
+          "ODPV3",
+          "RAIZ4",
+          "TTEN3",
+          "UNIP6",
+          "VULC3"
+        ],
+        "fitness": 4.222626238026535,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.4312244285800801,
+        "score_mean": 0.42033526486662764,
+        "score_std": 0.3861696262461374,
+        "sectors": {
+          "Materiais Básicos": 3,
+          "Financeiro e Outros": 2,
+          "Utilidade Pública": 1,
+          "Consumo Cíclico": 1,
+          "Saúde": 1,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 12,
+        "seed": 54,
+        "tickers": [
+          "ALUP11",
+          "BBAS3",
+          "BRFS3",
+          "CSNA3",
+          "GOAU4",
+          "KLBN4",
+          "MULT3",
+          "SMFT3",
+          "TAEE11",
+          "VULC3"
+        ],
+        "fitness": 4.128265440317476,
+        "hhi": 0.22000000000000003,
+        "score_median": 0.19108769694940592,
+        "score_mean": 0.2647449173465919,
+        "score_std": 0.32519728284745375,
+        "sectors": {
+          "Materiais Básicos": 3,
+          "Consumo Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 13,
+        "seed": 55,
+        "tickers": [
+          "AESB3",
+          "BBDC3",
+          "BPAC11",
+          "BRFS3",
+          "CURY3",
+          "ENGI11",
+          "GGPS3",
+          "GMAT3",
+          "HYPE3",
+          "ITSA3"
+        ],
+        "fitness": 4.107038752472304,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.3140014062628904,
+        "score_mean": 0.23267849800214885,
+        "score_std": 0.3569676997530612,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Consumo não Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Consumo Cíclico": 1,
+          "Bens Industriais": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 14,
+        "seed": 56,
+        "tickers": [
+          "ALUP11",
+          "ASAI3",
+          "BBDC3",
+          "CPFE3",
+          "EQTL3",
+          "ISAE4",
+          "MDIA3",
+          "MOTV3",
+          "ODPV3",
+          "TIMS3"
+        ],
+        "fitness": 4.9294470482193145,
+        "hhi": 0.24000000000000007,
+        "score_median": 0.11934365234292173,
+        "score_mean": 0.20945197967881501,
+        "score_std": 0.33241415258720874,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Consumo não Cíclico": 2,
+          "Financeiro e Outros": 1,
+          "Saúde": 1,
+          "Comunicações": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 15,
+        "seed": 57,
+        "tickers": [
+          "BBDC4",
+          "BPAC11",
+          "CPFE3",
+          "CSMG3",
+          "ENGI11",
+          "ITSA4",
+          "ODPV3",
+          "RENT3",
+          "STBP3",
+          "SUZB3"
+        ],
+        "fitness": 4.125915829104043,
+        "hhi": 0.22000000000000003,
+        "score_median": 0.23203480231338214,
+        "score_mean": 0.17113078856606323,
+        "score_std": 0.3515222687008667,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Utilidade Pública": 3,
+          "Bens Industriais": 1,
+          "Saúde": 1,
+          "Consumo Cíclico": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 16,
+        "seed": 58,
+        "tickers": [
+          "ASAI3",
+          "BBAS3",
+          "COGN3",
+          "GMAT3",
+          "ITSA4",
+          "PETR3",
+          "SAPR11",
+          "SLCE3",
+          "USIM3",
+          "VULC3"
+        ],
+        "fitness": 4.399365956059846,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.22990493733963038,
+        "score_mean": 0.25197034653931183,
+        "score_std": 0.33638534698330835,
+        "sectors": {
+          "Consumo não Cíclico": 3,
+          "Consumo Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Utilidade Pública": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 17,
+        "seed": 59,
+        "tickers": [
+          "BBDC3",
+          "BBDC4",
+          "CMIN3",
+          "CXSE3",
+          "GUAR3",
+          "ISAE4",
+          "ITUB4",
+          "ODPV3",
+          "SAPR4",
+          "TTEN3"
+        ],
+        "fitness": 4.2579251951628265,
+        "hhi": 0.24000000000000007,
+        "score_median": 0.1999496834711825,
+        "score_mean": 0.265608467881726,
+        "score_std": 0.3984237917292544,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Utilidade Pública": 2,
+          "Saúde": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1,
+          "Consumo Cíclico": 1
+        }
+      },
+      {
+        "run_id": 18,
+        "seed": 60,
+        "tickers": [
+          "ASAI3",
+          "BBAS3",
+          "CMIN3",
+          "CXSE3",
+          "GOAU4",
+          "MDIA3",
+          "PETR4",
+          "POMO3",
+          "TAEE11",
+          "USIM3"
+        ],
+        "fitness": 4.687412056739232,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.17202063801917683,
+        "score_mean": 0.21078765606914784,
+        "score_std": 0.2646455046544969,
+        "sectors": {
+          "Materiais Básicos": 3,
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 2,
+          "Utilidade Pública": 1,
+          "Bens Industriais": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 19,
+        "seed": 61,
+        "tickers": [
+          "ALOS3",
+          "BBDC3",
+          "BRAV3",
+          "GMAT3",
+          "ITUB4",
+          "JHSF3",
+          "NEOE3",
+          "RADL3",
+          "SULA11",
+          "TAEE4"
+        ],
+        "fitness": 4.269190366425448,
+        "hhi": 0.24000000000000007,
+        "score_median": 0.17568363418806862,
+        "score_mean": 0.22494826427874892,
+        "score_std": 0.29385911588298047,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Utilidade Pública": 2,
+          "Consumo Cíclico": 1,
+          "Consumo não Cíclico": 1,
+          "Saúde": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 20,
+        "seed": 62,
+        "tickers": [
+          "CMIN3",
+          "CSAN3",
+          "CYRE3",
+          "DIRR3",
+          "EQTL3",
+          "GMAT3",
+          "MOTV3",
+          "SMTO3",
+          "UGPA3",
+          "VULC3"
+        ],
+        "fitness": 4.536581727023338,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.09365667242850768,
+        "score_mean": 0.212491735927951,
+        "score_std": 0.2952496957376917,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Consumo não Cíclico": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Utilidade Pública": 1,
+          "Bens Industriais": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 21,
+        "seed": 63,
+        "tickers": [
+          "CXSE3",
+          "ECOR3",
+          "GMAT3",
+          "ISAE4",
+          "ODPV3",
+          "POMO3",
+          "RADL3",
+          "UNIP6",
+          "VALE3",
+          "VULC3"
+        ],
+        "fitness": 4.514482681366999,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.3703383362030529,
+        "score_mean": 0.3765040863228369,
+        "score_std": 0.36506567442217885,
+        "sectors": {
+          "Materiais Básicos": 2,
+          "Saúde": 2,
+          "Bens Industriais": 2,
+          "Consumo Cíclico": 1,
+          "Utilidade Pública": 1,
+          "Financeiro e Outros": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 22,
+        "seed": 64,
+        "tickers": [
+          "ALUP11",
+          "BBDC3",
+          "CSMG3",
+          "MDIA3",
+          "MULT3",
+          "NATU3",
+          "NTCO3",
+          "RDOR3",
+          "TTEN3",
+          "VULC3"
+        ],
+        "fitness": 4.304931531581344,
+        "hhi": 0.26000000000000006,
+        "score_median": 0.17132755735674884,
+        "score_mean": 0.2747946473204232,
+        "score_std": 0.318997819394998,
+        "sectors": {
+          "Consumo não Cíclico": 4,
+          "Utilidade Pública": 2,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 23,
+        "seed": 65,
+        "tickers": [
+          "ALOS3",
+          "BBDC3",
+          "CMIN3",
+          "ENGI11",
+          "FLRY3",
+          "ISAE4",
+          "ITSA4",
+          "KLBN4",
+          "LREN3",
+          "SULA11"
+        ],
+        "fitness": 4.403494593546078,
+        "hhi": 0.26000000000000006,
+        "score_median": 0.24782794021303875,
+        "score_mean": 0.29709261226776884,
+        "score_std": 0.37779174820013656,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Utilidade Pública": 2,
+          "Materiais Básicos": 2,
+          "Saúde": 1,
+          "Consumo Cíclico": 1
+        }
+      },
+      {
+        "run_id": 24,
+        "seed": 66,
+        "tickers": [
+          "IGTI11",
+          "ITSA3",
+          "JHSF3",
+          "MBRF3",
+          "NATU3",
+          "POMO3",
+          "PSSA3",
+          "SBSP3",
+          "UNIP6",
+          "VIVA3"
+        ],
+        "fitness": 3.9925928528861645,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.3496789388689331,
+        "score_mean": 0.29753845781976884,
+        "score_std": 0.2943520123152993,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Consumo Cíclico": 2,
+          "Consumo não Cíclico": 2,
+          "Materiais Básicos": 1,
+          "Bens Industriais": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 25,
+        "seed": 67,
+        "tickers": [
+          "BBAS3",
+          "CPLE3",
+          "CXSE3",
+          "KLBN3",
+          "NEOE3",
+          "POMO4",
+          "SMTO3",
+          "SULA11",
+          "VIVA3",
+          "VIVT3"
+        ],
+        "fitness": 4.235311930039923,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.13333333333333328,
+        "score_mean": 0.19031074970166478,
+        "score_std": 0.24528395279942342,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Utilidade Pública": 2,
+          "Bens Industriais": 1,
+          "Consumo Cíclico": 1,
+          "Comunicações": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 26,
+        "seed": 68,
+        "tickers": [
+          "BBDC3",
+          "BRKM5",
+          "EMBJ3",
+          "ENAT3",
+          "GMAT3",
+          "JBSS3",
+          "JHSF3",
+          "MBRF3",
+          "UNIP6",
+          "VIVT3"
+        ],
+        "fitness": 4.420778913793798,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.266773043555283,
+        "score_mean": 0.2655255395149349,
+        "score_std": 0.32868391607572184,
+        "sectors": {
+          "Consumo não Cíclico": 3,
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 1,
+          "Consumo Cíclico": 1,
+          "Comunicações": 1,
+          "Bens Industriais": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 27,
+        "seed": 69,
+        "tickers": [
+          "ABEV3",
+          "ALOS3",
+          "BBDC4",
+          "DIRR3",
+          "GGPS3",
+          "GMAT3",
+          "GOAU4",
+          "RAIZ4",
+          "TAEE4",
+          "UNIP6"
+        ],
+        "fitness": 5.07703097434652,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.3140014062628904,
+        "score_mean": 0.31541636473155044,
+        "score_std": 0.2931201605111035,
+        "sectors": {
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 2,
+          "Utilidade Pública": 1,
+          "Consumo Cíclico": 1,
+          "Bens Industriais": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 28,
+        "seed": 70,
+        "tickers": [
+          "CPLE3",
+          "CPLE6",
+          "ENGI11",
+          "EQTL3",
+          "GGPS3",
+          "MGLU3",
+          "PRIO3",
+          "TTEN3",
+          "VBBR3",
+          "VULC3"
+        ],
+        "fitness": 4.0317038580506175,
+        "hhi": 0.26000000000000006,
+        "score_median": -0.08081662671743525,
+        "score_mean": 0.013425510162650225,
+        "score_std": 0.36534397843538163,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Consumo Cíclico": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo não Cíclico": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 29,
+        "seed": 71,
+        "tickers": [
+          "GUAR3",
+          "ITSA3",
+          "ITUB4",
+          "JHSF3",
+          "KLBN11",
+          "PETR4",
+          "PSSA3",
+          "STBP3",
+          "TTEN3",
+          "VBBR3"
+        ],
+        "fitness": 4.260291785720978,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.0761344195909813,
+        "score_mean": 0.10058089204144267,
+        "score_std": 0.289402230689628,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Consumo Cíclico": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Bens Industriais": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1
+        }
+      }
+    ]
+  },
+  "moderado": {
+    "n_runs": 30,
+    "stability_metrics": {
+      "fitness": {
+        "mean": 4.00252339358945,
+        "median": 3.9279089589740224,
+        "std": 0.1914064671251697,
+        "min": 3.758143750422887,
+        "max": 4.5047811757800105,
+        "cv": 0.04782144869702236,
+        "ci_95": [
+          3.7727097581941202,
+          4.448607600073834
+        ]
+      },
+      "hhi": {
+        "mean": 0.18379629629629635,
+        "median": 0.18055555555555558,
+        "std": 0.03890266510841799,
+        "min": 0.125,
+        "max": 0.30555555555555547,
+        "cv": 0.21166185550172
+      },
+      "portfolio_similarity": {
+        "jaccard_mean": 0.038978692471945846,
+        "jaccard_std": 0.03901585434743917,
+        "jaccard_min": 0.0,
+        "jaccard_max": 0.2
+      }
+    },
+    "consensus_portfolio": {
+      "tickers": [
+        "ISAE4",
+        "POMO4",
+        "ITSA4",
+        "FESA4",
+        "BMOB3",
+        "BRFS3",
+        "VULC3",
+        "RANI3",
+        "VLID3",
+        "SAPR4",
+        "SAPR11",
+        "MRVE3"
+      ],
+      "hhi": 0.16666666666666666,
+      "avg_score": 0.38680156330122145,
+      "frequency_mean": 0.18333333333333332
+    },
+    "all_runs": [
+      {
+        "run_id": 0,
+        "seed": 42,
+        "tickers": [
+          "BMOB3",
+          "CMIN3",
+          "ITSA4",
+          "MOTV3",
+          "PETR4",
+          "PNVL3",
+          "POMO3",
+          "RADL3",
+          "SBSP3",
+          "VBBR3",
+          "VIVA3",
+          "YDUQ3"
+        ],
+        "fitness": 4.248885754780179,
+        "hhi": 0.1388888888888889,
+        "score_median": 0.00762535086789734,
+        "score_mean": 0.04651835481906278,
+        "score_std": 0.2758814896018901,
+        "sectors": {
+          "Bens Industriais": 2,
+          "Consumo Cíclico": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Saúde": 2,
+          "Financeiro e Outros": 1,
+          "Tecnologia da Informação": 1,
+          "Utilidade Pública": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 1,
+        "seed": 43,
+        "tickers": [
+          "ALOS3",
+          "BRBI11",
+          "ECOR3",
+          "ENGI11",
+          "GOAU3",
+          "MULT3",
+          "PFRM3",
+          "RECV3",
+          "SAPR4",
+          "VALE3",
+          "VIVT3",
+          "VLID3"
+        ],
+        "fitness": 3.909949346291589,
+        "hhi": 0.16666666666666666,
+        "score_median": 0.10546558886240895,
+        "score_mean": 0.11355892944932976,
+        "score_std": 0.19497849583621676,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Bens Industriais": 2,
+          "Utilidade Pública": 2,
+          "Materiais Básicos": 2,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Saúde": 1,
+          "Comunicações": 1
+        }
+      },
+      {
+        "run_id": 2,
+        "seed": 44,
+        "tickers": [
+          "CPLE3",
+          "CXSE3",
+          "FIQE3",
+          "MRVE3",
+          "PETR4",
+          "POMO4",
+          "RAIL3",
+          "SEER3",
+          "SOJA3",
+          "UNIP3",
+          "VIVT3",
+          "WIZC3"
+        ],
+        "fitness": 3.7782347956245883,
+        "hhi": 0.1388888888888889,
+        "score_median": 0.054104543829112665,
+        "score_mean": 0.08178676767333783,
+        "score_std": 0.3721197689609103,
+        "sectors": {
+          "Comunicações": 2,
+          "Bens Industriais": 2,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 2,
+          "Materiais Básicos": 1,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 3,
+        "seed": 45,
+        "tickers": [
+          "BRBI11",
+          "CLSC4",
+          "DESK3",
+          "ENGI11",
+          "GGBR4",
+          "ISAE4",
+          "ITSA4",
+          "OPCT3",
+          "PSSA3",
+          "RAIZ4",
+          "VULC3",
+          "WEGE3"
+        ],
+        "fitness": 4.5047811757800105,
+        "hhi": 0.18055555555555558,
+        "score_median": 0.11812810193936357,
+        "score_mean": 0.19681240684904416,
+        "score_std": 0.2960218715239654,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Financeiro e Outros": 3,
+          "Bens Industriais": 2,
+          "Consumo Cíclico": 1,
+          "Materiais Básicos": 1,
+          "Comunicações": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 4,
+        "seed": 46,
+        "tickers": [
+          "BMOB3",
+          "CSAN3",
+          "ECOR3",
+          "ITSA4",
+          "KEPL3",
+          "KLBN3",
+          "MBRF3",
+          "MGLU3",
+          "MRVE3",
+          "SEER3",
+          "UGPA3",
+          "VULC3"
+        ],
+        "fitness": 3.8348903031726143,
+        "hhi": 0.19444444444444448,
+        "score_median": 0.15771031038161043,
+        "score_mean": 0.19647128856685228,
+        "score_std": 0.24451232485783594,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Bens Industriais": 2,
+          "Financeiro e Outros": 1,
+          "Tecnologia da Informação": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 5,
+        "seed": 47,
+        "tickers": [
+          "ALOS3",
+          "AZZA3",
+          "BBDC3",
+          "BRAV3",
+          "CSED3",
+          "ECOR3",
+          "FESA4",
+          "GRND3",
+          "LWSA3",
+          "PNVL3",
+          "POMO3",
+          "SANB11"
+        ],
+        "fitness": 3.905469929519946,
+        "hhi": 0.18055555555555558,
+        "score_median": 0.07501396451958367,
+        "score_mean": 0.10055403572223992,
+        "score_std": 0.31502020960034294,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 2,
+          "Materiais Básicos": 1,
+          "Saúde": 1,
+          "Tecnologia da Informação": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 6,
+        "seed": 48,
+        "tickers": [
+          "ABCB4",
+          "AZZA3",
+          "ECOR3",
+          "LIGT3",
+          "LOGG3",
+          "ODPV3",
+          "POMO4",
+          "RADL3",
+          "RAPT4",
+          "SAPR4",
+          "STBP3",
+          "UNIP3"
+        ],
+        "fitness": 4.010227437951719,
+        "hhi": 0.20833333333333337,
+        "score_median": 0.16313552384326718,
+        "score_mean": 0.1632905363898647,
+        "score_std": 0.22458836521389577,
+        "sectors": {
+          "Bens Industriais": 4,
+          "Financeiro e Outros": 2,
+          "Utilidade Pública": 2,
+          "Saúde": 2,
+          "Materiais Básicos": 1,
+          "Consumo Cíclico": 1
+        }
+      },
+      {
+        "run_id": 7,
+        "seed": 49,
+        "tickers": [
+          "AMER3",
+          "FESA4",
+          "FIQE3",
+          "JSLG3",
+          "LEVE3",
+          "MBRF3",
+          "MYPK3",
+          "RAPT4",
+          "TAEE3",
+          "TOTS3",
+          "UNIP3",
+          "VBBR3"
+        ],
+        "fitness": 3.758143750422887,
+        "hhi": 0.1527777777777778,
+        "score_median": 0.11143170376754857,
+        "score_mean": 0.09900592501542738,
+        "score_std": 0.326389801626849,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Materiais Básicos": 2,
+          "Bens Industriais": 2,
+          "Comunicações": 1,
+          "Consumo não Cíclico": 1,
+          "Utilidade Pública": 1,
+          "Tecnologia da Informação": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 8,
+        "seed": 50,
+        "tickers": [
+          "BBDC4",
+          "BPAN4",
+          "BRBI11",
+          "GRND3",
+          "MOVI3",
+          "MULT3",
+          "ONCO3",
+          "PORT3",
+          "RECV3",
+          "TIMS3",
+          "VALE3",
+          "WEGE3"
+        ],
+        "fitness": 4.291279995276894,
+        "hhi": 0.19444444444444448,
+        "score_median": 0.05718010680122565,
+        "score_mean": 0.07389918846802461,
+        "score_std": 0.27347641638372583,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 2,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Materiais Básicos": 1,
+          "Comunicações": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 9,
+        "seed": 51,
+        "tickers": [
+          "ANIM3",
+          "ASAI3",
+          "BBDC4",
+          "GGBR4",
+          "GUAR3",
+          "ISAE4",
+          "NTCO3",
+          "PETR4",
+          "POMO3",
+          "RANI3",
+          "RAPT4",
+          "VULC3"
+        ],
+        "fitness": 3.8393241177194954,
+        "hhi": 0.16666666666666666,
+        "score_median": 0.1620884997054084,
+        "score_mean": 0.19658801911526283,
+        "score_std": 0.3523503952175032,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Materiais Básicos": 2,
+          "Bens Industriais": 2,
+          "Consumo não Cíclico": 2,
+          "Utilidade Pública": 1,
+          "Financeiro e Outros": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 10,
+        "seed": 52,
+        "tickers": [
+          "ALPA4",
+          "BBDC4",
+          "CAML3",
+          "CMIG3",
+          "ELMD3",
+          "EMBJ3",
+          "INTB3",
+          "ITSA4",
+          "KLBN4",
+          "RDOR3",
+          "SAPR11",
+          "USIM3"
+        ],
+        "fitness": 4.211290940464285,
+        "hhi": 0.125,
+        "score_median": 0.14005256017467893,
+        "score_mean": 0.07469215785799842,
+        "score_std": 0.27150479484479184,
+        "sectors": {
+          "Financeiro e Outros": 2,
+          "Utilidade Pública": 2,
+          "Materiais Básicos": 2,
+          "Tecnologia da Informação": 1,
+          "Saúde": 1,
+          "Comunicações": 1,
+          "Consumo não Cíclico": 1,
+          "Bens Industriais": 1,
+          "Consumo Cíclico": 1
+        }
+      },
+      {
+        "run_id": 11,
+        "seed": 53,
+        "tickers": [
+          "BRSR6",
+          "GGPS3",
+          "GMAT3",
+          "ISAE4",
+          "MOTV3",
+          "NATU3",
+          "PCAR3",
+          "PORT3",
+          "STBP3",
+          "TEND3",
+          "TTEN3",
+          "VLID3"
+        ],
+        "fitness": 3.9569830717662935,
+        "hhi": 0.30555555555555547,
+        "score_median": 0.1325173193321058,
+        "score_mean": 0.16256020043049652,
+        "score_std": 0.2780535514051859,
+        "sectors": {
+          "Bens Industriais": 5,
+          "Consumo não Cíclico": 4,
+          "Utilidade Pública": 1,
+          "Financeiro e Outros": 1,
+          "Consumo Cíclico": 1
+        }
+      },
+      {
+        "run_id": 12,
+        "seed": 54,
+        "tickers": [
+          "ABCB4",
+          "AESB3",
+          "BRFS3",
+          "BRSR6",
+          "CSAN3",
+          "FESA4",
+          "HYPE3",
+          "JBSS3",
+          "KLBN3",
+          "NTCO3",
+          "ONCO3",
+          "PLPL3"
+        ],
+        "fitness": 4.140730451660951,
+        "hhi": 0.16666666666666666,
+        "score_median": 0.07087652879376728,
+        "score_mean": 0.1064374516663333,
+        "score_std": 0.20373165922408412,
+        "sectors": {
+          "Consumo não Cíclico": 3,
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 2,
+          "Saúde": 2,
+          "Consumo Cíclico": 1,
+          "Utilidade Pública": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 13,
+        "seed": 55,
+        "tickers": [
+          "BRAV3",
+          "BRBI11",
+          "DIRR3",
+          "EUCA4",
+          "HYPE3",
+          "ITUB3",
+          "MBRF3",
+          "PCAR3",
+          "POMO4",
+          "RANI3",
+          "SAPR11",
+          "SULA11"
+        ],
+        "fitness": 3.8644919785528176,
+        "hhi": 0.1527777777777778,
+        "score_median": 0.21493266190402868,
+        "score_mean": 0.17723732300713957,
+        "score_std": 0.19142967360335314,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Materiais Básicos": 2,
+          "Consumo não Cíclico": 2,
+          "Bens Industriais": 1,
+          "Consumo Cíclico": 1,
+          "Utilidade Pública": 1,
+          "Saúde": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 14,
+        "seed": 56,
+        "tickers": [
+          "BRKM5",
+          "CMIN3",
+          "COGN3",
+          "CURY3",
+          "CXSE3",
+          "ENAT3",
+          "MDNE3",
+          "SANB11",
+          "TEND3",
+          "TGMA3",
+          "TOTS3",
+          "VIVA3"
+        ],
+        "fitness": 4.091285355934532,
+        "hhi": 0.25,
+        "score_median": 0.1273755300413617,
+        "score_mean": 0.08260947863605998,
+        "score_std": 0.21680939496700496,
+        "sectors": {
+          "Consumo Cíclico": 5,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 2,
+          "Bens Industriais": 1,
+          "Tecnologia da Informação": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 15,
+        "seed": 57,
+        "tickers": [
+          "BMEB4",
+          "BRFS3",
+          "CYRE3",
+          "ELMD3",
+          "ISAE4",
+          "ITSA3",
+          "NTCO3",
+          "ODPV3",
+          "RAIL3",
+          "RANI3",
+          "SAPR4",
+          "TGMA3"
+        ],
+        "fitness": 3.874846694620654,
+        "hhi": 0.1388888888888889,
+        "score_median": 0.26220105261318366,
+        "score_mean": 0.2323004490554081,
+        "score_std": 0.3358419604163712,
+        "sectors": {
+          "Utilidade Pública": 2,
+          "Consumo não Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 2,
+          "Materiais Básicos": 1,
+          "Consumo Cíclico": 1,
+          "Comunicações": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 16,
+        "seed": 58,
+        "tickers": [
+          "BBDC3",
+          "CPLE3",
+          "FESA4",
+          "LIGT3",
+          "MRVE3",
+          "PNVL3",
+          "RENT3",
+          "SANB4",
+          "SAPR3",
+          "STBP3",
+          "USIM3",
+          "USIM5"
+        ],
+        "fitness": 4.004318965385124,
+        "hhi": 0.19444444444444448,
+        "score_median": 0.08079255708471889,
+        "score_mean": 0.10049610633622338,
+        "score_std": 0.30791122284885675,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Materiais Básicos": 3,
+          "Consumo Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 17,
+        "seed": 59,
+        "tickers": [
+          "AESB3",
+          "COGN3",
+          "CYRE3",
+          "ISAE4",
+          "ITSA4",
+          "MILS3",
+          "SANB4",
+          "SAPR3",
+          "SOMA3",
+          "TAEE11",
+          "VALE3",
+          "WIZC3"
+        ],
+        "fitness": 4.0185264963911544,
+        "hhi": 0.25,
+        "score_median": 0.17881830382871727,
+        "score_mean": 0.18616841565557182,
+        "score_std": 0.281662235809804,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Financeiro e Outros": 3,
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 18,
+        "seed": 60,
+        "tickers": [
+          "BBAS3",
+          "BMOB3",
+          "BRSR6",
+          "CRFB3",
+          "DESK3",
+          "EMBJ3",
+          "EUCA4",
+          "ITUB3",
+          "NEOE3",
+          "PETR3",
+          "VAMO3",
+          "VULC3"
+        ],
+        "fitness": 4.165863604140002,
+        "hhi": 0.13888888888888887,
+        "score_median": -0.01439421938739191,
+        "score_mean": 0.09398001761264499,
+        "score_std": 0.3018142811917666,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Bens Industriais": 2,
+          "Consumo Cíclico": 1,
+          "Materiais Básicos": 1,
+          "Tecnologia da Informação": 1,
+          "Utilidade Pública": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Consumo não Cíclico": 1,
+          "Comunicações": 1
+        }
+      },
+      {
+        "run_id": 19,
+        "seed": 61,
+        "tickers": [
+          "BRAV3",
+          "BRFS3",
+          "BRKM5",
+          "GGBR4",
+          "JBSS3",
+          "LWSA3",
+          "PETR4",
+          "PLPL3",
+          "POMO3",
+          "TUPY3",
+          "UNIP3",
+          "USIM3"
+        ],
+        "fitness": 3.8401205177703703,
+        "hhi": 0.20833333333333337,
+        "score_median": 0.07721624129218158,
+        "score_mean": 0.08575706321622886,
+        "score_std": 0.3562220949158778,
+        "sectors": {
+          "Materiais Básicos": 4,
+          "Consumo não Cíclico": 2,
+          "Bens Industriais": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo Cíclico": 1,
+          "Tecnologia da Informação": 1
+        }
+      },
+      {
+        "run_id": 20,
+        "seed": 62,
+        "tickers": [
+          "CAML3",
+          "EMBJ3",
+          "FRAS3",
+          "ISAE4",
+          "ITSA3",
+          "LIGT3",
+          "MDNE3",
+          "PFRM3",
+          "POMO4",
+          "RECV3",
+          "TAEE4",
+          "TGMA3"
+        ],
+        "fitness": 3.9191573397050443,
+        "hhi": 0.20833333333333334,
+        "score_median": 0.3167953199906304,
+        "score_mean": 0.2486371682628545,
+        "score_std": 0.2748192520655792,
+        "sectors": {
+          "Bens Industriais": 4,
+          "Utilidade Pública": 3,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Financeiro e Outros": 1,
+          "Saúde": 1,
+          "Consumo Cíclico": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 21,
+        "seed": 63,
+        "tickers": [
+          "BEEF3",
+          "BRFS3",
+          "CRFB3",
+          "CYRE3",
+          "INTB3",
+          "IRBR3",
+          "LAVV3",
+          "PETR3",
+          "POMO4",
+          "RAPT4",
+          "SIMH3",
+          "UGPA3"
+        ],
+        "fitness": 4.427300381702526,
+        "hhi": 0.18055555555555555,
+        "score_median": 0.18721531527095758,
+        "score_mean": 0.15733805792639163,
+        "score_std": 0.2682864962711887,
+        "sectors": {
+          "Consumo não Cíclico": 3,
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 2,
+          "Financeiro e Outros": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Tecnologia da Informação": 1
+        }
+      },
+      {
+        "run_id": 22,
+        "seed": 64,
+        "tickers": [
+          "BLAU3",
+          "BMOB3",
+          "DESK3",
+          "ISAE4",
+          "MGLU3",
+          "MRVE3",
+          "POMO4",
+          "RANI3",
+          "RDOR3",
+          "SIMH3",
+          "VLID3",
+          "VULC3"
+        ],
+        "fitness": 4.223984959693839,
+        "hhi": 0.1527777777777778,
+        "score_median": 0.3029307484414588,
+        "score_mean": 0.3125875780765109,
+        "score_std": 0.2551060625633233,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 2,
+          "Saúde": 2,
+          "Utilidade Pública": 1,
+          "Tecnologia da Informação": 1,
+          "Materiais Básicos": 1,
+          "Financeiro e Outros": 1,
+          "Comunicações": 1
+        }
+      },
+      {
+        "run_id": 23,
+        "seed": 65,
+        "tickers": [
+          "AESB3",
+          "BPAC11",
+          "BRFS3",
+          "CMIN3",
+          "CPLE3",
+          "CURY3",
+          "FESA4",
+          "SANB3",
+          "SAPR11",
+          "SAPR4",
+          "VBBR3",
+          "YDUQ3"
+        ],
+        "fitness": 3.9159304244602944,
+        "hhi": 0.20833333333333337,
+        "score_median": -0.12094072283311957,
+        "score_mean": -0.020511495174303836,
+        "score_std": 0.28057889239979944,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 2,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 24,
+        "seed": 66,
+        "tickers": [
+          "ALOS3",
+          "BPAN4",
+          "EGIE3",
+          "EZTC3",
+          "KEPL3",
+          "MRVE3",
+          "ONCO3",
+          "PGMN3",
+          "RANI3",
+          "RENT3",
+          "SAPR11",
+          "TOTS3"
+        ],
+        "fitness": 3.8997723977721095,
+        "hhi": 0.16666666666666666,
+        "score_median": 0.03858669154989862,
+        "score_mean": 0.039914815215557654,
+        "score_std": 0.19780133002632733,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Utilidade Pública": 2,
+          "Saúde": 2,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 1,
+          "Tecnologia da Informação": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 25,
+        "seed": 67,
+        "tickers": [
+          "ANIM3",
+          "BBDC3",
+          "BMEB4",
+          "COGN3",
+          "CPLE6",
+          "CSED3",
+          "MILS3",
+          "PGMN3",
+          "PLPL3",
+          "SAPR11",
+          "USIM3",
+          "VLID3"
+        ],
+        "fitness": 3.799277660866579,
+        "hhi": 0.20833333333333337,
+        "score_median": 0.12995699313092485,
+        "score_mean": 0.11986666660045353,
+        "score_std": 0.25508134587708514,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 2,
+          "Utilidade Pública": 2,
+          "Saúde": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 26,
+        "seed": 68,
+        "tickers": [
+          "ALUP11",
+          "CSNA3",
+          "ENGI11",
+          "KLBN11",
+          "MATD3",
+          "NATU3",
+          "PETR3",
+          "PORT3",
+          "TAEE3",
+          "TGMA3",
+          "TTEN3",
+          "UNIP6"
+        ],
+        "fitness": 4.033730866973197,
+        "hhi": 0.19444444444444448,
+        "score_median": 0.16589856462122987,
+        "score_mean": 0.18243695162698606,
+        "score_std": 0.20062703996861553,
+        "sectors": {
+          "Materiais Básicos": 3,
+          "Utilidade Pública": 3,
+          "Bens Industriais": 2,
+          "Consumo não Cíclico": 2,
+          "Saúde": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 27,
+        "seed": 69,
+        "tickers": [
+          "AURE3",
+          "BRSR6",
+          "CSMG3",
+          "CURY3",
+          "EGIE3",
+          "KLBN3",
+          "POMO4",
+          "PSSA3",
+          "RADL3",
+          "SAPR4",
+          "SHUL4",
+          "WEGE3"
+        ],
+        "fitness": 3.9366605782430004,
+        "hhi": 0.22222222222222224,
+        "score_median": -0.010331634915634429,
+        "score_mean": 0.02975019784577017,
+        "score_std": 0.18201957803806304,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Bens Industriais": 3,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 1,
+          "Materiais Básicos": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 28,
+        "seed": 70,
+        "tickers": [
+          "AMER3",
+          "BMOB3",
+          "CLSC4",
+          "CPLE6",
+          "CSNA3",
+          "GGBR3",
+          "ITSA4",
+          "RDOR3",
+          "SHUL4",
+          "TOTS3",
+          "VIVA3",
+          "YDUQ3"
+        ],
+        "fitness": 3.862370304679592,
+        "hhi": 0.16666666666666666,
+        "score_median": 0.15362828269560452,
+        "score_mean": 0.11266961448038508,
+        "score_std": 0.2554276725393306,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Utilidade Pública": 2,
+          "Tecnologia da Informação": 2,
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 1,
+          "Saúde": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 29,
+        "seed": 71,
+        "tickers": [
+          "CYRE3",
+          "EGIE3",
+          "EUCA4",
+          "FESA4",
+          "FIQE3",
+          "INTB3",
+          "JBSS3",
+          "MATD3",
+          "MOTV3",
+          "MOVI3",
+          "OPCT3",
+          "VLID3"
+        ],
+        "fitness": 3.807872210361192,
+        "hhi": 0.1527777777777778,
+        "score_median": 0.1920424493616042,
+        "score_mean": 0.18733900348174293,
+        "score_std": 0.18045857153638634,
+        "sectors": {
+          "Bens Industriais": 3,
+          "Materiais Básicos": 2,
+          "Consumo Cíclico": 2,
+          "Comunicações": 1,
+          "Tecnologia da Informação": 1,
+          "Consumo não Cíclico": 1,
+          "Saúde": 1,
+          "Utilidade Pública": 1
+        }
+      }
+    ]
+  },
+  "arrojado": {
+    "n_runs": 30,
+    "stability_metrics": {
+      "fitness": {
+        "mean": 5.292727712804302,
+        "median": 5.241424660742151,
+        "std": 0.24880257627674845,
+        "min": 4.839629567532592,
+        "max": 5.813446882946085,
+        "cv": 0.047008383914184534,
+        "ci_95": [
+          4.893022772162117,
+          5.8114881235397045
+        ]
+      },
+      "hhi": {
+        "mean": 0.19111111111111115,
+        "median": 0.18222222222222223,
+        "std": 0.03833574871617391,
+        "min": 0.1377777777777778,
+        "max": 0.31555555555555553,
+        "cv": 0.2005940339799797
+      },
+      "portfolio_similarity": {
+        "jaccard_mean": 0.036713517688547415,
+        "jaccard_std": 0.03524510309616465,
+        "jaccard_min": 0.0,
+        "jaccard_max": 0.15384615384615385
+      }
+    },
+    "consensus_portfolio": {
+      "tickers": [
+        "LAVV3",
+        "POMO3",
+        "BMOB3",
+        "BALM4",
+        "STBP3",
+        "JHSF3",
+        "ENGI3",
+        "IGTI11",
+        "SYNE3",
+        "GRND3",
+        "BLAU3",
+        "BHIA3",
+        "UNIP3",
+        "TEND3",
+        "DASA3"
+      ],
+      "hhi": 0.2,
+      "avg_score": 0.37083317552338646,
+      "frequency_mean": 0.17555555555555555
+    },
+    "all_runs": [
+      {
+        "run_id": 0,
+        "seed": 42,
+        "tickers": [
+          "BRKM3",
+          "CURY3",
+          "DASA3",
+          "ENAT3",
+          "ENGI11",
+          "ENGI3",
+          "POMO3",
+          "PTBL3",
+          "QUAL3",
+          "SIMH3",
+          "TEND3",
+          "TRIS3",
+          "UNIP3",
+          "UNIP6",
+          "USIM5"
+        ],
+        "fitness": 5.247655657714983,
+        "hhi": 0.17333333333333334,
+        "score_median": 0.38581463534661486,
+        "score_mean": 0.2536445091535309,
+        "score_std": 0.3548185398263126,
+        "sectors": {
+          "Materiais Básicos": 4,
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 2,
+          "Saúde": 2,
+          "Utilidade Pública": 2,
+          "Financeiro e Outros": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 1,
+        "seed": 43,
+        "tickers": [
+          "ALLD3",
+          "BLAU3",
+          "BRKM3",
+          "BRKM5",
+          "CLSC4",
+          "COCE5",
+          "CPLE3",
+          "CSAN3",
+          "ENGI3",
+          "ETER3",
+          "PINE4",
+          "RADL3",
+          "SANB4",
+          "SUZB3",
+          "TECN3"
+        ],
+        "fitness": 5.183046652012332,
+        "hhi": 0.17333333333333334,
+        "score_median": 0.09596569305785298,
+        "score_mean": 0.05264658136796787,
+        "score_std": 0.18354848647247382,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Materiais Básicos": 3,
+          "Consumo Cíclico": 2,
+          "Saúde": 2,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 2,
+        "seed": 44,
+        "tickers": [
+          "ABCB4",
+          "ABEV3",
+          "AESB3",
+          "ARML3",
+          "BPAC5",
+          "BRSR6",
+          "CEBR3",
+          "ENJU3",
+          "EUCA4",
+          "ITUB4",
+          "LIGT3",
+          "MATD3",
+          "RDOR3",
+          "TASA4",
+          "VALE3"
+        ],
+        "fitness": 5.813446882946085,
+        "hhi": 0.17333333333333334,
+        "score_median": -0.00749109753624435,
+        "score_mean": 0.06531786824162121,
+        "score_std": 0.23732550134904362,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Utilidade Pública": 3,
+          "Bens Industriais": 2,
+          "Materiais Básicos": 2,
+          "Saúde": 2,
+          "Consumo não Cíclico": 1,
+          "Tecnologia da Informação": 1
+        }
+      },
+      {
+        "run_id": 3,
+        "seed": 45,
+        "tickers": [
+          "AMER3",
+          "BBDC3",
+          "BLAU3",
+          "BRFS3",
+          "DASA3",
+          "GRND3",
+          "MDNE3",
+          "POMO3",
+          "PSSA3",
+          "PTBL3",
+          "ROMI3",
+          "SOJA3",
+          "SYNE3",
+          "TAEE4",
+          "VULC3"
+        ],
+        "fitness": 5.519400364664182,
+        "hhi": 0.19111111111111115,
+        "score_median": 0.2574831635255563,
+        "score_mean": 0.279005621205562,
+        "score_std": 0.29312726015045015,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Bens Industriais": 3,
+          "Financeiro e Outros": 3,
+          "Consumo não Cíclico": 2,
+          "Saúde": 2,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 4,
+        "seed": 46,
+        "tickers": [
+          "ABCB4",
+          "ANIM3",
+          "BBDC3",
+          "BHIA3",
+          "BPAC5",
+          "CYRE3",
+          "ENGI3",
+          "EUCA4",
+          "KLBN11",
+          "LAVV3",
+          "MOAR3",
+          "PLPL3",
+          "POMO3",
+          "PSSA3",
+          "RADL3"
+        ],
+        "fitness": 4.956330364927279,
+        "hhi": 0.2533333333333333,
+        "score_median": 0.20972525743342388,
+        "score_mean": 0.20807338947320878,
+        "score_std": 0.24840117067453413,
+        "sectors": {
+          "Consumo Cíclico": 5,
+          "Financeiro e Outros": 5,
+          "Materiais Básicos": 2,
+          "Bens Industriais": 1,
+          "Utilidade Pública": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 5,
+        "seed": 47,
+        "tickers": [
+          "AURE3",
+          "BEEF3",
+          "BHIA3",
+          "CGAS5",
+          "EMAE4",
+          "ESPA3",
+          "FLRY3",
+          "IGTI11",
+          "LAVV3",
+          "NGRD3",
+          "RANI3",
+          "RAPT4",
+          "SHUL4",
+          "SIMH3",
+          "TAEE4"
+        ],
+        "fitness": 5.18268459041772,
+        "hhi": 0.15555555555555556,
+        "score_median": -0.024115772849130895,
+        "score_mean": 0.0407184737323991,
+        "score_std": 0.3628832101555905,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Consumo Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 2,
+          "Consumo não Cíclico": 2,
+          "Materiais Básicos": 1,
+          "Saúde": 1,
+          "Tecnologia da Informação": 1
+        }
+      },
+      {
+        "run_id": 6,
+        "seed": 48,
+        "tickers": [
+          "ALLD3",
+          "BPAC3",
+          "BRAV3",
+          "BRBI11",
+          "CXSE3",
+          "EVEN3",
+          "GRND3",
+          "IGTI3",
+          "IRBR3",
+          "KEPL3",
+          "LWSA3",
+          "POMO4",
+          "RECV3",
+          "SYNE3",
+          "TAEE11"
+        ],
+        "fitness": 4.913275367021591,
+        "hhi": 0.2444444444444445,
+        "score_median": 0.1362925524626877,
+        "score_mean": 0.14381046287641475,
+        "score_std": 0.2987858476466452,
+        "sectors": {
+          "Financeiro e Outros": 6,
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Utilidade Pública": 1,
+          "Tecnologia da Informação": 1
+        }
+      },
+      {
+        "run_id": 7,
+        "seed": 49,
+        "tickers": [
+          "ALLD3",
+          "ALUP11",
+          "AMER3",
+          "BBAS3",
+          "CEAB3",
+          "CMIN3",
+          "EGIE3",
+          "ENGI4",
+          "IGTI11",
+          "ISAE4",
+          "JHSF3",
+          "PCAR3",
+          "STBP3",
+          "UNIP5",
+          "VAMO3"
+        ],
+        "fitness": 5.260674449542977,
+        "hhi": 0.2,
+        "score_median": 0.17320113963222977,
+        "score_mean": 0.1733427643449358,
+        "score_std": 0.3152922724695992,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Utilidade Pública": 4,
+          "Bens Industriais": 2,
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 8,
+        "seed": 50,
+        "tickers": [
+          "AMER3",
+          "BALM4",
+          "BAZA3",
+          "BMOB3",
+          "BPAC5",
+          "CEBR3",
+          "CLSC4",
+          "FLRY3",
+          "GUAR3",
+          "HBRE3",
+          "LEVE3",
+          "MOVI3",
+          "MULT3",
+          "STBP3",
+          "UGPA3"
+        ],
+        "fitness": 5.64238107745212,
+        "hhi": 0.19111111111111112,
+        "score_median": 0.17432472950116934,
+        "score_mean": 0.1427935097125658,
+        "score_std": 0.36086351072906403,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Financeiro e Outros": 4,
+          "Saúde": 2,
+          "Utilidade Pública": 2,
+          "Tecnologia da Informação": 1,
+          "Bens Industriais": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 9,
+        "seed": 51,
+        "tickers": [
+          "BALM4",
+          "CSUD3",
+          "DASA3",
+          "ENAT3",
+          "EUCA4",
+          "FESA4",
+          "ITUB3",
+          "JBSS3",
+          "KLBN3",
+          "MYPK3",
+          "POMO3",
+          "RADL3",
+          "SHUL4",
+          "TASA3",
+          "WIZC3"
+        ],
+        "fitness": 5.408167303553631,
+        "hhi": 0.18222222222222226,
+        "score_median": -0.01542073649647921,
+        "score_mean": 0.08150516866414909,
+        "score_std": 0.24385801853881967,
+        "sectors": {
+          "Bens Industriais": 4,
+          "Saúde": 3,
+          "Materiais Básicos": 3,
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 1,
+          "Consumo Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 10,
+        "seed": 52,
+        "tickers": [
+          "BBDC4",
+          "BRFS3",
+          "BRSR3",
+          "CURY3",
+          "CVCB3",
+          "ENGI4",
+          "LIGT3",
+          "LOGN3",
+          "NATU3",
+          "PNVL3",
+          "RADL3",
+          "SMTO3",
+          "TRIS3",
+          "UNIP6",
+          "VULC3"
+        ],
+        "fitness": 5.374832593645827,
+        "hhi": 0.17333333333333334,
+        "score_median": 0.16769838481937716,
+        "score_mean": 0.2562405689103428,
+        "score_std": 0.31802620655265745,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Consumo não Cíclico": 3,
+          "Utilidade Pública": 2,
+          "Saúde": 2,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 11,
+        "seed": 53,
+        "tickers": [
+          "B3SA3",
+          "BMOB3",
+          "BSLI3",
+          "CSED3",
+          "GMAT3",
+          "ITSA3",
+          "JHSF3",
+          "KEPL3",
+          "MILS3",
+          "SBFG3",
+          "SHUL4",
+          "TAEE4",
+          "UNIP3",
+          "VALE3",
+          "YDUQ3"
+        ],
+        "fitness": 5.206390835520096,
+        "hhi": 0.18222222222222226,
+        "score_median": 0.08588212755004325,
+        "score_mean": 0.1781350190461523,
+        "score_std": 0.2960088525279764,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Financeiro e Outros": 3,
+          "Bens Industriais": 3,
+          "Materiais Básicos": 2,
+          "Tecnologia da Informação": 1,
+          "Utilidade Pública": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 12,
+        "seed": 54,
+        "tickers": [
+          "ALPA4",
+          "AZUL4",
+          "BMOB3",
+          "DESK3",
+          "EALT4",
+          "EUCA4",
+          "FRAS3",
+          "LAVV3",
+          "LOGG3",
+          "MBRF3",
+          "ONCO3",
+          "POMO3",
+          "PTBL3",
+          "RAPT3",
+          "STBP3"
+        ],
+        "fitness": 5.215273391342491,
+        "hhi": 0.26222222222222225,
+        "score_median": 0.2933264634310576,
+        "score_mean": 0.24543627779036023,
+        "score_std": 0.39005581685441293,
+        "sectors": {
+          "Bens Industriais": 7,
+          "Consumo Cíclico": 2,
+          "Tecnologia da Informação": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1,
+          "Financeiro e Outros": 1,
+          "Comunicações": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 13,
+        "seed": 55,
+        "tickers": [
+          "ARML3",
+          "CEAB3",
+          "CEEB3",
+          "ENGI11",
+          "ETER3",
+          "ISAE4",
+          "ITUB3",
+          "OFSA3",
+          "ONCO3",
+          "PFRM3",
+          "ROMI3",
+          "SCAR3",
+          "STBP3",
+          "TEND3",
+          "USIM3"
+        ],
+        "fitness": 5.1435073565699,
+        "hhi": 0.19111111111111115,
+        "score_median": 0.27421721473558114,
+        "score_mean": 0.22756693642593318,
+        "score_std": 0.29236137769510423,
+        "sectors": {
+          "Bens Industriais": 4,
+          "Utilidade Pública": 3,
+          "Saúde": 3,
+          "Consumo Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 14,
+        "seed": 56,
+        "tickers": [
+          "BALM4",
+          "BRSR3",
+          "CLSC4",
+          "CMIG3",
+          "CPLE3",
+          "CRFB3",
+          "ECOR3",
+          "JBSS3",
+          "PETR3",
+          "PLPL3",
+          "PNVL3",
+          "TECN3",
+          "TTEN3",
+          "UGPA3",
+          "VLID3"
+        ],
+        "fitness": 5.028565029998617,
+        "hhi": 0.15555555555555559,
+        "score_median": 0.0962521788214755,
+        "score_mean": 0.08091259062158049,
+        "score_std": 0.25422436076591837,
+        "sectors": {
+          "Consumo não Cíclico": 3,
+          "Utilidade Pública": 3,
+          "Saúde": 2,
+          "Bens Industriais": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo Cíclico": 2,
+          "Financeiro e Outros": 1
+        }
+      },
+      {
+        "run_id": 15,
+        "seed": 57,
+        "tickers": [
+          "AMBP3",
+          "BBAS3",
+          "BHIA3",
+          "BLAU3",
+          "BRFS3",
+          "CAMB3",
+          "CSUD3",
+          "CYRE3",
+          "DASA3",
+          "FIQE3",
+          "LAVV3",
+          "RAIL3",
+          "RANI3",
+          "RECV3",
+          "TECN3"
+        ],
+        "fitness": 5.291838806077643,
+        "hhi": 0.17333333333333334,
+        "score_median": 0.2652174570180496,
+        "score_mean": 0.2917638500316524,
+        "score_std": 0.37175619835166174,
+        "sectors": {
+          "Consumo Cíclico": 5,
+          "Saúde": 2,
+          "Bens Industriais": 2,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Materiais Básicos": 1,
+          "Comunicações": 1,
+          "Financeiro e Outros": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 16,
+        "seed": 58,
+        "tickers": [
+          "ALUP11",
+          "AZZA3",
+          "BBAS3",
+          "BLAU3",
+          "COGN3",
+          "CPLE3",
+          "ETER3",
+          "JHSF3",
+          "LWSA3",
+          "PETR3",
+          "PRIO3",
+          "RECV3",
+          "SCAR3",
+          "TASA4",
+          "TGMA3"
+        ],
+        "fitness": 5.219075743109338,
+        "hhi": 0.16444444444444448,
+        "score_median": 0.015550358872600159,
+        "score_mean": 0.025284023158206905,
+        "score_std": 0.2816215626456283,
+        "sectors": {
+          "Petróleo, Gás e Biocombustíveis": 3,
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 3,
+          "Financeiro e Outros": 2,
+          "Utilidade Pública": 2,
+          "Saúde": 1,
+          "Tecnologia da Informação": 1
+        }
+      },
+      {
+        "run_id": 17,
+        "seed": 59,
+        "tickers": [
+          "ALUP4",
+          "BGIP4",
+          "BPAC3",
+          "BRKM5",
+          "GMAT3",
+          "GRND3",
+          "IGTI11",
+          "JBSS3",
+          "MBRF3",
+          "MTRE3",
+          "PNVL3",
+          "SMTO3",
+          "SULA11",
+          "VIVT3",
+          "VVEO3"
+        ],
+        "fitness": 4.977235730787829,
+        "hhi": 0.19111111111111112,
+        "score_median": -0.017285114209670542,
+        "score_mean": 0.07130642758578647,
+        "score_std": 0.2216829409126175,
+        "sectors": {
+          "Consumo não Cíclico": 4,
+          "Financeiro e Outros": 4,
+          "Consumo Cíclico": 2,
+          "Saúde": 2,
+          "Utilidade Pública": 1,
+          "Comunicações": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 18,
+        "seed": 60,
+        "tickers": [
+          "BHIA3",
+          "BMGB4",
+          "BMOB3",
+          "BRAV3",
+          "CRFB3",
+          "FIQE3",
+          "FRAS3",
+          "ITSA4",
+          "LIGT3",
+          "LWSA3",
+          "ODPV3",
+          "RAIZ4",
+          "SIMH3",
+          "VBBR3",
+          "VLID3"
+        ],
+        "fitness": 5.272865099706699,
+        "hhi": 0.1377777777777778,
+        "score_median": 0.10488398380395936,
+        "score_mean": 0.12181240966056996,
+        "score_std": 0.37759746325221394,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Petróleo, Gás e Biocombustíveis": 3,
+          "Tecnologia da Informação": 2,
+          "Bens Industriais": 2,
+          "Comunicações": 1,
+          "Saúde": 1,
+          "Consumo não Cíclico": 1,
+          "Consumo Cíclico": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 19,
+        "seed": 61,
+        "tickers": [
+          "BRST3",
+          "CAML3",
+          "CEAB3",
+          "CGAS5",
+          "COCE5",
+          "ENAT3",
+          "HYPE3",
+          "IGTI3",
+          "ISAE3",
+          "ITSA3",
+          "LIGT3",
+          "PFRM3",
+          "SYNE3",
+          "TAEE4",
+          "UNIP3"
+        ],
+        "fitness": 5.126790634219707,
+        "hhi": 0.19111111111111112,
+        "score_median": 0.14149854623607672,
+        "score_mean": 0.19397870101493322,
+        "score_std": 0.2406709521548723,
+        "sectors": {
+          "Utilidade Pública": 5,
+          "Financeiro e Outros": 3,
+          "Saúde": 2,
+          "Materiais Básicos": 1,
+          "Consumo Cíclico": 1,
+          "Comunicações": 1,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 20,
+        "seed": 62,
+        "tickers": [
+          "ALOS3",
+          "BALM4",
+          "COCE5",
+          "CSUD3",
+          "DESK3",
+          "FHER3",
+          "MULT3",
+          "MYPK3",
+          "OFSA3",
+          "POMO3",
+          "POMO4",
+          "STBP3",
+          "TAEE11",
+          "TEND3",
+          "UGPA3"
+        ],
+        "fitness": 5.617540797248502,
+        "hhi": 0.15555555555555556,
+        "score_median": 0.2519770397835044,
+        "score_mean": 0.2345413472708056,
+        "score_std": 0.2760037433437608,
+        "sectors": {
+          "Bens Industriais": 4,
+          "Saúde": 2,
+          "Utilidade Pública": 2,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 2,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Comunicações": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 21,
+        "seed": 63,
+        "tickers": [
+          "ANIM3",
+          "BLAU3",
+          "BRAV3",
+          "CMIG4",
+          "CSAN3",
+          "CVCB3",
+          "ETER3",
+          "LAVV3",
+          "LJQQ3",
+          "MOTV3",
+          "NTCO3",
+          "PNVL3",
+          "POMO3",
+          "SANB4",
+          "VSTE3"
+        ],
+        "fitness": 5.810745145833836,
+        "hhi": 0.2,
+        "score_median": 0.1113671033723999,
+        "score_mean": 0.16768183273806223,
+        "score_std": 0.2701646077775723,
+        "sectors": {
+          "Consumo Cíclico": 5,
+          "Bens Industriais": 3,
+          "Saúde": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Financeiro e Outros": 1,
+          "Utilidade Pública": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 22,
+        "seed": 64,
+        "tickers": [
+          "ALOS3",
+          "AZZA3",
+          "BAZA3",
+          "CEEB3",
+          "DIRR3",
+          "GEPA4",
+          "KLBN3",
+          "MGLU3",
+          "SANB3",
+          "SAPR11",
+          "SOJA3",
+          "SULA11",
+          "TTEN3",
+          "VTRU3",
+          "WHRL4"
+        ],
+        "fitness": 5.73086616870438,
+        "hhi": 0.24444444444444446,
+        "score_median": 0.1638716572763667,
+        "score_mean": 0.16189863258671555,
+        "score_std": 0.24486635961006972,
+        "sectors": {
+          "Consumo Cíclico": 5,
+          "Financeiro e Outros": 4,
+          "Utilidade Pública": 3,
+          "Consumo não Cíclico": 2,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 23,
+        "seed": 65,
+        "tickers": [
+          "ALOS3",
+          "AZUL4",
+          "BMOB3",
+          "BRST3",
+          "CVCB3",
+          "EZTC3",
+          "FLRY3",
+          "GMAT3",
+          "GRND3",
+          "HBOR3",
+          "LAVV3",
+          "SUZB3",
+          "SYNE3",
+          "TASA4",
+          "UNIP3"
+        ],
+        "fitness": 5.23519366376932,
+        "hhi": 0.18222222222222223,
+        "score_median": 0.16538180259089671,
+        "score_mean": 0.2053156575412254,
+        "score_std": 0.34826407927066966,
+        "sectors": {
+          "Consumo Cíclico": 5,
+          "Materiais Básicos": 2,
+          "Bens Industriais": 2,
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 1,
+          "Tecnologia da Informação": 1,
+          "Comunicações": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 24,
+        "seed": 66,
+        "tickers": [
+          "ABCB4",
+          "BALM4",
+          "BMOB3",
+          "BRKM5",
+          "CGAS5",
+          "EALT4",
+          "ENGI4",
+          "ESPA3",
+          "EVEN3",
+          "GMAT3",
+          "ITUB3",
+          "MEAL3",
+          "RAPT3",
+          "RDOR3",
+          "VTRU3"
+        ],
+        "fitness": 5.357950961327514,
+        "hhi": 0.1377777777777778,
+        "score_median": 0.17261410480974032,
+        "score_mean": 0.137061194910955,
+        "score_std": 0.3551455764726657,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Saúde": 2,
+          "Consumo não Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Bens Industriais": 2,
+          "Financeiro e Outros": 2,
+          "Tecnologia da Informação": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 25,
+        "seed": 67,
+        "tickers": [
+          "ALUP4",
+          "AMBP3",
+          "BALM4",
+          "BHIA3",
+          "BMEB4",
+          "COCE5",
+          "CPLE5",
+          "EMBJ3",
+          "FESA4",
+          "HBOR3",
+          "ITSA3",
+          "JHSF3",
+          "POMO4",
+          "RANI3",
+          "VVEO3"
+        ],
+        "fitness": 5.139535232603345,
+        "hhi": 0.18222222222222223,
+        "score_median": 0.043141688241863624,
+        "score_mean": 0.09536905648894503,
+        "score_std": 0.33059949589890386,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 2,
+          "Saúde": 2,
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 2
+        }
+      },
+      {
+        "run_id": 26,
+        "seed": 68,
+        "tickers": [
+          "ALOS3",
+          "BGIP4",
+          "BPAC3",
+          "CXSE3",
+          "CYRE3",
+          "DMVF3",
+          "FIQE3",
+          "GRND3",
+          "HBRE3",
+          "IGTI11",
+          "ITSA3",
+          "MTSA4",
+          "SOMA3",
+          "TASA4",
+          "TEND3"
+        ],
+        "fitness": 4.839629567532592,
+        "hhi": 0.31555555555555553,
+        "score_median": 0.0886596543693474,
+        "score_mean": 0.11624861991496527,
+        "score_std": 0.2340693997016181,
+        "sectors": {
+          "Financeiro e Outros": 7,
+          "Consumo Cíclico": 4,
+          "Bens Industriais": 2,
+          "Comunicações": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 27,
+        "seed": 69,
+        "tickers": [
+          "AMER3",
+          "ASAI3",
+          "BGIP4",
+          "CSED3",
+          "EMAE4",
+          "ENGI3",
+          "FIQE3",
+          "HBRE3",
+          "JALL3",
+          "LAVV3",
+          "MOTV3",
+          "RDOR3",
+          "TECN3",
+          "TOTS3",
+          "TTEN3"
+        ],
+        "fitness": 5.16588209045622,
+        "hhi": 0.16444444444444445,
+        "score_median": 0.23808313750294335,
+        "score_mean": 0.2577020375524153,
+        "score_std": 0.2897310636923158,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Consumo não Cíclico": 3,
+          "Utilidade Pública": 2,
+          "Financeiro e Outros": 2,
+          "Comunicações": 1,
+          "Tecnologia da Informação": 1,
+          "Saúde": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 28,
+        "seed": 70,
+        "tickers": [
+          "ABEV3",
+          "AURE3",
+          "BRKM5",
+          "CEAB3",
+          "CRFB3",
+          "EMAE4",
+          "ENGI3",
+          "ISAE3",
+          "LAVV3",
+          "MGLU3",
+          "PETR4",
+          "RAPT4",
+          "SAPR4",
+          "SYNE3",
+          "YDUQ3"
+        ],
+        "fitness": 5.423512780283311,
+        "hhi": 0.2177777777777778,
+        "score_median": 0.11058001758501339,
+        "score_mean": 0.13067310286956083,
+        "score_std": 0.33880699633291445,
+        "sectors": {
+          "Utilidade Pública": 5,
+          "Consumo Cíclico": 4,
+          "Consumo não Cíclico": 2,
+          "Financeiro e Outros": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Bens Industriais": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 29,
+        "seed": 71,
+        "tickers": [
+          "ALUP3",
+          "ASAI3",
+          "BRSR6",
+          "CRFB3",
+          "DESK3",
+          "EQTL3",
+          "FESA4",
+          "HBOR3",
+          "IGTI11",
+          "JHSF3",
+          "KLBN3",
+          "MILS3",
+          "TAEE3",
+          "VULC3",
+          "WHRL4"
+        ],
+        "fitness": 5.477537045138984,
+        "hhi": 0.17333333333333334,
+        "score_median": -0.06846838798975502,
+        "score_mean": 0.04070113506913993,
+        "score_std": 0.30620747385416247,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Utilidade Pública": 3,
+          "Materiais Básicos": 2,
+          "Consumo não Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 1,
+          "Comunicações": 1
+        }
+      }
+    ]
+  },
+  "caio": {
+    "n_runs": 30,
+    "stability_metrics": {
+      "fitness": {
+        "mean": 6.33928606614279,
+        "median": 6.284817028990748,
+        "std": 0.306337728262482,
+        "min": 5.7811532160447445,
+        "max": 7.092570091448705,
+        "cv": 0.04832369529726502,
+        "ci_95": [
+          5.860186131880047,
+          6.98319780597124
+        ]
+      },
+      "hhi": {
+        "mean": 0.21400000000000005,
+        "median": 0.20000000000000004,
+        "std": 0.05936328831862332,
+        "min": 0.14,
+        "max": 0.42000000000000004,
+        "cv": 0.27739854354496873
+      },
+      "portfolio_similarity": {
+        "jaccard_mean": 0.0348455373276554,
+        "jaccard_std": 0.04314633915642767,
+        "jaccard_min": 0.0,
+        "jaccard_max": 0.25
+      }
+    },
+    "consensus_portfolio": {
+      "tickers": [
+        "ITSA3",
+        "FLRY3",
+        "VULC3",
+        "FIQE3",
+        "CURY3",
+        "EZTC3",
+        "MGLU3",
+        "ELMD3",
+        "SBFG3",
+        "CPLE3"
+      ],
+      "hhi": 0.32000000000000006,
+      "avg_score": 0.43384335431231563,
+      "frequency_mean": 0.16999999999999998
+    },
+    "all_runs": [
+      {
+        "run_id": 0,
+        "seed": 42,
+        "tickers": [
+          "ABEV3",
+          "ALPA4",
+          "BHIA3",
+          "BPAC11",
+          "BRSR6",
+          "CPLE3",
+          "JBSS3",
+          "MILS3",
+          "PORT3",
+          "TTEN3"
+        ],
+        "fitness": 6.026465728964599,
+        "hhi": 0.22000000000000003,
+        "score_median": 0.08112515295347929,
+        "score_mean": 0.050216748980740744,
+        "score_std": 0.259344428643413,
+        "sectors": {
+          "Consumo não Cíclico": 3,
+          "Bens Industriais": 2,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 2,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 1,
+        "seed": 43,
+        "tickers": [
+          "CSED3",
+          "CYRE3",
+          "EGIE3",
+          "ELMD3",
+          "EQTL3",
+          "JBSS3",
+          "SBFG3",
+          "STBP3",
+          "TAEE11",
+          "VBBR3"
+        ],
+        "fitness": 5.890164134438265,
+        "hhi": 0.22000000000000003,
+        "score_median": 0.12831725221872048,
+        "score_mean": 0.19741664554125876,
+        "score_std": 0.34028668155374275,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 1,
+          "Comunicações": 1,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 2,
+        "seed": 44,
+        "tickers": [
+          "ALOS3",
+          "ARML3",
+          "CMIG4",
+          "CSAN3",
+          "FIQE3",
+          "GOAU3",
+          "LIGT3",
+          "PETR3",
+          "RDOR3",
+          "TIMS3"
+        ],
+        "fitness": 6.55730072935489,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.262373494306833,
+        "score_mean": 0.24105029659423888,
+        "score_std": 0.329639027836606,
+        "sectors": {
+          "Comunicações": 2,
+          "Utilidade Pública": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Saúde": 1,
+          "Financeiro e Outros": 1,
+          "Materiais Básicos": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 3,
+        "seed": 45,
+        "tickers": [
+          "BMGB4",
+          "CPLE3",
+          "GOAU4",
+          "LAVV3",
+          "MGLU3",
+          "MULT3",
+          "SANB11",
+          "SMTO3",
+          "UNIP3",
+          "VLID3"
+        ],
+        "fitness": 6.726559315473944,
+        "hhi": 0.20000000000000004,
+        "score_median": -0.01174995831000309,
+        "score_mean": 0.10810643427777744,
+        "score_std": 0.44623409610464754,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Materiais Básicos": 2,
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 1,
+          "Consumo não Cíclico": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 4,
+        "seed": 46,
+        "tickers": [
+          "CPLE3",
+          "CURY3",
+          "CYRE3",
+          "INTB3",
+          "MYPK3",
+          "RAIZ4",
+          "TAEE11",
+          "USIM3",
+          "VLID3",
+          "VULC3"
+        ],
+        "fitness": 6.43906851191548,
+        "hhi": 0.24000000000000007,
+        "score_median": 0.5251064080931959,
+        "score_mean": 0.4550291344806405,
+        "score_std": 0.5266482055988818,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Utilidade Pública": 2,
+          "Bens Industriais": 1,
+          "Tecnologia da Informação": 1,
+          "Materiais Básicos": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 5,
+        "seed": 47,
+        "tickers": [
+          "BPAN4",
+          "BRST3",
+          "CSMG3",
+          "DIRR3",
+          "FLRY3",
+          "MGLU3",
+          "SUZB3",
+          "TGMA3",
+          "UGPA3",
+          "WEGE3"
+        ],
+        "fitness": 5.976230756809936,
+        "hhi": 0.14,
+        "score_median": 0.025942599612858695,
+        "score_mean": 0.16066196613482278,
+        "score_std": 0.446214380066773,
+        "sectors": {
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 2,
+          "Saúde": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Utilidade Pública": 1,
+          "Comunicações": 1,
+          "Financeiro e Outros": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 6,
+        "seed": 48,
+        "tickers": [
+          "CSAN3",
+          "ENAT3",
+          "EVEN3",
+          "GOAU3",
+          "OPCT3",
+          "RAPT4",
+          "SUZB3",
+          "TGMA3",
+          "VAMO3",
+          "VLID3"
+        ],
+        "fitness": 6.941711766652202,
+        "hhi": 0.3400000000000001,
+        "score_median": 0.12857499393673955,
+        "score_mean": 0.1677275810682537,
+        "score_std": 0.4102149653745953,
+        "sectors": {
+          "Bens Industriais": 5,
+          "Materiais Básicos": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo Cíclico": 1
+        }
+      },
+      {
+        "run_id": 7,
+        "seed": 49,
+        "tickers": [
+          "BRSR6",
+          "CURY3",
+          "ELMD3",
+          "ENGI11",
+          "EQTL3",
+          "POMO3",
+          "PSSA3",
+          "SAPR4",
+          "TOTS3",
+          "VULC3"
+        ],
+        "fitness": 6.136826433247424,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.16863461401217444,
+        "score_mean": 0.33974370038514967,
+        "score_std": 0.47318765424489223,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Consumo Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 1,
+          "Tecnologia da Informação": 1,
+          "Comunicações": 1
+        }
+      },
+      {
+        "run_id": 8,
+        "seed": 50,
+        "tickers": [
+          "ASAI3",
+          "BMOB3",
+          "BRBI11",
+          "CAML3",
+          "EVEN3",
+          "FIQE3",
+          "MATD3",
+          "MRVE3",
+          "SULA11",
+          "USIM5"
+        ],
+        "fitness": 7.092570091448705,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.12857499393673955,
+        "score_mean": 0.26023757300510725,
+        "score_std": 0.30514806738158595,
+        "sectors": {
+          "Financeiro e Outros": 2,
+          "Consumo não Cíclico": 2,
+          "Consumo Cíclico": 2,
+          "Tecnologia da Informação": 1,
+          "Comunicações": 1,
+          "Saúde": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 9,
+        "seed": 51,
+        "tickers": [
+          "BPAN4",
+          "CBAV3",
+          "DESK3",
+          "FLRY3",
+          "IGTI11",
+          "ISAE4",
+          "MATD3",
+          "SUZB3",
+          "TAEE11",
+          "VIVA3"
+        ],
+        "fitness": 6.138146822104117,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.254957098482275,
+        "score_mean": 0.3019254254096787,
+        "score_std": 0.49298415315543787,
+        "sectors": {
+          "Utilidade Pública": 2,
+          "Saúde": 2,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 2,
+          "Consumo Cíclico": 1,
+          "Comunicações": 1
+        }
+      },
+      {
+        "run_id": 10,
+        "seed": 52,
+        "tickers": [
+          "CSMG3",
+          "CSNA3",
+          "CXSE3",
+          "EZTC3",
+          "FESA4",
+          "FLRY3",
+          "LAVV3",
+          "NTCO3",
+          "SULA11",
+          "VULC3"
+        ],
+        "fitness": 6.022635020633235,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.674096862475533,
+        "score_mean": 0.6159866765141775,
+        "score_std": 0.42533696135095944,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 2,
+          "Saúde": 1,
+          "Utilidade Pública": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 11,
+        "seed": 53,
+        "tickers": [
+          "BBDC4",
+          "BRAV3",
+          "FIQE3",
+          "FLRY3",
+          "INTB3",
+          "ISAE4",
+          "PCAR3",
+          "SAPR11",
+          "TAEE4",
+          "WIZC3"
+        ],
+        "fitness": 6.288811504612041,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.6534303061720023,
+        "score_mean": 0.5741851246173486,
+        "score_std": 0.3041910864175027,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Financeiro e Outros": 2,
+          "Saúde": 1,
+          "Comunicações": 1,
+          "Tecnologia da Informação": 1,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 12,
+        "seed": 54,
+        "tickers": [
+          "ABEV3",
+          "AZZA3",
+          "CPLE3",
+          "FLRY3",
+          "ITSA3",
+          "KLBN4",
+          "LEVE3",
+          "PETR3",
+          "UGPA3",
+          "VULC3"
+        ],
+        "fitness": 6.280104694680713,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.29195733171526017,
+        "score_mean": 0.3860004440046227,
+        "score_std": 0.5274041727856325,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Financeiro e Outros": 1,
+          "Saúde": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 13,
+        "seed": 55,
+        "tickers": [
+          "CBAV3",
+          "CURY3",
+          "FESA4",
+          "GGBR3",
+          "IGTI11",
+          "ITSA3",
+          "JHSF3",
+          "PETR3",
+          "PINE4",
+          "PLPL3"
+        ],
+        "fitness": 6.6236456327721385,
+        "hhi": 0.28,
+        "score_median": 0.26846139722959744,
+        "score_mean": 0.3076698659554495,
+        "score_std": 0.39607664033988577,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Consumo Cíclico": 3,
+          "Materiais Básicos": 3,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 14,
+        "seed": 56,
+        "tickers": [
+          "BRFS3",
+          "GGPS3",
+          "LAVV3",
+          "MDIA3",
+          "MILS3",
+          "ONCO3",
+          "PRIO3",
+          "RAIZ4",
+          "SBFG3",
+          "TOTS3"
+        ],
+        "fitness": 6.575486567666701,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.2688329063040742,
+        "score_mean": 0.24451876942662146,
+        "score_std": 0.3547024687929894,
+        "sectors": {
+          "Consumo não Cíclico": 2,
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Tecnologia da Informação": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 15,
+        "seed": 57,
+        "tickers": [
+          "BMOB3",
+          "DESK3",
+          "EZTC3",
+          "ITSA3",
+          "LAVV3",
+          "MBRF3",
+          "RANI3",
+          "SOMA3",
+          "TAEE11",
+          "VULC3"
+        ],
+        "fitness": 6.6358823198044075,
+        "hhi": 0.22000000000000008,
+        "score_median": 0.5903514514832413,
+        "score_mean": 0.6258053049754984,
+        "score_std": 0.4136804118257318,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Financeiro e Outros": 1,
+          "Utilidade Pública": 1,
+          "Tecnologia da Informação": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1,
+          "Comunicações": 1
+        }
+      },
+      {
+        "run_id": 16,
+        "seed": 58,
+        "tickers": [
+          "BRFS3",
+          "CPFE3",
+          "EGIE3",
+          "EZTC3",
+          "FLRY3",
+          "ITSA3",
+          "ITUB3",
+          "OPCT3",
+          "PINE4",
+          "VIVA3"
+        ],
+        "fitness": 6.4967652526742175,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.3884312657819919,
+        "score_mean": 0.4192980833975224,
+        "score_std": 0.37765733466366574,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Consumo Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Saúde": 1,
+          "Consumo não Cíclico": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 17,
+        "seed": 59,
+        "tickers": [
+          "ALUP11",
+          "ELMD3",
+          "INTB3",
+          "MGLU3",
+          "PETR4",
+          "PRIO3",
+          "SBFG3",
+          "STBP3",
+          "TIMS3",
+          "VIVT3"
+        ],
+        "fitness": 6.280822553369454,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.23321366877365923,
+        "score_mean": 0.20121194590174193,
+        "score_std": 0.3330171988939587,
+        "sectors": {
+          "Comunicações": 3,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 1,
+          "Tecnologia da Informação": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 18,
+        "seed": 60,
+        "tickers": [
+          "AESB3",
+          "CSNA3",
+          "EGIE3",
+          "EMBJ3",
+          "FIQE3",
+          "MOTV3",
+          "MULT3",
+          "PINE4",
+          "SAPR3",
+          "SUZB3"
+        ],
+        "fitness": 6.677557207336298,
+        "hhi": 0.22000000000000003,
+        "score_median": 0.09380784969256022,
+        "score_mean": 0.11343694506654296,
+        "score_std": 0.3607030661552714,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 2,
+          "Materiais Básicos": 2,
+          "Comunicações": 1
+        }
+      },
+      {
+        "run_id": 19,
+        "seed": 61,
+        "tickers": [
+          "ALPA4",
+          "ALUP11",
+          "ASAI3",
+          "BRKM5",
+          "CURY3",
+          "KLBN3",
+          "NEOE3",
+          "PRIO3",
+          "RAIZ4",
+          "YDUQ3"
+        ],
+        "fitness": 6.405421900495838,
+        "hhi": 0.22000000000000003,
+        "score_median": 0.023136110589053197,
+        "score_mean": 0.07772364255922151,
+        "score_std": 0.30642858258902317,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Utilidade Pública": 2,
+          "Materiais Básicos": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 20,
+        "seed": 62,
+        "tickers": [
+          "BMEB4",
+          "CRFB3",
+          "ENGI11",
+          "EZTC3",
+          "FESA4",
+          "INTB3",
+          "ISAE4",
+          "ITSA4",
+          "PCAR3",
+          "SULA11"
+        ],
+        "fitness": 5.979488314555454,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.4789004136595004,
+        "score_mean": 0.4845174052463935,
+        "score_std": 0.4365710748720654,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Utilidade Pública": 2,
+          "Consumo não Cíclico": 2,
+          "Tecnologia da Informação": 1,
+          "Consumo Cíclico": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 21,
+        "seed": 63,
+        "tickers": [
+          "CURY3",
+          "EMBJ3",
+          "FRAS3",
+          "GRND3",
+          "JHSF3",
+          "MGLU3",
+          "MOTV3",
+          "MOVI3",
+          "POMO3",
+          "PRIO3"
+        ],
+        "fitness": 6.277607943996137,
+        "hhi": 0.42000000000000004,
+        "score_median": 0.09900039613313993,
+        "score_mean": 0.24553671720541015,
+        "score_std": 0.44463761072657537,
+        "sectors": {
+          "Consumo Cíclico": 5,
+          "Bens Industriais": 4,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 22,
+        "seed": 64,
+        "tickers": [
+          "ABCB4",
+          "AESB3",
+          "EVEN3",
+          "KEPL3",
+          "KLBN3",
+          "PGMN3",
+          "RANI3",
+          "TIMS3",
+          "TOTS3",
+          "USIM5"
+        ],
+        "fitness": 6.132050309726754,
+        "hhi": 0.16000000000000003,
+        "score_median": 0.13230282130386917,
+        "score_mean": 0.16509254829513104,
+        "score_std": 0.18359720700999613,
+        "sectors": {
+          "Materiais Básicos": 3,
+          "Comunicações": 1,
+          "Tecnologia da Informação": 1,
+          "Consumo Cíclico": 1,
+          "Bens Industriais": 1,
+          "Saúde": 1,
+          "Financeiro e Outros": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 23,
+        "seed": 65,
+        "tickers": [
+          "ABCB4",
+          "BBDC3",
+          "BRAV3",
+          "CEAB3",
+          "CMIG4",
+          "CPFE3",
+          "CSAN3",
+          "GGBR4",
+          "MILS3",
+          "USIM5"
+        ],
+        "fitness": 6.21996002991545,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.03184668193852251,
+        "score_mean": 0.18529114500376992,
+        "score_std": 0.31660783382343544,
+        "sectors": {
+          "Financeiro e Outros": 2,
+          "Utilidade Pública": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Materiais Básicos": 2,
+          "Consumo Cíclico": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 24,
+        "seed": 66,
+        "tickers": [
+          "B3SA3",
+          "BMEB4",
+          "CMIN3",
+          "ENGI11",
+          "EUCA4",
+          "IRBR3",
+          "ITSA3",
+          "ODPV3",
+          "POMO4",
+          "PORT3"
+        ],
+        "fitness": 6.051145533390873,
+        "hhi": 0.26000000000000006,
+        "score_median": 0.15206201432579508,
+        "score_mean": 0.3617180539291319,
+        "score_std": 0.38608671570122677,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Bens Industriais": 2,
+          "Materiais Básicos": 2,
+          "Saúde": 1,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 25,
+        "seed": 67,
+        "tickers": [
+          "ABCB4",
+          "BPAC11",
+          "CMIG3",
+          "ENAT3",
+          "ITSA3",
+          "ITUB3",
+          "LEVE3",
+          "MYPK3",
+          "SIMH3",
+          "TOTS3"
+        ],
+        "fitness": 6.329499696284537,
+        "hhi": 0.32000000000000006,
+        "score_median": 0.2762927752848148,
+        "score_mean": 0.19061456204898292,
+        "score_std": 0.3845950406852606,
+        "sectors": {
+          "Financeiro e Outros": 5,
+          "Consumo Cíclico": 2,
+          "Utilidade Pública": 1,
+          "Tecnologia da Informação": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 26,
+        "seed": 68,
+        "tickers": [
+          "ALUP11",
+          "ISAE4",
+          "ITSA3",
+          "MBRF3",
+          "RDOR3",
+          "SBFG3",
+          "TAEE4",
+          "TIMS3",
+          "UNIP6",
+          "VIVT3"
+        ],
+        "fitness": 6.218474354899615,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.4836029944296629,
+        "score_mean": 0.4858098925191496,
+        "score_std": 0.43081589131458503,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Comunicações": 2,
+          "Financeiro e Outros": 1,
+          "Materiais Básicos": 1,
+          "Consumo não Cíclico": 1,
+          "Saúde": 1,
+          "Consumo Cíclico": 1
+        }
+      },
+      {
+        "run_id": 27,
+        "seed": 69,
+        "tickers": [
+          "GRND3",
+          "MGLU3",
+          "MOTV3",
+          "OPCT3",
+          "PCAR3",
+          "POMO4",
+          "SANB4",
+          "SAPR11",
+          "STBP3",
+          "UNIP6"
+        ],
+        "fitness": 6.342785579019271,
+        "hhi": 0.24000000000000007,
+        "score_median": 0.38358232092239575,
+        "score_mean": 0.34346734046620797,
+        "score_std": 0.48763515047698763,
+        "sectors": {
+          "Bens Industriais": 4,
+          "Consumo Cíclico": 2,
+          "Materiais Básicos": 1,
+          "Utilidade Pública": 1,
+          "Financeiro e Outros": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 28,
+        "seed": 70,
+        "tickers": [
+          "ASAI3",
+          "AURE3",
+          "CMIN3",
+          "DIRR3",
+          "FLRY3",
+          "KLBN4",
+          "OPCT3",
+          "PGMN3",
+          "PINE4",
+          "WIZC3"
+        ],
+        "fitness": 5.7811532160447445,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.10004683719158107,
+        "score_mean": 0.093486288224704,
+        "score_std": 0.45858918657694553,
+        "sectors": {
+          "Saúde": 2,
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 1,
+          "Consumo não Cíclico": 1,
+          "Utilidade Pública": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 29,
+        "seed": 71,
+        "tickers": [
+          "BEEF3",
+          "BLAU3",
+          "ELMD3",
+          "EZTC3",
+          "FIQE3",
+          "ITSA4",
+          "MULT3",
+          "POMO3",
+          "USIM3",
+          "VLID3"
+        ],
+        "fitness": 6.634240061996281,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.4789004136595004,
+        "score_mean": 0.46784048102438724,
+        "score_std": 0.37764754436801945,
+        "sectors": {
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 2,
+          "Comunicações": 2,
+          "Consumo Cíclico": 1,
+          "Saúde": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1
+        }
+      }
+    ]
+  },
+  "caio2": {
+    "n_runs": 30,
+    "stability_metrics": {
+      "fitness": {
+        "mean": 5.650466219581135,
+        "median": 5.5851910815342105,
+        "std": 0.23808107962032746,
+        "min": 5.341247297002809,
+        "max": 6.262740712820593,
+        "cv": 0.04213476735694497,
+        "ci_95": [
+          5.344089069193032,
+          6.157657381577581
+        ]
+      },
+      "hhi": {
+        "mean": 0.20866666666666667,
+        "median": 0.20000000000000004,
+        "std": 0.046956244407840894,
+        "min": 0.14,
+        "max": 0.3400000000000001,
+        "cv": 0.2250299252771928
+      },
+      "portfolio_similarity": {
+        "jaccard_mean": 0.04972065051065797,
+        "jaccard_std": 0.05011706700076052,
+        "jaccard_min": 0.0,
+        "jaccard_max": 0.25
+      }
+    },
+    "consensus_portfolio": {
+      "tickers": [
+        "VULC3",
+        "ISAE4",
+        "BRKM5",
+        "EZTC3",
+        "DIRR3",
+        "TAEE4",
+        "ITSA3",
+        "UNIP3",
+        "NEOE3",
+        "CPLE3"
+      ],
+      "hhi": 0.30000000000000004,
+      "avg_score": 0.5579194561230051,
+      "frequency_mean": 0.21666666666666665
+    },
+    "all_runs": [
+      {
+        "run_id": 0,
+        "seed": 42,
+        "tickers": [
+          "BBAS3",
+          "BBDC4",
+          "BRKM5",
+          "GGPS3",
+          "PETR4",
+          "TAEE4",
+          "TIMS3",
+          "TOTS3",
+          "USIM5",
+          "VULC3"
+        ],
+        "fitness": 5.341247297002809,
+        "hhi": 0.14,
+        "score_median": 0.3104284452372062,
+        "score_mean": 0.4255730597724835,
+        "score_std": 0.3914491719205884,
+        "sectors": {
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 2,
+          "Utilidade Pública": 1,
+          "Consumo Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Comunicações": 1,
+          "Tecnologia da Informação": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 1,
+        "seed": 43,
+        "tickers": [
+          "ALPA4",
+          "BBDC3",
+          "BRKM5",
+          "ISAE4",
+          "ITSA4",
+          "ITUB4",
+          "MDIA3",
+          "MGLU3",
+          "UNIP3",
+          "VULC3"
+        ],
+        "fitness": 5.609475533813245,
+        "hhi": 0.24000000000000002,
+        "score_median": 0.7240520331449396,
+        "score_mean": 0.47334223067275133,
+        "score_std": 0.5507033536650553,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Financeiro e Outros": 3,
+          "Materiais Básicos": 2,
+          "Utilidade Pública": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 2,
+        "seed": 44,
+        "tickers": [
+          "B3SA3",
+          "BPAC11",
+          "CBAV3",
+          "CURY3",
+          "DASA3",
+          "EQTL3",
+          "NTCO3",
+          "POMO4",
+          "SANB4",
+          "VAMO3"
+        ],
+        "fitness": 5.510656092786663,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.004794245543394891,
+        "score_mean": 0.10856095668665222,
+        "score_std": 0.40455430015238336,
+        "sectors": {
+          "Financeiro e Outros": 3,
+          "Bens Industriais": 2,
+          "Consumo Cíclico": 1,
+          "Utilidade Pública": 1,
+          "Consumo não Cíclico": 1,
+          "Materiais Básicos": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 3,
+        "seed": 45,
+        "tickers": [
+          "CMIN3",
+          "ENAT3",
+          "FLRY3",
+          "ITSA3",
+          "LREN3",
+          "SLCE3",
+          "STBP3",
+          "UGPA3",
+          "UNIP3",
+          "YDUQ3"
+        ],
+        "fitness": 5.4189072695687965,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.3633173114061079,
+        "score_mean": 0.3303958352912533,
+        "score_std": 0.41667574803235774,
+        "sectors": {
+          "Materiais Básicos": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 1,
+          "Financeiro e Outros": 1,
+          "Consumo não Cíclico": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 4,
+        "seed": 46,
+        "tickers": [
+          "ASAI3",
+          "BBDC3",
+          "BPAC11",
+          "EGIE3",
+          "LAVV3",
+          "ODPV3",
+          "SHUL4",
+          "TAEE3",
+          "VBBR3",
+          "VULC3"
+        ],
+        "fitness": 5.515422037320551,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.4105776175068097,
+        "score_mean": 0.3723368087591257,
+        "score_std": 0.42343474414254967,
+        "sectors": {
+          "Consumo Cíclico": 2,
+          "Financeiro e Outros": 2,
+          "Utilidade Pública": 2,
+          "Saúde": 1,
+          "Bens Industriais": 1,
+          "Consumo não Cíclico": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 5,
+        "seed": 47,
+        "tickers": [
+          "B3SA3",
+          "CEAB3",
+          "CMIG4",
+          "CPLE3",
+          "GUAR3",
+          "LEVE3",
+          "MILS3",
+          "PRIO3",
+          "SANB11",
+          "TAEE4"
+        ],
+        "fitness": 5.615152107148765,
+        "hhi": 0.24000000000000002,
+        "score_median": 0.06139346568351404,
+        "score_mean": 0.0731548577471055,
+        "score_std": 0.3616742883520926,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Consumo Cíclico": 3,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 6,
+        "seed": 48,
+        "tickers": [
+          "BBDC4",
+          "BEEF3",
+          "CYRE3",
+          "EMBJ3",
+          "ISAE4",
+          "MOVI3",
+          "SANB11",
+          "SAPR3",
+          "TAEE3",
+          "VIVT3"
+        ],
+        "fitness": 5.53628786203242,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.12354522009856175,
+        "score_mean": 0.2273798664089814,
+        "score_std": 0.4506872222205883,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 2,
+          "Comunicações": 1,
+          "Consumo não Cíclico": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 7,
+        "seed": 49,
+        "tickers": [
+          "BRAV3",
+          "CBAV3",
+          "CURY3",
+          "GGPS3",
+          "LOGN3",
+          "NEOE3",
+          "PETR4",
+          "SAPR11",
+          "VAMO3",
+          "VIVT3"
+        ],
+        "fitness": 5.345166982782427,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.08299724441397846,
+        "score_mean": 0.11690004015463122,
+        "score_std": 0.2426427430821769,
+        "sectors": {
+          "Bens Industriais": 3,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Utilidade Pública": 2,
+          "Consumo Cíclico": 1,
+          "Comunicações": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 8,
+        "seed": 50,
+        "tickers": [
+          "BRSR6",
+          "CPLE6",
+          "ITSA3",
+          "MOTV3",
+          "PGMN3",
+          "TAEE11",
+          "TAEE3",
+          "UNIP3",
+          "VIVT3",
+          "WEGE3"
+        ],
+        "fitness": 5.349229885525058,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.1772413963486706,
+        "score_mean": 0.2858222636326646,
+        "score_std": 0.44127146463490746,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Financeiro e Outros": 2,
+          "Bens Industriais": 2,
+          "Materiais Básicos": 1,
+          "Comunicações": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 9,
+        "seed": 51,
+        "tickers": [
+          "ALUP11",
+          "BEEF3",
+          "CMIG3",
+          "CYRE3",
+          "EZTC3",
+          "NATU3",
+          "ODPV3",
+          "RAIZ4",
+          "SBFG3",
+          "UGPA3"
+        ],
+        "fitness": 6.117798186968162,
+        "hhi": 0.22000000000000003,
+        "score_median": 0.2534558766023695,
+        "score_mean": 0.18796653057202783,
+        "score_std": 0.24402282882962673,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Utilidade Pública": 2,
+          "Consumo não Cíclico": 2,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 10,
+        "seed": 52,
+        "tickers": [
+          "AESB3",
+          "CPLE3",
+          "EMBJ3",
+          "EZTC3",
+          "ITSA3",
+          "LREN3",
+          "NEOE3",
+          "PETR4",
+          "PGMN3",
+          "VIVA3"
+        ],
+        "fitness": 5.833901511224919,
+        "hhi": 0.22000000000000003,
+        "score_median": -0.06745127334606084,
+        "score_mean": 0.10981782262107953,
+        "score_std": 0.42019916351640463,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Utilidade Pública": 3,
+          "Financeiro e Outros": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Saúde": 1,
+          "Bens Industriais": 1
+        }
+      },
+      {
+        "run_id": 11,
+        "seed": 53,
+        "tickers": [
+          "CSAN3",
+          "JHSF3",
+          "MBRF3",
+          "MULT3",
+          "NEOE3",
+          "SLCE3",
+          "SMTO3",
+          "TAEE3",
+          "TOTS3",
+          "VULC3"
+        ],
+        "fitness": 6.062377765115036,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.3037210254702039,
+        "score_mean": 0.35961961030895007,
+        "score_std": 0.35373309952579934,
+        "sectors": {
+          "Consumo não Cíclico": 3,
+          "Consumo Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Tecnologia da Informação": 1,
+          "Financeiro e Outros": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 12,
+        "seed": 54,
+        "tickers": [
+          "ALOS3",
+          "BPAN4",
+          "BRKM5",
+          "DIRR3",
+          "EZTC3",
+          "ITSA4",
+          "LAVV3",
+          "SULA11",
+          "TAEE4",
+          "UNIP3"
+        ],
+        "fitness": 5.766402894356213,
+        "hhi": 0.30000000000000004,
+        "score_median": 0.5415938029404208,
+        "score_mean": 0.43067261166833437,
+        "score_std": 0.4383491444806143,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Consumo Cíclico": 3,
+          "Materiais Básicos": 2,
+          "Utilidade Pública": 1
+        }
+      },
+      {
+        "run_id": 13,
+        "seed": 55,
+        "tickers": [
+          "BRKM5",
+          "EMBJ3",
+          "EZTC3",
+          "FLRY3",
+          "GOAU4",
+          "ISAE4",
+          "ITUB4",
+          "NATU3",
+          "TAEE4",
+          "VULC3"
+        ],
+        "fitness": 5.560906629255175,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.4853580358006945,
+        "score_mean": 0.42013724761355364,
+        "score_std": 0.5155349995329388,
+        "sectors": {
+          "Consumo Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Materiais Básicos": 2,
+          "Saúde": 1,
+          "Financeiro e Outros": 1,
+          "Bens Industriais": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 14,
+        "seed": 56,
+        "tickers": [
+          "BRSR6",
+          "CPLE6",
+          "CURY3",
+          "DIRR3",
+          "FLRY3",
+          "ISAE4",
+          "POMO4",
+          "RDOR3",
+          "SHUL4",
+          "UGPA3"
+        ],
+        "fitness": 5.4562868280778645,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.37529233244873134,
+        "score_mean": 0.3402050686992501,
+        "score_std": 0.3923803117768109,
+        "sectors": {
+          "Utilidade Pública": 2,
+          "Bens Industriais": 2,
+          "Saúde": 2,
+          "Consumo Cíclico": 2,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Financeiro e Outros": 1
+        }
+      },
+      {
+        "run_id": 15,
+        "seed": 57,
+        "tickers": [
+          "CSAN3",
+          "ECOR3",
+          "EGIE3",
+          "GGBR4",
+          "LEVE3",
+          "MDIA3",
+          "SANB3",
+          "SBFG3",
+          "VALE3",
+          "VULC3"
+        ],
+        "fitness": 5.381608448900263,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.005356614756350705,
+        "score_mean": 0.13667328391151,
+        "score_std": 0.42234684180472515,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Materiais Básicos": 2,
+          "Utilidade Pública": 1,
+          "Consumo não Cíclico": 1,
+          "Bens Industriais": 1,
+          "Financeiro e Outros": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 16,
+        "seed": 58,
+        "tickers": [
+          "CSAN3",
+          "DIRR3",
+          "LEVE3",
+          "MOTV3",
+          "SAPR4",
+          "SHUL4",
+          "SLCE3",
+          "SMTO3",
+          "VULC3",
+          "YDUQ3"
+        ],
+        "fitness": 5.777311173430763,
+        "hhi": 0.26000000000000006,
+        "score_median": 0.21504379253045816,
+        "score_mean": 0.27739448124998567,
+        "score_std": 0.3819736822263458,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Consumo não Cíclico": 2,
+          "Bens Industriais": 2,
+          "Utilidade Pública": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 17,
+        "seed": 59,
+        "tickers": [
+          "AESB3",
+          "BRSR6",
+          "GGBR4",
+          "INTB3",
+          "POMO4",
+          "RAIZ4",
+          "RECV3",
+          "SAPR3",
+          "STBP3",
+          "VBBR3"
+        ],
+        "fitness": 5.633699699004937,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.09144540617414848,
+        "score_mean": 0.1767938667355634,
+        "score_std": 0.3173866651910484,
+        "sectors": {
+          "Petróleo, Gás e Biocombustíveis": 3,
+          "Bens Industriais": 2,
+          "Utilidade Pública": 2,
+          "Tecnologia da Informação": 1,
+          "Materiais Básicos": 1,
+          "Financeiro e Outros": 1
+        }
+      },
+      {
+        "run_id": 18,
+        "seed": 60,
+        "tickers": [
+          "BBDC4",
+          "BPAN4",
+          "DIRR3",
+          "EZTC3",
+          "GRND3",
+          "ISAE4",
+          "RDOR3",
+          "TAEE4",
+          "UNIP6",
+          "VULC3"
+        ],
+        "fitness": 5.9181964524810295,
+        "hhi": 0.26000000000000006,
+        "score_median": 0.6113850527263021,
+        "score_mean": 0.5565226850387548,
+        "score_std": 0.42626923074221235,
+        "sectors": {
+          "Consumo Cíclico": 4,
+          "Utilidade Pública": 2,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 19,
+        "seed": 61,
+        "tickers": [
+          "BRKM5",
+          "CPLE6",
+          "ENGI11",
+          "ISAE4",
+          "PORT3",
+          "RENT3",
+          "SAPR3",
+          "SLCE3",
+          "VBBR3",
+          "VIVT3"
+        ],
+        "fitness": 5.721467205431626,
+        "hhi": 0.22000000000000008,
+        "score_median": 0.022666666666666616,
+        "score_mean": 0.10326951510974264,
+        "score_std": 0.38682991355806334,
+        "sectors": {
+          "Utilidade Pública": 4,
+          "Consumo não Cíclico": 1,
+          "Comunicações": 1,
+          "Bens Industriais": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Consumo Cíclico": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 20,
+        "seed": 62,
+        "tickers": [
+          "ALUP11",
+          "BBDC3",
+          "CMIN3",
+          "CPLE3",
+          "CXSE3",
+          "POMO3",
+          "RAIZ4",
+          "RDOR3",
+          "SBSP3",
+          "USIM5"
+        ],
+        "fitness": 5.544643139234958,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.25905319322073295,
+        "score_mean": 0.29787164050825005,
+        "score_std": 0.39265883594765516,
+        "sectors": {
+          "Utilidade Pública": 3,
+          "Financeiro e Outros": 2,
+          "Materiais Básicos": 2,
+          "Bens Industriais": 1,
+          "Saúde": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 21,
+        "seed": 63,
+        "tickers": [
+          "ALUP11",
+          "CEAB3",
+          "ITUB3",
+          "LOGN3",
+          "LREN3",
+          "MOTV3",
+          "NEOE3",
+          "POMO3",
+          "UNIP6",
+          "VULC3"
+        ],
+        "fitness": 5.46313594852307,
+        "hhi": 0.24000000000000002,
+        "score_median": 0.13657450036611107,
+        "score_mean": 0.29538561902997684,
+        "score_std": 0.46640759561386635,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Bens Industriais": 3,
+          "Utilidade Pública": 2,
+          "Materiais Básicos": 1,
+          "Financeiro e Outros": 1
+        }
+      },
+      {
+        "run_id": 22,
+        "seed": 64,
+        "tickers": [
+          "ALUP11",
+          "BRFS3",
+          "CYRE3",
+          "DIRR3",
+          "DXCO3",
+          "MULT3",
+          "RDOR3",
+          "RENT3",
+          "SBSP3",
+          "SMTO3"
+        ],
+        "fitness": 6.0548159471912975,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.20126131562012367,
+        "score_mean": 0.15193600282417152,
+        "score_std": 0.31263895259706115,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Consumo não Cíclico": 2,
+          "Utilidade Pública": 2,
+          "Saúde": 1,
+          "Financeiro e Outros": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 23,
+        "seed": 65,
+        "tickers": [
+          "FLRY3",
+          "MILS3",
+          "MRVE3",
+          "SANB3",
+          "SAPR4",
+          "SUZB3",
+          "TOTS3",
+          "TTEN3",
+          "VULC3",
+          "WEGE3"
+        ],
+        "fitness": 5.721448069304332,
+        "hhi": 0.14,
+        "score_median": 0.22083690934496975,
+        "score_mean": 0.2883281668493106,
+        "score_std": 0.42042766308677065,
+        "sectors": {
+          "Consumo Cíclico": 2,
+          "Bens Industriais": 2,
+          "Saúde": 1,
+          "Tecnologia da Informação": 1,
+          "Utilidade Pública": 1,
+          "Consumo não Cíclico": 1,
+          "Financeiro e Outros": 1,
+          "Materiais Básicos": 1
+        }
+      },
+      {
+        "run_id": 24,
+        "seed": 66,
+        "tickers": [
+          "BRKM5",
+          "CBAV3",
+          "CMIG3",
+          "INTB3",
+          "ITSA3",
+          "MDIA3",
+          "PETR3",
+          "SBSP3",
+          "SMTO3",
+          "UNIP6"
+        ],
+        "fitness": 5.509853251593508,
+        "hhi": 0.20000000000000004,
+        "score_median": 0.2017213217464868,
+        "score_mean": 0.3123427993341144,
+        "score_std": 0.36087763522006294,
+        "sectors": {
+          "Materiais Básicos": 3,
+          "Utilidade Pública": 2,
+          "Consumo não Cíclico": 2,
+          "Financeiro e Outros": 1,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Tecnologia da Informação": 1
+        }
+      },
+      {
+        "run_id": 25,
+        "seed": 67,
+        "tickers": [
+          "BRAV3",
+          "BRKM5",
+          "GGPS3",
+          "GOAU4",
+          "MDIA3",
+          "PSSA3",
+          "SBFG3",
+          "SMFT3",
+          "TAEE4",
+          "VIVA3"
+        ],
+        "fitness": 6.262740712820593,
+        "hhi": 0.18000000000000005,
+        "score_median": -0.03629790122807523,
+        "score_mean": 0.07102346760194458,
+        "score_std": 0.31884614603664313,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Materiais Básicos": 2,
+          "Utilidade Pública": 1,
+          "Consumo não Cíclico": 1,
+          "Financeiro e Outros": 1,
+          "Bens Industriais": 1,
+          "Petróleo, Gás e Biocombustíveis": 1
+        }
+      },
+      {
+        "run_id": 26,
+        "seed": 68,
+        "tickers": [
+          "CPLE3",
+          "DASA3",
+          "DIRR3",
+          "DXCO3",
+          "ITSA3",
+          "PETR3",
+          "PORT3",
+          "PSSA3",
+          "SOMA3",
+          "VIVA3"
+        ],
+        "fitness": 5.543860795239409,
+        "hhi": 0.18000000000000005,
+        "score_median": 0.09540443925177422,
+        "score_mean": 0.1699641564317039,
+        "score_std": 0.4419150407546624,
+        "sectors": {
+          "Consumo Cíclico": 3,
+          "Financeiro e Outros": 2,
+          "Petróleo, Gás e Biocombustíveis": 1,
+          "Bens Industriais": 1,
+          "Utilidade Pública": 1,
+          "Materiais Básicos": 1,
+          "Saúde": 1
+        }
+      },
+      {
+        "run_id": 27,
+        "seed": 69,
+        "tickers": [
+          "ASAI3",
+          "BRSR6",
+          "CMIN3",
+          "ECOR3",
+          "ISAE4",
+          "RADL3",
+          "SULA11",
+          "TAEE11",
+          "UNIP6",
+          "VULC3"
+        ],
+        "fitness": 5.641706769475584,
+        "hhi": 0.16000000000000006,
+        "score_median": 0.11136697485673008,
+        "score_mean": 0.39665803918650683,
+        "score_std": 0.4826524915950502,
+        "sectors": {
+          "Utilidade Pública": 2,
+          "Materiais Básicos": 2,
+          "Financeiro e Outros": 2,
+          "Consumo Cíclico": 1,
+          "Saúde": 1,
+          "Bens Industriais": 1,
+          "Consumo não Cíclico": 1
+        }
+      },
+      {
+        "run_id": 28,
+        "seed": 70,
+        "tickers": [
+          "BRSR6",
+          "CPLE3",
+          "CXSE3",
+          "CYRE3",
+          "EQTL3",
+          "EZTC3",
+          "INTB3",
+          "SANB4",
+          "SIMH3",
+          "VULC3"
+        ],
+        "fitness": 5.497892207338911,
+        "hhi": 0.30000000000000004,
+        "score_median": 0.03981077616881716,
+        "score_mean": 0.17964975897898264,
+        "score_std": 0.4462889567873059,
+        "sectors": {
+          "Financeiro e Outros": 4,
+          "Consumo Cíclico": 3,
+          "Utilidade Pública": 2,
+          "Tecnologia da Informação": 1
+        }
+      },
+      {
+        "run_id": 29,
+        "seed": 71,
+        "tickers": [
+          "EGIE3",
+          "EZTC3",
+          "GGBR4",
+          "KLBN3",
+          "NEOE3",
+          "PETR4",
+          "RECV3",
+          "SUZB3",
+          "UNIP3",
+          "USIM5"
+        ],
+        "fitness": 5.802387884485689,
+        "hhi": 0.3400000000000001,
+        "score_median": 0.2331186146490007,
+        "score_mean": 0.23923178207340381,
+        "score_std": 0.25741531536433576,
+        "sectors": {
+          "Materiais Básicos": 5,
+          "Utilidade Pública": 2,
+          "Petróleo, Gás e Biocombustíveis": 2,
+          "Consumo Cíclico": 1
+        }
+      }
+    ]
+  }
+}

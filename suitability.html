@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Suitability para otimização de carteiras</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17202a;
+      --muted: #607080;
+      --line: #dce4ea;
+      --surface: #ffffff;
+      --background: #f4f7f9;
+      --primary: #155e75;
+      --primary-dark: #0e3f50;
+      --accent: #d97706;
+      --success: #166534;
+      --danger: #b42318;
+      --shadow: 0 12px 30px rgba(20, 45, 60, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--background);
+      font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    main { width: min(980px, calc(100% - 32px)); margin: 32px auto 56px; }
+
+    header, .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    header { padding: 32px; margin-bottom: 20px; }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--primary);
+      font-size: .78rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 { line-height: 1.15; }
+    h1 { max-width: 760px; margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); }
+    h2 { margin-top: 0; }
+    h3 { margin-bottom: 6px; }
+    p { color: var(--muted); }
+
+    .notice {
+      margin-top: 22px;
+      padding: 14px 16px;
+      border-left: 4px solid var(--accent);
+      background: #fff8eb;
+      color: #6b4a12;
+    }
+
+    form { display: grid; gap: 14px; }
+    .question { padding: 24px; }
+    fieldset { border: 0; padding: 0; margin: 0; }
+    legend { padding: 0; margin-bottom: 16px; font-size: 1.18rem; font-weight: 750; }
+    .question-meta { margin: -8px 0 16px; font-size: .9rem; color: var(--muted); }
+    .options { display: grid; gap: 10px; }
+
+    .option {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      align-items: start;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease, transform .15s ease;
+    }
+
+    .option:hover { border-color: #8eb8c7; background: #f7fcfd; transform: translateY(-1px); }
+    .option:has(input:checked) { border-color: var(--primary); background: #eef9fb; }
+    .option input { margin-top: 4px; accent-color: var(--primary); }
+    .option strong { display: block; }
+    .option small { display: block; margin-top: 2px; color: var(--muted); }
+
+    .consent {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 16px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+    }
+
+    .consent input { margin-top: 5px; accent-color: var(--primary); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+
+    button {
+      border: 0;
+      border-radius: 10px;
+      padding: 12px 18px;
+      color: #fff;
+      background: var(--primary);
+      font: inherit;
+      font-weight: 750;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--primary-dark); }
+    button.secondary { color: var(--ink); background: #e8eef2; }
+    button.secondary:hover { background: #dce5ea; }
+    button.copy { padding: 9px 13px; font-size: .9rem; }
+
+    .error {
+      margin: 0;
+      padding: 12px 14px;
+      border-radius: 10px;
+      color: var(--danger);
+      background: #fff1f0;
+      border: 1px solid #f4b9b4;
+    }
+
+    #result { margin-top: 20px; }
+    .result-card { padding: 28px; }
+    .result-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; align-items: end; }
+    .score { color: var(--primary); font-size: clamp(2.7rem, 8vw, 5rem); font-weight: 850; line-height: 1; }
+    .score-label { color: var(--muted); font-weight: 700; }
+    .adjustment { margin: 18px 0; padding: 12px 14px; background: #f6fafb; border-radius: 10px; color: var(--muted); }
+    .adjustment strong { color: var(--ink); }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 14px;
+      margin: 22px 0;
+    }
+
+    .metric { padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
+    .metric span { display: block; color: var(--muted); font-size: .88rem; }
+    .metric strong { display: block; margin-top: 4px; font-size: 1.15rem; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { padding: 10px 8px; border-bottom: 1px solid var(--line); text-align: left; }
+    th { color: var(--muted); font-size: .85rem; }
+    td:last-child, th:last-child { text-align: right; }
+
+    details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 16px; }
+    summary { cursor: pointer; font-weight: 750; }
+    .output-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; }
+    textarea {
+      width: 100%;
+      min-height: 360px;
+      margin-top: 10px;
+      padding: 14px;
+      resize: vertical;
+      border: 1px solid #bac8d1;
+      border-radius: 10px;
+      color: #e6edf3;
+      background: #14232d;
+      font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .fine-print { margin-top: 22px; font-size: .88rem; }
+    footer { margin-top: 22px; color: var(--muted); font-size: .85rem; }
+    footer a { color: var(--primary); }
+
+    @media (max-width: 600px) {
+      main { width: min(100% - 18px, 980px); margin-top: 10px; }
+      header, .question, .result-card { padding: 20px; border-radius: 14px; }
+      th, td { font-size: .92rem; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">TCC · suitability quantitativo</p>
+      <h1>Transforme suas respostas em parâmetros auditáveis de carteira.</h1>
+      <p>Questionário acadêmico para gerar um score contínuo e calibrar os pesos fundamentalistas, os filtros de elegibilidade e os parâmetros do algoritmo genético deste repositório.</p>
+      <div class="notice">
+        <strong>Importante:</strong> esta é uma ferramenta de protótipo. Ela não substitui o processo regulatório de suitability, a análise completa da situação financeira, a atualização periódica do perfil ou uma recomendação de investimento.
+      </div>
+    </header>
+
+    <form id="questionnaire" novalidate>
+      <section class="card question">
+        <fieldset data-question="objetivo" data-dimension="apetite" data-weight="1.2">
+          <legend>1. Qual é o principal objetivo desta parcela do seu patrimônio?</legend>
+          <p class="question-meta">A finalidade declarada é uma das âncoras do perfil.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="objetivo" value="preservacao" data-score="0"><span><strong>Preservar o capital</strong><small>Priorizar estabilidade e reduzir oscilações.</small></span></label>
+            <label class="option"><input type="radio" name="objetivo" value="renda" data-score="0.25"><span><strong>Gerar renda</strong><small>Receber dividendos e manter previsibilidade.</small></span></label>
+            <label class="option"><input type="radio" name="objetivo" value="equilibrio" data-score="0.5"><span><strong>Equilibrar renda e crescimento</strong><small>Aceitar oscilações moderadas para buscar valorização.</small></span></label>
+            <label class="option"><input type="radio" name="objetivo" value="crescimento" data-score="0.8"><span><strong>Crescer o patrimônio</strong><small>Priorizar retorno de longo prazo.</small></span></label>
+            <label class="option"><input type="radio" name="objetivo" value="crescimento_agressivo" data-score="1"><span><strong>Buscar crescimento agressivo</strong><small>Aceitar perdas relevantes em troca de maior potencial.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="horizonte" data-dimension="liquidez" data-weight="1.3">
+          <legend>2. Por quanto tempo você pretende manter o investimento?</legend>
+          <p class="question-meta">Considere quando o dinheiro poderá ser necessário, não apenas sua intenção atual.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="horizonte" value="ate_2_anos" data-score="0"><span><strong>Até 2 anos</strong><small>Posso precisar resgatar em breve.</small></span></label>
+            <label class="option"><input type="radio" name="horizonte" value="2_a_5_anos" data-score="0.33"><span><strong>De 2 a 5 anos</strong><small>Tenho alguma flexibilidade.</small></span></label>
+            <label class="option"><input type="radio" name="horizonte" value="5_a_10_anos" data-score="0.67"><span><strong>De 5 a 10 anos</strong><small>Posso atravessar ciclos de mercado.</small></span></label>
+            <label class="option"><input type="radio" name="horizonte" value="mais_de_10_anos" data-score="1"><span><strong>Mais de 10 anos</strong><small>Não há necessidade planejada de resgate.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="capacidade" data-dimension="capacidade" data-weight="1.3">
+          <legend>3. Quanto desta parcela poderia permanecer investido sem comprometer despesas e reserva de emergência?</legend>
+          <p class="question-meta">Isto é uma triagem simples; uma análise regulatória deve coletar renda, patrimônio e necessidades futuras separadamente.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="capacidade" value="nenhuma" data-score="0"><span><strong>Nenhuma ou quase nenhuma</strong><small>O dinheiro pode ser necessário para despesas essenciais.</small></span></label>
+            <label class="option"><input type="radio" name="capacidade" value="menos_de_10" data-score="0.25"><span><strong>Menos de 10%</strong><small>Tenho pouca margem para perdas.</small></span></label>
+            <label class="option"><input type="radio" name="capacidade" value="10_a_30" data-score="0.5"><span><strong>De 10% a 30%</strong><small>Tenho alguma reserva separada.</small></span></label>
+            <label class="option"><input type="radio" name="capacidade" value="30_a_60" data-score="0.75"><span><strong>De 30% a 60%</strong><small>Consigo manter o investimento em uma queda.</small></span></label>
+            <label class="option"><input type="radio" name="capacidade" value="mais_de_60" data-score="1"><span><strong>Mais de 60%</strong><small>Esta parcela não é necessária para o orçamento.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="reacao" data-dimension="apetite" data-weight="2">
+          <legend>4. Como você reagiria se a carteira caísse 20% em poucos meses?</legend>
+          <p class="question-meta">A pergunta mede comportamento diante de uma perda, não uma previsão de retorno.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="reacao" value="vender_tudo" data-score="0"><span><strong>Venderia tudo</strong><small>Eu não conseguiria manter a posição.</small></span></label>
+            <label class="option"><input type="radio" name="reacao" value="vender_parte" data-score="0.25"><span><strong>Venderia parte</strong><small>Reduziria o risco até me sentir confortável.</small></span></label>
+            <label class="option"><input type="radio" name="reacao" value="manter" data-score="0.5"><span><strong>Manteria a carteira</strong><small>Aguardaria uma recuperação.</small></span></label>
+            <label class="option"><input type="radio" name="reacao" value="comprar" data-score="0.75"><span><strong>Manteria e compraria um pouco</strong><small>Usaria a queda para ajustar posições.</small></span></label>
+            <label class="option"><input type="radio" name="reacao" value="comprar_mais" data-score="1"><span><strong>Compraria mais agressivamente</strong><small>Tenho convicção e caixa para aproveitar a queda.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="perda" data-dimension="apetite" data-weight="1.8">
+          <legend>5. Qual perda temporária máxima você aceitaria sem mudar seu plano?</legend>
+          <p class="question-meta">Escolha a faixa que ainda permitiria manter o horizonte informado acima.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="perda" value="ate_5" data-score="0"><span><strong>Até 5%</strong><small>Oscilações maiores já seriam desconfortáveis.</small></span></label>
+            <label class="option"><input type="radio" name="perda" value="5_a_10" data-score="0.25"><span><strong>De 5% a 10%</strong><small>Aceito uma variação limitada.</small></span></label>
+            <label class="option"><input type="radio" name="perda" value="10_a_20" data-score="0.5"><span><strong>De 10% a 20%</strong><small>Aceito oscilações de um ciclo normal.</small></span></label>
+            <label class="option"><input type="radio" name="perda" value="20_a_35" data-score="0.75"><span><strong>De 20% a 35%</strong><small>Consigo suportar uma queda forte.</small></span></label>
+            <label class="option"><input type="radio" name="perda" value="mais_de_35" data-score="1"><span><strong>Mais de 35%</strong><small>Aceito alta volatilidade e perdas expressivas.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="experiencia" data-dimension="conhecimento" data-weight="1">
+          <legend>6. Qual é sua experiência com ações e indicadores fundamentalistas?</legend>
+          <p class="question-meta">Conhecimento não transforma um investimento arriscado em investimento seguro.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="experiencia" value="nenhuma" data-score="0"><span><strong>Nenhuma</strong><small>Nunca investi em ações por conta própria.</small></span></label>
+            <label class="option"><input type="radio" name="experiencia" value="basica" data-score="0.25"><span><strong>Básica</strong><small>Conheço os conceitos, mas tenho pouca prática.</small></span></label>
+            <label class="option"><input type="radio" name="experiencia" value="intermediaria" data-score="0.5"><span><strong>Intermediária</strong><small>Já acompanho resultados, valuation ou indicadores.</small></span></label>
+            <label class="option"><input type="radio" name="experiencia" value="avancada" data-score="0.75"><span><strong>Avançada</strong><small>Analiso empresas e acompanho minhas posições.</small></span></label>
+            <label class="option"><input type="radio" name="experiencia" value="profissional" data-score="1"><span><strong>Profissional</strong><small>Tenho formação ou atuação diretamente relacionada.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="liquidez" data-dimension="liquidez" data-weight="1.4">
+          <legend>7. Quando você poderá precisar acessar esta parcela?</legend>
+          <p class="question-meta">Necessidade de liquidez reduz a capacidade de atravessar uma queda.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="liquidez" value="a_qualquer_momento" data-score="0"><span><strong>A qualquer momento</strong><small>Não posso aceitar bloqueio ou espera.</small></span></label>
+            <label class="option"><input type="radio" name="liquidez" value="ate_1_ano" data-score="0.2"><span><strong>Em até 1 ano</strong><small>Tenho uma necessidade próxima.</small></span></label>
+            <label class="option"><input type="radio" name="liquidez" value="1_a_3_anos" data-score="0.5"><span><strong>Entre 1 e 3 anos</strong><small>Consigo planejar o resgate.</small></span></label>
+            <label class="option"><input type="radio" name="liquidez" value="mais_de_3_anos" data-score="0.8"><span><strong>Depois de 3 anos</strong><small>Tenho flexibilidade para esperar.</small></span></label>
+            <label class="option"><input type="radio" name="liquidez" value="sem_previsao" data-score="1"><span><strong>Não há previsão</strong><small>Esta parcela pode permanecer investida por tempo indeterminado.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="renda" data-dimension="capacidade" data-weight="1">
+          <legend>8. Qual é a faixa da sua renda mensal regular?</legend>
+          <p class="question-meta">Use renda recorrente, antes de considerar ganhos eventuais. Esta faixa contextualiza a capacidade financeira, mas não decide o perfil sozinha.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="renda" value="ate_3k" data-score="0"><span><strong>Até R$ 3 mil</strong><small>Renda regular mais limitada.</small></span></label>
+            <label class="option"><input type="radio" name="renda" value="3_a_8k" data-score="0.25"><span><strong>De R$ 3 mil a R$ 8 mil</strong><small>Renda regular intermediária.</small></span></label>
+            <label class="option"><input type="radio" name="renda" value="8_a_20k" data-score="0.5"><span><strong>De R$ 8 mil a R$ 20 mil</strong><small>Renda regular com maior margem.</small></span></label>
+            <label class="option"><input type="radio" name="renda" value="20_a_50k" data-score="0.75"><span><strong>De R$ 20 mil a R$ 50 mil</strong><small>Renda regular elevada.</small></span></label>
+            <label class="option"><input type="radio" name="renda" value="mais_de_50k" data-score="1"><span><strong>Mais de R$ 50 mil</strong><small>Renda regular muito elevada.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="patrimonio" data-dimension="capacidade" data-weight="1">
+          <legend>9. Qual é a faixa aproximada do seu patrimônio financeiro investível?</legend>
+          <p class="question-meta">Considere ativos financeiros disponíveis para investimento, não o imóvel de moradia.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="patrimonio" value="ate_50k" data-score="0"><span><strong>Até R$ 50 mil</strong><small>Patrimônio financeiro inicial.</small></span></label>
+            <label class="option"><input type="radio" name="patrimonio" value="50_a_200k" data-score="0.25"><span><strong>De R$ 50 mil a R$ 200 mil</strong><small>Patrimônio financeiro intermediário.</small></span></label>
+            <label class="option"><input type="radio" name="patrimonio" value="200k_a_1m" data-score="0.5"><span><strong>De R$ 200 mil a R$ 1 milhão</strong><small>Patrimônio financeiro relevante.</small></span></label>
+            <label class="option"><input type="radio" name="patrimonio" value="1m_a_5m" data-score="0.75"><span><strong>De R$ 1 milhão a R$ 5 milhões</strong><small>Patrimônio financeiro elevado.</small></span></label>
+            <label class="option"><input type="radio" name="patrimonio" value="mais_de_5m" data-score="1"><span><strong>Mais de R$ 5 milhões</strong><small>Patrimônio financeiro muito elevado.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="concentracao" data-dimension="capacidade" data-weight="1.4">
+          <legend>10. Que parte do seu patrimônio financeiro representa esta parcela?</legend>
+          <p class="question-meta">Quanto maior a concentração nesta carteira, menor a margem para suportar perdas.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="concentracao" value="ate_10" data-score="1"><span><strong>Até 10%</strong><small>Esta parcela tem impacto limitado no patrimônio.</small></span></label>
+            <label class="option"><input type="radio" name="concentracao" value="10_a_30" data-score="0.75"><span><strong>De 10% a 30%</strong><small>Tenho diversificação fora desta parcela.</small></span></label>
+            <label class="option"><input type="radio" name="concentracao" value="30_a_60" data-score="0.5"><span><strong>De 30% a 60%</strong><small>Esta parcela tem peso relevante.</small></span></label>
+            <label class="option"><input type="radio" name="concentracao" value="60_a_80" data-score="0.25"><span><strong>De 60% a 80%</strong><small>Grande parte do patrimônio está concentrada aqui.</small></span></label>
+            <label class="option"><input type="radio" name="concentracao" value="mais_de_80" data-score="0"><span><strong>Mais de 80%</strong><small>Quase todo o patrimônio depende desta parcela.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="necessidade_futura" data-dimension="capacidade" data-weight="1.4">
+          <legend>11. Quanto do seu patrimônio financeiro poderá ser necessário para objetivos planejados nos próximos 3 anos?</legend>
+          <p class="question-meta">Considere compras, estudos, aposentadoria, dependentes, impostos ou qualquer saque planejado.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="necessidade_futura" value="nenhuma" data-score="1"><span><strong>Nenhuma ou quase nenhuma</strong><small>Não há saque planejado relevante.</small></span></label>
+            <label class="option"><input type="radio" name="necessidade_futura" value="ate_10" data-score="0.75"><span><strong>Até 10%</strong><small>Necessidade futura pequena.</small></span></label>
+            <label class="option"><input type="radio" name="necessidade_futura" value="10_a_30" data-score="0.5"><span><strong>De 10% a 30%</strong><small>Necessidade futura moderada.</small></span></label>
+            <label class="option"><input type="radio" name="necessidade_futura" value="30_a_60" data-score="0.25"><span><strong>De 30% a 60%</strong><small>Necessidade futura relevante.</small></span></label>
+            <label class="option"><input type="radio" name="necessidade_futura" value="mais_de_60" data-score="0"><span><strong>Mais de 60%</strong><small>Grande parte do patrimônio terá uso planejado.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="produtos" data-dimension="conhecimento" data-weight="1">
+          <legend>12. Com quais produtos você tem familiaridade suficiente para explicar riscos e custos?</legend>
+          <p class="question-meta">Conhecimento declarado não elimina risco, mas ajuda a verificar se o produto é compreensível.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="produtos" value="nenhum" data-score="0"><span><strong>Nenhum produto além de poupança ou conta remunerada</strong><small>Não conheço produtos de mercado de capitais.</small></span></label>
+            <label class="option"><input type="radio" name="produtos" value="renda_fixa_fundos" data-score="0.25"><span><strong>Renda fixa e fundos</strong><small>Conheço produtos mais simples.</small></span></label>
+            <label class="option"><input type="radio" name="produtos" value="etf_fii_acoes" data-score="0.5"><span><strong>ETFs, FIIs ou ações</strong><small>Conheço produtos negociados em bolsa.</small></span></label>
+            <label class="option"><input type="radio" name="produtos" value="cripto" data-score="0.75"><span><strong>Ações, ETFs, FIIs e criptoativos</strong><small>Conheço diferentes classes e seus riscos.</small></span></label>
+            <label class="option"><input type="radio" name="produtos" value="complexos" data-score="1"><span><strong>Também derivativos ou produtos estruturados</strong><small>Conheço produtos complexos e riscos específicos.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="operacoes" data-dimension="conhecimento" data-weight="1">
+          <legend>13. Como foi sua experiência real de operações no mercado?</legend>
+          <p class="question-meta">Considere tipo, volume, frequência e período das operações, não apenas leitura ou acompanhamento de notícias.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="operacoes" value="nenhuma" data-score="0"><span><strong>Nunca operei</strong><small>Não tenho histórico próprio de operações.</small></span></label>
+            <label class="option"><input type="radio" name="operacoes" value="inicial" data-score="0.25"><span><strong>Experiência inicial</strong><small>Menos de 1 ano ou poucas operações.</small></span></label>
+            <label class="option"><input type="radio" name="operacoes" value="ocasional" data-score="0.5"><span><strong>Experiência ocasional</strong><small>De 1 a 3 anos, com operações esporádicas.</small></span></label>
+            <label class="option"><input type="radio" name="operacoes" value="regular" data-score="0.75"><span><strong>Experiência regular</strong><small>Mais de 3 anos acompanhando e operando posições.</small></span></label>
+            <label class="option"><input type="radio" name="operacoes" value="frequente" data-score="1"><span><strong>Experiência frequente ou profissional</strong><small>Opero com alta frequência ou atuação profissional.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="formacao" data-dimension="conhecimento" data-weight="1">
+          <legend>14. Qual formação acadêmica ou experiência profissional financeira você possui?</legend>
+          <p class="question-meta">Esta informação complementa, mas não substitui, histórico de operações e familiaridade com produtos.</p>
+          <div class="options">
+            <label class="option"><input type="radio" name="formacao" value="nenhuma" data-score="0"><span><strong>Nenhuma relacionada</strong><small>Não tive formação ou experiência financeira.</small></span></label>
+            <label class="option"><input type="radio" name="formacao" value="autodidata" data-score="0.25"><span><strong>Estudo autodidata</strong><small>Aprendi por cursos, livros ou prática pessoal.</small></span></label>
+            <label class="option"><input type="radio" name="formacao" value="academica" data-score="0.5"><span><strong>Formação acadêmica relacionada</strong><small>Cursei disciplinas ou formação na área.</small></span></label>
+            <label class="option"><input type="radio" name="formacao" value="profissional_indireta" data-score="0.75"><span><strong>Experiência profissional próxima</strong><small>Atuo em área com contato recorrente com finanças.</small></span></label>
+            <label class="option"><input type="radio" name="formacao" value="profissional_direta" data-score="1"><span><strong>Atuação profissional direta</strong><small>Trabalho ou tenho certificação diretamente relacionada.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <section class="card question">
+        <fieldset data-question="restricoes" data-dimension="restricoes" data-multiple="true" data-weight="0">
+          <legend>15. Quais restrições ou preferências devem ser respeitadas?</legend>
+          <p class="question-meta">Selecione pelo menos uma. Estas respostas são exportadas para aplicação explícita; não alteram score automaticamente.</p>
+          <div class="options">
+            <label class="option"><input type="checkbox" name="restricoes" value="nenhuma"><span><strong>Nenhuma restrição específica</strong><small>Posso avaliar qualquer alternativa compatível com meu perfil.</small></span></label>
+            <label class="option"><input type="checkbox" name="restricoes" value="priorizar_renda"><span><strong>Priorizar geração de renda</strong><small>Prefiro receber fluxo recorrente.</small></span></label>
+            <label class="option"><input type="checkbox" name="restricoes" value="evitar_cripto"><span><strong>Evitar criptoativos</strong><small>Não quero exposição a criptoativos.</small></span></label>
+            <label class="option"><input type="checkbox" name="restricoes" value="evitar_exterior"><span><strong>Evitar exposição internacional</strong><small>Prefiro manter exposição econômica doméstica.</small></span></label>
+            <label class="option"><input type="checkbox" name="restricoes" value="limitar_concentracao"><span><strong>Limitar concentração</strong><small>Quero limite adicional por ativo, setor ou classe.</small></span></label>
+            <label class="option"><input type="checkbox" name="restricoes" value="evitar_illiquidez"><span><strong>Evitar baixa liquidez</strong><small>Preciso conseguir sair sem espera relevante.</small></span></label>
+          </div>
+        </fieldset>
+      </section>
+
+      <label class="consent">
+        <input id="prototypeAcknowledgement" type="checkbox" required>
+        <span>Entendo que o resultado é uma parametrização acadêmica do algoritmo do TCC, não uma recomendação personalizada nem uma classificação regulatória.</span>
+      </label>
+
+      <p id="formError" class="error" role="alert" hidden></p>
+      <div class="actions">
+        <button type="submit">Calcular parâmetros</button>
+        <button class="secondary" type="reset">Limpar respostas</button>
+      </div>
+    </form>
+
+    <section id="result" class="card result-card" aria-live="polite" hidden>
+      <div class="result-heading">
+        <div>
+          <p class="eyebrow">Resultado</p>
+          <h2 id="profileTitle">Perfil personalizado</h2>
+          <p id="profileSubtitle"></p>
+        </div>
+        <div>
+          <div id="scoreValue" class="score">0%</div>
+          <div class="score-label">score contínuo de apetite a risco</div>
+        </div>
+      </div>
+
+      <div id="adjustment" class="adjustment"></div>
+
+      <h3>Dimensões do perfil</h3>
+      <div class="result-grid">
+        <div class="metric"><span>Apetite a risco</span><strong id="appetiteValue">—</strong></div>
+        <div class="metric"><span>Capacidade financeira</span><strong id="capacityValue">—</strong></div>
+        <div class="metric"><span>Liquidez e horizonte</span><strong id="liquidityValue">—</strong></div>
+        <div class="metric"><span>Conhecimento</span><strong id="knowledgeValue">—</strong></div>
+      </div>
+
+      <div class="result-grid">
+        <div class="metric"><span>Capitalização mínima</span><strong id="capValue">—</strong></div>
+        <div class="metric"><span>Liquidez média diária mínima</span><strong id="liqValue">—</strong></div>
+        <div class="metric"><span>Número de ativos</span><strong id="assetsValue">—</strong></div>
+        <div class="metric"><span>Lambda · penalização HHI</span><strong id="lambdaValue">—</strong></div>
+        <div class="metric"><span>Gerações</span><strong id="generationsValue">—</strong></div>
+        <div class="metric"><span>Tamanho da população</span><strong id="populationValue">—</strong></div>
+      </div>
+
+      <h3>Pesos usados em <code>profiles.py</code></h3>
+      <table>
+        <thead><tr><th>Grupo</th><th>Indicadores existentes no repositório</th><th>Peso</th></tr></thead>
+        <tbody id="weightsTable"></tbody>
+      </table>
+
+      <details>
+        <summary>Como o mapeamento foi calculado</summary>
+        <p>Cada dimensão calcula uma média ponderada própria. <code>score_bruto</code> é o apetite a risco; o score efetivo usa o menor valor entre apetite, capacidade financeira e liquidez/horizonte. Conhecimento serve como diagnóstico e alerta, não aumenta o risco permitido.</p>
+        <p>Para manter consistência, horizonte de até 2 anos limita o score efetivo a 0,25, necessidade de liquidez em até 1 ano limita-o a 0,35, concentração acima de 80% limita-o a 0,25 e uso planejado acima de 30% em até 3 anos limita-o a 0,25. Restrições são exportadas, mas exigem aplicação explícita no pipeline. Os pesos fundamentalistas somam 1; os campos inteiros são arredondados para valores executáveis pelo GA.</p>
+      </details>
+
+      <div class="output-head">
+        <h3>Saída copiável · Python dict</h3>
+        <button id="copyButton" class="copy" type="button">Copiar</button>
+      </div>
+      <textarea id="pythonOutput" readonly aria-label="Saída Python dict"></textarea>
+      <p class="fine-print">A saída usa o nome de perfil <code>personalizado</code>. Para executá-la no repositório, incorpore as entradas de <code>FILTERS</code>, <code>PERFIL_CONFIG</code> e <code>PROFILE_WEIGHTS</code> aos dicionários correspondentes. O GA atual ainda recebe o nome de um perfil cadastrado.</p>
+    </section>
+
+    <footer>
+      Referências regulatórias: <a href="https://conteudo.cvm.gov.br/legislacao/resolucoes/resol030.html" target="_blank" rel="noreferrer">Resolução CVM 30</a> e <a href="https://www.anbima.com.br/pt_br/informar/regulacao/informe-de-legislacao/classificacao-dos-investidores-e-suitability-no-mercado-de-valores-mobiliarios.htm" target="_blank" rel="noreferrer">visão geral ANBIMA sobre suitability</a>. Consulte a norma vigente e a instituição responsável antes de usar o questionário em produção.
+    </footer>
+  </main>
+
+  <script>
+    "use strict";
+
+    // As âncoras abaixo são cópias dos dicionários atuais do repositório.
+    // O score navega por trechos [conservador, moderado] e [moderado, arrojado].
+    // `lambda` segue a implementação real de ga.py: penaliza concentração setorial
+    // via HHI; não é uma medida estatística direta da volatilidade da carteira.
+    const BASE_PROFILES = [
+      {
+        key: "conservador",
+        label: "Conservador",
+        score: 0,
+        filters: { cap_min: 5000000000, liq_min: 2000000 },
+        ga: { n_assets: 10, lambda: 0.50, generations: 300, pop_size: 200 },
+        weights: { liquidez: 0.30, rent: 0.25, value: 0.15, growth: 0.10, div: 0.20 }
+      },
+      {
+        key: "moderado",
+        label: "Moderado",
+        score: 0.5,
+        filters: { cap_min: 1000000000, liq_min: 500000 },
+        ga: { n_assets: 12, lambda: 0.25, generations: 400, pop_size: 250 },
+        weights: { liquidez: 0.20, rent: 0.25, value: 0.25, growth: 0.20, div: 0.10 }
+      },
+      {
+        key: "arrojado",
+        label: "Arrojado",
+        score: 1,
+        filters: { cap_min: 200000000, liq_min: 50000 },
+        ga: { n_assets: 15, lambda: 0.10, generations: 500, pop_size: 300 },
+        weights: { liquidez: 0.10, rent: 0.20, value: 0.20, growth: 0.40, div: 0.10 }
+      }
+    ];
+
+    const GROUPS = {
+      liquidez: "LIQ. CORRENTE · DIVIDA LIQUIDA / EBIT · DIV. LIQ. / PATRI.",
+      rent: "ROE · ROA · ROIC · MARG. LIQUIDA · MARGEM EBIT",
+      value: "P/L · P/VP · EV/EBIT · PSR · EV/EBITDA (se existir)",
+      growth: "CAGR RECEITAS 5 ANOS · CAGR LUCROS 5 ANOS · PEG RATIO",
+      div: "DY"
+    };
+
+    const QUESTION_LABELS = {
+      objetivo: "objetivo",
+      horizonte: "horizonte",
+      capacidade: "capacidade",
+      reacao: "reação à perda",
+      perda: "perda aceitável",
+      experiencia: "experiência",
+      liquidez: "necessidade de liquidez",
+      renda: "renda regular",
+      patrimonio: "patrimônio financeiro",
+      concentracao: "concentração desta parcela",
+      necessidade_futura: "necessidade financeira futura",
+      produtos: "familiaridade com produtos",
+      operacoes: "histórico de operações",
+      formacao: "formação ou experiência profissional",
+      restricoes: "restrições ou preferências"
+    };
+
+    const form = document.querySelector("#questionnaire");
+    const errorBox = document.querySelector("#formError");
+    const resultBox = document.querySelector("#result");
+
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const rounded = (value, digits = 4) => Number(value.toFixed(digits));
+
+    function interpolate(score, selector) {
+      const safeScore = clamp(score, 0, 1);
+      const leftIndex = safeScore <= 0.5 ? 0 : 1;
+      const left = BASE_PROFILES[leftIndex];
+      const right = BASE_PROFILES[leftIndex + 1];
+      const t = (safeScore - left.score) / (right.score - left.score);
+      return lerp(selector(left), selector(right), t);
+    }
+
+    function normalizedWeights(score) {
+      const names = Object.keys(BASE_PROFILES[0].weights);
+      const raw = Object.fromEntries(names.map(name => [name, interpolate(score, profile => profile.weights[name])]));
+      const result = {};
+      let sum = 0;
+      names.slice(0, -1).forEach(name => {
+        result[name] = rounded(raw[name]);
+        sum += result[name];
+      });
+      const last = names[names.length - 1];
+      result[last] = rounded(1 - sum);
+      return result;
+    }
+
+    function makeProfile(score) {
+      const filters = {
+        cap_min: Math.round(interpolate(score, profile => profile.filters.cap_min) / 1000000) * 1000000,
+        liq_min: Math.round(interpolate(score, profile => profile.filters.liq_min) / 1000) * 1000
+      };
+      const ga = {
+        n_assets: Math.round(interpolate(score, profile => profile.ga.n_assets)),
+        lambda: rounded(interpolate(score, profile => profile.ga.lambda), 3),
+        generations: Math.round(interpolate(score, profile => profile.ga.generations) / 10) * 10,
+        pop_size: Math.round(interpolate(score, profile => profile.ga.pop_size) / 10) * 10
+      };
+      const base = BASE_PROFILES.reduce((nearest, profile) =>
+        Math.abs(profile.score - score) < Math.abs(nearest.score - score) ? profile : nearest
+      );
+      return { filters, ga, weights: normalizedWeights(score), base: base.key, baseLabel: base.label };
+    }
+
+    function selectedAnswers() {
+      const answers = {};
+      const missing = [];
+      form.querySelectorAll("fieldset[data-question]").forEach(fieldset => {
+        const selected = [...fieldset.querySelectorAll("input:checked")];
+        const key = fieldset.dataset.question;
+        if (!selected.length) {
+          missing.push(QUESTION_LABELS[key]);
+          return;
+        }
+        if (fieldset.dataset.multiple === "true") {
+          answers[key] = {
+            value: selected.map(input => input.value),
+            score: 0,
+            weight: 0,
+            dimension: fieldset.dataset.dimension
+          };
+          return;
+        }
+        const input = selected[0];
+        answers[key] = {
+          value: input.value,
+          score: Number(input.dataset.score),
+          weight: Number(fieldset.dataset.weight),
+          dimension: fieldset.dataset.dimension
+        };
+      });
+      return { answers, missing };
+    }
+
+    function dimensionScore(answers, dimension) {
+      let total = 0;
+      let weightTotal = 0;
+      Object.values(answers).filter(answer => answer.dimension === dimension).forEach(answer => {
+        total += answer.score * answer.weight;
+        weightTotal += answer.weight;
+      });
+      return rounded(weightTotal ? total / weightTotal : 0);
+    }
+
+    function scoreAnswers(answers) {
+      const dimensions = {
+        apetite: dimensionScore(answers, "apetite"),
+        capacidade: dimensionScore(answers, "capacidade"),
+        liquidez: dimensionScore(answers, "liquidez"),
+        conhecimento: dimensionScore(answers, "conhecimento")
+      };
+      const rawScore = dimensions.apetite;
+      let score = Math.min(dimensions.apetite, dimensions.capacidade, dimensions.liquidez);
+      const rules = [];
+      const warnings = [];
+      if (answers.horizonte.score <= 0) {
+        score = Math.min(score, 0.25);
+        rules.push("horizonte de até 2 anos: score limitado a 0,25");
+      }
+      if (answers.liquidez.score <= 0.2) {
+        score = Math.min(score, 0.35);
+        rules.push("necessidade de liquidez em até 1 ano: score limitado a 0,35");
+      }
+      if (answers.capacidade.score <= 0) {
+        score = Math.min(score, 0.25);
+        rules.push("sem margem declarada para manter a parcela: score limitado a 0,25");
+      }
+      if (answers.concentracao.score <= 0) {
+        score = Math.min(score, 0.25);
+        rules.push("mais de 80% do patrimônio nesta parcela: score limitado a 0,25");
+      }
+      if (answers.necessidade_futura.score <= 0.25) {
+        score = Math.min(score, 0.25);
+        rules.push("mais de 30% do patrimônio tem uso planejado em até 3 anos: score limitado a 0,25");
+      }
+      if (dimensions.conhecimento < 0.5) {
+        warnings.push("conhecimento abaixo da faixa intermediária: revisar produtos elegíveis antes de operar ações");
+      }
+      const restrictions = answers.restricoes.value;
+      if (restrictions.includes("nenhuma") && restrictions.length > 1) {
+        warnings.push("restrição 'nenhuma' foi selecionada junto com outras preferências");
+      } else if (!restrictions.includes("nenhuma")) {
+        warnings.push("restrições registradas: aplicar manualmente na alocação e nos produtos elegíveis");
+      }
+
+      return {
+        rawScore: rounded(rawScore),
+        score: rounded(score),
+        dimensions,
+        rules,
+        warnings
+      };
+    }
+
+    function calculate() {
+      const { answers, missing } = selectedAnswers();
+      if (missing.length || !document.querySelector("#prototypeAcknowledgement").checked) {
+        errorBox.textContent = missing.length
+          ? `Responda: ${missing.join(", ")}.`
+          : "Confirme que você entende o uso acadêmico do resultado.";
+        errorBox.hidden = false;
+        return null;
+      }
+
+      const scored = scoreAnswers(answers);
+      return { ...scored, answers, ...makeProfile(scored.score) };
+    }
+
+    function pythonString(value) {
+      return `'${String(value).replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+    }
+
+    function toPython(value, level = 0) {
+      const indent = " ".repeat(level * 4);
+      const nextIndent = " ".repeat((level + 1) * 4);
+      if (typeof value === "string") return pythonString(value);
+      if (typeof value === "number") return Number.isFinite(value) ? String(value) : "None";
+      if (typeof value === "boolean") return value ? "True" : "False";
+      if (value === null || value === undefined) return "None";
+      if (Array.isArray(value)) return `[${value.map(item => toPython(item, level)).join(", ")}]`;
+      const entries = Object.entries(value).map(([key, item]) =>
+        `${nextIndent}${pythonString(key)}: ${toPython(item, level + 1)}`
+      );
+      return entries.length ? `{
+${entries.join(",\n")}
+${indent}}` : "{}";
+    }
+
+    function buildOutput(profile) {
+      const components = Object.fromEntries(Object.entries(profile.answers)
+        .filter(([, answer]) => answer.weight > 0)
+        .map(([key, answer]) => [key, answer.score]));
+      const responseValues = Object.fromEntries(Object.entries(profile.answers).map(([key, answer]) => [key, answer.value]));
+      return {
+        perfil: "personalizado",
+        score_bruto: profile.rawScore,
+        score: profile.score,
+        perfil_base_mais_proximo: profile.base,
+        score_componentes: components,
+        score_dimensoes: profile.dimensions,
+        respostas: responseValues,
+        regras_aplicadas: profile.rules,
+        alertas: profile.warnings,
+        ALLOCATION_PROFILE_INPUT: {
+          score: profile.score,
+          score_bruto: profile.rawScore,
+          source: "suitability questionnaire",
+          risk_inputs: components,
+          score_dimensoes: profile.dimensions,
+          alertas: profile.warnings
+        },
+        FILTERS: { personalizado: profile.filters },
+        PERFIL_CONFIG: { personalizado: profile.ga },
+        PROFILE_WEIGHTS: { personalizado: profile.weights }
+      };
+    }
+
+    const currency = value => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(value);
+    const decimal = value => value.toFixed(3).replace(".", ",");
+
+    function render(profile) {
+      const output = buildOutput(profile);
+      document.querySelector("#profileTitle").textContent = `Perfil personalizado · ${profile.baseLabel}`;
+      document.querySelector("#profileSubtitle").textContent = `Âncora mais próxima: ${profile.base}. Score bruto: ${(profile.rawScore * 100).toFixed(1).replace(".", ",")}%`;
+      document.querySelector("#scoreValue").textContent = `${Math.round(profile.score * 100)}%`;
+      document.querySelector("#appetiteValue").textContent = `${Math.round(profile.dimensions.apetite * 100)}%`;
+      document.querySelector("#capacityValue").textContent = `${Math.round(profile.dimensions.capacidade * 100)}%`;
+      document.querySelector("#liquidityValue").textContent = `${Math.round(profile.dimensions.liquidez * 100)}%`;
+      document.querySelector("#knowledgeValue").textContent = `${Math.round(profile.dimensions.conhecimento * 100)}%`;
+      document.querySelector("#capValue").textContent = currency(profile.filters.cap_min);
+      document.querySelector("#liqValue").textContent = `${currency(profile.filters.liq_min)} / dia`;
+      document.querySelector("#assetsValue").textContent = `${profile.ga.n_assets} ativos`;
+      document.querySelector("#lambdaValue").textContent = decimal(profile.ga.lambda);
+      document.querySelector("#generationsValue").textContent = profile.ga.generations;
+      document.querySelector("#populationValue").textContent = profile.ga.pop_size;
+      const messages = [
+        ...profile.rules.map(rule => `Regra: ${rule}`),
+        ...profile.warnings.map(warning => `Alerta: ${warning}`)
+      ];
+      document.querySelector("#adjustment").innerHTML = messages.length
+        ? `<strong>Regras e alertas:</strong> ${messages.join("; ")}.`
+        : "<strong>Regras e alertas:</strong> nenhuma limitação adicional foi necessária.";
+
+      document.querySelector("#weightsTable").innerHTML = Object.entries(profile.weights).map(([name, weight]) =>
+        `<tr><td><code>${name}</code></td><td>${GROUPS[name]}</td><td>${(weight * 100).toFixed(2).replace(".", ",")}%</td></tr>`
+      ).join("");
+      document.querySelector("#pythonOutput").value = toPython(output);
+      errorBox.hidden = true;
+      resultBox.hidden = false;
+      resultBox.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function selfCheck() {
+      const assert = (condition, message) => { if (!condition) throw new Error(message); };
+      [0, 0.5, 1].forEach(score => {
+        const profile = makeProfile(score);
+        const anchor = BASE_PROFILES.find(item => item.score === score);
+        assert(profile.filters.cap_min === anchor.filters.cap_min, `cap_min não reproduz ${anchor.key}`);
+        assert(profile.filters.liq_min === anchor.filters.liq_min, `liq_min não reproduz ${anchor.key}`);
+        assert(profile.ga.n_assets === anchor.ga.n_assets, `n_assets não reproduz ${anchor.key}`);
+        assert(Math.abs(Object.values(profile.weights).reduce((sum, value) => sum + value, 0) - 1) < 0.00001, "pesos não somam 1");
+      });
+      const middle = makeProfile(0.25);
+      assert(middle.ga.lambda < 0.5 && middle.ga.lambda > 0.25, "interpolação de lambda inválida");
+      const sampleAnswers = {
+        objetivo: { score: 1, weight: 1.2, dimension: "apetite" },
+        reacao: { score: 0.5, weight: 2, dimension: "apetite" },
+        capacidade: { score: 0.25, weight: 1.3, dimension: "capacidade" },
+        concentracao: { score: 1, weight: 1.4, dimension: "capacidade" },
+        necessidade_futura: { score: 1, weight: 1.4, dimension: "capacidade" },
+        horizonte: { score: 1, weight: 1.3, dimension: "liquidez" },
+        liquidez: { score: 1, weight: 1.4, dimension: "liquidez" },
+        experiencia: { score: 0, weight: 1, dimension: "conhecimento" },
+        restricoes: { value: ["nenhuma"], score: 0, weight: 0, dimension: "restricoes" }
+      };
+      const scored = scoreAnswers(sampleAnswers);
+      assert(scored.dimensions.apetite > 0.5, "dimensão de apetite inválida");
+      assert(scored.score <= scored.dimensions.capacidade, "score excede capacidade financeira");
+      assert(scored.warnings.length === 1, "alerta de conhecimento ausente");
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+      const profile = calculate();
+      if (profile) render(profile);
+    });
+
+    form.addEventListener("reset", () => {
+      errorBox.hidden = true;
+      resultBox.hidden = true;
+    });
+
+    document.querySelector("#copyButton").addEventListener("click", async event => {
+      const text = document.querySelector("#pythonOutput").value;
+      try {
+        await navigator.clipboard.writeText(text);
+        event.currentTarget.textContent = "Copiado";
+      } catch {
+        const output = document.querySelector("#pythonOutput");
+        output.focus();
+        output.select();
+        event.currentTarget.textContent = "Selecionei";
+      }
+      setTimeout(() => { event.currentTarget.textContent = "Copiar"; }, 1600);
+    });
+
+    try { selfCheck(); } catch (error) { console.error("Falha na autoverificação do suitability.html:", error); }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1495 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Caio allocation dashboard</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;max-width:736px;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="Caio allocation dashboard" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Caio allocation dashboard&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(--background) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: light-dark(rgb(255 255 255), rgb(24 24 24));
+  --foreground: light-dark(rgb(26 28 31), rgb(255 255 255));
+  --card: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --card-foreground: var(--foreground);
+  --popover: light-dark(rgb(255 255 255), rgb(45 45 45));
+  --popover-foreground: var(--foreground);
+  --primary: light-dark(rgb(51 156 255), rgb(131 195 255));
+  --primary-foreground: light-dark(rgb(255 255 255), rgb(13 13 13));
+  --secondary: light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: light-dark(
+    rgb(26 28 31 / 49.4%),
+    rgb(255 255 255 / 49.8%)
+  );
+  --accent: light-dark(rgb(229 242 255), rgb(13 39 63));
+  --accent-foreground: var(--primary);
+  --destructive: light-dark(rgb(226 85 7), rgb(255 133 73));
+  --border: light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%));
+  --input: light-dark(
+    rgb(26 28 31 / 11.8%),
+    color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+  );
+  --ring: light-dark(rgb(51 156 255), rgb(131 195 255 / 76%));
+  --font-size-base: 14px;
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: 12.5px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+  --color-background-primary: var(--background);
+  --color-text-primary: var(--foreground);
+  --color-border-secondary: var(--border);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--viz-font-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: superellipse(1.5);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: superellipse(1.5);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+    [aria-pressed=&quot;true&quot;],
+    [aria-selected=&quot;true&quot;],
+    .is-selected
+  ) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;caio-allocation-dashboard&quot;&gt;
+  &lt;div class=&quot;viz-controls&quot; aria-label=&quot;Chart controls&quot;&gt;
+    &lt;label class=&quot;form-label&quot; for=&quot;caio-allocation-view&quot;&gt;View&lt;/label&gt;
+    &lt;select class=&quot;form-select&quot; id=&quot;caio-allocation-view&quot;&gt;
+      &lt;option value=&quot;benchmark&quot;&gt;Wallet vs benchmarks&lt;/option&gt;
+      &lt;option value=&quot;strategy&quot;&gt;Strategy comparison&lt;/option&gt;
+      &lt;option value=&quot;drawdown&quot;&gt;Drawdown&lt;/option&gt;
+    &lt;/select&gt;
+  &lt;/div&gt;
+  &lt;div class=&quot;caio-plot&quot;&gt;
+    &lt;svg id=&quot;caio-allocation-svg&quot; class=&quot;caio-allocation-svg&quot; viewBox=&quot;0 0 760 360&quot; role=&quot;img&quot; aria-labelledby=&quot;caio-allocation-svg-title caio-allocation-svg-desc&quot;&gt;
+      &lt;title id=&quot;caio-allocation-svg-title&quot;&gt;Wallet versus benchmarks&lt;/title&gt;
+      &lt;desc id=&quot;caio-allocation-svg-desc&quot;&gt;Interactive monthly growth chart for the conservative Caio wallet, with hover values and view selection.&lt;/desc&gt;
+      &lt;g id=&quot;caio-allocation-grid&quot;&gt;&lt;/g&gt;
+      &lt;g id=&quot;caio-allocation-axis&quot;&gt;&lt;/g&gt;
+      &lt;g id=&quot;caio-allocation-series&quot;&gt;&lt;/g&gt;
+      &lt;rect id=&quot;caio-allocation-overlay&quot; fill=&quot;transparent&quot; pointer-events=&quot;all&quot;&gt;&lt;/rect&gt;
+      &lt;g id=&quot;caio-allocation-hover&quot; pointer-events=&quot;none&quot;&gt;&lt;/g&gt;
+      &lt;g id=&quot;caio-allocation-legend&quot;&gt;&lt;/g&gt;
+    &lt;/svg&gt;
+    &lt;div id=&quot;caio-allocation-tooltip&quot; class=&quot;tooltip&quot; hidden aria-hidden=&quot;true&quot;&gt;&lt;/div&gt;
+  &lt;/div&gt;
+  &lt;p id=&quot;caio-allocation-detail&quot; class=&quot;text-small&quot;&gt;Latest values appear here when chart receives focus or pointer input.&lt;/p&gt;
+  &lt;div id=&quot;caio-allocation-bar&quot; class=&quot;caio-allocation-bar&quot; role=&quot;img&quot; aria-label=&quot;Current profile winner allocation&quot;&gt;&lt;/div&gt;
+  &lt;div id=&quot;caio-allocation-labels&quot; class=&quot;viz-row text-small&quot;&gt;&lt;/div&gt;
+&lt;/div&gt;
+&lt;style&gt;
+#caio-allocation-dashboard {
+  color: var(--foreground, currentColor);
+}
+#caio-allocation-dashboard .caio-plot {
+  position: relative;
+}
+#caio-allocation-dashboard .caio-allocation-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+#caio-allocation-dashboard .caio-grid {
+  stroke: var(--border, currentColor);
+  stroke-width: 1;
+  opacity: .55;
+}
+#caio-allocation-dashboard .caio-axis {
+  stroke: var(--muted-foreground, currentColor);
+  stroke-width: 1;
+}
+#caio-allocation-dashboard .caio-axis-label,
+#caio-allocation-dashboard .caio-legend-label {
+  fill: var(--muted-foreground, currentColor);
+}
+#caio-allocation-dashboard .caio-series {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#caio-allocation-dashboard .caio-series-1 {
+  stroke: var(--viz-series-1, currentColor);
+}
+#caio-allocation-dashboard .caio-series-2 {
+  stroke: var(--viz-series-2, currentColor);
+}
+#caio-allocation-dashboard .caio-series-3 {
+  stroke: var(--viz-series-3, currentColor);
+}
+#caio-allocation-dashboard .caio-series-4 {
+  stroke: var(--viz-series-4, currentColor);
+}
+#caio-allocation-dashboard .caio-series-5 {
+  stroke: var(--viz-series-5, currentColor);
+}
+#caio-allocation-dashboard .caio-legend-line {
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+#caio-allocation-dashboard .caio-hover-line {
+  stroke: var(--foreground, currentColor);
+  stroke-width: 1;
+  opacity: .35;
+}
+#caio-allocation-dashboard .caio-hover-dot {
+  stroke: var(--background, currentColor);
+  stroke-width: 1.5;
+}
+#caio-allocation-dashboard .caio-allocation-bar {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  margin-top: .6rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--muted);
+}
+#caio-allocation-dashboard .caio-allocation-segment {
+  height: 100%;
+}
+#caio-allocation-dashboard .caio-allocation-segment-1 {
+  background: var(--viz-series-1, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-segment-2 {
+  background: var(--viz-series-2, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-segment-3 {
+  background: var(--viz-series-3, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-segment-4 {
+  background: var(--viz-series-4, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-segment-5 {
+  background: var(--viz-series-5, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-labels {
+  gap: .65rem 1rem;
+  margin-top: .35rem;
+}
+#caio-allocation-dashboard .caio-allocation-key {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  white-space: nowrap;
+}
+#caio-allocation-dashboard .caio-allocation-swatch {
+  width: .55rem;
+  height: .55rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+#caio-allocation-dashboard .caio-allocation-swatch-1 {
+  background: var(--viz-series-1, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-swatch-2 {
+  background: var(--viz-series-2, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-swatch-3 {
+  background: var(--viz-series-3, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-swatch-4 {
+  background: var(--viz-series-4, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-swatch-5 {
+  background: var(--viz-series-5, currentColor);
+}
+#caio-allocation-dashboard [hidden] {
+  display: none;
+}
+#caio-allocation-dashboard .tooltip {
+  position: absolute;
+  max-width: 14rem;
+  white-space: pre-line;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  #caio-allocation-dashboard .caio-series {
+    transition: none;
+  }
+}
+&lt;/style&gt;
+&lt;script&gt;
+(function () {
+  var root = document.getElementById(&#x27;caio-allocation-dashboard&#x27;);
+  if (!root) return;
+
+  var data = {&quot;views&quot;:{&quot;benchmark&quot;:[{&quot;label&quot;:&quot;Caio wallet&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.04864],[&quot;2021-02-01&quot;,1.07106],[&quot;2021-03-01&quot;,1.11853],[&quot;2021-04-01&quot;,1.17133],[&quot;2021-05-03&quot;,1.16757],[&quot;2021-06-01&quot;,1.11252],[&quot;2021-07-01&quot;,1.09873],[&quot;2021-08-02&quot;,1.12668],[&quot;2021-09-01&quot;,1.15408],[&quot;2021-10-01&quot;,1.15248],[&quot;2021-11-01&quot;,1.20979],[&quot;2021-12-01&quot;,1.18518],[&quot;2022-01-03&quot;,1.2058],[&quot;2022-02-01&quot;,1.18326],[&quot;2022-03-02&quot;,1.17033],[&quot;2022-04-01&quot;,1.17965],[&quot;2022-05-02&quot;,1.15996],[&quot;2022-06-01&quot;,1.15387],[&quot;2022-07-01&quot;,1.13452],[&quot;2022-08-01&quot;,1.15711],[&quot;2022-09-01&quot;,1.19749],[&quot;2022-10-03&quot;,1.19903],[&quot;2022-11-01&quot;,1.21084],[&quot;2022-12-01&quot;,1.18678],[&quot;2023-01-03&quot;,1.17397],[&quot;2023-02-01&quot;,1.21514],[&quot;2023-03-01&quot;,1.20393],[&quot;2023-04-03&quot;,1.21438],[&quot;2023-05-02&quot;,1.23927],[&quot;2023-06-01&quot;,1.29714],[&quot;2023-07-03&quot;,1.34521],[&quot;2023-08-01&quot;,1.36595],[&quot;2023-09-01&quot;,1.37063],[&quot;2023-10-02&quot;,1.35647],[&quot;2023-11-01&quot;,1.36564],[&quot;2023-12-01&quot;,1.42867],[&quot;2024-01-02&quot;,1.49095],[&quot;2024-02-01&quot;,1.50242],[&quot;2024-03-01&quot;,1.56036],[&quot;2024-04-01&quot;,1.59618],[&quot;2024-05-02&quot;,1.56492],[&quot;2024-06-03&quot;,1.60589],[&quot;2024-07-01&quot;,1.63478],[&quot;2024-08-01&quot;,1.66077],[&quot;2024-09-03&quot;,1.67651],[&quot;2024-10-01&quot;,1.66843],[&quot;2024-11-01&quot;,1.71162],[&quot;2024-12-02&quot;,1.80669],[&quot;2025-01-02&quot;,1.8098],[&quot;2025-02-03&quot;,1.80994],[&quot;2025-03-05&quot;,1.80107],[&quot;2025-04-01&quot;,1.82934],[&quot;2025-05-02&quot;,1.88743],[&quot;2025-06-02&quot;,1.95477],[&quot;2025-07-01&quot;,1.97093],[&quot;2025-08-01&quot;,1.97253],[&quot;2025-09-02&quot;,2.02934],[&quot;2025-10-01&quot;,2.0815],[&quot;2025-11-03&quot;,2.10268],[&quot;2025-12-01&quot;,2.12973],[&quot;2026-01-02&quot;,2.1719],[&quot;2026-02-02&quot;,2.18899],[&quot;2026-03-02&quot;,2.19149],[&quot;2026-04-01&quot;,2.15208],[&quot;2026-05-04&quot;,2.1874],[&quot;2026-06-01&quot;,2.18899],[&quot;2026-07-01&quot;,2.19294]]},{&quot;label&quot;:&quot;BTC (BRL)&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.66785],[&quot;2021-02-01&quot;,1.85056],[&quot;2021-03-01&quot;,2.80001],[&quot;2021-04-01&quot;,3.39469],[&quot;2021-05-03&quot;,3.12616],[&quot;2021-06-01&quot;,1.91408],[&quot;2021-07-01&quot;,1.69803],[&quot;2021-08-02&quot;,2.03522],[&quot;2021-09-01&quot;,2.54569],[&quot;2021-10-01&quot;,2.62117],[&quot;2021-11-01&quot;,3.49478],[&quot;2021-12-01&quot;,3.24812],[&quot;2022-01-03&quot;,2.64338],[&quot;2022-02-01&quot;,2.06744],[&quot;2022-03-02&quot;,2.27896],[&quot;2022-04-01&quot;,2.19723],[&quot;2022-05-02&quot;,1.95697],[&quot;2022-06-01&quot;,1.43823],[&quot;2022-07-01&quot;,1.03473],[&quot;2022-08-01&quot;,1.21574],[&quot;2022-09-01&quot;,1.0577],[&quot;2022-10-03&quot;,1.03114],[&quot;2022-11-01&quot;,1.06603],[&quot;2022-12-01&quot;,0.89063],[&quot;2023-01-03&quot;,0.90607],[&quot;2023-02-01&quot;,1.21588],[&quot;2023-03-01&quot;,1.24416],[&quot;2023-04-03&quot;,1.42193],[&quot;2023-05-02&quot;,1.45872],[&quot;2023-06-01&quot;,1.36451],[&quot;2023-07-03&quot;,1.50724],[&quot;2023-08-01&quot;,1.43189],[&quot;2023-09-01&quot;,1.28575],[&quot;2023-10-02&quot;,1.40982],[&quot;2023-11-01&quot;,1.79734],[&quot;2023-12-01&quot;,1.92304],[&quot;2024-01-02&quot;,2.22216],[&quot;2024-02-01&quot;,2.14802],[&quot;2024-03-01&quot;,3.12919],[&quot;2024-04-01&quot;,3.55902],[&quot;2024-05-02&quot;,3.05782],[&quot;2024-06-03&quot;,3.64121],[&quot;2024-07-01&quot;,3.54975],[&quot;2024-08-01&quot;,3.7433],[&quot;2024-09-03&quot;,3.26279],[&quot;2024-10-01&quot;,3.3516],[&quot;2024-11-01&quot;,4.07729],[&quot;2024-12-02&quot;,5.87355],[&quot;2025-01-02&quot;,6.0783],[&quot;2025-02-03&quot;,6.01347],[&quot;2025-03-05&quot;,5.3033],[&quot;2025-04-01&quot;,4.90984],[&quot;2025-05-02&quot;,5.52234],[&quot;2025-06-02&quot;,6.09167],[&quot;2025-07-01&quot;,5.822],[&quot;2025-08-01&quot;,6.34774],[&quot;2025-09-02&quot;,6.14407],[&quot;2025-10-01&quot;,6.37911],[&quot;2025-11-03&quot;,5.76046],[&quot;2025-12-01&quot;,4.66381],[&quot;2026-01-02&quot;,4.94164],[&quot;2026-02-02&quot;,4.18129],[&quot;2026-03-02&quot;,3.61382],[&quot;2026-04-01&quot;,3.55001],[&quot;2026-05-04&quot;,3.99982],[&quot;2026-06-01&quot;,3.62512],[&quot;2026-07-01&quot;,3.1498]]},{&quot;label&quot;:&quot;CDI / CDB proxy&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.0009],[&quot;2021-02-01&quot;,1.00239],[&quot;2021-03-01&quot;,1.00374],[&quot;2021-04-01&quot;,1.00579],[&quot;2021-05-03&quot;,1.00788],[&quot;2021-06-01&quot;,1.01063],[&quot;2021-07-01&quot;,1.01377],[&quot;2021-08-02&quot;,1.01738],[&quot;2021-09-01&quot;,1.02177],[&quot;2021-10-01&quot;,1.02632],[&quot;2021-11-01&quot;,1.03137],[&quot;2021-12-01&quot;,1.03742],[&quot;2022-01-03&quot;,1.04546],[&quot;2022-02-01&quot;,1.05311],[&quot;2022-03-02&quot;,1.06112],[&quot;2022-04-01&quot;,1.071],[&quot;2022-05-02&quot;,1.07993],[&quot;2022-06-01&quot;,1.09114],[&quot;2022-07-01&quot;,1.10224],[&quot;2022-08-01&quot;,1.11365],[&quot;2022-09-01&quot;,1.12669],[&quot;2022-10-03&quot;,1.13877],[&quot;2022-11-01&quot;,1.15039],[&quot;2022-12-01&quot;,1.16213],[&quot;2023-01-03&quot;,1.17579],[&quot;2023-02-01&quot;,1.18839],[&quot;2023-03-01&quot;,1.1993],[&quot;2023-04-03&quot;,1.21339],[&quot;2023-05-02&quot;,1.22453],[&quot;2023-06-01&quot;,1.23828],[&quot;2023-07-03&quot;,1.25156],[&quot;2023-08-01&quot;,1.26498],[&quot;2023-09-01&quot;,1.27934],[&quot;2023-10-02&quot;,1.29177],[&quot;2023-11-01&quot;,1.30465],[&quot;2023-12-01&quot;,1.31658],[&quot;2024-01-02&quot;,1.32833],[&quot;2024-02-01&quot;,1.34115],[&quot;2024-03-01&quot;,1.35188],[&quot;2024-04-01&quot;,1.3631],[&quot;2024-05-02&quot;,1.3752],[&quot;2024-06-03&quot;,1.38663],[&quot;2024-07-01&quot;,1.39756],[&quot;2024-08-01&quot;,1.41024],[&quot;2024-09-03&quot;,1.42303],[&quot;2024-10-01&quot;,1.43437],[&quot;2024-11-01&quot;,1.44768],[&quot;2024-12-02&quot;,1.45918],[&quot;2025-01-02&quot;,1.47283],[&quot;2025-02-03&quot;,1.4878],[&quot;2025-03-05&quot;,1.50246],[&quot;2025-04-01&quot;,1.517],[&quot;2025-05-02&quot;,1.53302],[&quot;2025-06-02&quot;,1.5505],[&quot;2025-07-01&quot;,1.56753],[&quot;2025-08-01&quot;,1.58752],[&quot;2025-09-02&quot;,1.60689],[&quot;2025-10-01&quot;,1.6256],[&quot;2025-11-03&quot;,1.64633],[&quot;2025-12-01&quot;,1.66367],[&quot;2026-01-02&quot;,1.68396],[&quot;2026-02-02&quot;,1.70357],[&quot;2026-03-02&quot;,1.72055],[&quot;2026-04-01&quot;,1.74139],[&quot;2026-05-04&quot;,1.76036],[&quot;2026-06-01&quot;,1.77925],[&quot;2026-07-01&quot;,1.79916]]},{&quot;label&quot;:&quot;IFIX&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.03615],[&quot;2021-02-01&quot;,1.03884],[&quot;2021-03-01&quot;,1.03967],[&quot;2021-04-01&quot;,1.02984],[&quot;2021-05-03&quot;,1.03433],[&quot;2021-06-01&quot;,1.01595],[&quot;2021-07-01&quot;,0.99516],[&quot;2021-08-02&quot;,1.01634],[&quot;2021-09-01&quot;,0.99397],[&quot;2021-10-01&quot;,0.98092],[&quot;2021-11-01&quot;,0.96596],[&quot;2021-12-01&quot;,0.93274],[&quot;2022-01-03&quot;,1.00784],[&quot;2022-02-01&quot;,1.00332],[&quot;2022-03-02&quot;,0.98885],[&quot;2022-04-01&quot;,1.0113],[&quot;2022-05-02&quot;,1.0111],[&quot;2022-06-01&quot;,1.02011],[&quot;2022-07-01&quot;,1.00892],[&quot;2022-08-01&quot;,1.01297],[&quot;2022-09-01&quot;,1.07283],[&quot;2022-10-03&quot;,1.07786],[&quot;2022-11-01&quot;,1.08012],[&quot;2022-12-01&quot;,1.03991],[&quot;2023-01-03&quot;,1.03172],[&quot;2023-02-01&quot;,1.01431],[&quot;2023-03-01&quot;,1.01491],[&quot;2023-04-03&quot;,0.99483],[&quot;2023-05-02&quot;,1.03332],[&quot;2023-06-01&quot;,1.08819],[&quot;2023-07-03&quot;,1.13899],[&quot;2023-08-01&quot;,1.15245],[&quot;2023-09-01&quot;,1.16253],[&quot;2023-10-02&quot;,1.15527],[&quot;2023-11-01&quot;,1.13714],[&quot;2023-12-01&quot;,1.1473],[&quot;2024-01-02&quot;,1.19753],[&quot;2024-02-01&quot;,1.19984],[&quot;2024-03-01&quot;,1.21647],[&quot;2024-04-01&quot;,1.22981],[&quot;2024-05-02&quot;,1.22005],[&quot;2024-06-03&quot;,1.21831],[&quot;2024-07-01&quot;,1.19925],[&quot;2024-08-01&quot;,1.21615],[&quot;2024-09-03&quot;,1.22269],[&quot;2024-10-01&quot;,1.1846],[&quot;2024-11-01&quot;,1.15572],[&quot;2024-12-02&quot;,1.12141],[&quot;2025-01-02&quot;,1.12644],[&quot;2025-02-03&quot;,1.08458],[&quot;2025-03-05&quot;,1.12816],[&quot;2025-04-01&quot;,1.19659],[&quot;2025-05-02&quot;,1.23561],[&quot;2025-06-02&quot;,1.24482],[&quot;2025-07-01&quot;,1.25563],[&quot;2025-08-01&quot;,1.23943],[&quot;2025-09-02&quot;,1.25476],[&quot;2025-10-01&quot;,1.29108],[&quot;2025-11-03&quot;,1.29776],[&quot;2025-12-01&quot;,1.32261],[&quot;2026-01-02&quot;,1.36549],[&quot;2026-02-02&quot;,1.3923],[&quot;2026-03-02&quot;,1.41144],[&quot;2026-04-01&quot;,1.40081],[&quot;2026-05-04&quot;,1.41053],[&quot;2026-06-01&quot;,1.39493],[&quot;2026-07-01&quot;,1.38275]]},{&quot;label&quot;:&quot;Ibovespa&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.02077],[&quot;2021-02-01&quot;,1.0105],[&quot;2021-03-01&quot;,0.94997],[&quot;2021-04-01&quot;,0.99231],[&quot;2021-05-03&quot;,1.02637],[&quot;2021-06-01&quot;,1.10436],[&quot;2021-07-01&quot;,1.08197],[&quot;2021-08-02&quot;,1.05484],[&quot;2021-09-01&quot;,1.02798],[&quot;2021-10-01&quot;,0.97205],[&quot;2021-11-01&quot;,0.90878],[&quot;2021-12-01&quot;,0.86766],[&quot;2022-01-03&quot;,0.89475],[&quot;2022-02-01&quot;,0.97418],[&quot;2022-03-02&quot;,0.99163],[&quot;2022-04-01&quot;,1.0467],[&quot;2022-05-02&quot;,0.91815],[&quot;2022-06-01&quot;,0.95879],[&quot;2022-07-01&quot;,0.85198],[&quot;2022-08-01&quot;,0.88014],[&quot;2022-09-01&quot;,0.95057],[&quot;2022-10-03&quot;,0.9999],[&quot;2022-11-01&quot;,1.00674],[&quot;2022-12-01&quot;,0.95506],[&quot;2023-01-03&quot;,0.89685],[&quot;2023-02-01&quot;,0.96691],[&quot;2023-03-01&quot;,0.89874],[&quot;2023-04-03&quot;,0.87395],[&quot;2023-05-02&quot;,0.87758],[&quot;2023-06-01&quot;,0.95195],[&quot;2023-07-03&quot;,1.03037],[&quot;2023-08-01&quot;,1.04393],[&quot;2023-09-01&quot;,1.01504],[&quot;2023-10-02&quot;,0.99062],[&quot;2023-11-01&quot;,0.99059],[&quot;2023-12-01&quot;,1.10295],[&quot;2024-01-02&quot;,1.1425],[&quot;2024-02-01&quot;,1.1062],[&quot;2024-03-01&quot;,1.11222],[&quot;2024-04-01&quot;,1.09337],[&quot;2024-05-02&quot;,1.0945],[&quot;2024-06-03&quot;,1.05068],[&quot;2024-07-01&quot;,1.0738],[&quot;2024-08-01&quot;,1.09685],[&quot;2024-09-03&quot;,1.15676],[&quot;2024-10-01&quot;,1.14076],[&quot;2024-11-01&quot;,1.1031],[&quot;2024-12-02&quot;,1.07826],[&quot;2025-01-02&quot;,1.03426],[&quot;2025-02-03&quot;,1.08458],[&quot;2025-03-05&quot;,1.05942],[&quot;2025-04-01&quot;,1.12916],[&quot;2025-05-02&quot;,1.16348],[&quot;2025-06-02&quot;,1.17772],[&quot;2025-07-01&quot;,1.2015],[&quot;2025-08-01&quot;,1.14026],[&quot;2025-09-02&quot;,1.20826],[&quot;2025-10-01&quot;,1.25288],[&quot;2025-11-03&quot;,1.29539],[&quot;2025-12-01&quot;,1.36562],[&quot;2026-01-02&quot;,1.38222],[&quot;2026-02-02&quot;,1.57382],[&quot;2026-03-02&quot;,1.62991],[&quot;2026-04-01&quot;,1.61825],[&quot;2026-05-04&quot;,1.59799],[&quot;2026-06-01&quot;,1.4826],[&quot;2026-07-01&quot;,1.47822]]}],&quot;strategy&quot;:[{&quot;label&quot;:&quot;Profile winner&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.04864],[&quot;2021-02-01&quot;,1.07106],[&quot;2021-03-01&quot;,1.11853],[&quot;2021-04-01&quot;,1.17133],[&quot;2021-05-03&quot;,1.16757],[&quot;2021-06-01&quot;,1.11252],[&quot;2021-07-01&quot;,1.09873],[&quot;2021-08-02&quot;,1.12668],[&quot;2021-09-01&quot;,1.15408],[&quot;2021-10-01&quot;,1.15248],[&quot;2021-11-01&quot;,1.20979],[&quot;2021-12-01&quot;,1.18518],[&quot;2022-01-03&quot;,1.2058],[&quot;2022-02-01&quot;,1.18326],[&quot;2022-03-02&quot;,1.17033],[&quot;2022-04-01&quot;,1.17965],[&quot;2022-05-02&quot;,1.15996],[&quot;2022-06-01&quot;,1.15387],[&quot;2022-07-01&quot;,1.13452],[&quot;2022-08-01&quot;,1.15711],[&quot;2022-09-01&quot;,1.19749],[&quot;2022-10-03&quot;,1.19903],[&quot;2022-11-01&quot;,1.21084],[&quot;2022-12-01&quot;,1.18678],[&quot;2023-01-03&quot;,1.17397],[&quot;2023-02-01&quot;,1.21514],[&quot;2023-03-01&quot;,1.20393],[&quot;2023-04-03&quot;,1.21438],[&quot;2023-05-02&quot;,1.23927],[&quot;2023-06-01&quot;,1.29714],[&quot;2023-07-03&quot;,1.34521],[&quot;2023-08-01&quot;,1.36595],[&quot;2023-09-01&quot;,1.37063],[&quot;2023-10-02&quot;,1.35647],[&quot;2023-11-01&quot;,1.36564],[&quot;2023-12-01&quot;,1.42867],[&quot;2024-01-02&quot;,1.49095],[&quot;2024-02-01&quot;,1.50242],[&quot;2024-03-01&quot;,1.56036],[&quot;2024-04-01&quot;,1.59618],[&quot;2024-05-02&quot;,1.56492],[&quot;2024-06-03&quot;,1.60589],[&quot;2024-07-01&quot;,1.63478],[&quot;2024-08-01&quot;,1.66077],[&quot;2024-09-03&quot;,1.67651],[&quot;2024-10-01&quot;,1.66843],[&quot;2024-11-01&quot;,1.71162],[&quot;2024-12-02&quot;,1.80669],[&quot;2025-01-02&quot;,1.8098],[&quot;2025-02-03&quot;,1.80994],[&quot;2025-03-05&quot;,1.80107],[&quot;2025-04-01&quot;,1.82934],[&quot;2025-05-02&quot;,1.88743],[&quot;2025-06-02&quot;,1.95477],[&quot;2025-07-01&quot;,1.97093],[&quot;2025-08-01&quot;,1.97253],[&quot;2025-09-02&quot;,2.02934],[&quot;2025-10-01&quot;,2.0815],[&quot;2025-11-03&quot;,2.10268],[&quot;2025-12-01&quot;,2.12973],[&quot;2026-01-02&quot;,2.1719],[&quot;2026-02-02&quot;,2.18899],[&quot;2026-03-02&quot;,2.19149],[&quot;2026-04-01&quot;,2.15208],[&quot;2026-05-04&quot;,2.1874],[&quot;2026-06-01&quot;,2.18899],[&quot;2026-07-01&quot;,2.19294]]},{&quot;label&quot;:&quot;Knee&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.06232],[&quot;2021-02-01&quot;,1.09543],[&quot;2021-03-01&quot;,1.16072],[&quot;2021-04-01&quot;,1.24217],[&quot;2021-05-03&quot;,1.23756],[&quot;2021-06-01&quot;,1.16602],[&quot;2021-07-01&quot;,1.15013],[&quot;2021-08-02&quot;,1.18498],[&quot;2021-09-01&quot;,1.22765],[&quot;2021-10-01&quot;,1.22556],[&quot;2021-11-01&quot;,1.3104],[&quot;2021-12-01&quot;,1.27925],[&quot;2022-01-03&quot;,1.29435],[&quot;2022-02-01&quot;,1.25613],[&quot;2022-03-02&quot;,1.2332],[&quot;2022-04-01&quot;,1.2383],[&quot;2022-05-02&quot;,1.20023],[&quot;2022-06-01&quot;,1.1843],[&quot;2022-07-01&quot;,1.15022],[&quot;2022-08-01&quot;,1.18261],[&quot;2022-09-01&quot;,1.22944],[&quot;2022-10-03&quot;,1.22528],[&quot;2022-11-01&quot;,1.23974],[&quot;2022-12-01&quot;,1.20536],[&quot;2023-01-03&quot;,1.17944],[&quot;2023-02-01&quot;,1.24359],[&quot;2023-03-01&quot;,1.22001],[&quot;2023-04-03&quot;,1.23505],[&quot;2023-05-02&quot;,1.2603],[&quot;2023-06-01&quot;,1.33684],[&quot;2023-07-03&quot;,1.39458],[&quot;2023-08-01&quot;,1.42116],[&quot;2023-09-01&quot;,1.42267],[&quot;2023-10-02&quot;,1.39441],[&quot;2023-11-01&quot;,1.40397],[&quot;2023-12-01&quot;,1.49942],[&quot;2024-01-02&quot;,1.57947],[&quot;2024-02-01&quot;,1.59338],[&quot;2024-03-01&quot;,1.67481],[&quot;2024-04-01&quot;,1.72364],[&quot;2024-05-02&quot;,1.6715],[&quot;2024-06-03&quot;,1.73277],[&quot;2024-07-01&quot;,1.78514],[&quot;2024-08-01&quot;,1.81735],[&quot;2024-09-03&quot;,1.84171],[&quot;2024-10-01&quot;,1.83473],[&quot;2024-11-01&quot;,1.90701],[&quot;2024-12-02&quot;,2.06256],[&quot;2025-01-02&quot;,2.05008],[&quot;2025-02-03&quot;,2.06386],[&quot;2025-03-05&quot;,2.02079],[&quot;2025-04-01&quot;,2.03502],[&quot;2025-05-02&quot;,2.11505],[&quot;2025-06-02&quot;,2.22635],[&quot;2025-07-01&quot;,2.24371],[&quot;2025-08-01&quot;,2.24131],[&quot;2025-09-02&quot;,2.33231],[&quot;2025-10-01&quot;,2.4023],[&quot;2025-11-03&quot;,2.43049],[&quot;2025-12-01&quot;,2.46524],[&quot;2026-01-02&quot;,2.51168],[&quot;2026-02-02&quot;,2.52599],[&quot;2026-03-02&quot;,2.51614],[&quot;2026-04-01&quot;,2.43442],[&quot;2026-05-04&quot;,2.48304],[&quot;2026-06-01&quot;,2.48429],[&quot;2026-07-01&quot;,2.48942]]},{&quot;label&quot;:&quot;Max return&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.06049],[&quot;2021-02-01&quot;,1.09797],[&quot;2021-03-01&quot;,1.16819],[&quot;2021-04-01&quot;,1.2514],[&quot;2021-05-03&quot;,1.24492],[&quot;2021-06-01&quot;,1.16957],[&quot;2021-07-01&quot;,1.1547],[&quot;2021-08-02&quot;,1.19155],[&quot;2021-09-01&quot;,1.23829],[&quot;2021-10-01&quot;,1.23836],[&quot;2021-11-01&quot;,1.33309],[&quot;2021-12-01&quot;,1.30187],[&quot;2022-01-03&quot;,1.31575],[&quot;2022-02-01&quot;,1.2683],[&quot;2022-03-02&quot;,1.24349],[&quot;2022-04-01&quot;,1.24298],[&quot;2022-05-02&quot;,1.20557],[&quot;2022-06-01&quot;,1.18474],[&quot;2022-07-01&quot;,1.15601],[&quot;2022-08-01&quot;,1.19076],[&quot;2022-09-01&quot;,1.22888],[&quot;2022-10-03&quot;,1.21985],[&quot;2022-11-01&quot;,1.23683],[&quot;2022-12-01&quot;,1.21261],[&quot;2023-01-03&quot;,1.18741],[&quot;2023-02-01&quot;,1.25228],[&quot;2023-03-01&quot;,1.22989],[&quot;2023-04-03&quot;,1.24841],[&quot;2023-05-02&quot;,1.2699],[&quot;2023-06-01&quot;,1.34021],[&quot;2023-07-03&quot;,1.393],[&quot;2023-08-01&quot;,1.41937],[&quot;2023-09-01&quot;,1.42183],[&quot;2023-10-02&quot;,1.39528],[&quot;2023-11-01&quot;,1.40667],[&quot;2023-12-01&quot;,1.5021],[&quot;2024-01-02&quot;,1.57799],[&quot;2024-02-01&quot;,1.59626],[&quot;2024-03-01&quot;,1.68147],[&quot;2024-04-01&quot;,1.73329],[&quot;2024-05-02&quot;,1.68167],[&quot;2024-06-03&quot;,1.75037],[&quot;2024-07-01&quot;,1.81507],[&quot;2024-08-01&quot;,1.84667],[&quot;2024-09-03&quot;,1.86872],[&quot;2024-10-01&quot;,1.86618],[&quot;2024-11-01&quot;,1.94948],[&quot;2024-12-02&quot;,2.12072],[&quot;2025-01-02&quot;,2.10798],[&quot;2025-02-03&quot;,2.12066],[&quot;2025-03-05&quot;,2.06963],[&quot;2025-04-01&quot;,2.06951],[&quot;2025-05-02&quot;,2.14371],[&quot;2025-06-02&quot;,2.25839],[&quot;2025-07-01&quot;,2.27458],[&quot;2025-08-01&quot;,2.2799],[&quot;2025-09-02&quot;,2.36802],[&quot;2025-10-01&quot;,2.43553],[&quot;2025-11-03&quot;,2.46617],[&quot;2025-12-01&quot;,2.49496],[&quot;2026-01-02&quot;,2.54129],[&quot;2026-02-02&quot;,2.54831],[&quot;2026-03-02&quot;,2.53249],[&quot;2026-04-01&quot;,2.4494],[&quot;2026-05-04&quot;,2.50575],[&quot;2026-06-01&quot;,2.52182],[&quot;2026-07-01&quot;,2.5313]]},{&quot;label&quot;:&quot;Equal 20%&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,1.0],[&quot;2021-01-04&quot;,1.14849],[&quot;2021-02-01&quot;,1.19766],[&quot;2021-03-01&quot;,1.38363],[&quot;2021-04-01&quot;,1.53078],[&quot;2021-05-03&quot;,1.48926],[&quot;2021-06-01&quot;,1.25833],[&quot;2021-07-01&quot;,1.21286],[&quot;2021-08-02&quot;,1.28881],[&quot;2021-09-01&quot;,1.39243],[&quot;2021-10-01&quot;,1.40008],[&quot;2021-11-01&quot;,1.58558],[&quot;2021-12-01&quot;,1.5243],[&quot;2022-01-03&quot;,1.46605],[&quot;2022-02-01&quot;,1.39532],[&quot;2022-03-02&quot;,1.39239],[&quot;2022-04-01&quot;,1.39712],[&quot;2022-05-02&quot;,1.34574],[&quot;2022-06-01&quot;,1.29703],[&quot;2022-07-01&quot;,1.23237],[&quot;2022-08-01&quot;,1.27378],[&quot;2022-09-01&quot;,1.31445],[&quot;2022-10-03&quot;,1.31354],[&quot;2022-11-01&quot;,1.32791],[&quot;2022-12-01&quot;,1.27463],[&quot;2023-01-03&quot;,1.24862],[&quot;2023-02-01&quot;,1.35984],[&quot;2023-03-01&quot;,1.3463],[&quot;2023-04-03&quot;,1.39024],[&quot;2023-05-02&quot;,1.4235],[&quot;2023-06-01&quot;,1.47501],[&quot;2023-07-03&quot;,1.55689],[&quot;2023-08-01&quot;,1.56513],[&quot;2023-09-01&quot;,1.53839],[&quot;2023-10-02&quot;,1.53911],[&quot;2023-11-01&quot;,1.6211],[&quot;2023-12-01&quot;,1.72358],[&quot;2024-01-02&quot;,1.84728],[&quot;2024-02-01&quot;,1.84774],[&quot;2024-03-01&quot;,2.04257],[&quot;2024-04-01&quot;,2.13932],[&quot;2024-05-02&quot;,2.02982],[&quot;2024-06-03&quot;,2.15229],[&quot;2024-07-01&quot;,2.17603],[&quot;2024-08-01&quot;,2.23138],[&quot;2024-09-03&quot;,2.19458],[&quot;2024-10-01&quot;,2.19386],[&quot;2024-11-01&quot;,2.33902],[&quot;2024-12-02&quot;,2.68855],[&quot;2025-01-02&quot;,2.71334],[&quot;2025-02-03&quot;,2.71927],[&quot;2025-03-05&quot;,2.64362],[&quot;2025-04-01&quot;,2.65538],[&quot;2025-05-02&quot;,2.78798],[&quot;2025-06-02&quot;,2.93771],[&quot;2025-07-01&quot;,2.94176],[&quot;2025-08-01&quot;,2.96656],[&quot;2025-09-02&quot;,3.05171],[&quot;2025-10-01&quot;,3.14673],[&quot;2025-11-03&quot;,3.13583],[&quot;2025-12-01&quot;,3.10973],[&quot;2026-01-02&quot;,3.18913],[&quot;2026-02-02&quot;,3.13905],[&quot;2026-03-02&quot;,3.08261],[&quot;2026-04-01&quot;,2.99992],[&quot;2026-05-04&quot;,3.08737],[&quot;2026-06-01&quot;,3.03939],[&quot;2026-07-01&quot;,2.99413]]}],&quot;drawdown&quot;:[{&quot;label&quot;:&quot;Profile winner&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,0.0],[&quot;2021-01-04&quot;,0.0],[&quot;2021-02-01&quot;,0.0],[&quot;2021-03-01&quot;,0.0],[&quot;2021-04-01&quot;,0.0],[&quot;2021-05-03&quot;,-0.00321],[&quot;2021-06-01&quot;,-0.05021],[&quot;2021-07-01&quot;,-0.06198],[&quot;2021-08-02&quot;,-0.03812],[&quot;2021-09-01&quot;,-0.01473],[&quot;2021-10-01&quot;,-0.01609],[&quot;2021-11-01&quot;,0.0],[&quot;2021-12-01&quot;,-0.02034],[&quot;2022-01-03&quot;,-0.0033],[&quot;2022-02-01&quot;,-0.02193],[&quot;2022-03-02&quot;,-0.03262],[&quot;2022-04-01&quot;,-0.02491],[&quot;2022-05-02&quot;,-0.04119],[&quot;2022-06-01&quot;,-0.04623],[&quot;2022-07-01&quot;,-0.06222],[&quot;2022-08-01&quot;,-0.04355],[&quot;2022-09-01&quot;,-0.01016],[&quot;2022-10-03&quot;,-0.0089],[&quot;2022-11-01&quot;,0.0],[&quot;2022-12-01&quot;,-0.01988],[&quot;2023-01-03&quot;,-0.03045],[&quot;2023-02-01&quot;,0.0],[&quot;2023-03-01&quot;,-0.00922],[&quot;2023-04-03&quot;,-0.00063],[&quot;2023-05-02&quot;,0.0],[&quot;2023-06-01&quot;,0.0],[&quot;2023-07-03&quot;,0.0],[&quot;2023-08-01&quot;,0.0],[&quot;2023-09-01&quot;,0.0],[&quot;2023-10-02&quot;,-0.01033],[&quot;2023-11-01&quot;,-0.00364],[&quot;2023-12-01&quot;,0.0],[&quot;2024-01-02&quot;,0.0],[&quot;2024-02-01&quot;,0.0],[&quot;2024-03-01&quot;,0.0],[&quot;2024-04-01&quot;,0.0],[&quot;2024-05-02&quot;,-0.01959],[&quot;2024-06-03&quot;,0.0],[&quot;2024-07-01&quot;,0.0],[&quot;2024-08-01&quot;,0.0],[&quot;2024-09-03&quot;,0.0],[&quot;2024-10-01&quot;,-0.00482],[&quot;2024-11-01&quot;,0.0],[&quot;2024-12-02&quot;,0.0],[&quot;2025-01-02&quot;,0.0],[&quot;2025-02-03&quot;,0.0],[&quot;2025-03-05&quot;,-0.0049],[&quot;2025-04-01&quot;,0.0],[&quot;2025-05-02&quot;,0.0],[&quot;2025-06-02&quot;,0.0],[&quot;2025-07-01&quot;,0.0],[&quot;2025-08-01&quot;,0.0],[&quot;2025-09-02&quot;,0.0],[&quot;2025-10-01&quot;,0.0],[&quot;2025-11-03&quot;,0.0],[&quot;2025-12-01&quot;,0.0],[&quot;2026-01-02&quot;,0.0],[&quot;2026-02-02&quot;,0.0],[&quot;2026-03-02&quot;,0.0],[&quot;2026-04-01&quot;,-0.01798],[&quot;2026-05-04&quot;,-0.00187],[&quot;2026-06-01&quot;,-0.00114],[&quot;2026-07-01&quot;,0.0]]},{&quot;label&quot;:&quot;Knee&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,0.0],[&quot;2021-01-04&quot;,0.0],[&quot;2021-02-01&quot;,0.0],[&quot;2021-03-01&quot;,0.0],[&quot;2021-04-01&quot;,0.0],[&quot;2021-05-03&quot;,-0.00371],[&quot;2021-06-01&quot;,-0.0613],[&quot;2021-07-01&quot;,-0.0741],[&quot;2021-08-02&quot;,-0.04604],[&quot;2021-09-01&quot;,-0.01169],[&quot;2021-10-01&quot;,-0.01337],[&quot;2021-11-01&quot;,0.0],[&quot;2021-12-01&quot;,-0.02378],[&quot;2022-01-03&quot;,-0.01225],[&quot;2022-02-01&quot;,-0.04141],[&quot;2022-03-02&quot;,-0.05892],[&quot;2022-04-01&quot;,-0.05502],[&quot;2022-05-02&quot;,-0.08408],[&quot;2022-06-01&quot;,-0.09623],[&quot;2022-07-01&quot;,-0.12224],[&quot;2022-08-01&quot;,-0.09752],[&quot;2022-09-01&quot;,-0.06179],[&quot;2022-10-03&quot;,-0.06496],[&quot;2022-11-01&quot;,-0.05393],[&quot;2022-12-01&quot;,-0.08016],[&quot;2023-01-03&quot;,-0.09994],[&quot;2023-02-01&quot;,-0.05098],[&quot;2023-03-01&quot;,-0.06898],[&quot;2023-04-03&quot;,-0.0575],[&quot;2023-05-02&quot;,-0.03823],[&quot;2023-06-01&quot;,0.0],[&quot;2023-07-03&quot;,0.0],[&quot;2023-08-01&quot;,0.0],[&quot;2023-09-01&quot;,0.0],[&quot;2023-10-02&quot;,-0.01987],[&quot;2023-11-01&quot;,-0.01314],[&quot;2023-12-01&quot;,0.0],[&quot;2024-01-02&quot;,0.0],[&quot;2024-02-01&quot;,0.0],[&quot;2024-03-01&quot;,0.0],[&quot;2024-04-01&quot;,0.0],[&quot;2024-05-02&quot;,-0.03025],[&quot;2024-06-03&quot;,0.0],[&quot;2024-07-01&quot;,0.0],[&quot;2024-08-01&quot;,0.0],[&quot;2024-09-03&quot;,0.0],[&quot;2024-10-01&quot;,-0.00379],[&quot;2024-11-01&quot;,0.0],[&quot;2024-12-02&quot;,0.0],[&quot;2025-01-02&quot;,-0.00605],[&quot;2025-02-03&quot;,0.0],[&quot;2025-03-05&quot;,-0.02087],[&quot;2025-04-01&quot;,-0.01397],[&quot;2025-05-02&quot;,0.0],[&quot;2025-06-02&quot;,0.0],[&quot;2025-07-01&quot;,0.0],[&quot;2025-08-01&quot;,-0.00107],[&quot;2025-09-02&quot;,0.0],[&quot;2025-10-01&quot;,0.0],[&quot;2025-11-03&quot;,0.0],[&quot;2025-12-01&quot;,0.0],[&quot;2026-01-02&quot;,0.0],[&quot;2026-02-02&quot;,0.0],[&quot;2026-03-02&quot;,-0.0039],[&quot;2026-04-01&quot;,-0.03625],[&quot;2026-05-04&quot;,-0.017],[&quot;2026-06-01&quot;,-0.01651],[&quot;2026-07-01&quot;,-0.01448]]},{&quot;label&quot;:&quot;Max return&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,0.0],[&quot;2021-01-04&quot;,0.0],[&quot;2021-02-01&quot;,0.0],[&quot;2021-03-01&quot;,0.0],[&quot;2021-04-01&quot;,0.0],[&quot;2021-05-03&quot;,-0.00518],[&quot;2021-06-01&quot;,-0.06539],[&quot;2021-07-01&quot;,-0.07727],[&quot;2021-08-02&quot;,-0.04783],[&quot;2021-09-01&quot;,-0.01048],[&quot;2021-10-01&quot;,-0.01042],[&quot;2021-11-01&quot;,0.0],[&quot;2021-12-01&quot;,-0.02342],[&quot;2022-01-03&quot;,-0.01301],[&quot;2022-02-01&quot;,-0.04861],[&quot;2022-03-02&quot;,-0.06722],[&quot;2022-04-01&quot;,-0.0676],[&quot;2022-05-02&quot;,-0.09566],[&quot;2022-06-01&quot;,-0.11128],[&quot;2022-07-01&quot;,-0.13284],[&quot;2022-08-01&quot;,-0.10677],[&quot;2022-09-01&quot;,-0.07817],[&quot;2022-10-03&quot;,-0.08495],[&quot;2022-11-01&quot;,-0.07221],[&quot;2022-12-01&quot;,-0.09038],[&quot;2023-01-03&quot;,-0.10928],[&quot;2023-02-01&quot;,-0.06062],[&quot;2023-03-01&quot;,-0.07741],[&quot;2023-04-03&quot;,-0.06352],[&quot;2023-05-02&quot;,-0.0474],[&quot;2023-06-01&quot;,0.0],[&quot;2023-07-03&quot;,0.0],[&quot;2023-08-01&quot;,0.0],[&quot;2023-09-01&quot;,0.0],[&quot;2023-10-02&quot;,-0.01868],[&quot;2023-11-01&quot;,-0.01067],[&quot;2023-12-01&quot;,0.0],[&quot;2024-01-02&quot;,0.0],[&quot;2024-02-01&quot;,0.0],[&quot;2024-03-01&quot;,0.0],[&quot;2024-04-01&quot;,0.0],[&quot;2024-05-02&quot;,-0.02978],[&quot;2024-06-03&quot;,0.0],[&quot;2024-07-01&quot;,0.0],[&quot;2024-08-01&quot;,0.0],[&quot;2024-09-03&quot;,0.0],[&quot;2024-10-01&quot;,-0.00136],[&quot;2024-11-01&quot;,0.0],[&quot;2024-12-02&quot;,0.0],[&quot;2025-01-02&quot;,-0.00601],[&quot;2025-02-03&quot;,-3e-05],[&quot;2025-03-05&quot;,-0.02409],[&quot;2025-04-01&quot;,-0.02415],[&quot;2025-05-02&quot;,0.0],[&quot;2025-06-02&quot;,0.0],[&quot;2025-07-01&quot;,0.0],[&quot;2025-08-01&quot;,0.0],[&quot;2025-09-02&quot;,0.0],[&quot;2025-10-01&quot;,0.0],[&quot;2025-11-03&quot;,0.0],[&quot;2025-12-01&quot;,0.0],[&quot;2026-01-02&quot;,0.0],[&quot;2026-02-02&quot;,0.0],[&quot;2026-03-02&quot;,-0.00621],[&quot;2026-04-01&quot;,-0.03882],[&quot;2026-05-04&quot;,-0.0167],[&quot;2026-06-01&quot;,-0.0104],[&quot;2026-07-01&quot;,-0.00668]]},{&quot;label&quot;:&quot;Equal 20%&quot;,&quot;points&quot;:[[&quot;2020-12-15&quot;,0.0],[&quot;2021-01-04&quot;,0.0],[&quot;2021-02-01&quot;,0.0],[&quot;2021-03-01&quot;,0.0],[&quot;2021-04-01&quot;,0.0],[&quot;2021-05-03&quot;,-0.02713],[&quot;2021-06-01&quot;,-0.17798],[&quot;2021-07-01&quot;,-0.20769],[&quot;2021-08-02&quot;,-0.15807],[&quot;2021-09-01&quot;,-0.09038],[&quot;2021-10-01&quot;,-0.08538],[&quot;2021-11-01&quot;,0.0],[&quot;2021-12-01&quot;,-0.03865],[&quot;2022-01-03&quot;,-0.07539],[&quot;2022-02-01&quot;,-0.11999],[&quot;2022-03-02&quot;,-0.12185],[&quot;2022-04-01&quot;,-0.11886],[&quot;2022-05-02&quot;,-0.15126],[&quot;2022-06-01&quot;,-0.18198],[&quot;2022-07-01&quot;,-0.22277],[&quot;2022-08-01&quot;,-0.19665],[&quot;2022-09-01&quot;,-0.171],[&quot;2022-10-03&quot;,-0.17157],[&quot;2022-11-01&quot;,-0.16251],[&quot;2022-12-01&quot;,-0.19611],[&quot;2023-01-03&quot;,-0.21252],[&quot;2023-02-01&quot;,-0.14237],[&quot;2023-03-01&quot;,-0.15091],[&quot;2023-04-03&quot;,-0.1232],[&quot;2023-05-02&quot;,-0.10223],[&quot;2023-06-01&quot;,-0.06974],[&quot;2023-07-03&quot;,-0.0181],[&quot;2023-08-01&quot;,-0.0129],[&quot;2023-09-01&quot;,-0.02976],[&quot;2023-10-02&quot;,-0.02931],[&quot;2023-11-01&quot;,0.0],[&quot;2023-12-01&quot;,0.0],[&quot;2024-01-02&quot;,0.0],[&quot;2024-02-01&quot;,0.0],[&quot;2024-03-01&quot;,0.0],[&quot;2024-04-01&quot;,0.0],[&quot;2024-05-02&quot;,-0.05119],[&quot;2024-06-03&quot;,0.0],[&quot;2024-07-01&quot;,0.0],[&quot;2024-08-01&quot;,0.0],[&quot;2024-09-03&quot;,-0.01649],[&quot;2024-10-01&quot;,-0.01682],[&quot;2024-11-01&quot;,0.0],[&quot;2024-12-02&quot;,0.0],[&quot;2025-01-02&quot;,0.0],[&quot;2025-02-03&quot;,0.0],[&quot;2025-03-05&quot;,-0.02782],[&quot;2025-04-01&quot;,-0.02349],[&quot;2025-05-02&quot;,0.0],[&quot;2025-06-02&quot;,0.0],[&quot;2025-07-01&quot;,0.0],[&quot;2025-08-01&quot;,0.0],[&quot;2025-09-02&quot;,0.0],[&quot;2025-10-01&quot;,0.0],[&quot;2025-11-03&quot;,-0.00346],[&quot;2025-12-01&quot;,-0.01176],[&quot;2026-01-02&quot;,0.0],[&quot;2026-02-02&quot;,-0.0157],[&quot;2026-03-02&quot;,-0.0334],[&quot;2026-04-01&quot;,-0.05933],[&quot;2026-05-04&quot;,-0.03191],[&quot;2026-06-01&quot;,-0.04695],[&quot;2026-07-01&quot;,-0.06114]]}]},&quot;allocation&quot;:[{&quot;label&quot;:&quot;Brazilian stocks&quot;,&quot;value&quot;:0.15},{&quot;label&quot;:&quot;FIIs&quot;,&quot;value&quot;:0.24},{&quot;label&quot;:&quot;International equity&quot;,&quot;value&quot;:0.19},{&quot;label&quot;:&quot;Fixed income&quot;,&quot;value&quot;:0.37},{&quot;label&quot;:&quot;Crypto&quot;,&quot;value&quot;:0.05}]};
+  var svg = root.querySelector(&#x27;#caio-allocation-svg&#x27;);
+  var viewSelect = root.querySelector(&#x27;#caio-allocation-view&#x27;);
+  var grid = root.querySelector(&#x27;#caio-allocation-grid&#x27;);
+  var axis = root.querySelector(&#x27;#caio-allocation-axis&#x27;);
+  var seriesGroup = root.querySelector(&#x27;#caio-allocation-series&#x27;);
+  var overlay = root.querySelector(&#x27;#caio-allocation-overlay&#x27;);
+  var hover = root.querySelector(&#x27;#caio-allocation-hover&#x27;);
+  var legend = root.querySelector(&#x27;#caio-allocation-legend&#x27;);
+  var tooltip = root.querySelector(&#x27;#caio-allocation-tooltip&#x27;);
+  var detail = root.querySelector(&#x27;#caio-allocation-detail&#x27;);
+  var allocationBar = root.querySelector(&#x27;#caio-allocation-bar&#x27;);
+  var allocationLabels = root.querySelector(&#x27;#caio-allocation-labels&#x27;);
+  var svgWidth = 760;
+  var svgHeight = 360;
+  var margins = { left: 58, right: 18, top: 24, bottom: 68 };
+  var previousCoords = [];
+  var animationToken = 0;
+  var current = null;
+
+  function svgElement(name, attributes, parent) {
+    var node = document.createElementNS(&#x27;http://www.w3.org/2000/svg&#x27;, name);
+    Object.keys(attributes || {}).forEach(function (key) {
+      node.setAttribute(key, attributes[key]);
+    });
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+
+  function clear(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function clamp(value, low, high) {
+    return Math.max(low, Math.min(high, value));
+  }
+
+  function formatDate(value) {
+    return new Intl.DateTimeFormat(&#x27;en-US&#x27;, { month: &#x27;short&#x27;, year: &#x27;numeric&#x27; }).format(new Date(value + &#x27;T00:00:00&#x27;));
+  }
+
+  function formatValue(value, mode) {
+    return mode === &#x27;drawdown&#x27; ? (value * 100).toFixed(1) + &#x27;%&#x27; : value.toFixed(2) + &#x27;x&#x27;;
+  }
+
+  function modeFor(view) {
+    return view === &#x27;drawdown&#x27; ? &#x27;drawdown&#x27; : &#x27;growth&#x27;;
+  }
+
+  function pointsFor(view) {
+    return data.views[view];
+  }
+
+  function xFor(index, count) {
+    var plotWidth = svgWidth - margins.left - margins.right;
+    return margins.left + (count &lt;= 1 ? plotWidth / 2 : index / (count - 1) * plotWidth);
+  }
+
+  function yFor(value, scale) {
+    return margins.top + (scale.high - value) / (scale.high - scale.low) * (svgHeight - margins.top - margins.bottom);
+  }
+
+  function pathFor(coords) {
+    return coords.map(function (point, index) {
+      return (index ? &#x27;L &#x27; : &#x27;M &#x27;) + point[0].toFixed(2) + &#x27; &#x27; + point[1].toFixed(2);
+    }).join(&#x27; &#x27;);
+  }
+
+  function resample(coords, count) {
+    if (!coords || !coords.length) return [];
+    return Array.from({ length: count }, function (_, index) {
+      var sourceIndex = count &lt;= 1 ? 0 : Math.round(index / (count - 1) * (coords.length - 1));
+      return coords[sourceIndex];
+    });
+  }
+
+  function animatePath(path, start, target, token) {
+    var reduced = window.matchMedia &amp;&amp; window.matchMedia(&#x27;(prefers-reduced-motion: reduce)&#x27;).matches;
+    if (reduced || !start.length) {
+      path.setAttribute(&#x27;d&#x27;, pathFor(target));
+      return;
+    }
+    var started = performance.now();
+    function frame(now) {
+      if (token !== animationToken) return;
+      var progress = clamp((now - started) / 360, 0, 1);
+      var eased = progress * (2 - progress);
+      var frameCoords = target.map(function (point, index) {
+        var from = start[index] || point;
+        return [
+          from[0] + (point[0] - from[0]) * eased,
+          from[1] + (point[1] - from[1]) * eased
+        ];
+      });
+      path.setAttribute(&#x27;d&#x27;, pathFor(frameCoords));
+      if (progress &lt; 1) window.requestAnimationFrame(frame);
+    }
+    window.requestAnimationFrame(frame);
+  }
+
+  function appendText(parent, text, attributes) {
+    var node = svgElement(&#x27;text&#x27;, attributes, parent);
+    node.textContent = text;
+    return node;
+  }
+
+  function renderAxes(seriesList, scale, mode) {
+    clear(grid);
+    clear(axis);
+    for (var tick = 0; tick &lt; 5; tick += 1) {
+      var value = scale.high - (scale.high - scale.low) * tick / 4;
+      var y = yFor(value, scale);
+      svgElement(&#x27;line&#x27;, { class: &#x27;caio-grid&#x27;, x1: margins.left, y1: y, x2: svgWidth - margins.right, y2: y }, grid);
+      appendText(axis, formatValue(value, mode), { class: &#x27;text-small caio-axis-label&#x27;, x: margins.left - 10, y: y + 4, &#x27;text-anchor&#x27;: &#x27;end&#x27; });
+    }
+    svgElement(&#x27;line&#x27;, { class: &#x27;caio-axis&#x27;, x1: margins.left, y1: margins.top, x2: margins.left, y2: svgHeight - margins.bottom }, axis);
+    svgElement(&#x27;line&#x27;, { class: &#x27;caio-axis&#x27;, x1: margins.left, y1: svgHeight - margins.bottom, x2: svgWidth - margins.right, y2: svgHeight - margins.bottom }, axis);
+    appendText(axis, mode === &#x27;drawdown&#x27; ? &#x27;Drawdown&#x27; : &#x27;Growth of R$1&#x27;, { class: &#x27;text-small caio-axis-label&#x27;, x: margins.left, y: margins.top - 8 });
+    var count = seriesList[0].points.length;
+    for (var tickIndex = 0; tickIndex &lt; 6; tickIndex += 1) {
+      var index = Math.round(tickIndex / 5 * (count - 1));
+      appendText(axis, formatDate(seriesList[0].points[index][0]), { class: &#x27;text-small caio-axis-label&#x27;, x: xFor(index, count), y: svgHeight - margins.bottom + 22, &#x27;text-anchor&#x27;: tickIndex === 0 ? &#x27;start&#x27; : tickIndex === 5 ? &#x27;end&#x27; : &#x27;middle&#x27; });
+    }
+  }
+
+  function renderLegend(seriesList, mode) {
+    clear(legend);
+    var slot = (svgWidth - margins.left - margins.right) / seriesList.length;
+    seriesList.forEach(function (item, index) {
+      var x = margins.left + index * slot;
+      var className = &#x27;caio-series-&#x27; + (index + 1);
+      svgElement(&#x27;line&#x27;, { class: &#x27;caio-legend-line &#x27; + className, x1: x, y1: svgHeight - 28, x2: x + 16, y2: svgHeight - 28 }, legend);
+      appendText(legend, item.label + &#x27; &#x27; + formatValue(item.points[item.points.length - 1][1], mode), { class: &#x27;text-small caio-legend-label&#x27;, x: x + 22, y: svgHeight - 24 });
+    });
+  }
+
+  function updateDetail(index) {
+    if (!current) return;
+    var values = current.seriesList.map(function (item) {
+      return item.label + &#x27;: &#x27; + formatValue(item.points[index][1], current.mode);
+    });
+    detail.textContent = formatDate(current.seriesList[0].points[index][0]) + &#x27; | &#x27; + values.join(&#x27; · &#x27;);
+  }
+
+  function updateHover(index) {
+    if (!current) return;
+    var x = xFor(index, current.count);
+    clear(hover);
+    svgElement(&#x27;line&#x27;, { class: &#x27;caio-hover-line&#x27;, x1: x, y1: margins.top, x2: x, y2: svgHeight - margins.bottom }, hover);
+    current.seriesList.forEach(function (item, seriesIndex) {
+      var point = current.coords[seriesIndex][index];
+      svgElement(&#x27;circle&#x27;, { class: &#x27;caio-hover-dot caio-series-&#x27; + (seriesIndex + 1), cx: point[0], cy: point[1], r: 4 }, hover);
+    });
+    updateDetail(index);
+    var lines = [formatDate(current.seriesList[0].points[index][0])].concat(current.seriesList.map(function (item) {
+      return item.label + &#x27;: &#x27; + formatValue(item.points[index][1], current.mode);
+    }));
+    tooltip.textContent = lines.join(&#x27;\n&#x27;);
+    tooltip.hidden = false;
+    tooltip.setAttribute(&#x27;aria-hidden&#x27;, &#x27;false&#x27;);
+    var plotRect = root.querySelector(&#x27;.caio-plot&#x27;).getBoundingClientRect();
+    var svgRect = svg.getBoundingClientRect();
+    var pixelX = (x / svgWidth) * svgRect.width + (svgRect.left - plotRect.left);
+    var pixelY = (yFor(current.seriesList[0].points[index][1], current.scale) / svgHeight) * svgRect.height + (svgRect.top - plotRect.top);
+    var tooltipWidth = tooltip.offsetWidth || 180;
+    var tooltipHeight = tooltip.offsetHeight || 44;
+    tooltip.style.left = clamp(pixelX - tooltipWidth / 2, 4, plotRect.width - tooltipWidth - 4) + &#x27;px&#x27;;
+    tooltip.style.top = clamp(pixelY - tooltipHeight - 10, 4, plotRect.height - tooltipHeight - 4) + &#x27;px&#x27;;
+  }
+
+  function updateLatestDetail() {
+    if (!current) return;
+    updateDetail(current.count - 1);
+  }
+
+  function renderAllocation() {
+    clear(allocationBar);
+    clear(allocationLabels);
+    var readable = [];
+    data.allocation.forEach(function (item, index) {
+      var seriesIndex = index + 1;
+      var percent = Math.round(item.value * 100);
+      readable.push(item.label + &#x27; &#x27; + percent + &#x27;%&#x27;);
+      var segment = document.createElement(&#x27;div&#x27;);
+      segment.className = &#x27;caio-allocation-segment caio-allocation-segment-&#x27; + seriesIndex;
+      segment.style.width = item.value * 100 + &#x27;%&#x27;;
+      allocationBar.appendChild(segment);
+      var key = document.createElement(&#x27;span&#x27;);
+      key.className = &#x27;caio-allocation-key&#x27;;
+      var swatch = document.createElement(&#x27;span&#x27;);
+      swatch.className = &#x27;caio-allocation-swatch caio-allocation-swatch-&#x27; + seriesIndex;
+      swatch.setAttribute(&#x27;aria-hidden&#x27;, &#x27;true&#x27;);
+      key.appendChild(swatch);
+      var label = document.createElement(&#x27;span&#x27;);
+      label.textContent = item.label + &#x27; &#x27; + percent + &#x27;%&#x27;;
+      key.appendChild(label);
+      allocationLabels.appendChild(key);
+    });
+    allocationBar.setAttribute(&#x27;aria-label&#x27;, &#x27;Current profile winner allocation: &#x27; + readable.join(&#x27;, &#x27;));
+  }
+
+  function draw() {
+    var view = viewSelect.value;
+    var seriesList = pointsFor(view);
+    var mode = modeFor(view);
+    var values = [];
+    seriesList.forEach(function (item) {
+      item.points.forEach(function (point) { values.push(point[1]); });
+    });
+    var low = Math.min.apply(Math, values);
+    var high = Math.max.apply(Math, values);
+    if (mode === &#x27;drawdown&#x27;) {
+      low = Math.min(low, -0.02);
+      high = Math.max(high, 0);
+      var drawdownPadding = Math.max((high - low) * .08, .01);
+      low -= drawdownPadding;
+      high += drawdownPadding;
+    } else {
+      low = Math.min(low, .9);
+      high = Math.max(high, 1.05);
+      var growthPadding = Math.max((high - low) * .06, .05);
+      low -= growthPadding;
+      high += growthPadding;
+    }
+    var scale = { low: low, high: high };
+    var count = seriesList[0].points.length;
+    var coords = seriesList.map(function (item) {
+      return item.points.map(function (point, index) {
+        return [xFor(index, count), yFor(point[1], scale)];
+      });
+    });
+    var token = animationToken + 1;
+    animationToken = token;
+    renderAxes(seriesList, scale, mode);
+    renderLegend(seriesList, mode);
+    clear(seriesGroup);
+    clear(hover);
+    seriesList.forEach(function (item, index) {
+      var path = svgElement(&#x27;path&#x27;, { class: &#x27;caio-series caio-series-&#x27; + (index + 1), &#x27;aria-label&#x27;: item.label }, seriesGroup);
+      var start = resample(previousCoords[index], coords[index].length);
+      animatePath(path, start, coords[index], token);
+    });
+    overlay.setAttribute(&#x27;x&#x27;, margins.left);
+    overlay.setAttribute(&#x27;y&#x27;, margins.top);
+    overlay.setAttribute(&#x27;width&#x27;, svgWidth - margins.left - margins.right);
+    overlay.setAttribute(&#x27;height&#x27;, svgHeight - margins.top - margins.bottom);
+    current = { seriesList: seriesList, mode: mode, scale: scale, coords: coords, count: count };
+    previousCoords = coords;
+    updateLatestDetail();
+  }
+
+  overlay.addEventListener(&#x27;pointermove&#x27;, function (event) {
+    if (!current) return;
+    var rect = svg.getBoundingClientRect();
+    var x = (event.clientX - rect.left) / rect.width * svgWidth;
+    var index = Math.round(clamp((x - margins.left) / (svgWidth - margins.left - margins.right), 0, 1) * (current.count - 1));
+    updateHover(index);
+  });
+  overlay.addEventListener(&#x27;pointerleave&#x27;, function () {
+    tooltip.hidden = true;
+    tooltip.setAttribute(&#x27;aria-hidden&#x27;, &#x27;true&#x27;);
+    clear(hover);
+  });
+  viewSelect.addEventListener(&#x27;change&#x27;, function () {
+    draw();
+  });
+
+  renderAllocation();
+  draw();
+})();
+&lt;/script&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handleLeave = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>
