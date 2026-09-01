@@ -28,8 +28,14 @@ env/
 Thumbs.db
 
 # Local secrets
-web/.env.local
-api/.env
+.env
+.env.*
+!.env.example
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
 
 # Dados grandes (opcional - descomente se quiser ignorar)
 # data/raw/*.csv
