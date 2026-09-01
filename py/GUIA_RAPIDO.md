@@ -61,6 +61,21 @@ python main.py --multi
 python main.py --multi --n-runs 50
 ```
 
+### Backtest exclusivo da carteira FII otimizada
+
+```bash
+# Gere/atualize a carteira FII consenso primeiro
+python run_fii.py --production --profile caio
+
+# Analise a carteira FII em 5 e 10 anos, comparando opcionalmente com IFIX
+python fii_backtest_analysis.py --profile caio
+```
+
+O relatório lê `outputs/carteira_fii_caio_consensus.json`, usa apenas os FIIs
+selecionados, inclui distribuições via preços ajustados e salva métricas,
+séries, gráficos e análise individual em `outputs/`. IFIX é benchmark; nunca
+substitui carteira otimizada.
+
 ### Quando Atualizar Dados
 
 ```bash

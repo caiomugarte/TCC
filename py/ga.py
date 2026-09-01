@@ -33,6 +33,7 @@ PERFIL_CONFIG: Dict[str, Dict[str, int | float]] = {
     "generations": 460,
     "pop_size": 276
 },
+    "caio_last": {"n_assets": 11, "lambda": 0.375, "generations": 350, "pop_size": 230},
 }
 # ---------- parâmetros de GA ----------
 NCROSS_RATE = 0.8   # probabilidade de crossover

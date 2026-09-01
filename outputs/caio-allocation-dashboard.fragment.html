@@ -1,0 +1,435 @@
+<div id="caio-allocation-dashboard">
+  <div class="viz-controls" aria-label="Chart controls">
+    <label class="form-label" for="caio-allocation-view">View</label>
+    <select class="form-select" id="caio-allocation-view">
+      <option value="benchmark">Wallet vs benchmarks</option>
+      <option value="strategy">Strategy comparison</option>
+      <option value="drawdown">Drawdown</option>
+    </select>
+  </div>
+  <div class="caio-plot">
+    <svg id="caio-allocation-svg" class="caio-allocation-svg" viewBox="0 0 760 360" role="img" aria-labelledby="caio-allocation-svg-title caio-allocation-svg-desc">
+      <title id="caio-allocation-svg-title">Wallet versus benchmarks</title>
+      <desc id="caio-allocation-svg-desc">Interactive monthly growth chart for the conservative Caio wallet, with hover values and view selection.</desc>
+      <g id="caio-allocation-grid"></g>
+      <g id="caio-allocation-axis"></g>
+      <g id="caio-allocation-series"></g>
+      <rect id="caio-allocation-overlay" fill="transparent" pointer-events="all"></rect>
+      <g id="caio-allocation-hover" pointer-events="none"></g>
+      <g id="caio-allocation-legend"></g>
+    </svg>
+    <div id="caio-allocation-tooltip" class="tooltip" hidden aria-hidden="true"></div>
+  </div>
+  <p id="caio-allocation-detail" class="text-small">Latest values appear here when chart receives focus or pointer input.</p>
+  <div id="caio-allocation-bar" class="caio-allocation-bar" role="img" aria-label="Current profile winner allocation"></div>
+  <div id="caio-allocation-labels" class="viz-row text-small"></div>
+</div>
+<style>
+#caio-allocation-dashboard {
+  color: var(--foreground, currentColor);
+}
+#caio-allocation-dashboard .caio-plot {
+  position: relative;
+}
+#caio-allocation-dashboard .caio-allocation-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+#caio-allocation-dashboard .caio-grid {
+  stroke: var(--border, currentColor);
+  stroke-width: 1;
+  opacity: .55;
+}
+#caio-allocation-dashboard .caio-axis {
+  stroke: var(--muted-foreground, currentColor);
+  stroke-width: 1;
+}
+#caio-allocation-dashboard .caio-axis-label,
+#caio-allocation-dashboard .caio-legend-label {
+  fill: var(--muted-foreground, currentColor);
+}
+#caio-allocation-dashboard .caio-series {
+  fill: none;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#caio-allocation-dashboard .caio-series-1 {
+  stroke: var(--viz-series-1, currentColor);
+}
+#caio-allocation-dashboard .caio-series-2 {
+  stroke: var(--viz-series-2, currentColor);
+}
+#caio-allocation-dashboard .caio-series-3 {
+  stroke: var(--viz-series-3, currentColor);
+}
+#caio-allocation-dashboard .caio-series-4 {
+  stroke: var(--viz-series-4, currentColor);
+}
+#caio-allocation-dashboard .caio-series-5 {
+  stroke: var(--viz-series-5, currentColor);
+}
+#caio-allocation-dashboard .caio-legend-line {
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+#caio-allocation-dashboard .caio-hover-line {
+  stroke: var(--foreground, currentColor);
+  stroke-width: 1;
+  opacity: .35;
+}
+#caio-allocation-dashboard .caio-hover-dot {
+  stroke: var(--background, currentColor);
+  stroke-width: 1.5;
+}
+#caio-allocation-dashboard .caio-allocation-bar {
+  display: flex;
+  width: 100%;
+  height: 12px;
+  margin-top: .6rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--muted);
+}
+#caio-allocation-dashboard .caio-allocation-segment {
+  height: 100%;
+}
+#caio-allocation-dashboard .caio-allocation-segment-1 {
+  background: var(--viz-series-1, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-segment-2 {
+  background: var(--viz-series-2, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-segment-3 {
+  background: var(--viz-series-3, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-segment-4 {
+  background: var(--viz-series-4, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-segment-5 {
+  background: var(--viz-series-5, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-labels {
+  gap: .65rem 1rem;
+  margin-top: .35rem;
+}
+#caio-allocation-dashboard .caio-allocation-key {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  white-space: nowrap;
+}
+#caio-allocation-dashboard .caio-allocation-swatch {
+  width: .55rem;
+  height: .55rem;
+  border-radius: 999px;
+  background: currentColor;
+}
+#caio-allocation-dashboard .caio-allocation-swatch-1 {
+  background: var(--viz-series-1, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-swatch-2 {
+  background: var(--viz-series-2, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-swatch-3 {
+  background: var(--viz-series-3, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-swatch-4 {
+  background: var(--viz-series-4, currentColor);
+}
+#caio-allocation-dashboard .caio-allocation-swatch-5 {
+  background: var(--viz-series-5, currentColor);
+}
+#caio-allocation-dashboard [hidden] {
+  display: none;
+}
+#caio-allocation-dashboard .tooltip {
+  position: absolute;
+  max-width: 14rem;
+  white-space: pre-line;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  #caio-allocation-dashboard .caio-series {
+    transition: none;
+  }
+}
+</style>
+<script>
+(function () {
+  var root = document.getElementById('caio-allocation-dashboard');
+  if (!root) return;
+
+  var data = {"views":{"benchmark":[{"label":"Caio wallet","points":[["2020-12-15",1.0],["2021-01-04",1.04864],["2021-02-01",1.07106],["2021-03-01",1.11853],["2021-04-01",1.17133],["2021-05-03",1.16757],["2021-06-01",1.11252],["2021-07-01",1.09873],["2021-08-02",1.12668],["2021-09-01",1.15408],["2021-10-01",1.15248],["2021-11-01",1.20979],["2021-12-01",1.18518],["2022-01-03",1.2058],["2022-02-01",1.18326],["2022-03-02",1.17033],["2022-04-01",1.17965],["2022-05-02",1.15996],["2022-06-01",1.15387],["2022-07-01",1.13452],["2022-08-01",1.15711],["2022-09-01",1.19749],["2022-10-03",1.19903],["2022-11-01",1.21084],["2022-12-01",1.18678],["2023-01-03",1.17397],["2023-02-01",1.21514],["2023-03-01",1.20393],["2023-04-03",1.21438],["2023-05-02",1.23927],["2023-06-01",1.29714],["2023-07-03",1.34521],["2023-08-01",1.36595],["2023-09-01",1.37063],["2023-10-02",1.35647],["2023-11-01",1.36564],["2023-12-01",1.42867],["2024-01-02",1.49095],["2024-02-01",1.50242],["2024-03-01",1.56036],["2024-04-01",1.59618],["2024-05-02",1.56492],["2024-06-03",1.60589],["2024-07-01",1.63478],["2024-08-01",1.66077],["2024-09-03",1.67651],["2024-10-01",1.66843],["2024-11-01",1.71162],["2024-12-02",1.80669],["2025-01-02",1.8098],["2025-02-03",1.80994],["2025-03-05",1.80107],["2025-04-01",1.82934],["2025-05-02",1.88743],["2025-06-02",1.95477],["2025-07-01",1.97093],["2025-08-01",1.97253],["2025-09-02",2.02934],["2025-10-01",2.0815],["2025-11-03",2.10268],["2025-12-01",2.12973],["2026-01-02",2.1719],["2026-02-02",2.18899],["2026-03-02",2.19149],["2026-04-01",2.15208],["2026-05-04",2.1874],["2026-06-01",2.18899],["2026-07-01",2.19294]]},{"label":"BTC (BRL)","points":[["2020-12-15",1.0],["2021-01-04",1.66785],["2021-02-01",1.85056],["2021-03-01",2.80001],["2021-04-01",3.39469],["2021-05-03",3.12616],["2021-06-01",1.91408],["2021-07-01",1.69803],["2021-08-02",2.03522],["2021-09-01",2.54569],["2021-10-01",2.62117],["2021-11-01",3.49478],["2021-12-01",3.24812],["2022-01-03",2.64338],["2022-02-01",2.06744],["2022-03-02",2.27896],["2022-04-01",2.19723],["2022-05-02",1.95697],["2022-06-01",1.43823],["2022-07-01",1.03473],["2022-08-01",1.21574],["2022-09-01",1.0577],["2022-10-03",1.03114],["2022-11-01",1.06603],["2022-12-01",0.89063],["2023-01-03",0.90607],["2023-02-01",1.21588],["2023-03-01",1.24416],["2023-04-03",1.42193],["2023-05-02",1.45872],["2023-06-01",1.36451],["2023-07-03",1.50724],["2023-08-01",1.43189],["2023-09-01",1.28575],["2023-10-02",1.40982],["2023-11-01",1.79734],["2023-12-01",1.92304],["2024-01-02",2.22216],["2024-02-01",2.14802],["2024-03-01",3.12919],["2024-04-01",3.55902],["2024-05-02",3.05782],["2024-06-03",3.64121],["2024-07-01",3.54975],["2024-08-01",3.7433],["2024-09-03",3.26279],["2024-10-01",3.3516],["2024-11-01",4.07729],["2024-12-02",5.87355],["2025-01-02",6.0783],["2025-02-03",6.01347],["2025-03-05",5.3033],["2025-04-01",4.90984],["2025-05-02",5.52234],["2025-06-02",6.09167],["2025-07-01",5.822],["2025-08-01",6.34774],["2025-09-02",6.14407],["2025-10-01",6.37911],["2025-11-03",5.76046],["2025-12-01",4.66381],["2026-01-02",4.94164],["2026-02-02",4.18129],["2026-03-02",3.61382],["2026-04-01",3.55001],["2026-05-04",3.99982],["2026-06-01",3.62512],["2026-07-01",3.1498]]},{"label":"CDI / CDB proxy","points":[["2020-12-15",1.0],["2021-01-04",1.0009],["2021-02-01",1.00239],["2021-03-01",1.00374],["2021-04-01",1.00579],["2021-05-03",1.00788],["2021-06-01",1.01063],["2021-07-01",1.01377],["2021-08-02",1.01738],["2021-09-01",1.02177],["2021-10-01",1.02632],["2021-11-01",1.03137],["2021-12-01",1.03742],["2022-01-03",1.04546],["2022-02-01",1.05311],["2022-03-02",1.06112],["2022-04-01",1.071],["2022-05-02",1.07993],["2022-06-01",1.09114],["2022-07-01",1.10224],["2022-08-01",1.11365],["2022-09-01",1.12669],["2022-10-03",1.13877],["2022-11-01",1.15039],["2022-12-01",1.16213],["2023-01-03",1.17579],["2023-02-01",1.18839],["2023-03-01",1.1993],["2023-04-03",1.21339],["2023-05-02",1.22453],["2023-06-01",1.23828],["2023-07-03",1.25156],["2023-08-01",1.26498],["2023-09-01",1.27934],["2023-10-02",1.29177],["2023-11-01",1.30465],["2023-12-01",1.31658],["2024-01-02",1.32833],["2024-02-01",1.34115],["2024-03-01",1.35188],["2024-04-01",1.3631],["2024-05-02",1.3752],["2024-06-03",1.38663],["2024-07-01",1.39756],["2024-08-01",1.41024],["2024-09-03",1.42303],["2024-10-01",1.43437],["2024-11-01",1.44768],["2024-12-02",1.45918],["2025-01-02",1.47283],["2025-02-03",1.4878],["2025-03-05",1.50246],["2025-04-01",1.517],["2025-05-02",1.53302],["2025-06-02",1.5505],["2025-07-01",1.56753],["2025-08-01",1.58752],["2025-09-02",1.60689],["2025-10-01",1.6256],["2025-11-03",1.64633],["2025-12-01",1.66367],["2026-01-02",1.68396],["2026-02-02",1.70357],["2026-03-02",1.72055],["2026-04-01",1.74139],["2026-05-04",1.76036],["2026-06-01",1.77925],["2026-07-01",1.79916]]},{"label":"IFIX","points":[["2020-12-15",1.0],["2021-01-04",1.03615],["2021-02-01",1.03884],["2021-03-01",1.03967],["2021-04-01",1.02984],["2021-05-03",1.03433],["2021-06-01",1.01595],["2021-07-01",0.99516],["2021-08-02",1.01634],["2021-09-01",0.99397],["2021-10-01",0.98092],["2021-11-01",0.96596],["2021-12-01",0.93274],["2022-01-03",1.00784],["2022-02-01",1.00332],["2022-03-02",0.98885],["2022-04-01",1.0113],["2022-05-02",1.0111],["2022-06-01",1.02011],["2022-07-01",1.00892],["2022-08-01",1.01297],["2022-09-01",1.07283],["2022-10-03",1.07786],["2022-11-01",1.08012],["2022-12-01",1.03991],["2023-01-03",1.03172],["2023-02-01",1.01431],["2023-03-01",1.01491],["2023-04-03",0.99483],["2023-05-02",1.03332],["2023-06-01",1.08819],["2023-07-03",1.13899],["2023-08-01",1.15245],["2023-09-01",1.16253],["2023-10-02",1.15527],["2023-11-01",1.13714],["2023-12-01",1.1473],["2024-01-02",1.19753],["2024-02-01",1.19984],["2024-03-01",1.21647],["2024-04-01",1.22981],["2024-05-02",1.22005],["2024-06-03",1.21831],["2024-07-01",1.19925],["2024-08-01",1.21615],["2024-09-03",1.22269],["2024-10-01",1.1846],["2024-11-01",1.15572],["2024-12-02",1.12141],["2025-01-02",1.12644],["2025-02-03",1.08458],["2025-03-05",1.12816],["2025-04-01",1.19659],["2025-05-02",1.23561],["2025-06-02",1.24482],["2025-07-01",1.25563],["2025-08-01",1.23943],["2025-09-02",1.25476],["2025-10-01",1.29108],["2025-11-03",1.29776],["2025-12-01",1.32261],["2026-01-02",1.36549],["2026-02-02",1.3923],["2026-03-02",1.41144],["2026-04-01",1.40081],["2026-05-04",1.41053],["2026-06-01",1.39493],["2026-07-01",1.38275]]},{"label":"Ibovespa","points":[["2020-12-15",1.0],["2021-01-04",1.02077],["2021-02-01",1.0105],["2021-03-01",0.94997],["2021-04-01",0.99231],["2021-05-03",1.02637],["2021-06-01",1.10436],["2021-07-01",1.08197],["2021-08-02",1.05484],["2021-09-01",1.02798],["2021-10-01",0.97205],["2021-11-01",0.90878],["2021-12-01",0.86766],["2022-01-03",0.89475],["2022-02-01",0.97418],["2022-03-02",0.99163],["2022-04-01",1.0467],["2022-05-02",0.91815],["2022-06-01",0.95879],["2022-07-01",0.85198],["2022-08-01",0.88014],["2022-09-01",0.95057],["2022-10-03",0.9999],["2022-11-01",1.00674],["2022-12-01",0.95506],["2023-01-03",0.89685],["2023-02-01",0.96691],["2023-03-01",0.89874],["2023-04-03",0.87395],["2023-05-02",0.87758],["2023-06-01",0.95195],["2023-07-03",1.03037],["2023-08-01",1.04393],["2023-09-01",1.01504],["2023-10-02",0.99062],["2023-11-01",0.99059],["2023-12-01",1.10295],["2024-01-02",1.1425],["2024-02-01",1.1062],["2024-03-01",1.11222],["2024-04-01",1.09337],["2024-05-02",1.0945],["2024-06-03",1.05068],["2024-07-01",1.0738],["2024-08-01",1.09685],["2024-09-03",1.15676],["2024-10-01",1.14076],["2024-11-01",1.1031],["2024-12-02",1.07826],["2025-01-02",1.03426],["2025-02-03",1.08458],["2025-03-05",1.05942],["2025-04-01",1.12916],["2025-05-02",1.16348],["2025-06-02",1.17772],["2025-07-01",1.2015],["2025-08-01",1.14026],["2025-09-02",1.20826],["2025-10-01",1.25288],["2025-11-03",1.29539],["2025-12-01",1.36562],["2026-01-02",1.38222],["2026-02-02",1.57382],["2026-03-02",1.62991],["2026-04-01",1.61825],["2026-05-04",1.59799],["2026-06-01",1.4826],["2026-07-01",1.47822]]}],"strategy":[{"label":"Profile winner","points":[["2020-12-15",1.0],["2021-01-04",1.04864],["2021-02-01",1.07106],["2021-03-01",1.11853],["2021-04-01",1.17133],["2021-05-03",1.16757],["2021-06-01",1.11252],["2021-07-01",1.09873],["2021-08-02",1.12668],["2021-09-01",1.15408],["2021-10-01",1.15248],["2021-11-01",1.20979],["2021-12-01",1.18518],["2022-01-03",1.2058],["2022-02-01",1.18326],["2022-03-02",1.17033],["2022-04-01",1.17965],["2022-05-02",1.15996],["2022-06-01",1.15387],["2022-07-01",1.13452],["2022-08-01",1.15711],["2022-09-01",1.19749],["2022-10-03",1.19903],["2022-11-01",1.21084],["2022-12-01",1.18678],["2023-01-03",1.17397],["2023-02-01",1.21514],["2023-03-01",1.20393],["2023-04-03",1.21438],["2023-05-02",1.23927],["2023-06-01",1.29714],["2023-07-03",1.34521],["2023-08-01",1.36595],["2023-09-01",1.37063],["2023-10-02",1.35647],["2023-11-01",1.36564],["2023-12-01",1.42867],["2024-01-02",1.49095],["2024-02-01",1.50242],["2024-03-01",1.56036],["2024-04-01",1.59618],["2024-05-02",1.56492],["2024-06-03",1.60589],["2024-07-01",1.63478],["2024-08-01",1.66077],["2024-09-03",1.67651],["2024-10-01",1.66843],["2024-11-01",1.71162],["2024-12-02",1.80669],["2025-01-02",1.8098],["2025-02-03",1.80994],["2025-03-05",1.80107],["2025-04-01",1.82934],["2025-05-02",1.88743],["2025-06-02",1.95477],["2025-07-01",1.97093],["2025-08-01",1.97253],["2025-09-02",2.02934],["2025-10-01",2.0815],["2025-11-03",2.10268],["2025-12-01",2.12973],["2026-01-02",2.1719],["2026-02-02",2.18899],["2026-03-02",2.19149],["2026-04-01",2.15208],["2026-05-04",2.1874],["2026-06-01",2.18899],["2026-07-01",2.19294]]},{"label":"Knee","points":[["2020-12-15",1.0],["2021-01-04",1.06232],["2021-02-01",1.09543],["2021-03-01",1.16072],["2021-04-01",1.24217],["2021-05-03",1.23756],["2021-06-01",1.16602],["2021-07-01",1.15013],["2021-08-02",1.18498],["2021-09-01",1.22765],["2021-10-01",1.22556],["2021-11-01",1.3104],["2021-12-01",1.27925],["2022-01-03",1.29435],["2022-02-01",1.25613],["2022-03-02",1.2332],["2022-04-01",1.2383],["2022-05-02",1.20023],["2022-06-01",1.1843],["2022-07-01",1.15022],["2022-08-01",1.18261],["2022-09-01",1.22944],["2022-10-03",1.22528],["2022-11-01",1.23974],["2022-12-01",1.20536],["2023-01-03",1.17944],["2023-02-01",1.24359],["2023-03-01",1.22001],["2023-04-03",1.23505],["2023-05-02",1.2603],["2023-06-01",1.33684],["2023-07-03",1.39458],["2023-08-01",1.42116],["2023-09-01",1.42267],["2023-10-02",1.39441],["2023-11-01",1.40397],["2023-12-01",1.49942],["2024-01-02",1.57947],["2024-02-01",1.59338],["2024-03-01",1.67481],["2024-04-01",1.72364],["2024-05-02",1.6715],["2024-06-03",1.73277],["2024-07-01",1.78514],["2024-08-01",1.81735],["2024-09-03",1.84171],["2024-10-01",1.83473],["2024-11-01",1.90701],["2024-12-02",2.06256],["2025-01-02",2.05008],["2025-02-03",2.06386],["2025-03-05",2.02079],["2025-04-01",2.03502],["2025-05-02",2.11505],["2025-06-02",2.22635],["2025-07-01",2.24371],["2025-08-01",2.24131],["2025-09-02",2.33231],["2025-10-01",2.4023],["2025-11-03",2.43049],["2025-12-01",2.46524],["2026-01-02",2.51168],["2026-02-02",2.52599],["2026-03-02",2.51614],["2026-04-01",2.43442],["2026-05-04",2.48304],["2026-06-01",2.48429],["2026-07-01",2.48942]]},{"label":"Max return","points":[["2020-12-15",1.0],["2021-01-04",1.06049],["2021-02-01",1.09797],["2021-03-01",1.16819],["2021-04-01",1.2514],["2021-05-03",1.24492],["2021-06-01",1.16957],["2021-07-01",1.1547],["2021-08-02",1.19155],["2021-09-01",1.23829],["2021-10-01",1.23836],["2021-11-01",1.33309],["2021-12-01",1.30187],["2022-01-03",1.31575],["2022-02-01",1.2683],["2022-03-02",1.24349],["2022-04-01",1.24298],["2022-05-02",1.20557],["2022-06-01",1.18474],["2022-07-01",1.15601],["2022-08-01",1.19076],["2022-09-01",1.22888],["2022-10-03",1.21985],["2022-11-01",1.23683],["2022-12-01",1.21261],["2023-01-03",1.18741],["2023-02-01",1.25228],["2023-03-01",1.22989],["2023-04-03",1.24841],["2023-05-02",1.2699],["2023-06-01",1.34021],["2023-07-03",1.393],["2023-08-01",1.41937],["2023-09-01",1.42183],["2023-10-02",1.39528],["2023-11-01",1.40667],["2023-12-01",1.5021],["2024-01-02",1.57799],["2024-02-01",1.59626],["2024-03-01",1.68147],["2024-04-01",1.73329],["2024-05-02",1.68167],["2024-06-03",1.75037],["2024-07-01",1.81507],["2024-08-01",1.84667],["2024-09-03",1.86872],["2024-10-01",1.86618],["2024-11-01",1.94948],["2024-12-02",2.12072],["2025-01-02",2.10798],["2025-02-03",2.12066],["2025-03-05",2.06963],["2025-04-01",2.06951],["2025-05-02",2.14371],["2025-06-02",2.25839],["2025-07-01",2.27458],["2025-08-01",2.2799],["2025-09-02",2.36802],["2025-10-01",2.43553],["2025-11-03",2.46617],["2025-12-01",2.49496],["2026-01-02",2.54129],["2026-02-02",2.54831],["2026-03-02",2.53249],["2026-04-01",2.4494],["2026-05-04",2.50575],["2026-06-01",2.52182],["2026-07-01",2.5313]]},{"label":"Equal 20%","points":[["2020-12-15",1.0],["2021-01-04",1.14849],["2021-02-01",1.19766],["2021-03-01",1.38363],["2021-04-01",1.53078],["2021-05-03",1.48926],["2021-06-01",1.25833],["2021-07-01",1.21286],["2021-08-02",1.28881],["2021-09-01",1.39243],["2021-10-01",1.40008],["2021-11-01",1.58558],["2021-12-01",1.5243],["2022-01-03",1.46605],["2022-02-01",1.39532],["2022-03-02",1.39239],["2022-04-01",1.39712],["2022-05-02",1.34574],["2022-06-01",1.29703],["2022-07-01",1.23237],["2022-08-01",1.27378],["2022-09-01",1.31445],["2022-10-03",1.31354],["2022-11-01",1.32791],["2022-12-01",1.27463],["2023-01-03",1.24862],["2023-02-01",1.35984],["2023-03-01",1.3463],["2023-04-03",1.39024],["2023-05-02",1.4235],["2023-06-01",1.47501],["2023-07-03",1.55689],["2023-08-01",1.56513],["2023-09-01",1.53839],["2023-10-02",1.53911],["2023-11-01",1.6211],["2023-12-01",1.72358],["2024-01-02",1.84728],["2024-02-01",1.84774],["2024-03-01",2.04257],["2024-04-01",2.13932],["2024-05-02",2.02982],["2024-06-03",2.15229],["2024-07-01",2.17603],["2024-08-01",2.23138],["2024-09-03",2.19458],["2024-10-01",2.19386],["2024-11-01",2.33902],["2024-12-02",2.68855],["2025-01-02",2.71334],["2025-02-03",2.71927],["2025-03-05",2.64362],["2025-04-01",2.65538],["2025-05-02",2.78798],["2025-06-02",2.93771],["2025-07-01",2.94176],["2025-08-01",2.96656],["2025-09-02",3.05171],["2025-10-01",3.14673],["2025-11-03",3.13583],["2025-12-01",3.10973],["2026-01-02",3.18913],["2026-02-02",3.13905],["2026-03-02",3.08261],["2026-04-01",2.99992],["2026-05-04",3.08737],["2026-06-01",3.03939],["2026-07-01",2.99413]]}],"drawdown":[{"label":"Profile winner","points":[["2020-12-15",0.0],["2021-01-04",0.0],["2021-02-01",0.0],["2021-03-01",0.0],["2021-04-01",0.0],["2021-05-03",-0.00321],["2021-06-01",-0.05021],["2021-07-01",-0.06198],["2021-08-02",-0.03812],["2021-09-01",-0.01473],["2021-10-01",-0.01609],["2021-11-01",0.0],["2021-12-01",-0.02034],["2022-01-03",-0.0033],["2022-02-01",-0.02193],["2022-03-02",-0.03262],["2022-04-01",-0.02491],["2022-05-02",-0.04119],["2022-06-01",-0.04623],["2022-07-01",-0.06222],["2022-08-01",-0.04355],["2022-09-01",-0.01016],["2022-10-03",-0.0089],["2022-11-01",0.0],["2022-12-01",-0.01988],["2023-01-03",-0.03045],["2023-02-01",0.0],["2023-03-01",-0.00922],["2023-04-03",-0.00063],["2023-05-02",0.0],["2023-06-01",0.0],["2023-07-03",0.0],["2023-08-01",0.0],["2023-09-01",0.0],["2023-10-02",-0.01033],["2023-11-01",-0.00364],["2023-12-01",0.0],["2024-01-02",0.0],["2024-02-01",0.0],["2024-03-01",0.0],["2024-04-01",0.0],["2024-05-02",-0.01959],["2024-06-03",0.0],["2024-07-01",0.0],["2024-08-01",0.0],["2024-09-03",0.0],["2024-10-01",-0.00482],["2024-11-01",0.0],["2024-12-02",0.0],["2025-01-02",0.0],["2025-02-03",0.0],["2025-03-05",-0.0049],["2025-04-01",0.0],["2025-05-02",0.0],["2025-06-02",0.0],["2025-07-01",0.0],["2025-08-01",0.0],["2025-09-02",0.0],["2025-10-01",0.0],["2025-11-03",0.0],["2025-12-01",0.0],["2026-01-02",0.0],["2026-02-02",0.0],["2026-03-02",0.0],["2026-04-01",-0.01798],["2026-05-04",-0.00187],["2026-06-01",-0.00114],["2026-07-01",0.0]]},{"label":"Knee","points":[["2020-12-15",0.0],["2021-01-04",0.0],["2021-02-01",0.0],["2021-03-01",0.0],["2021-04-01",0.0],["2021-05-03",-0.00371],["2021-06-01",-0.0613],["2021-07-01",-0.0741],["2021-08-02",-0.04604],["2021-09-01",-0.01169],["2021-10-01",-0.01337],["2021-11-01",0.0],["2021-12-01",-0.02378],["2022-01-03",-0.01225],["2022-02-01",-0.04141],["2022-03-02",-0.05892],["2022-04-01",-0.05502],["2022-05-02",-0.08408],["2022-06-01",-0.09623],["2022-07-01",-0.12224],["2022-08-01",-0.09752],["2022-09-01",-0.06179],["2022-10-03",-0.06496],["2022-11-01",-0.05393],["2022-12-01",-0.08016],["2023-01-03",-0.09994],["2023-02-01",-0.05098],["2023-03-01",-0.06898],["2023-04-03",-0.0575],["2023-05-02",-0.03823],["2023-06-01",0.0],["2023-07-03",0.0],["2023-08-01",0.0],["2023-09-01",0.0],["2023-10-02",-0.01987],["2023-11-01",-0.01314],["2023-12-01",0.0],["2024-01-02",0.0],["2024-02-01",0.0],["2024-03-01",0.0],["2024-04-01",0.0],["2024-05-02",-0.03025],["2024-06-03",0.0],["2024-07-01",0.0],["2024-08-01",0.0],["2024-09-03",0.0],["2024-10-01",-0.00379],["2024-11-01",0.0],["2024-12-02",0.0],["2025-01-02",-0.00605],["2025-02-03",0.0],["2025-03-05",-0.02087],["2025-04-01",-0.01397],["2025-05-02",0.0],["2025-06-02",0.0],["2025-07-01",0.0],["2025-08-01",-0.00107],["2025-09-02",0.0],["2025-10-01",0.0],["2025-11-03",0.0],["2025-12-01",0.0],["2026-01-02",0.0],["2026-02-02",0.0],["2026-03-02",-0.0039],["2026-04-01",-0.03625],["2026-05-04",-0.017],["2026-06-01",-0.01651],["2026-07-01",-0.01448]]},{"label":"Max return","points":[["2020-12-15",0.0],["2021-01-04",0.0],["2021-02-01",0.0],["2021-03-01",0.0],["2021-04-01",0.0],["2021-05-03",-0.00518],["2021-06-01",-0.06539],["2021-07-01",-0.07727],["2021-08-02",-0.04783],["2021-09-01",-0.01048],["2021-10-01",-0.01042],["2021-11-01",0.0],["2021-12-01",-0.02342],["2022-01-03",-0.01301],["2022-02-01",-0.04861],["2022-03-02",-0.06722],["2022-04-01",-0.0676],["2022-05-02",-0.09566],["2022-06-01",-0.11128],["2022-07-01",-0.13284],["2022-08-01",-0.10677],["2022-09-01",-0.07817],["2022-10-03",-0.08495],["2022-11-01",-0.07221],["2022-12-01",-0.09038],["2023-01-03",-0.10928],["2023-02-01",-0.06062],["2023-03-01",-0.07741],["2023-04-03",-0.06352],["2023-05-02",-0.0474],["2023-06-01",0.0],["2023-07-03",0.0],["2023-08-01",0.0],["2023-09-01",0.0],["2023-10-02",-0.01868],["2023-11-01",-0.01067],["2023-12-01",0.0],["2024-01-02",0.0],["2024-02-01",0.0],["2024-03-01",0.0],["2024-04-01",0.0],["2024-05-02",-0.02978],["2024-06-03",0.0],["2024-07-01",0.0],["2024-08-01",0.0],["2024-09-03",0.0],["2024-10-01",-0.00136],["2024-11-01",0.0],["2024-12-02",0.0],["2025-01-02",-0.00601],["2025-02-03",-3e-05],["2025-03-05",-0.02409],["2025-04-01",-0.02415],["2025-05-02",0.0],["2025-06-02",0.0],["2025-07-01",0.0],["2025-08-01",0.0],["2025-09-02",0.0],["2025-10-01",0.0],["2025-11-03",0.0],["2025-12-01",0.0],["2026-01-02",0.0],["2026-02-02",0.0],["2026-03-02",-0.00621],["2026-04-01",-0.03882],["2026-05-04",-0.0167],["2026-06-01",-0.0104],["2026-07-01",-0.00668]]},{"label":"Equal 20%","points":[["2020-12-15",0.0],["2021-01-04",0.0],["2021-02-01",0.0],["2021-03-01",0.0],["2021-04-01",0.0],["2021-05-03",-0.02713],["2021-06-01",-0.17798],["2021-07-01",-0.20769],["2021-08-02",-0.15807],["2021-09-01",-0.09038],["2021-10-01",-0.08538],["2021-11-01",0.0],["2021-12-01",-0.03865],["2022-01-03",-0.07539],["2022-02-01",-0.11999],["2022-03-02",-0.12185],["2022-04-01",-0.11886],["2022-05-02",-0.15126],["2022-06-01",-0.18198],["2022-07-01",-0.22277],["2022-08-01",-0.19665],["2022-09-01",-0.171],["2022-10-03",-0.17157],["2022-11-01",-0.16251],["2022-12-01",-0.19611],["2023-01-03",-0.21252],["2023-02-01",-0.14237],["2023-03-01",-0.15091],["2023-04-03",-0.1232],["2023-05-02",-0.10223],["2023-06-01",-0.06974],["2023-07-03",-0.0181],["2023-08-01",-0.0129],["2023-09-01",-0.02976],["2023-10-02",-0.02931],["2023-11-01",0.0],["2023-12-01",0.0],["2024-01-02",0.0],["2024-02-01",0.0],["2024-03-01",0.0],["2024-04-01",0.0],["2024-05-02",-0.05119],["2024-06-03",0.0],["2024-07-01",0.0],["2024-08-01",0.0],["2024-09-03",-0.01649],["2024-10-01",-0.01682],["2024-11-01",0.0],["2024-12-02",0.0],["2025-01-02",0.0],["2025-02-03",0.0],["2025-03-05",-0.02782],["2025-04-01",-0.02349],["2025-05-02",0.0],["2025-06-02",0.0],["2025-07-01",0.0],["2025-08-01",0.0],["2025-09-02",0.0],["2025-10-01",0.0],["2025-11-03",-0.00346],["2025-12-01",-0.01176],["2026-01-02",0.0],["2026-02-02",-0.0157],["2026-03-02",-0.0334],["2026-04-01",-0.05933],["2026-05-04",-0.03191],["2026-06-01",-0.04695],["2026-07-01",-0.06114]]}]},"allocation":[{"label":"Brazilian stocks","value":0.15},{"label":"FIIs","value":0.24},{"label":"International equity","value":0.19},{"label":"Fixed income","value":0.37},{"label":"Crypto","value":0.05}]};
+  var svg = root.querySelector('#caio-allocation-svg');
+  var viewSelect = root.querySelector('#caio-allocation-view');
+  var grid = root.querySelector('#caio-allocation-grid');
+  var axis = root.querySelector('#caio-allocation-axis');
+  var seriesGroup = root.querySelector('#caio-allocation-series');
+  var overlay = root.querySelector('#caio-allocation-overlay');
+  var hover = root.querySelector('#caio-allocation-hover');
+  var legend = root.querySelector('#caio-allocation-legend');
+  var tooltip = root.querySelector('#caio-allocation-tooltip');
+  var detail = root.querySelector('#caio-allocation-detail');
+  var allocationBar = root.querySelector('#caio-allocation-bar');
+  var allocationLabels = root.querySelector('#caio-allocation-labels');
+  var svgWidth = 760;
+  var svgHeight = 360;
+  var margins = { left: 58, right: 18, top: 24, bottom: 68 };
+  var previousCoords = [];
+  var animationToken = 0;
+  var current = null;
+
+  function svgElement(name, attributes, parent) {
+    var node = document.createElementNS('http://www.w3.org/2000/svg', name);
+    Object.keys(attributes || {}).forEach(function (key) {
+      node.setAttribute(key, attributes[key]);
+    });
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+
+  function clear(node) {
+    while (node.firstChild) node.removeChild(node.firstChild);
+  }
+
+  function clamp(value, low, high) {
+    return Math.max(low, Math.min(high, value));
+  }
+
+  function formatDate(value) {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', year: 'numeric' }).format(new Date(value + 'T00:00:00'));
+  }
+
+  function formatValue(value, mode) {
+    return mode === 'drawdown' ? (value * 100).toFixed(1) + '%' : value.toFixed(2) + 'x';
+  }
+
+  function modeFor(view) {
+    return view === 'drawdown' ? 'drawdown' : 'growth';
+  }
+
+  function pointsFor(view) {
+    return data.views[view];
+  }
+
+  function xFor(index, count) {
+    var plotWidth = svgWidth - margins.left - margins.right;
+    return margins.left + (count <= 1 ? plotWidth / 2 : index / (count - 1) * plotWidth);
+  }
+
+  function yFor(value, scale) {
+    return margins.top + (scale.high - value) / (scale.high - scale.low) * (svgHeight - margins.top - margins.bottom);
+  }
+
+  function pathFor(coords) {
+    return coords.map(function (point, index) {
+      return (index ? 'L ' : 'M ') + point[0].toFixed(2) + ' ' + point[1].toFixed(2);
+    }).join(' ');
+  }
+
+  function resample(coords, count) {
+    if (!coords || !coords.length) return [];
+    return Array.from({ length: count }, function (_, index) {
+      var sourceIndex = count <= 1 ? 0 : Math.round(index / (count - 1) * (coords.length - 1));
+      return coords[sourceIndex];
+    });
+  }
+
+  function animatePath(path, start, target, token) {
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduced || !start.length) {
+      path.setAttribute('d', pathFor(target));
+      return;
+    }
+    var started = performance.now();
+    function frame(now) {
+      if (token !== animationToken) return;
+      var progress = clamp((now - started) / 360, 0, 1);
+      var eased = progress * (2 - progress);
+      var frameCoords = target.map(function (point, index) {
+        var from = start[index] || point;
+        return [
+          from[0] + (point[0] - from[0]) * eased,
+          from[1] + (point[1] - from[1]) * eased
+        ];
+      });
+      path.setAttribute('d', pathFor(frameCoords));
+      if (progress < 1) window.requestAnimationFrame(frame);
+    }
+    window.requestAnimationFrame(frame);
+  }
+
+  function appendText(parent, text, attributes) {
+    var node = svgElement('text', attributes, parent);
+    node.textContent = text;
+    return node;
+  }
+
+  function renderAxes(seriesList, scale, mode) {
+    clear(grid);
+    clear(axis);
+    for (var tick = 0; tick < 5; tick += 1) {
+      var value = scale.high - (scale.high - scale.low) * tick / 4;
+      var y = yFor(value, scale);
+      svgElement('line', { class: 'caio-grid', x1: margins.left, y1: y, x2: svgWidth - margins.right, y2: y }, grid);
+      appendText(axis, formatValue(value, mode), { class: 'text-small caio-axis-label', x: margins.left - 10, y: y + 4, 'text-anchor': 'end' });
+    }
+    svgElement('line', { class: 'caio-axis', x1: margins.left, y1: margins.top, x2: margins.left, y2: svgHeight - margins.bottom }, axis);
+    svgElement('line', { class: 'caio-axis', x1: margins.left, y1: svgHeight - margins.bottom, x2: svgWidth - margins.right, y2: svgHeight - margins.bottom }, axis);
+    appendText(axis, mode === 'drawdown' ? 'Drawdown' : 'Growth of R$1', { class: 'text-small caio-axis-label', x: margins.left, y: margins.top - 8 });
+    var count = seriesList[0].points.length;
+    for (var tickIndex = 0; tickIndex < 6; tickIndex += 1) {
+      var index = Math.round(tickIndex / 5 * (count - 1));
+      appendText(axis, formatDate(seriesList[0].points[index][0]), { class: 'text-small caio-axis-label', x: xFor(index, count), y: svgHeight - margins.bottom + 22, 'text-anchor': tickIndex === 0 ? 'start' : tickIndex === 5 ? 'end' : 'middle' });
+    }
+  }
+
+  function renderLegend(seriesList, mode) {
+    clear(legend);
+    var slot = (svgWidth - margins.left - margins.right) / seriesList.length;
+    seriesList.forEach(function (item, index) {
+      var x = margins.left + index * slot;
+      var className = 'caio-series-' + (index + 1);
+      svgElement('line', { class: 'caio-legend-line ' + className, x1: x, y1: svgHeight - 28, x2: x + 16, y2: svgHeight - 28 }, legend);
+      appendText(legend, item.label + ' ' + formatValue(item.points[item.points.length - 1][1], mode), { class: 'text-small caio-legend-label', x: x + 22, y: svgHeight - 24 });
+    });
+  }
+
+  function updateDetail(index) {
+    if (!current) return;
+    var values = current.seriesList.map(function (item) {
+      return item.label + ': ' + formatValue(item.points[index][1], current.mode);
+    });
+    detail.textContent = formatDate(current.seriesList[0].points[index][0]) + ' | ' + values.join(' · ');
+  }
+
+  function updateHover(index) {
+    if (!current) return;
+    var x = xFor(index, current.count);
+    clear(hover);
+    svgElement('line', { class: 'caio-hover-line', x1: x, y1: margins.top, x2: x, y2: svgHeight - margins.bottom }, hover);
+    current.seriesList.forEach(function (item, seriesIndex) {
+      var point = current.coords[seriesIndex][index];
+      svgElement('circle', { class: 'caio-hover-dot caio-series-' + (seriesIndex + 1), cx: point[0], cy: point[1], r: 4 }, hover);
+    });
+    updateDetail(index);
+    var lines = [formatDate(current.seriesList[0].points[index][0])].concat(current.seriesList.map(function (item) {
+      return item.label + ': ' + formatValue(item.points[index][1], current.mode);
+    }));
+    tooltip.textContent = lines.join('\n');
+    tooltip.hidden = false;
+    tooltip.setAttribute('aria-hidden', 'false');
+    var plotRect = root.querySelector('.caio-plot').getBoundingClientRect();
+    var svgRect = svg.getBoundingClientRect();
+    var pixelX = (x / svgWidth) * svgRect.width + (svgRect.left - plotRect.left);
+    var pixelY = (yFor(current.seriesList[0].points[index][1], current.scale) / svgHeight) * svgRect.height + (svgRect.top - plotRect.top);
+    var tooltipWidth = tooltip.offsetWidth || 180;
+    var tooltipHeight = tooltip.offsetHeight || 44;
+    tooltip.style.left = clamp(pixelX - tooltipWidth / 2, 4, plotRect.width - tooltipWidth - 4) + 'px';
+    tooltip.style.top = clamp(pixelY - tooltipHeight - 10, 4, plotRect.height - tooltipHeight - 4) + 'px';
+  }
+
+  function updateLatestDetail() {
+    if (!current) return;
+    updateDetail(current.count - 1);
+  }
+
+  function renderAllocation() {
+    clear(allocationBar);
+    clear(allocationLabels);
+    var readable = [];
+    data.allocation.forEach(function (item, index) {
+      var seriesIndex = index + 1;
+      var percent = Math.round(item.value * 100);
+      readable.push(item.label + ' ' + percent + '%');
+      var segment = document.createElement('div');
+      segment.className = 'caio-allocation-segment caio-allocation-segment-' + seriesIndex;
+      segment.style.width = item.value * 100 + '%';
+      allocationBar.appendChild(segment);
+      var key = document.createElement('span');
+      key.className = 'caio-allocation-key';
+      var swatch = document.createElement('span');
+      swatch.className = 'caio-allocation-swatch caio-allocation-swatch-' + seriesIndex;
+      swatch.setAttribute('aria-hidden', 'true');
+      key.appendChild(swatch);
+      var label = document.createElement('span');
+      label.textContent = item.label + ' ' + percent + '%';
+      key.appendChild(label);
+      allocationLabels.appendChild(key);
+    });
+    allocationBar.setAttribute('aria-label', 'Current profile winner allocation: ' + readable.join(', '));
+  }
+
+  function draw() {
+    var view = viewSelect.value;
+    var seriesList = pointsFor(view);
+    var mode = modeFor(view);
+    var values = [];
+    seriesList.forEach(function (item) {
+      item.points.forEach(function (point) { values.push(point[1]); });
+    });
+    var low = Math.min.apply(Math, values);
+    var high = Math.max.apply(Math, values);
+    if (mode === 'drawdown') {
+      low = Math.min(low, -0.02);
+      high = Math.max(high, 0);
+      var drawdownPadding = Math.max((high - low) * .08, .01);
+      low -= drawdownPadding;
+      high += drawdownPadding;
+    } else {
+      low = Math.min(low, .9);
+      high = Math.max(high, 1.05);
+      var growthPadding = Math.max((high - low) * .06, .05);
+      low -= growthPadding;
+      high += growthPadding;
+    }
+    var scale = { low: low, high: high };
+    var count = seriesList[0].points.length;
+    var coords = seriesList.map(function (item) {
+      return item.points.map(function (point, index) {
+        return [xFor(index, count), yFor(point[1], scale)];
+      });
+    });
+    var token = animationToken + 1;
+    animationToken = token;
+    renderAxes(seriesList, scale, mode);
+    renderLegend(seriesList, mode);
+    clear(seriesGroup);
+    clear(hover);
+    seriesList.forEach(function (item, index) {
+      var path = svgElement('path', { class: 'caio-series caio-series-' + (index + 1), 'aria-label': item.label }, seriesGroup);
+      var start = resample(previousCoords[index], coords[index].length);
+      animatePath(path, start, coords[index], token);
+    });
+    overlay.setAttribute('x', margins.left);
+    overlay.setAttribute('y', margins.top);
+    overlay.setAttribute('width', svgWidth - margins.left - margins.right);
+    overlay.setAttribute('height', svgHeight - margins.top - margins.bottom);
+    current = { seriesList: seriesList, mode: mode, scale: scale, coords: coords, count: count };
+    previousCoords = coords;
+    updateLatestDetail();
+  }
+
+  overlay.addEventListener('pointermove', function (event) {
+    if (!current) return;
+    var rect = svg.getBoundingClientRect();
+    var x = (event.clientX - rect.left) / rect.width * svgWidth;
+    var index = Math.round(clamp((x - margins.left) / (svgWidth - margins.left - margins.right), 0, 1) * (current.count - 1));
+    updateHover(index);
+  });
+  overlay.addEventListener('pointerleave', function () {
+    tooltip.hidden = true;
+    tooltip.setAttribute('aria-hidden', 'true');
+    clear(hover);
+  });
+  viewSelect.addEventListener('change', function () {
+    draw();
+  });
+
+  renderAllocation();
+  draw();
+})();
+</script>

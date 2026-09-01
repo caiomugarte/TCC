@@ -8,6 +8,7 @@ Inclui:
 - Outras métricas de diversificação e risco
 =============================================================================
 """
+from __future__ import annotations
 
 from typing import Set
 import pandas as pd

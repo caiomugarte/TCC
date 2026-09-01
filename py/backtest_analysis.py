@@ -572,7 +572,7 @@ def fetch_historical_data(
         prices = prices[valid_columns]
 
         # Forward-fill para preencher gaps de até 5 dias
-        prices = prices.fillna(method='ffill', limit=5)
+        prices = prices.ffill(limit=5)
 
         # Remove linhas onde TODOS os ativos estão NaN
         prices = prices.dropna(how='all')
@@ -709,7 +709,7 @@ def calculate_metrics(
     calmar = annualized_return / abs(max_drawdown) if max_drawdown < 0 else 0.0
 
     # Retorno mensal médio
-    monthly_returns = values.resample('M').last().pct_change().dropna() * 100
+    monthly_returns = values.resample('ME').last().pct_change().dropna() * 100
     avg_monthly_return = monthly_returns.mean()
 
     return {
@@ -1535,5 +1535,36 @@ def plot_portfolios_vs_ibov_assets(
 
     print(f"  ✓ Gráfico comparativo salvo: backtest_comparison_all_assets_{period}.png")
 
+
+def run_profile_backtest(perfil: str):
+    """Gera análise de ativos e dividendos para um único perfil."""
+    for period_name, years in PERIODS.items():
+        print(f"\n{'='*70}")
+        print(f" PERFIL: {perfil.upper()} | PERÍODO: {period_name.upper()}")
+        print(f"{'='*70}")
+
+        result = run_backtest(perfil, years, analyze_assets=True)
+        asset_data = result["asset_analysis"]
+        if asset_data.empty:
+            print("  ⚠ Nenhuma análise de ativo gerada.")
+            continue
+
+        plot_asset_comparison(asset_data, perfil, period_name)
+        plot_dividend_contribution(asset_data, perfil, period_name)
+        save_asset_metrics(asset_data, perfil, period_name)
+
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Backtest de uma carteira ou de todos os perfis")
+    parser.add_argument(
+        "--profile",
+        choices=PROFILES + ["caio_new"],
+        help="Gera imagens de ativos/dividendos para um único perfil",
+    )
+    args = parser.parse_args()
+
+    if args.profile:
+        run_profile_backtest(args.profile)
+    else:
+        main()

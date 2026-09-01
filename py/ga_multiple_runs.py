@@ -24,7 +24,7 @@ DATA_DIR = Path("../data/processed")
 OUT_DIR = Path("outputs")
 OUT_DIR.mkdir(exist_ok=True)
 
-PROFILES = ["conservador", "moderado", "arrojado", "caio"]
+PROFILES = ["conservador", "moderado", "arrojado", "caio", "caio_last"]
 
 # ==================== FUNÇÕES AUXILIARES ====================
 

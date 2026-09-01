@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import json
 import pandas as pd
 import numpy as np
-from typing import Dict, List
+from typing import Dict, List, Optional, Sequence
 from collections import Counter
 from tqdm import tqdm
 import multiprocessing as mp
@@ -44,6 +44,14 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+
+
+def normalize_tickers(tickers: Optional[Sequence[str]]) -> set[str]:
+    return {
+        str(ticker).strip().upper()
+        for ticker in (tickers or ())
+        if str(ticker).strip()
+    }
 
 
 def run_single_execution(
@@ -545,12 +553,33 @@ def run_backtest_comparison(
             else:
                 prices = data
 
-            # Remove colunas com muitos NaN
-            valid_cols = [col for col in prices.columns
-                         if prices[col].count() > len(prices) * 0.5]
-            prices = prices[valid_cols]
-            prices = prices.ffill(limit=5)
-            prices = prices.dropna(how='all')
+            # Keep requested order and expose missing downloads as all-NaN columns.
+            prices = prices.reindex(columns=tickers_yf)
+
+            # ponytail: endpoint + 95% coverage gate; replace with exchange-calendar
+            # validation if suspended assets need separate treatment.
+            incomplete = []
+            latest_first_date = pd.Timestamp(start_str) + pd.Timedelta(days=7)
+            earliest_last_date = pd.Timestamp(end_str) - pd.Timedelta(days=7)
+            for ticker in tickers_yf:
+                series = prices[ticker].dropna()
+                if (
+                    series.empty
+                    or series.index[0] > latest_first_date
+                    or series.index[-1] < earliest_last_date
+                    or len(series) < len(prices) * 0.95
+                ):
+                    incomplete.append(ticker)
+
+            if incomplete:
+                print(
+                    "    ⚠ Backtest descartado: histórico incompleto para "
+                    + ", ".join(incomplete)
+                )
+                return pd.DataFrame()
+
+            # Align all assets on observed trading dates; never invent prices.
+            prices = prices.dropna()
 
             return prices
         except Exception as e:
@@ -803,7 +832,8 @@ def run_multi_execution_profile(
     adaptive_mode: bool = False,
     min_runs: int = 30,
     target_cv: float = 0.03,
-    target_jaccard: float = 0.70
+    target_jaccard: float = 0.70,
+    exclude_tickers: Optional[Sequence[str]] = None,
 ) -> Dict:
     """
     Executa múltiplas rodadas do GA para um perfil.
@@ -828,6 +858,8 @@ def run_multi_execution_profile(
         CV alvo do fitness para convergência (default: 0.03 = 3%).
     target_jaccard : float
         Jaccard médio alvo para convergência (default: 0.70 = 70%).
+    exclude_tickers : Sequence[str], optional
+        Tickers removed before scoring and genetic optimization.
 
     Returns
     -------
@@ -838,8 +870,9 @@ def run_multi_execution_profile(
     print(f"Perfil: {profile.upper()}")
     print(f"{'='*70}")
 
-    # Arquivo de checkpoint
-    checkpoint_file = OUTPUTS_DIR / f".checkpoint_{profile}_runs.json"
+    excluded = normalize_tickers(exclude_tickers)
+    checkpoint_suffix = f"_excluding_{'-'.join(sorted(excluded))}" if excluded else ""
+    checkpoint_file = OUTPUTS_DIR / f".checkpoint_{profile}_runs{checkpoint_suffix}.json"
 
     # Tenta carregar checkpoint existente
     results = []
@@ -869,6 +902,14 @@ def run_multi_execution_profile(
         from core.preprocessing import load_raw_data, preprocess_profile
         df_raw = load_raw_data()
         df = preprocess_profile(df_raw, profile)
+
+    if excluded:
+        available = normalize_tickers(df["TICKER"].tolist())
+        unknown = excluded - available
+        if unknown:
+            raise ValueError(f"tickers not found for exclusion: {sorted(unknown)}")
+        df = df[~df["TICKER"].astype(str).str.upper().isin(excluded)].copy()
+        print(f"Excluding tickers: {', '.join(sorted(excluded))}")
 
     df = apply_robustness_filter(df)
     df_ranked = build_scores(df, profile)

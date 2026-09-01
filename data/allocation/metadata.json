@@ -1,0 +1,48 @@
+{
+  "source": "B3, Banco Central do Brasil, and Yahoo Finance chart API",
+  "retrieved_at": "2026-07-22T11:45:53.089257-03:00",
+  "cutoff_date": "2026-07-21",
+  "requested_start_date": "2016-07-21",
+  "notes": "Daily common-date intersection; no forward-fill. Caio stocks use Yahoo adjusted close and equal-weight annual rebalancing. IFIX and S&P 500 TR are total-return levels. USD levels are converted with closing PTAX midpoint. Fixed income uses BCB SGS 12 daily CDI factors (cross-checked against B3 DI FTP using the 252-business-day convention). BTC uses Yahoo BTC-USD close.",
+  "sources": {
+    "caio_stocks": {
+      "provider": "Yahoo Finance chart API",
+      "symbols": [
+        "VULC3.SA",
+        "ISAE4.SA",
+        "BBDC3.SA",
+        "FLRY3.SA",
+        "POMO4.SA",
+        "ITSA3.SA",
+        "BBAS3.SA",
+        "CMIG4.SA",
+        "TAEE3.SA",
+        "UNIP6.SA"
+      ]
+    },
+    "sp500_total_return_usd": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "^SP500TR"
+    },
+    "btc_usd": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "BTC-USD"
+    },
+    "ifix": {
+      "provider": "B3 Index Statistics API",
+      "index": "IFIX"
+    },
+    "di": {
+      "provider": "Banco Central do Brasil SGS API",
+      "series": 12,
+      "unit": "% per business day",
+      "endpoint": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados",
+      "cross_check": "B3 DI FTP annual rate converted with 252-business-day factor"
+    },
+    "ptax": {
+      "provider": "Banco Central do Brasil PTAX OData",
+      "currency": "USD",
+      "quote": "closing midpoint"
+    }
+  }
+}

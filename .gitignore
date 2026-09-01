@@ -27,6 +27,10 @@ env/
 .DS_Store
 Thumbs.db
 
+# Local secrets
+web/.env.local
+api/.env
+
 # Dados grandes (opcional - descomente se quiser ignorar)
 # data/raw/*.csv
 # data/processed/*.csv

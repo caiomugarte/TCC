@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent / "py"))
 from pipelines.multi_run import run_multi_execution_profile
 
 
-def quick_test(profile: str = "caio"):
+def quick_test(profile: str = "caio", exclude_tickers=None):
     """Teste rápido: 20 runs em paralelo."""
     print("\n" + "=" * 70)
     print("MODO: TESTE RÁPIDO")
@@ -42,11 +42,12 @@ def quick_test(profile: str = "caio"):
         n_runs=20,
         parallel=True,
         adaptive_mode=False,
-        save_interval=5
+        save_interval=5,
+        exclude_tickers=exclude_tickers,
     )
 
 
-def production_mode(profile: str = "caio"):
+def production_mode(profile: str = "caio", exclude_tickers=None):
     """Modo produção: até 100 runs com modo adaptativo."""
     print("\n" + "=" * 70)
     print("MODO: PRODUÇÃO (RECOMENDADO)")
@@ -67,11 +68,12 @@ def production_mode(profile: str = "caio"):
         min_runs=30,
         target_cv=0.03,
         target_jaccard=0.70,
-        save_interval=10
+        save_interval=10,
+        exclude_tickers=exclude_tickers,
     )
 
 
-def max_quality_mode(profile: str = "caio"):
+def max_quality_mode(profile: str = "caio", exclude_tickers=None):
     """Máxima qualidade: até 150 runs."""
     print("\n" + "=" * 70)
     print("MODO: MÁXIMA QUALIDADE")
@@ -98,7 +100,8 @@ def max_quality_mode(profile: str = "caio"):
         min_runs=40,
         target_cv=0.02,      # Critério mais rigoroso
         target_jaccard=0.75,  # Critério mais rigoroso
-        save_interval=10
+        save_interval=10,
+        exclude_tickers=exclude_tickers,
     )
 
 
@@ -109,7 +112,7 @@ def custom_mode():
     print("=" * 70)
 
     # Perfil
-    print("\nPerfis disponíveis: conservador, moderado, arrojado, caio")
+    print("\nPerfis disponíveis: conservador, moderado, arrojado, caio, caio_new, caio_last")
     profile = input("Digite o perfil [caio]: ").strip() or "caio"
 
     # Número de runs
@@ -232,8 +235,14 @@ Para mais detalhes, consulte: OPTIMIZATION_GUIDE.md
         "--profile",
         type=str,
         default="caio",
-        choices=["conservador", "moderado", "arrojado", "caio"],
+        choices=["conservador", "moderado", "arrojado", "caio", "caio_new", "caio_last"],
         help="Perfil de investidor (default: caio)"
+    )
+    parser.add_argument(
+        "--exclude-ticker",
+        action="append",
+        default=[],
+        help="Ticker to exclude; repeat option for multiple tickers",
     )
 
     args = parser.parse_args()
@@ -243,11 +252,11 @@ Para mais detalhes, consulte: OPTIMIZATION_GUIDE.md
         interactive_mode()
     else:
         if args.quick:
-            quick_test(args.profile)
+            quick_test(args.profile, args.exclude_ticker)
         elif args.production:
-            production_mode(args.profile)
+            production_mode(args.profile, args.exclude_ticker)
         elif args.max_quality:
-            max_quality_mode(args.profile)
+            max_quality_mode(args.profile, args.exclude_ticker)
         else:
             print("Use --quick, --production ou --max-quality")
 

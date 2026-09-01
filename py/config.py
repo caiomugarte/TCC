@@ -11,6 +11,7 @@ Este módulo centraliza:
 - Lista do Ibovespa
 =============================================================================
 """
+from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, List
@@ -40,7 +41,7 @@ RAW_DATA_FILE = DATA_RAW / "status_invest_fundamentals.csv"
 # PERFIS DE INVESTIDOR
 # ============================================================================
 
-PROFILES = ["conservador", "moderado", "arrojado", "caio"]
+PROFILES = ["conservador", "moderado", "arrojado", "caio", "caio_new", "caio_last"]
 
 # Filtros de elegibilidade por perfil (valor de mercado e liquidez)
 FILTERS: Dict[str, Dict[str, float]] = {
@@ -51,6 +52,14 @@ FILTERS: Dict[str, Dict[str, float]] = {
     "cap_min": 3_000_000_000,
     "liq_min": 1_050_000
 },
+    "caio_new": {
+        "cap_min": 470_000_000,
+        "liq_min": 202_000,
+    },
+    "caio_last": {
+        "cap_min": 3_000_000_000,
+        "liq_min": 1_250_000,
+    },
 }
 
 # ============================================================================
@@ -82,6 +91,18 @@ GA_CONFIG: Dict[str, Dict[str, int | float]] = {
     "generations": 600,
     "pop_size": 400 #AUMENTEI, TENHO QUE AUMENTAR NO QUESITIONARIO
 },
+    "caio_new": {
+        "n_assets": 14,
+        "lambda": 0.151,
+        "generations": 470,
+        "pop_size": 280,
+    },
+    "caio_last": {
+        "n_assets": 11,
+        "lambda": 0.375,
+        "generations": 350,
+        "pop_size": 230,
+    },
 }
 
 # Parâmetros genéricos do GA (aplicam-se a todos os perfis)
@@ -151,6 +172,20 @@ PROFILE_WEIGHTS: Dict[str, Dict[str, float]] = {
     "growth": 0.04,
     "div": 0.26
 },
+    "caio_new": {
+        "liquidez": 0.1338,
+        "rent": 0.2169,
+        "value": 0.2169,
+        "growth": 0.3324,
+        "div": 0.1,
+    },
+    "caio_last": {
+        "liquidez": 0.25,
+        "rent": 0.25,
+        "value": 0.2,
+        "growth": 0.15,
+        "div": 0.15,
+    },
 }
 
 # ============================================================================

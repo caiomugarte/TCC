@@ -354,7 +354,7 @@ def main():
     parser.add_argument(
         "--profile",
         type=str,
-        choices=["conservador", "moderado", "arrojado", "caio"],
+        choices=["conservador", "moderado", "arrojado", "caio", "caio_new", "caio_last"],
         help="Perfil específico para executar (default: todos)"
     )
 

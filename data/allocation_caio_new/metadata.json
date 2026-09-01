@@ -1,0 +1,62 @@
+{
+  "source": "B3, Banco Central do Brasil, and Yahoo Finance chart API",
+  "retrieved_at": "2026-07-23T12:33:11.451683-03:00",
+  "cutoff_date": "2026-07-21",
+  "requested_start_date": "2016-07-21",
+  "notes": "Daily common-date intersection; no forward-fill. Caio stocks use Yahoo adjusted close and equal-weight annual rebalancing. IFIX and S&P 500 TR are total-return levels. USD levels are converted with closing PTAX midpoint. Fixed income uses BCB SGS 12 daily CDI factors (cross-checked against B3 DI FTP using the 252-business-day convention). BTC uses Yahoo BTC-USD close. Ibovespa is a price-index benchmark and does not include dividends. Permanent Yahoo no-data ticker failures are skipped and recorded; transient fetch failures stop the snapshot.",
+  "sources": {
+    "caio_stocks": {
+      "provider": "Yahoo Finance chart API",
+      "symbols": [
+        "CXSE3.SA",
+        "FIQE3.SA",
+        "UNIP3.SA",
+        "MBRF3.SA",
+        "TAEE3.SA",
+        "BMOB3.SA",
+        "POMO3.SA",
+        "JHSF3.SA",
+        "PSSA3.SA",
+        "LAVV3.SA",
+        "SIMH3.SA",
+        "AZZA3.SA",
+        "PFRM3.SA"
+      ]
+    },
+    "sp500_total_return_usd": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "^SP500TR"
+    },
+    "btc_usd": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "BTC-USD"
+    },
+    "ibovespa": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "^BVSP",
+      "treatment": "price index; dividends not included"
+    },
+    "ifix": {
+      "provider": "B3 Index Statistics API",
+      "index": "IFIX"
+    },
+    "di": {
+      "provider": "Banco Central do Brasil SGS API",
+      "series": 12,
+      "unit": "% per business day",
+      "endpoint": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados",
+      "cross_check": "B3 DI FTP annual rate converted with 252-business-day factor"
+    },
+    "ptax": {
+      "provider": "Banco Central do Brasil PTAX OData",
+      "currency": "USD",
+      "quote": "closing midpoint"
+    }
+  },
+  "skipped_tickers": [
+    "BRFS3"
+  ],
+  "skipped_ticker_reasons": {
+    "BRFS3": "could not fetch https://query2.finance.yahoo.com/v8/finance/chart/BRFS3.SA?period1=1469059200&period2=1784678400&interval=1d&events=div%2Csplits&includeAdjustedClose=true: HTTP Error 404: Not Found"
+  }
+}
