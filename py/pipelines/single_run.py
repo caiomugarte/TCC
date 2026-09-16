@@ -17,8 +17,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import json
+import math
 import pandas as pd
-from typing import Dict, Optional
+from typing import Dict, Mapping, Optional
 from tqdm import tqdm
 
 from config import OUTPUTS_DIR, PROFILES, DATA_PROCESSED, RAW_DATA_FILE, METRIC_COLS
@@ -34,11 +35,128 @@ from utils.cache import CacheManager
 from cleaner import to_float
 
 
+def _explicit_stock_config(config: Mapping[str, object]) -> Dict[str, object]:
+    """Validate and normalize the Premium stock selector contract."""
+
+    result = dict(config)
+    factor_weights = result.get("factor_weights", result.get("weights"))
+    filters = result.get("liquidity_and_size_filters", result.get("filters"))
+    if not isinstance(factor_weights, Mapping):
+        raise ValueError("explicit stock config requires factor_weights")
+    if not isinstance(filters, Mapping):
+        raise ValueError(
+            "explicit stock config requires liquidity_and_size_filters"
+        )
+    system_ga = result.get("system_ga_config")
+    if not isinstance(system_ga, Mapping):
+        raise ValueError("explicit stock config requires system_ga_config")
+    settings = dict(system_ga)
+    for key in (
+        "n_assets", "lambda", "lambda_hhi", "generations", "pop_size",
+        "population", "crossover_rate", "mutation_rate",
+    ):
+        if key in result:
+            settings[key] = result[key]
+    if "population" in settings and "pop_size" not in settings:
+        settings["pop_size"] = settings["population"]
+    if "lambda_hhi" in settings and "lambda" not in settings:
+        settings["lambda"] = settings["lambda_hhi"]
+    missing = [
+        key for key in ("n_assets", "lambda", "generations", "pop_size")
+        if key not in settings
+    ]
+    if missing:
+        raise ValueError(f"explicit stock config missing fields: {missing}")
+    result["factor_weights"] = dict(factor_weights)
+    result["liquidity_and_size_filters"] = dict(filters)
+    result["system_ga_config"] = settings
+    result["n_assets"] = int(settings["n_assets"])
+    result["lambda_hhi"] = float(settings["lambda"])
+    return result
+
+
+def run_stock_selection(
+    input_path: Path = RAW_DATA_FILE,
+    config: Optional[Mapping[str, object]] = None,
+    workspace: Optional[Path] = None,
+    seed: int = 42,
+    robustness_filter: bool = True,
+    *,
+    selection_config: Optional[Mapping[str, object]] = None,
+) -> Dict[str, object]:
+    """Run the explicit stock selector and return a serializable result shape.
+
+    The mapping contains ``selected_tickers``, equal ``sleeve_weights``,
+    ``metrics``, ``exclusion_reasons``, ``seed``, ``workspace``, and the
+    intermediate DataFrames under ``portfolio`` and ``ranked`` for adapters
+    that need diagnostics.  No shared profile-named output is written.
+    """
+
+    if config is not None and selection_config is not None:
+        raise ValueError("pass only one of config or selection_config")
+    explicit = selection_config if selection_config is not None else config
+    if explicit is None:
+        raise ValueError("explicit stock selector config is required")
+    resolved = _explicit_stock_config(explicit)
+    raw = input_path if isinstance(input_path, pd.DataFrame) else load_raw_data(Path(input_path))
+    clean = preprocess_profile(raw, config=resolved)
+    if clean.empty:
+        raise ValueError("no stock assets passed explicit eligibility filters")
+    if robustness_filter:
+        clean = apply_robustness_filter(clean)
+    if clean.empty:
+        raise ValueError("no stock assets passed the robustness filter")
+    ranked = build_scores(clean, factor_weights=resolved["factor_weights"])
+    portfolio = optimize_portfolio(ranked, config=resolved, seed=seed)
+    selected_tickers = sorted(str(ticker).upper() for ticker in portfolio["TICKER"])
+    sleeve_weights = {
+        ticker: 1.0 / len(selected_tickers) for ticker in selected_tickers
+    }
+
+    workspace_path = Path(workspace) if workspace is not None else None
+    output_path = None
+    processed_path = None
+    if workspace_path is not None:
+        workspace_path.mkdir(parents=True, exist_ok=True)
+        output_path = workspace_path / "stock_selection.json"
+        processed_path = workspace_path / "stock_processed.csv"
+        portfolio.to_json(output_path, orient="records", indent=2, force_ascii=False)
+        clean.to_csv(processed_path, index=False)
+
+    return {
+        "selection_preset": resolved.get("selection_preset", "explicit"),
+        "selected_tickers": selected_tickers,
+        "sleeve_weights": sleeve_weights,
+        "weights": sleeve_weights,
+        "metrics": {
+            "fitness": float(portfolio.attrs["fitness"]),
+            "hhi": float(portfolio.attrs["hhi"]),
+            "generations_run": int(portfolio.attrs.get("generations_run", 0)),
+            "converged_early": bool(portfolio.attrs.get("converged_early", False)),
+            "score_mean": float(portfolio["SCORE"].mean()),
+            "score_median": float(portfolio["SCORE"].median()),
+        },
+        "exclusion_reasons": dict(clean.attrs.get("exclusion_reasons", {})),
+        "config": resolved,
+        "seed": int(seed),
+        "workspace": str(workspace_path) if workspace_path is not None else None,
+        "output_path": output_path,
+        "processed_path": processed_path,
+        "portfolio": portfolio,
+        "ranked": ranked,
+    }
+
+
 def run_single_portfolio(
-    profile: str,
+    profile: Optional[str] = None,
     use_cache: bool = True,
     robustness_filter: bool = True,
-    random_seed: Optional[int] = None
+    random_seed: Optional[int] = None,
+    input_path: Optional[Path] = None,
+    config: Optional[Mapping[str, object]] = None,
+    selection_config: Optional[Mapping[str, object]] = None,
+    workspace: Optional[Path] = None,
+    seed: Optional[int] = None,
 ) -> pd.DataFrame:
     """
     Executa pipeline completo para um único perfil.
@@ -59,11 +177,24 @@ def run_single_portfolio(
     pd.DataFrame
         Carteira otimizada.
     """
+    explicit = selection_config if selection_config is not None else config
+    if explicit is not None:
+        if selection_config is not None and config is not None:
+            raise ValueError("pass only one of config or selection_config")
+        return run_stock_selection(
+            input_path=input_path or RAW_DATA_FILE,
+            config=explicit,
+            workspace=workspace,
+            seed=(seed if seed is not None else (random_seed if random_seed is not None else 42)),
+            robustness_filter=robustness_filter,
+        )["portfolio"]
+    if profile is None:
+        raise ValueError("profile is required for a named stock run")
     cache = CacheManager()
 
     # 1. Carrega dados brutos
     print(f"[{profile}] Carregando dados brutos...")
-    df_raw = load_raw_data()
+    df_raw = load_raw_data(input_path or RAW_DATA_FILE)
 
     # 2. Pré-processamento (com cache)
     print(f"[{profile}] Pré-processando dados...")
@@ -73,7 +204,7 @@ def run_single_portfolio(
         df_clean = cache.get_or_compute(
             key=cache_key,
             compute_fn=lambda: preprocess_profile(df_raw, profile),
-            dependencies=[str(RAW_DATA_FILE)],
+            dependencies=[str(input_path or RAW_DATA_FILE)],
             format="csv"
         )
     else:
@@ -93,7 +224,11 @@ def run_single_portfolio(
 
     # 5. Otimiza carteira via GA
     print(f"[{profile}] Executando Algoritmo Genético...")
-    portfolio = optimize_portfolio(df_ranked, profile, random_seed=random_seed)
+    portfolio = optimize_portfolio(
+        df_ranked,
+        profile,
+        random_seed=(seed if seed is not None else random_seed),
+    )
 
     print(f"[{profile}] ✓ Carteira otimizada: {len(portfolio)} ativos")
     print(f"[{profile}]   Fitness: {portfolio.attrs['fitness']:.2f}")

@@ -4,3 +4,7 @@ SQLAlchemy>=2,<3
 alembic>=1.13,<2
 psycopg[binary]>=3,<4
 clerk-backend-api>=7,<8
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+tqdm>=4.65

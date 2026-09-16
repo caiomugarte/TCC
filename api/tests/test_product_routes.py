@@ -7,15 +7,20 @@ from sqlalchemy.orm import Session
 
 from app.auth.dependencies import ClerkIdentity, get_current_account
 from app.db.base import Base
-from app.db.models import Account, PortfolioSnapshot, RecommendationRun
+from app.db.models import Account, Entitlement, PortfolioSnapshot, ProfileRecord, RecommendationRun
 from app.entitlements.dependencies import require_premium
 from app.routers.portfolio import read_portfolio, save_portfolio
 from app.routers.profile import read_profile, save_profile
-from app.routers.recommendations import create_recommendation, read_recommendation
+from app.routers.recommendations import (
+    create_recommendation,
+    read_latest_recommendation,
+    read_recommendation,
+)
 from app.routers.review import read_review
 from app.schemas.portfolio import PortfolioInput
 from app.schemas.profile import ProfileSubmission
 from app.schemas.recommendation import RecommendationRequest
+from app.services.profile import compute_profile
 
 
 def valid_answers() -> dict[str, str | list[str]]:
@@ -76,6 +81,26 @@ class ProductRouteTests(unittest.TestCase):
         self.assertEqual(loaded.suitability_score, second.suitability_score)
         self.assertIsNone(read_profile(self.other_account, self.session))
 
+    def test_profile_provenance_is_persisted_with_canonical_restrictions(self):
+        answers = valid_answers()
+        answers["restricoes"] = ["evitar_exterior", "priorizar_renda", "evitar_exterior"]
+        submission = ProfileSubmission(
+            answers=answers,
+            investableCapitalBrl=100_000,
+            consented=True,
+        )
+        computed = compute_profile(submission)
+
+        profile = save_profile(submission, self.account, self.session)
+        stored = self.session.get(ProfileRecord, profile.id)
+
+        self.assertIsNotNone(stored)
+        self.assertEqual(float(stored.raw_score), computed.raw_score)
+        self.assertEqual(stored.rules_json, computed.rules)
+        self.assertEqual(stored.warnings_json, computed.warnings)
+        self.assertEqual(stored.restrictions_json, ["priorizar_renda", "evitar_exterior"])
+        self.assertEqual(stored.schema_version, 1)
+
     def test_recommendation_is_persisted_and_cross_account_read_is_hidden(self):
         profile = self.save_valid_profile()
         engine_result = {
@@ -102,6 +127,59 @@ class ProductRouteTests(unittest.TestCase):
         with self.assertRaises(HTTPException) as error:
             read_recommendation(recommendation.id, self.other_account, self.session)
         self.assertEqual(error.exception.status_code, 404)
+
+    def test_latest_recommendation_matches_current_profile_and_plan(self):
+        first_profile = self.save_valid_profile()
+        engine_result = {
+            "plan": "basic",
+            "model_version": "allocation-v1",
+            "snapshot_id": "fixture-v1",
+            "snapshot_cutoff": "2026-07-21",
+            "classes": [],
+            "assumptions": [],
+            "risks": [],
+        }
+        with patch("app.routers.recommendations.generate_basic_recommendation", return_value=engine_result):
+            basic = create_recommendation(RecommendationRequest(), self.account, self.session)
+
+        self.save_valid_profile()
+        self.assertIsNone(read_latest_recommendation(self.account, self.session))
+
+        current_profile = self.session.scalar(
+            select(ProfileRecord)
+            .where(ProfileRecord.account_id == self.account.id)
+            .order_by(ProfileRecord.version.desc())
+            .limit(1)
+        )
+        self.session.add(
+            Entitlement(
+                account_id=self.account.id,
+                plan="premium",
+                status="active",
+            )
+        )
+        premium = RecommendationRun(
+            account_id=self.account.id,
+            profile_id=current_profile.id,
+            plan="premium",
+            model_version="premium-v1",
+            snapshot_id="fixture-v2",
+            snapshot_cutoff="2026-07-21",
+            classes=[],
+            assumptions=[],
+            risks=[],
+            status="completed",
+        )
+        self.session.add(premium)
+        self.session.commit()
+        self.assertEqual(read_latest_recommendation(self.account, self.session).id, premium.id)
+
+        self.session.scalar(
+            select(Entitlement).where(Entitlement.account_id == self.account.id)
+        ).status = "inactive"
+        self.session.commit()
+        self.assertIsNone(read_latest_recommendation(self.account, self.session))
+        self.assertNotEqual(basic.profile_version, current_profile.version)
 
     def test_missing_recommendation_input_does_not_publish_partial_result(self):
         self.save_valid_profile()

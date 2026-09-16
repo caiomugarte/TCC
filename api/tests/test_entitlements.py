@@ -6,7 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.db.base import Base
 from app.db.models import Account, Entitlement
-from app.entitlements.dependencies import require_premium
+from app.config import AppSettings
+from app.entitlements.dependencies import require_premium, require_premium_pilot
 from app.routers.premium import read_premium_access
 
 
@@ -56,6 +57,54 @@ class EntitlementTests(unittest.TestCase):
         self.session.commit()
 
         self.assertEqual(require_premium(self.account, self.session).status, "grace_period")
+
+    def test_premium_account_outside_pilot_allowlist_is_rejected(self) -> None:
+        self.session.add(
+            Entitlement(account_id=self.account.id, plan="premium", status="active")
+        )
+        self.session.commit()
+
+        with self.assertRaises(HTTPException) as error:
+            require_premium_pilot(
+                self.account,
+                self.session,
+                AppSettings("development", frozenset()),
+            )
+
+        self.assertEqual(error.exception.status_code, 403)
+        self.assertEqual(error.exception.detail["code"], "premium_pilot_required")
+
+    def test_premium_allowlist_grants_active_and_grace_access(self) -> None:
+        entitlement = Entitlement(
+            account_id=self.account.id,
+            plan="premium",
+            status="grace_period",
+        )
+        self.session.add(entitlement)
+        self.session.commit()
+
+        granted = require_premium_pilot(
+            self.account,
+            self.session,
+            AppSettings("production", frozenset({self.account.id})),
+        )
+
+        self.assertEqual(granted.status, "grace_period")
+
+    def test_empty_production_allowlist_fails_closed_before_pilot_grant(self) -> None:
+        self.session.add(
+            Entitlement(account_id=self.account.id, plan="premium", status="active")
+        )
+        self.session.commit()
+
+        with self.assertRaises(HTTPException) as error:
+            require_premium_pilot(
+                self.account,
+                self.session,
+                AppSettings("production", frozenset()),
+            )
+
+        self.assertEqual(error.exception.detail["code"], "premium_pilot_required")
 
 
 if __name__ == "__main__":

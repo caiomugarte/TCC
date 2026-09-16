@@ -10,7 +10,7 @@ from app.auth.dependencies import get_current_account
 from app.db.models import Account, ProfileRecord, utc_now
 from app.db.session import get_session
 from app.schemas.profile import ProfileResponse, ProfileSubmission
-from app.services.profile import compute_profile
+from app.services.profile import compute_profile, normalize_restrictions
 
 router = APIRouter(prefix="/v1/profile", tags=["profile"])
 
@@ -63,6 +63,11 @@ def save_profile(
         answers=computed.answers,
         dimensions=computed.dimensions,
         suitability_score=computed.score,
+        raw_score=computed.raw_score,
+        rules_json=computed.rules,
+        warnings_json=computed.warnings,
+        restrictions_json=normalize_restrictions(computed.answers["restricoes"]),
+        schema_version=computed.version,
         generic_profile=computed.generic_profile,
         investable_capital_brl=computed.investable_capital_brl,
         consented_at=utc_now(),

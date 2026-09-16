@@ -38,11 +38,26 @@ export type RecommendationRequest = {
   investableCapitalBrl?: number;
 };
 
+export type PremiumRecommendationRequest = {
+  profileId?: string;
+};
+
+export type RecommendationStatus = "queued" | "running" | "completed" | "failed";
+
 export type AllocationClass = {
   key: AssetClassKey;
   label: string;
   targetWeight: number;
   targetAmountBrl: number;
+  metrics?: Record<string, unknown>;
+};
+
+export type RecommendationConstituent = {
+  ticker: string;
+  sleeveWeight: number;
+  portfolioWeight: number;
+  targetAmountBrl: number;
+  reasons: string[];
 };
 
 export type Recommendation = {
@@ -56,6 +71,27 @@ export type Recommendation = {
   assumptions: string[];
   risks: string[];
   createdAt: string;
+  status?: RecommendationStatus;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  failureCode?: string | null;
+  failureMessage?: string | null;
+  stocks?: RecommendationConstituent[];
+  fiis?: RecommendationConstituent[];
+  policy?: Record<string, unknown> | null;
+  provenance?: Record<string, unknown> | null;
+};
+
+export type PremiumRecommendation = Recommendation & {
+  status: RecommendationStatus;
+  startedAt: string | null;
+  completedAt: string | null;
+  failureCode: string | null;
+  failureMessage: string | null;
+  stocks: RecommendationConstituent[];
+  fiis: RecommendationConstituent[];
+  policy: Record<string, unknown> | null;
+  provenance: Record<string, unknown> | null;
 };
 
 export type PortfolioInput = {

@@ -6,7 +6,7 @@ keeps currency conversions and data-quality checks visible.
 """
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 import json
 from pathlib import Path
@@ -14,6 +14,12 @@ from typing import Dict, Mapping, Optional, Sequence, Tuple
 
 from allocation_config import ASSET_CLASSES
 from core.allocation import DailyReturn, simulate_portfolio
+from snapshot_manifest import (
+    ALLOCATION_FILES,
+    SnapshotManifest,
+    SnapshotManifestError,
+    validate_manifest,
+)
 
 
 class SnapshotError(ValueError):
@@ -31,6 +37,8 @@ class SnapshotBundle:
     metadata: Mapping[str, object]
     start_date: date
     end_date: date
+    manifest_id: Optional[str] = None
+    source_metadata: Mapping[str, object] = field(default_factory=dict)
 
 
 def _parse_date(raw: str) -> date:
@@ -207,6 +215,119 @@ def load_caio_tickers(portfolio_path: Path) -> Tuple[str, ...]:
     return load_portfolio_tickers(portfolio_path, "Caio")
 
 
+def _manifest_metadata(manifest: SnapshotManifest) -> Dict[str, object]:
+    return {
+        "manifest_id": manifest.manifest_id,
+        "manifest_version": manifest.manifest_version,
+        "cutoff_date": manifest.cutoff_date.isoformat(),
+        "common_dates": [item.isoformat() for item in manifest.common_dates],
+        "supported_classes": list(manifest.supported_classes),
+        "sources": {
+            key: source.as_dict()
+            for key, source in sorted(manifest.sources.items())
+        },
+    }
+
+
+def _manifest_level_series(
+    manifest: SnapshotManifest,
+    key: str,
+) -> Dict[str, LevelSeries]:
+    """Read one manifest-named allocation input without filling dates."""
+
+    source = manifest.source_for(key)
+    path = source.resolved_path()
+    if path.is_dir():
+        filename = ALLOCATION_FILES.get(key)
+        files = source.metadata.get("files", {})
+        if isinstance(files, Mapping):
+            filename = str(files.get(key, filename or ""))
+        if not filename:
+            raise SnapshotError(f"manifest source {key} does not name an allocation file")
+        path = path / filename
+    return read_levels_csv(path)
+
+
+def _build_manifest_sleeve(
+    manifest: SnapshotManifest,
+    key: str,
+    *,
+    rebalance_years: int,
+) -> LevelSeries:
+    levels = _manifest_level_series(manifest, key)
+    return build_equal_weight_sleeve(levels, rebalance_years=rebalance_years)
+
+
+def load_premium_snapshot_bundle(
+    manifest: SnapshotManifest,
+    rebalance_years: int = 1,
+) -> SnapshotBundle:
+    """Load all five allocation classes from a validated immutable manifest.
+
+    Return shape is ``SnapshotBundle``.  Its rows contain BRL daily returns for
+    ``ASSET_CLASSES``; ``manifest_id`` and ``source_metadata`` carry the
+    provenance needed by the API orchestrator.  This path never reads IFIX,
+    portfolio artifacts, or the network.
+    """
+
+    try:
+        checked_manifest = validate_manifest(manifest)
+    except SnapshotManifestError as exc:
+        raise SnapshotError(str(exc)) from exc
+
+    allocation_source = checked_manifest.sources.get("allocation")
+    metadata: Dict[str, object] = {}
+    if allocation_source is not None:
+        allocation_path = allocation_source.resolved_path()
+        metadata_path = allocation_path / "metadata.json" if allocation_path.is_dir() else None
+        if metadata_path is not None and metadata_path.exists():
+            metadata.update(read_metadata(metadata_path))
+    metadata.update(_manifest_metadata(checked_manifest))
+
+    levels = {
+        "brazilian_stocks": _build_manifest_sleeve(
+            checked_manifest,
+            "brazilian_stocks",
+            rebalance_years=rebalance_years,
+        ),
+        "fiis": _build_manifest_sleeve(
+            checked_manifest,
+            "fiis",
+            rebalance_years=rebalance_years,
+        ),
+        "international_equity": multiply_levels(
+            _single_series(_manifest_level_series(checked_manifest, "international_equity")),
+            _single_series(_manifest_level_series(checked_manifest, "ptax")),
+        ),
+        "fixed_income": _single_series(
+            _manifest_level_series(checked_manifest, "fixed_income")
+        ),
+        "crypto": multiply_levels(
+            _single_series(_manifest_level_series(checked_manifest, "crypto")),
+            _single_series(_manifest_level_series(checked_manifest, "ptax")),
+        ),
+    }
+    rows = levels_to_returns(levels, ASSET_CLASSES)
+    row_dates = tuple(row.date for row in rows)
+    if row_dates != checked_manifest.common_dates:
+        raise SnapshotError(
+            "allocation source dates do not match manifest common_dates"
+        )
+    if rows[-1].date != checked_manifest.cutoff_date:
+        raise SnapshotError("allocation source ends before manifest cutoff_date")
+    return SnapshotBundle(
+        rows=rows,
+        metadata=metadata,
+        start_date=rows[0].date,
+        end_date=rows[-1].date,
+        manifest_id=checked_manifest.manifest_id,
+        source_metadata={
+            key: source.as_dict()
+            for key, source in sorted(checked_manifest.sources.items())
+        },
+    )
+
+
 def _metadata_tickers(metadata: Mapping[str, object], key: str) -> set[str]:
     raw_tickers = metadata.get(key, ())
     if not isinstance(raw_tickers, (list, tuple, set)):
@@ -219,12 +340,32 @@ def _metadata_tickers(metadata: Mapping[str, object], key: str) -> set[str]:
 
 
 def load_snapshot_bundle(
-    snapshot_dir: Path,
-    portfolio_path: Path,
+    snapshot_dir: Path | SnapshotManifest,
+    portfolio_path: Optional[Path] = None,
     fii_portfolio_path: Optional[Path] = None,
     rebalance_years: int = 1,
+    *,
+    manifest: Optional[SnapshotManifest] = None,
+    premium: bool = False,
 ) -> SnapshotBundle:
-    """Load the documented offline snapshot layout into BRL daily returns."""
+    """Load Basic local snapshots or a strict manifest-backed Premium snapshot.
+
+    Basic keeps its historical signature and IFIX fallback.  Supplying a
+    manifest (or ``premium=True``) selects the strict path and requires all
+    manifest-named classes; it never substitutes IFIX or a fixed artifact.
+    """
+
+    if isinstance(snapshot_dir, SnapshotManifest):
+        if manifest is not None:
+            raise SnapshotError("manifest supplied twice")
+        manifest = snapshot_dir
+    if premium or manifest is not None:
+        if manifest is None:
+            raise SnapshotError("Premium loading requires a validated manifest")
+        return load_premium_snapshot_bundle(manifest, rebalance_years=rebalance_years)
+    if portfolio_path is None:
+        raise SnapshotError("Basic loading requires a portfolio path")
+    snapshot_dir = Path(snapshot_dir)
 
     metadata = read_metadata(snapshot_dir / "metadata.json")
     skipped_tickers = _metadata_tickers(metadata, "skipped_tickers")
