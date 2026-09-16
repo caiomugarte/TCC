@@ -17,9 +17,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import json
+import hashlib
 import pandas as pd
 import numpy as np
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Mapping, Optional, Sequence
 from collections import Counter
 from tqdm import tqdm
 import multiprocessing as mp
@@ -31,11 +32,17 @@ from config import (
     N_RUNS,
     GA_CONFIG,
     METRIC_COLS,
-    DATA_PROCESSED
+    DATA_PROCESSED,
+    RAW_DATA_FILE,
 )
-from core.preprocessing import load_processed_data, apply_robustness_filter
+from core.preprocessing import (
+    load_processed_data,
+    load_raw_data,
+    preprocess_profile,
+    apply_robustness_filter,
+)
 from core.scoring import build_scores
-from core.optimizer import optimize_portfolio
+from core.optimizer import derive_run_seed, optimize_portfolio
 from core.metrics import hhi_sector, jaccard_similarity, coefficient_of_variation
 from cleaner import to_float
 
@@ -54,10 +61,19 @@ def normalize_tickers(tickers: Optional[Sequence[str]]) -> set[str]:
     }
 
 
+def _config_fingerprint(config: Optional[Mapping[str, object]]) -> str:
+    payload = json.dumps(dict(config or {}), sort_keys=True, default=str)
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 def run_single_execution(
     df_ranked: pd.DataFrame,
-    profile: str,
-    run_id: int
+    profile: Optional[str],
+    run_id: int,
+    *,
+    base_seed: int = 42,
+    selection_config: Optional[Mapping[str, object]] = None,
+    workspace: Optional[Path] = None,
 ) -> tuple:
     """
     Executa uma única rodada do GA com seed específico.
@@ -76,8 +92,23 @@ def run_single_execution(
     tuple
         (Dict com resultados, DataFrame do portfolio)
     """
-    seed_value = 42 + run_id
-    portfolio = optimize_portfolio(df_ranked, profile, random_seed=seed_value)
+    seed_value = derive_run_seed(base_seed, run_id, "stock")
+    portfolio = optimize_portfolio(
+        df_ranked,
+        profile,
+        random_seed=seed_value,
+        config=selection_config,
+    )
+    run_workspace = None
+    if workspace is not None:
+        run_workspace = Path(workspace) / f"run-{run_id}"
+        run_workspace.mkdir(parents=True, exist_ok=True)
+        portfolio.to_json(
+            run_workspace / "portfolio.json",
+            orient="records",
+            indent=2,
+            force_ascii=False,
+        )
 
     result = {
         "run_id": run_id,
@@ -91,6 +122,7 @@ def run_single_execution(
         "sectors": portfolio["SETOR"].value_counts().to_dict(),
         "generations_run": portfolio.attrs.get("generations_run", 0),
         "converged_early": portfolio.attrs.get("converged_early", False),
+        "workspace": str(run_workspace) if run_workspace is not None else None,
     }
 
     return result, portfolio
@@ -155,7 +187,8 @@ def analyze_stability(results: List[Dict]) -> Dict:
 def build_consensus_portfolio(
     results: List[Dict],
     df_ranked: pd.DataFrame,
-    profile: str
+    profile: Optional[str] = None,
+    selection_config: Optional[Mapping[str, object]] = None,
 ) -> pd.DataFrame:
     """
     Constrói carteira consenso baseada na frequência de aparição.
@@ -174,8 +207,17 @@ def build_consensus_portfolio(
     pd.DataFrame
         Carteira consenso.
     """
-    cfg = GA_CONFIG[profile]
-    n_assets = cfg["n_assets"]
+    if selection_config is not None:
+        n_assets = int(
+            selection_config.get(
+                "n_assets",
+                selection_config.get("system_ga_config", {}).get("n_assets"),
+            )
+        )
+    else:
+        if profile not in GA_CONFIG:
+            raise ValueError(f"unknown stock profile: {profile}")
+        n_assets = GA_CONFIG[profile]["n_assets"]
 
     # Conta frequência de cada ticker
     all_tickers = []
@@ -824,7 +866,7 @@ def plot_comparison_charts(
 
 
 def run_multi_execution_profile(
-    profile: str,
+    profile: Optional[str] = None,
     n_runs: int = N_RUNS,
     use_cache: bool = True,
     parallel: bool = True,
@@ -834,6 +876,12 @@ def run_multi_execution_profile(
     target_cv: float = 0.03,
     target_jaccard: float = 0.70,
     exclude_tickers: Optional[Sequence[str]] = None,
+    selection_config: Optional[Mapping[str, object]] = None,
+    config: Optional[Mapping[str, object]] = None,
+    workspace: Optional[Path] = None,
+    random_seed: int = 42,
+    seed: Optional[int] = None,
+    input_path: Optional[Path] = None,
 ) -> Dict:
     """
     Executa múltiplas rodadas do GA para um perfil.
@@ -866,41 +914,79 @@ def run_multi_execution_profile(
     Dict
         Resultados consolidados.
     """
+    if selection_config is not None and config is not None:
+        raise ValueError("pass only one of selection_config or config")
+    explicit_config = selection_config if selection_config is not None else config
+    explicit_mode = explicit_config is not None
+    if seed is not None:
+        if random_seed != 42 and random_seed != seed:
+            raise ValueError("random_seed and seed disagree")
+        random_seed = seed
+    if n_runs <= 0:
+        raise ValueError("n_runs must be positive")
+    display_profile = profile or "explicit"
     print(f"\n{'='*70}")
-    print(f"Perfil: {profile.upper()}")
+    print(f"Perfil: {display_profile.upper()}")
     print(f"{'='*70}")
 
     excluded = normalize_tickers(exclude_tickers)
     checkpoint_suffix = f"_excluding_{'-'.join(sorted(excluded))}" if excluded else ""
-    checkpoint_file = OUTPUTS_DIR / f".checkpoint_{profile}_runs{checkpoint_suffix}.json"
+    workspace_path = Path(workspace) if workspace is not None else None
+    if workspace_path is not None:
+        workspace_path.mkdir(parents=True, exist_ok=True)
+    if explicit_mode and input_path is None:
+        input_path = RAW_DATA_FILE
+    checkpoint_file = (
+        workspace_path / ".checkpoint.json"
+        if explicit_mode and workspace_path is not None
+        else OUTPUTS_DIR / f".checkpoint_{profile}_runs{checkpoint_suffix}.json"
+        if not explicit_mode
+        else None
+    )
+    config_fingerprint = _config_fingerprint(
+        {
+            "config": explicit_config,
+            "seed": random_seed if explicit_mode else None,
+            "input_path": str(input_path) if explicit_mode else None,
+            "exclude_tickers": sorted(excluded),
+        }
+    )
 
     # Tenta carregar checkpoint existente
     results = []
     portfolios = []
     start_run = 0
 
-    if checkpoint_file.exists():
+    if checkpoint_file is not None and checkpoint_file.exists():
         try:
             with open(checkpoint_file, "r") as f:
                 checkpoint = json.load(f)
-                if checkpoint.get("n_runs") == n_runs and checkpoint.get("profile") == profile:
+                if (
+                    checkpoint.get("n_runs") == n_runs
+                    and checkpoint.get("profile") == profile
+                    and checkpoint.get("config_fingerprint", "") == config_fingerprint
+                ):
                     print(f"\n  ℹ️  Checkpoint encontrado com {len(checkpoint['results'])} runs completados")
-                    resume = input("  Deseja retomar de onde parou? (s/n) [s]: ").strip().lower()
-                    if resume != "n":
-                        results = checkpoint["results"]
-                        start_run = len(results)
-                        print(f"  ✓ Retomando a partir do run {start_run}")
+                    results = checkpoint["results"]
+                    start_run = len(results)
+                    print(f"  ✓ Retomando a partir do run {start_run}")
                 else:
                     print(f"  ⚠️  Checkpoint incompatível (runs diferentes). Ignorando...")
         except Exception as e:
             print(f"  ⚠️  Erro ao carregar checkpoint: {e}")
 
     # Carrega dados
-    if use_cache:
+    if explicit_mode:
+        df_raw = load_raw_data(Path(input_path))
+        df = preprocess_profile(df_raw, config=explicit_config)
+    elif use_cache:
+        if profile is None:
+            raise ValueError("profile is required for named stock execution")
         df = load_processed_data(profile)
     else:
-        from core.preprocessing import load_raw_data, preprocess_profile
-        df_raw = load_raw_data()
+        if profile is None:
+            raise ValueError("profile is required for named stock execution")
+        df_raw = load_raw_data(Path(input_path) if input_path else RAW_DATA_FILE)
         df = preprocess_profile(df_raw, profile)
 
     if excluded:
@@ -912,7 +998,13 @@ def run_multi_execution_profile(
         print(f"Excluding tickers: {', '.join(sorted(excluded))}")
 
     df = apply_robustness_filter(df)
-    df_ranked = build_scores(df, profile)
+    if explicit_mode:
+        factor_weights = explicit_config.get("factor_weights")
+        if factor_weights is None:
+            factor_weights = explicit_config.get("weights")
+        df_ranked = build_scores(df, factor_weights=factor_weights)
+    else:
+        df_ranked = build_scores(df, profile)
 
     # Executa múltiplas rodadas
     # Para otimizar memória, mantém apenas o melhor portfolio de cada batch
@@ -922,7 +1014,7 @@ def run_multi_execution_profile(
     if parallel:
         # Paralelização com salvamento incremental
         remaining_runs = n_runs - start_run
-        batch_size = min(save_interval, remaining_runs)
+        batch_size = min(save_interval, remaining_runs) if remaining_runs else 1
 
         for batch_start in range(start_run, n_runs, batch_size):
             batch_end = min(batch_start + batch_size, n_runs)
@@ -932,7 +1024,10 @@ def run_multi_execution_profile(
                 run_func = partial(
                     run_single_execution,
                     df_ranked,
-                    profile
+                    profile,
+                    base_seed=random_seed,
+                    selection_config=explicit_config,
+                    workspace=workspace_path,
                 )
                 batch_outputs = list(tqdm(
                     pool.imap(run_func, batch_range),
@@ -956,13 +1051,15 @@ def run_multi_execution_profile(
                 del batch_portfolios
 
             # Salva checkpoint
-            with open(checkpoint_file, "w") as f:
-                json.dump({
-                    "profile": profile,
-                    "n_runs": n_runs,
-                    "completed_runs": len(results),
-                    "results": results
-                }, f, indent=2)
+            if checkpoint_file is not None:
+                with open(checkpoint_file, "w") as f:
+                    json.dump({
+                        "profile": profile,
+                        "n_runs": n_runs,
+                        "completed_runs": len(results),
+                        "results": results,
+                        "config_fingerprint": config_fingerprint,
+                    }, f, indent=2)
 
             print(f"  💾 Checkpoint salvo: {len(results)}/{n_runs} runs completados")
 
@@ -983,7 +1080,14 @@ def run_multi_execution_profile(
     else:
         # Sequencial com salvamento incremental
         for run_id in tqdm(range(start_run, n_runs), desc=f"Executando {n_runs} rodadas"):
-            result, portfolio = run_single_execution(df_ranked, profile, run_id)
+            result, portfolio = run_single_execution(
+                df_ranked,
+                profile,
+                run_id,
+                base_seed=random_seed,
+                selection_config=explicit_config,
+                workspace=workspace_path,
+            )
             results.append(result)
 
             # Mantém apenas o melhor portfolio (otimização de memória)
@@ -993,13 +1097,15 @@ def run_multi_execution_profile(
 
             # Salva checkpoint periodicamente
             if (run_id + 1) % save_interval == 0 or (run_id + 1) == n_runs:
-                with open(checkpoint_file, "w") as f:
-                    json.dump({
-                        "profile": profile,
-                        "n_runs": n_runs,
-                        "completed_runs": len(results),
-                        "results": results
-                    }, f, indent=2)
+                if checkpoint_file is not None:
+                    with open(checkpoint_file, "w") as f:
+                        json.dump({
+                            "profile": profile,
+                            "n_runs": n_runs,
+                            "completed_runs": len(results),
+                            "results": results,
+                            "config_fingerprint": config_fingerprint,
+                        }, f, indent=2)
                 print(f"  💾 Checkpoint salvo: {len(results)}/{n_runs} runs completados")
 
                 # Verifica convergência no modo adaptativo
@@ -1018,7 +1124,7 @@ def run_multi_execution_profile(
                         break
 
     # Remove checkpoint após conclusão bem-sucedida
-    if checkpoint_file.exists():
+    if checkpoint_file is not None and checkpoint_file.exists():
         checkpoint_file.unlink()
         print(f"  🗑️  Checkpoint removido (execução completa)")
 
@@ -1035,7 +1141,12 @@ def run_multi_execution_profile(
         print(f"     • Convergência antecipada: {early_stopped}/{len(results)} runs ({early_stopped/len(results)*100:.1f}%)")
 
     # Carteira consenso
-    consensus = build_consensus_portfolio(results, df_ranked, profile)
+    consensus = build_consensus_portfolio(
+        results,
+        df_ranked,
+        profile,
+        selection_config=explicit_config,
+    )
 
     # Melhor indivíduo (maior fitness)
     # Usa o melhor portfolio salvo ou reconstrói a partir dos results
@@ -1047,6 +1158,51 @@ def run_multi_execution_profile(
         best_individual.attrs["seed"] = results[best_idx]["seed"]
     else:
         best_individual = get_best_individual_portfolio(results, portfolios=None, df_ranked=df_ranked)
+
+    if explicit_mode:
+        if workspace_path is not None:
+            consensus.to_json(
+                workspace_path / "stock_consensus.json",
+                orient="records",
+                indent=2,
+                force_ascii=False,
+            )
+            best_individual.to_json(
+                workspace_path / "stock_best_individual.json",
+                orient="records",
+                indent=2,
+                force_ascii=False,
+            )
+            pd.DataFrame(results).to_csv(
+                workspace_path / "stock_runs.csv",
+                index=False,
+            )
+        selected_tickers = sorted(str(ticker).upper() for ticker in consensus["TICKER"])
+        sleeve_weights = {
+            ticker: 1.0 / len(selected_tickers)
+            for ticker in selected_tickers
+        }
+        return {
+            "profile": "explicit",
+            "n_runs": len(results),
+            "selected_tickers": selected_tickers,
+            "sleeve_weights": sleeve_weights,
+            "weights": sleeve_weights,
+            "portfolio": consensus,
+            "best_individual": best_individual,
+            "metrics": {
+                "hhi": float(consensus.attrs.get("hhi", hhi_sector(consensus))),
+                "avg_score": float(consensus.attrs.get("avg_score", consensus["SCORE"].mean())),
+                "stability": stability,
+            },
+            "exclusion_reasons": dict(df.attrs.get("exclusion_reasons", {})),
+            "config": dict(explicit_config),
+            "seed": int(random_seed),
+            "run_seeds": [int(result["seed"]) for result in results],
+            "workspaces": [result.get("workspace") for result in results],
+            "workspace": str(workspace_path) if workspace_path is not None else None,
+            "all_runs": results,
+        }
 
     # Comparação entre carteiras
     comparison = compare_portfolios(consensus, best_individual, profile)

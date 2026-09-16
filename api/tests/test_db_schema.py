@@ -6,7 +6,7 @@ from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import Session
 
 from app.db.base import Base
-from app.db.models import Account, Entitlement, ProfileRecord
+from app.db.models import Account, Entitlement, ProfileRecord, RecommendationRun
 
 
 class DatabaseSchemaTests(unittest.TestCase):
@@ -52,6 +52,43 @@ class DatabaseSchemaTests(unittest.TestCase):
             self.assertEqual(entitlement.account_id, account.id)
             self.assertEqual(entitlement.plan, "basic")
             self.assertEqual(entitlement.status, "inactive")
+
+    def test_premium_provenance_and_run_lifecycle_columns_exist(self):
+        profile_columns = {
+            column["name"] for column in inspect(self.engine).get_columns("profiles")
+        }
+        run_columns = {
+            column["name"] for column in inspect(self.engine).get_columns("recommendation_runs")
+        }
+
+        self.assertTrue(
+            {
+                "raw_score",
+                "rules_json",
+                "warnings_json",
+                "restrictions_json",
+                "schema_version",
+            }.issubset(profile_columns)
+        )
+        self.assertTrue(
+            {
+                "status",
+                "started_at",
+                "completed_at",
+                "failure_code",
+                "failure_message",
+                "policy_version",
+                "policy_json",
+                "result_json",
+                "provenance_json",
+                "output_hash",
+            }.issubset(run_columns)
+        )
+
+        self.assertEqual(
+            str(RecommendationRun.__table__.c.status.server_default.arg),
+            "'completed'",
+        )
 
 
 if __name__ == "__main__":

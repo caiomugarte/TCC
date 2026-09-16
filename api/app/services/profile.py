@@ -16,6 +16,15 @@ ANCHOR_SCORES = {
     "arrojado": 1.0,
 }
 
+RESTRICTION_ORDER = (
+    "nenhuma",
+    "priorizar_renda",
+    "evitar_cripto",
+    "evitar_exterior",
+    "limitar_concentracao",
+    "evitar_illiquidez",
+)
+
 
 def _rounded(value: float) -> float:
     return round(value, 4)
@@ -39,6 +48,13 @@ def _dimension_score(
 
 def _nearest_anchor(score: float) -> str:
     return min(ANCHOR_SCORES, key=lambda name: abs(ANCHOR_SCORES[name] - score))
+
+
+def normalize_restrictions(restrictions: list[str]) -> list[str]:
+    """Return supported restrictions in the persisted canonical order."""
+
+    values = set(restrictions)
+    return [restriction for restriction in RESTRICTION_ORDER if restriction in values]
 
 
 def compute_profile(submission: ProfileSubmission) -> ComputedProfile:

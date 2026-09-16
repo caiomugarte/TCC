@@ -1,7 +1,7 @@
 """Orchestration for Caio's asset-class allocation analysis."""
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 import json
 import math
@@ -14,7 +14,12 @@ PY_ROOT = Path(__file__).resolve().parent.parent
 if str(PY_ROOT) not in sys.path:
     sys.path.insert(0, str(PY_ROOT))
 
-from allocation_config import ALLOCATION_CONFIG, ASSET_CLASSES  # noqa: E402
+from allocation_config import (  # noqa: E402
+    ALLOCATION_CONFIG,
+    ASSET_CLASSES,
+    normalize_allocation_config,
+    normalize_class_constraints,
+)
 from allocation_profiles import AllocationProfile  # noqa: E402
 from core.allocation import (  # noqa: E402
     Candidate,
@@ -41,6 +46,7 @@ class WindowEvaluation:
     frontier: Tuple[Candidate, ...]
     selected: Mapping[str, Candidate]
     penalty_winners: Mapping[float, Candidate]
+    diagnostic: Optional[Mapping[str, object]] = None
 
 
 def _add_years(value: date, years: int) -> date:
@@ -91,40 +97,113 @@ def _risk_violation(
     )
 
 
+def _constraint_violation(
+    weights: Tuple[float, ...],
+    class_names: Sequence[str],
+    constraints: Mapping[str, object],
+    minimum_weight: float,
+) -> Tuple[float, Tuple[float, ...]]:
+    minimums = constraints["minimums"]
+    maximums = constraints["maximums"]
+    violations = []
+    for index, name in enumerate(class_names):
+        weight = weights[index]
+        violations.append(
+            max(0.0, minimum_weight - weight)
+            + max(0.0, float(minimums[name]) - weight)
+            + max(0.0, weight - float(maximums[name]))
+        )
+    hhi_max = constraints.get("hhi_max")
+    if hhi_max is not None:
+        violations.append(max(0.0, sum(weight * weight for weight in weights) - float(hhi_max)))
+    return sum(violations), weights
+
+
+def _apply_class_constraints(
+    candidates: Iterable[Candidate],
+    class_names: Sequence[str],
+    constraints: Mapping[str, object],
+    minimum_weight: float,
+) -> Tuple[Candidate, ...]:
+    minimums = constraints["minimums"]
+    maximums = constraints["maximums"]
+    hhi_max = constraints.get("hhi_max")
+    checked = []
+    for candidate in candidates:
+        bounds_ok = all(
+            candidate.weights[index] >= max(
+                minimum_weight,
+                float(minimums[name]),
+            ) - 1e-12
+            and candidate.weights[index] <= float(maximums[name]) + 1e-12
+            for index, name in enumerate(class_names)
+        )
+        hhi_ok = hhi_max is None or candidate.hhi <= float(hhi_max) + 1e-12
+        checked.append(replace(candidate, feasible=candidate.feasible and bounds_ok and hhi_ok))
+    return tuple(checked)
+
+
 def optimize_window(
     rows: Iterable[DailyReturn],
     class_names: Sequence[str] = ASSET_CLASSES,
-    config: Optional[Mapping[str, float]] = None,
+    config: Optional[Mapping[str, object]] = None,
 ) -> WindowEvaluation:
     """Search one training window with coarse and local fine grids."""
 
-    settings = dict(config or ALLOCATION_CONFIG["caio"])
+    settings = normalize_allocation_config(
+        config,
+        base=(
+            {
+                **ALLOCATION_CONFIG["caio"],
+                "minimum_class_weight": 0.0,
+            }
+            if config and "class_constraints" in config
+            and "minimum_class_weight" not in config
+            else ALLOCATION_CONFIG["caio"]
+        ),
+        class_names=class_names,
+    )
     checked_rows = _sorted_rows(rows)
     minimum_weight = float(settings.get("minimum_class_weight", 0.0))
     if minimum_weight < 0.0 or minimum_weight * len(class_names) > 1.0 + 1e-9:
         raise ValueError("minimum class weight must leave a valid simplex")
 
+    class_constraints = settings["class_constraints"]
+
     def eligible(weights: Tuple[float, ...]) -> bool:
-        return all(weight >= minimum_weight - 1e-12 for weight in weights)
+        minimums = class_constraints["minimums"]
+        maximums = class_constraints["maximums"]
+        return all(
+            weight >= max(minimum_weight, float(minimums[name])) - 1e-12
+            and weight <= float(maximums[name]) + 1e-12
+            for name, weight in zip(class_names, weights)
+        )
 
     risk_contribution_cap = settings.get("risk_contribution_cap")
     risk_contribution_caps = settings.get("risk_contribution_caps")
+    all_coarse_weights = simplex_grid(class_names, float(settings["coarse_step"]))
     coarse_weights = tuple(
         weights
-        for weights in simplex_grid(class_names, float(settings["coarse_step"]))
+        for weights in all_coarse_weights
         if eligible(weights)
     )
-    if not coarse_weights:
-        raise ValueError("minimum class weight leaves no coarse-grid candidates")
-    coarse_candidates = evaluate_candidates(
-        checked_rows,
-        class_names,
-        coarse_weights,
-        float(settings["volatility_cap"]),
-        float(settings["drawdown_cap"]),
-        risk_contribution_cap=risk_contribution_cap,
-        risk_contribution_caps=risk_contribution_caps,
-    )
+    def evaluate(weights: Iterable[Tuple[float, ...]]) -> Tuple[Candidate, ...]:
+        return _apply_class_constraints(
+            evaluate_candidates(
+                checked_rows,
+                class_names,
+                weights,
+                float(settings["volatility_cap"]),
+                float(settings["drawdown_cap"]),
+                risk_contribution_cap=risk_contribution_cap,
+                risk_contribution_caps=risk_contribution_caps,
+            ),
+            class_names,
+            class_constraints,
+            minimum_weight,
+        )
+
+    coarse_candidates = evaluate(coarse_weights)
     coarse_frontier = non_dominated_frontier(coarse_candidates)
 
     if coarse_frontier:
@@ -144,18 +223,33 @@ def optimize_window(
                 key=lambda candidate: (candidate.hhi, _candidate_key(candidate)),
             )[:10]
         )
-    else:
+    elif coarse_candidates:
         # A fine-grid candidate may be feasible even when no 5% point is. The
         # search remains honest: the selected candidates are still marked by
         # the same caps and an empty final frontier remains a valid outcome.
         centers = [
             candidate.weights
             for candidate in sorted(
-                coarse_candidates,
+                evaluate(all_coarse_weights),
                 key=lambda candidate: _risk_violation(
                     candidate,
                     float(settings["volatility_cap"]),
                     float(settings["drawdown_cap"]),
+                ),
+            )[:20]
+        ]
+    else:
+        # Keep a fine-grid chance when a bound is finer than the coarse step;
+        # if it still fails, the returned diagnostic is explicit.
+        centers = [
+            weights
+            for weights in sorted(
+                all_coarse_weights,
+                key=lambda weights: _constraint_violation(
+                    weights,
+                    class_names,
+                    class_constraints,
+                    minimum_weight,
                 ),
             )[:20]
         ]
@@ -170,17 +264,7 @@ def optimize_window(
         )
         if eligible(weights)
     )
-    if not fine_weights:
-        raise ValueError("minimum class weight leaves no fine-grid candidates")
-    fine_candidates = evaluate_candidates(
-        checked_rows,
-        class_names,
-        fine_weights,
-        float(settings["volatility_cap"]),
-        float(settings["drawdown_cap"]),
-        risk_contribution_cap=risk_contribution_cap,
-        risk_contribution_caps=risk_contribution_caps,
-    )
+    fine_candidates = evaluate(fine_weights) if fine_weights else ()
 
     by_weights = {candidate.weights: candidate for candidate in coarse_candidates}
     by_weights.update({candidate.weights: candidate for candidate in fine_candidates})
@@ -199,6 +283,19 @@ def optimize_window(
         frontier=frontier,
         selected=selected,
         penalty_winners=penalty_winners,
+        diagnostic=(
+            None
+            if frontier
+            else {
+                "code": "infeasible_constraints",
+                "message": "no allocation candidate satisfies the configured risk and class constraints",
+                "class_constraints": class_constraints,
+                "candidate_count": len(candidates),
+                "feasible_candidate_count": sum(
+                    1 for candidate in candidates if candidate.feasible
+                ),
+            }
+        ),
     )
 
 
@@ -268,6 +365,8 @@ def window_record(
             for penalty, candidate in sorted(window.penalty_winners.items())
         ],
     }
+    if window.diagnostic is not None:
+        record["diagnostic"] = dict(window.diagnostic)
     if include_frontier:
         record["frontier"] = [
             candidate_record(candidate, class_names)
@@ -517,12 +616,44 @@ def run_allocation(
     metadata: Optional[Mapping[str, object]] = None,
     profile: str = "caio",
     allocation_profile: Optional[AllocationProfile] = None,
+    allocation_config: Optional[Mapping[str, object]] = None,
+    class_constraints: Optional[Mapping[str, object]] = None,
+    config: Optional[Mapping[str, object]] = None,
 ) -> Dict[str, object]:
-    """Run the current target, horizons, baselines, and walk-forward reports."""
+    """Run allocation from explicit policy values or a Basic named wrapper.
 
-    if profile not in ALLOCATION_CONFIG:
-        raise ValueError(f"unknown allocation profile: {profile}")
-    config = dict(ALLOCATION_CONFIG[profile])
+    Explicit callers pass ``allocation_config`` (``config`` is a narrow alias)
+    and may provide ``class_constraints``.  Named Basic callers keep the
+    existing ``profile``/``allocation_profile`` behavior and five-percent
+    floor.
+    """
+
+    explicit_config = allocation_config if allocation_config is not None else config
+    if allocation_config is not None and config is not None:
+        raise ValueError("pass only one of allocation_config or config")
+    profile_name = "explicit" if explicit_config is not None else (profile or "caio")
+    if explicit_config is not None:
+        explicit_payload = dict(explicit_config)
+        if class_constraints is not None:
+            explicit_payload["class_constraints"] = class_constraints
+        base_profile = profile if profile in ALLOCATION_CONFIG else "caio"
+        base_settings = {
+            **ALLOCATION_CONFIG[base_profile],
+            "minimum_class_weight": 0.0,
+        }
+        settings = normalize_allocation_config(
+            explicit_payload,
+            base=base_settings,
+        )
+    else:
+        if profile not in ALLOCATION_CONFIG:
+            raise ValueError(f"unknown allocation profile: {profile}")
+        settings = dict(ALLOCATION_CONFIG[profile])
+        if class_constraints is not None:
+            settings["class_constraints"] = class_constraints
+        settings = normalize_allocation_config(settings, base=settings)
+
+    config = settings
     profile_record: Dict[str, object] = {
         "status": "generic_fallback",
         "reason": "no calibrated allocation profile supplied",
@@ -552,6 +683,24 @@ def run_allocation(
                     if allocation_profile.risk_adjusted_weights
                     else "return minus HHI penalty"
                 ),
+                "hhi_penalty": profile_penalty,
+            },
+        }
+    elif explicit_config is not None:
+        profile_penalty = (
+            None
+            if explicit_config.get("hhi_penalty") is None
+            else float(explicit_config["hhi_penalty"])
+        )
+        if profile_penalty is not None:
+            config["hhi_penalties"] = tuple(
+                sorted(set(config.get("hhi_penalties", ())) | {profile_penalty})
+            )
+        profile_record = {
+            "status": "explicit",
+            "parameters": dict(explicit_config),
+            "selection": {
+                "method": "explicit allocation policy",
                 "hhi_penalty": profile_penalty,
             },
         }
@@ -609,7 +758,7 @@ def run_allocation(
         for name, cap in config.get("risk_budget_scenarios", {}).items()
     }
     return {
-        "profile": profile,
+        "profile": profile_name,
         "allocation_profile": profile_record,
         "classes": list(ASSET_CLASSES),
         "config": config,
@@ -647,6 +796,8 @@ def run_allocation(
         },
         "risk_budget_scenarios": risk_budget_scenarios,
         "crypto_weight_scenarios": crypto_weight_scenarios,
+        "status": "completed" if current_target is not None else "unavailable",
+        "diagnostics": current.diagnostic,
     }
 
 

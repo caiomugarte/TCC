@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import uuid4
 
-from sqlalchemy import DateTime, ForeignKey, JSON, Numeric, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, JSON, Numeric, String, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -45,6 +45,21 @@ class ProfileRecord(Base):
     answers: Mapped[dict] = mapped_column(JSON, nullable=False)
     dimensions: Mapped[dict] = mapped_column(JSON, nullable=False)
     suitability_score: Mapped[Decimal] = mapped_column(Numeric(6, 5), nullable=False)
+    raw_score: Mapped[Decimal] = mapped_column(
+        Numeric(6, 5), nullable=False, default=0, server_default=text("0")
+    )
+    rules_json: Mapped[list] = mapped_column(
+        JSON, nullable=False, default=list, server_default=text("'[]'")
+    )
+    warnings_json: Mapped[list] = mapped_column(
+        JSON, nullable=False, default=list, server_default=text("'[]'")
+    )
+    restrictions_json: Mapped[list] = mapped_column(
+        JSON, nullable=False, default=list, server_default=text("'[]'")
+    )
+    schema_version: Mapped[int] = mapped_column(
+        nullable=False, default=1, server_default=text("1")
+    )
     generic_profile: Mapped[str] = mapped_column(String(32), nullable=False)
     investable_capital_brl: Mapped[Decimal] = mapped_column(Numeric(18, 2), nullable=False)
     consented_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
@@ -68,6 +83,18 @@ class RecommendationRun(Base):
     classes: Mapped[list] = mapped_column(JSON, nullable=False)
     assumptions: Mapped[list] = mapped_column(JSON, nullable=False)
     risks: Mapped[list] = mapped_column(JSON, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="completed", server_default=text("'completed'")
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failure_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    failure_message: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    policy_version: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    policy_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    result_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    provenance_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    output_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 

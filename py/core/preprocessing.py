@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pandas as pd
 import numpy as np
-from typing import List
+from typing import Dict, List, Mapping, Optional
 
 from config import (
     RAW_DATA_FILE,
@@ -70,7 +70,7 @@ def load_raw_data(file_path: Path = RAW_DATA_FILE) -> pd.DataFrame:
 def apply_eligibility_filters(
     df: pd.DataFrame,
     cap_min: float,
-    liq_min: float
+    liq_min: float,
 ) -> pd.DataFrame:
     """
     Aplica filtros de elegibilidade (valor de mercado e liquidez).
@@ -89,11 +89,61 @@ def apply_eligibility_filters(
     pd.DataFrame
         DataFrame filtrado.
     """
+    numeric = df.copy()
+    for column in ("VALOR DE MERCADO", "LIQUIDEZ MEDIA DIARIA"):
+        if column not in numeric.columns:
+            raise ValueError(f"coluna de filtro ausente: {column}")
+        if numeric[column].dtype == "object":
+            numeric[column] = pd.to_numeric(
+                numeric[column].astype(str)
+                .str.replace(".", "", regex=False)
+                .str.replace(",", ".", regex=False),
+                errors="coerce",
+            )
     condition = (
-        (df["VALOR DE MERCADO"] >= cap_min) &
-        (df["LIQUIDEZ MEDIA DIARIA"] >= liq_min)
+        (numeric["VALOR DE MERCADO"] >= cap_min)
+        & (numeric["LIQUIDEZ MEDIA DIARIA"] >= liq_min)
     )
-    return df.loc[condition].copy()
+    result = df.loc[condition].copy()
+    ticker_values = df.get("TICKER", pd.Series(df.index, index=df.index)).astype(str)
+    reasons: Dict[str, List[str]] = {}
+    for index in df.index[~condition]:
+        ticker = ticker_values.loc[index].strip().upper()
+        reason = []
+        if pd.isna(numeric.loc[index, "VALOR DE MERCADO"]) or numeric.loc[index, "VALOR DE MERCADO"] < cap_min:
+            reason.append("market_cap_below_minimum")
+        if pd.isna(numeric.loc[index, "LIQUIDEZ MEDIA DIARIA"]) or numeric.loc[index, "LIQUIDEZ MEDIA DIARIA"] < liq_min:
+            reason.append("liquidity_below_minimum")
+        reasons[ticker] = reason or ["eligibility_filter"]
+    result.attrs["exclusion_reasons"] = reasons
+    result.attrs["eligibility_filters"] = {
+        "cap_min": float(cap_min),
+        "liq_min": float(liq_min),
+    }
+    return result
+
+
+def _normalise_filter_config(
+    filters: Mapping[str, object],
+) -> Dict[str, float]:
+    """Normalize the explicit stock liquidity/size filter seam."""
+
+    if not isinstance(filters, Mapping):
+        raise ValueError("stock filters must be an object")
+    aliases = {
+        "cap_min": ("cap_min", "market_cap_min", "min_market_cap", "market_cap_floor"),
+        "liq_min": ("liq_min", "liquidity_min", "min_liquidity", "liquidity_floor"),
+    }
+    result = {}
+    for target, names in aliases.items():
+        raw = next((filters[name] for name in names if name in filters), None)
+        if raw is None:
+            raise ValueError(f"stock filters missing {target}")
+        value = float(raw)
+        if not np.isfinite(value) or value < 0:
+            raise ValueError(f"stock filter {target} must be finite and non-negative")
+        result[target] = value
+    return result
 
 
 def winsorize_sector(
@@ -152,7 +202,9 @@ def zscore_sector(df: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
 
 def preprocess_profile(
     df_raw: pd.DataFrame,
-    profile: str
+    profile: Optional[str] = None,
+    filters: Optional[Mapping[str, object]] = None,
+    config: Optional[Mapping[str, object]] = None,
 ) -> pd.DataFrame:
     """
     Pipeline completo de pré-processamento para um perfil.
@@ -169,19 +221,31 @@ def preprocess_profile(
     ----------
     df_raw : pd.DataFrame
         DataFrame com dados brutos.
-    profile : str
-        Perfil do investidor (conservador, moderado, arrojado, caio).
+    profile : str, optional
+        Named profile retained for Basic/offline callers.
+    filters : Mapping[str, object], optional
+        Explicit ``cap_min``/``liq_min`` stock eligibility filters.
+    config : Mapping[str, object], optional
+        Explicit selector config; reads ``liquidity_and_size_filters``.
 
     Returns
     -------
     pd.DataFrame
         DataFrame pré-processado.
     """
-    if profile not in FILTERS:
+    if filters is not None and config is not None:
+        raise ValueError("pass only one of filters or config")
+    if config is not None:
+        filters = config.get("liquidity_and_size_filters") or config.get("filters")
+        if filters is None:
+            raise ValueError("stock config must contain liquidity_and_size_filters")
+    if filters is None and profile not in FILTERS:
         raise ValueError(f"Perfil desconhecido: {profile}")
 
     # 1. Aplica filtros
-    limits = FILTERS[profile]
+    limits = _normalise_filter_config(
+        filters if filters is not None else FILTERS[profile]
+    )
     df = apply_eligibility_filters(
         df_raw,
         cap_min=limits["cap_min"],
@@ -190,10 +254,12 @@ def preprocess_profile(
 
     if df.empty:
         print(
-            f"⚠️  Nenhum ativo passou pelos filtros do perfil '{profile}' "
+            f"Nenhum ativo passou pelos filtros do perfil '{profile or 'explicit'}' "
             f"(cap >= {limits['cap_min']:,}, liq >= {limits['liq_min']:,})"
         )
-        return pd.DataFrame()
+        empty = df.iloc[0:0].copy()
+        empty.attrs.update(df.attrs)
+        return empty
 
     # 2. Identifica colunas candidatas a métricas
     candidates = df.columns.difference(
@@ -230,7 +296,17 @@ def preprocess_profile(
     # 8. Remove colunas proibidas
     df = df.drop(columns=PRICE_COLS + FILTER_COLS, errors="ignore")
 
+    df.attrs["eligibility_filters"] = limits
     return df
+
+
+def preprocess_explicit(
+    df_raw: pd.DataFrame,
+    config: Mapping[str, object],
+) -> pd.DataFrame:
+    """Explicit-config spelling used by Premium stock adapters."""
+
+    return preprocess_profile(df_raw, config=config)
 
 
 def preprocess_all_profiles(save: bool = True) -> dict:
@@ -329,4 +405,17 @@ def apply_robustness_filter(df: pd.DataFrame, threshold: float = 0.80) -> pd.Dat
     metric_subset = df.drop(columns=["TICKER", "SETOR"], errors="ignore")
     quality_mask = metric_subset.notna().mean(axis=1) >= threshold
 
-    return df[quality_mask].reset_index(drop=True)
+    result = df[quality_mask].reset_index(drop=True)
+    reasons = {
+        key: list(value)
+        for key, value in df.attrs.get("exclusion_reasons", {}).items()
+    }
+    if "TICKER" in df.columns:
+        for index in df.index[~quality_mask]:
+            ticker = str(df.loc[index, "TICKER"]).strip().upper()
+            reasons.setdefault(ticker, []).append("insufficient_metric_coverage")
+    result.attrs["exclusion_reasons"] = reasons
+    result.attrs["eligibility_filters"] = dict(
+        df.attrs.get("eligibility_filters", {})
+    )
+    return result

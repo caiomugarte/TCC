@@ -13,13 +13,28 @@ from pathlib import Path
 # Adiciona o diretório parent ao path para imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import math
+from typing import Dict, List, Mapping, Optional
+
 import pandas as pd
-from typing import Dict, List
 
 from config import METRIC_GROUPS, PROFILE_WEIGHTS
 
 
-def add_dynamic_columns(df: pd.DataFrame) -> None:
+def _metric_groups(
+    metric_groups: Optional[Mapping[str, List[str]]] = None,
+) -> Dict[str, List[str]]:
+    groups = {
+        group: list(columns)
+        for group, columns in (metric_groups or METRIC_GROUPS).items()
+    }
+    return groups
+
+
+def add_dynamic_columns(
+    df: pd.DataFrame,
+    metric_groups: Optional[Mapping[str, List[str]]] = None,
+) -> Dict[str, List[str]]:
     """
     Adiciona colunas dinâmicas aos grupos se existirem no DataFrame.
 
@@ -30,11 +45,16 @@ def add_dynamic_columns(df: pd.DataFrame) -> None:
     df : pd.DataFrame
         DataFrame com métricas.
     """
-    if "EV/EBITDA" in df.columns and "EV/EBITDA" not in METRIC_GROUPS["value"]:
-        METRIC_GROUPS["value"].append("EV/EBITDA")
+    groups = _metric_groups(metric_groups)
+    if "EV/EBITDA" in df.columns and "EV/EBITDA" not in groups["value"]:
+        groups["value"].append("EV/EBITDA")
+    return groups
 
 
-def calculate_group_scores(df: pd.DataFrame) -> pd.DataFrame:
+def calculate_group_scores(
+    df: pd.DataFrame,
+    metric_groups: Optional[Mapping[str, List[str]]] = None,
+) -> pd.DataFrame:
     """
     Calcula a média de cada grupo de métricas.
 
@@ -51,9 +71,9 @@ def calculate_group_scores(df: pd.DataFrame) -> pd.DataFrame:
         DataFrame com colunas de médias por grupo.
     """
     df = df.copy()
-    add_dynamic_columns(df)
+    groups = add_dynamic_columns(df, metric_groups)
 
-    for group, cols in METRIC_GROUPS.items():
+    for group, cols in groups.items():
         # Seleciona apenas colunas que existem no DataFrame
         existing = [c for c in cols if c in df.columns]
 
@@ -68,7 +88,9 @@ def calculate_group_scores(df: pd.DataFrame) -> pd.DataFrame:
 
 def calculate_weighted_score(
     df: pd.DataFrame,
-    profile: str
+    profile: Optional[str] = None,
+    factor_weights: Optional[Mapping[str, float]] = None,
+    profile_weights: Optional[Mapping[str, float]] = None,
 ) -> pd.DataFrame:
     """
     Calcula score final ponderado para um perfil específico.
@@ -87,13 +109,29 @@ def calculate_weighted_score(
     pd.DataFrame
         DataFrame com coluna SCORE adicionada.
     """
-    if profile not in PROFILE_WEIGHTS:
+    explicit_weights = factor_weights or profile_weights
+    if explicit_weights is None and profile not in PROFILE_WEIGHTS:
         raise ValueError(
             f"Perfil desconhecido: {profile}. "
             f"Perfis disponíveis: {list(PROFILE_WEIGHTS.keys())}"
         )
 
-    weights = PROFILE_WEIGHTS[profile]
+    weights = dict(explicit_weights or PROFILE_WEIGHTS[profile])
+    required_groups = set(METRIC_GROUPS)
+    if set(weights) != required_groups:
+        raise ValueError(
+            "factor weights must contain exactly: "
+            f"{sorted(required_groups)}"
+        )
+    if any(
+        not math.isfinite(float(value)) or float(value) < 0.0
+        for value in weights.values()
+    ):
+        raise ValueError("factor weights must be finite and non-negative")
+    if explicit_weights is not None and not math.isclose(
+        sum(float(value) for value in weights.values()), 1.0
+    ):
+        raise ValueError("factor weights must sum to 1")
     df = df.copy()
 
     # Score final = soma ponderada das médias de grupo
@@ -105,7 +143,14 @@ def calculate_weighted_score(
     return df
 
 
-def build_scores(df: pd.DataFrame, profile: str) -> pd.DataFrame:
+def build_scores(
+    df: pd.DataFrame,
+    profile: Optional[str] = None,
+    factor_weights: Optional[Mapping[str, float]] = None,
+    profile_weights: Optional[Mapping[str, float]] = None,
+    metric_groups: Optional[Mapping[str, List[str]]] = None,
+    config: Optional[Mapping[str, object]] = None,
+) -> pd.DataFrame:
     """
     Pipeline completo de cálculo de scores.
 
@@ -117,8 +162,12 @@ def build_scores(df: pd.DataFrame, profile: str) -> pd.DataFrame:
     ----------
     df : pd.DataFrame
         DataFrame com dados fundamentalistas padronizados.
-    profile : str
-        Perfil do investidor.
+    profile : str, optional
+        Named profile used by existing offline callers.
+    factor_weights : Mapping[str, float], optional
+        Explicit stock factor weights. Required when ``profile`` is omitted.
+    config : Mapping[str, object], optional
+        Explicit selector config; reads ``factor_weights`` and ``metric_groups``.
 
     Returns
     -------
@@ -131,11 +180,25 @@ def build_scores(df: pd.DataFrame, profile: str) -> pd.DataFrame:
     >>> df_ranked = build_scores(df_clean, "conservador")
     >>> print(df_ranked[["TICKER", "SCORE"]].head())
     """
-    df = calculate_group_scores(df)
-    df = calculate_weighted_score(df, profile)
+    if config is not None:
+        factor_weights = factor_weights or config.get("factor_weights")
+        factor_weights = factor_weights or config.get("weights")
+        metric_groups = metric_groups or config.get("metric_groups")
+    df = calculate_group_scores(df, metric_groups=metric_groups)
+    df = calculate_weighted_score(
+        df,
+        profile,
+        factor_weights=factor_weights,
+        profile_weights=profile_weights,
+    )
 
     # Ordena do maior para o menor score
-    return df.sort_values("SCORE", ascending=False).reset_index(drop=True)
+    sort_columns = ["SCORE"]
+    ascending = [False]
+    if "TICKER" in df.columns:
+        sort_columns.append("TICKER")
+        ascending.append(True)
+    return df.sort_values(sort_columns, ascending=ascending).reset_index(drop=True)
 
 
 def get_top_stocks(
