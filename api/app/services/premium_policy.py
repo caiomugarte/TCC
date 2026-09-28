@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date
 import json
 import math
@@ -10,6 +10,7 @@ from app.db.models import ProfileRecord
 
 
 POLICY_VERSION = "premium-policy-v1"
+BASIC_POLICY_VERSION = "basic-policy-v1"
 RULES_VERSION = POLICY_VERSION
 PROFILE_SCHEMA_VERSION = 1
 
@@ -23,12 +24,16 @@ CLASS_KEYS = (
     "crypto",
 )
 
-SYSTEM_GA_CONFIG = {
+SYSTEM_GA_CONFIG: dict[str, int | float | bool] = {
     "population": 300,
     "generations": 400,
     "mutation_rate": 0.02,
     "crossover_rate": 0.8,
-    "run_count": 30,
+    "run_count": 150,
+    "adaptive_mode": True,
+    "min_runs": 40,
+    "target_cv": 0.02,
+    "target_jaccard": 0.75,
 }
 
 SELECTOR_SCORE_WEIGHTS = {
@@ -118,7 +123,7 @@ class SelectorPolicy:
     factor_weights: Mapping[str, float]
     liquidity_and_size_filters: Mapping[str, object]
     lambda_hhi: float
-    system_ga_config: Mapping[str, int | float]
+    system_ga_config: Mapping[str, int | float | bool]
 
 
 @dataclass(frozen=True)
@@ -436,3 +441,53 @@ def resolve_premium_policy(
         fiis=fiis,
         provenance=provenance,
     )
+
+
+def resolve_basic_policy(
+    profile_record: ProfileRecord,
+    rules_version: str = BASIC_POLICY_VERSION,
+    **kwargs: Any,
+) -> ResolvedOptimizationPolicy:
+    """Resolve Basic selectors from the app's discrete generic profile band."""
+
+    if rules_version != BASIC_POLICY_VERSION:
+        raise PremiumPolicyError(f"unsupported policy version: {rules_version}")
+    resolved = resolve_premium_policy(
+        profile_record,
+        rules_version=POLICY_VERSION,
+        **kwargs,
+    )
+    band_scores = {"conservador": 0.0, "moderado": 0.5, "arrojado": 1.0}
+    generic_profile = resolved.profile.generic_profile
+    selector_score = band_scores.get(generic_profile)
+    if selector_score is None:
+        raise PremiumPolicyError(f"unsupported generic profile: {generic_profile}")
+    restrictions = set(resolved.profile.restrictions)
+    return replace(
+        resolved,
+        stocks=_selector_policy(STOCK_RULES, selector_score, restrictions),
+        fiis=_selector_policy(FII_RULES, selector_score, restrictions),
+        provenance=replace(resolved.provenance, policy_version=rules_version),
+    )
+
+
+def resolve_recommendation_policy(
+    profile_record: ProfileRecord,
+    rules_version: str = POLICY_VERSION,
+    *,
+    plan: str,
+    **kwargs: Any,
+) -> ResolvedOptimizationPolicy:
+    if plan == "basic":
+        return resolve_basic_policy(
+            profile_record,
+            rules_version=BASIC_POLICY_VERSION,
+            **kwargs,
+        )
+    if plan == "premium":
+        return resolve_premium_policy(
+            profile_record,
+            rules_version=rules_version,
+            **kwargs,
+        )
+    raise PremiumPolicyError("recommendation plan must be basic or premium")

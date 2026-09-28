@@ -13,6 +13,7 @@ from app.db.models import Account, ProfileRecord
 from app.services.premium_executor import PremiumExecutor
 from app.services.premium_recommendation import PremiumRecommendationService
 from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from app.repositories.recommendations import RecommendationRepository
 from app.schemas.recommendation import PremiumRecommendationRequest
 
 
@@ -208,6 +209,52 @@ class PremiumIntegrationTests(unittest.TestCase):
             self.assertEqual(first_result["fiis"], replay["fiis"])
         finally:
             executor.shutdown()
+
+    def test_active_run_is_reused_and_force_creates_after_terminal(self):
+        manifest = Manifest()
+
+        class Executor:
+            def __init__(self):
+                self.submitted = []
+
+            def submit(self, run_id):
+                self.submitted.append(run_id)
+
+        executor = Executor()
+        service = PremiumRecommendationService(
+            manifest_loader=lambda: manifest,
+            manifest_validator=lambda value: value,
+            policy_resolver=policy,
+            executor=executor,
+        )
+
+        first = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+        )
+        reused = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+        )
+        self.assertEqual(reused.id, first.id)
+        self.assertEqual(executor.submitted, [first.id])
+
+        RecommendationRepository(self.session).mark_failed(
+            first.id,
+            "fixture_failure",
+            "fixture terminal state",
+        )
+        self.session.commit()
+
+        forced = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(force=True),
+            self.session,
+        )
+        self.assertNotEqual(forced.id, first.id)
+        self.assertEqual(executor.submitted, [first.id, forced.id])
 
 
 if __name__ == "__main__":

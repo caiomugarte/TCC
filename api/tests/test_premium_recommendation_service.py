@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.base import Base
 from app.db.models import Account, Entitlement, ProfileRecord, RecommendationRun
+from app.repositories.recommendations import RecommendationRepository
 from app.schemas.recommendation import PremiumRecommendationRequest
 from app.services.premium_recommendation import (
     PremiumRecommendationError,
@@ -88,7 +89,17 @@ class PremiumRecommendationServiceTests(unittest.TestCase):
         self.assertEqual(persisted.status, "queued")
         self.assertEqual(persisted.profile_id, self.profile.id)
         self.assertEqual(persisted.provenance_json["manifest_id"], "manifest-fixture")
-        self.assertIsNotNone(persisted.policy_json)
+        self.assertEqual(
+            persisted.policy_json,
+            fake_policy(
+                self.profile,
+                rules_version=persisted.policy_version,
+                source_snapshot_ids=("manifest-fixture",),
+                source_snapshot_hashes={},
+                cutoff_date="2026-07-21",
+                random_seed=persisted.provenance_json["random_seed"],
+            ),
+        )
 
     def test_missing_profile_rejects_before_manifest_or_executor(self):
         executor = ExecutorSpy()
@@ -123,6 +134,74 @@ class PremiumRecommendationServiceTests(unittest.TestCase):
         self.assertEqual(run.status, "failed")
         self.assertEqual(run.failure_code, "submission_failed")
         self.assertIsNone(run.result_json)
+
+    def test_basic_plan_is_persisted_and_terminal_requests_create_fresh_runs(self):
+        executor = ExecutorSpy()
+        service = self.service(executor)
+
+        first = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+            plan="basic",
+        )
+        self.assertEqual(first.plan, "basic")
+        self.assertEqual(first.model_version, "basic-v1")
+        self.assertEqual(first.provenance_json["plan"], "basic")
+        self.assertEqual(len(executor.submitted), 1)
+
+        RecommendationRepository(self.session).mark_failed(first.id, "fixture", "failed")
+        self.session.commit()
+        second = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+            plan="basic",
+        )
+
+        self.assertNotEqual(second.id, first.id)
+        self.assertEqual(second.plan, "basic")
+        self.assertEqual(executor.submitted, [first.id, second.id])
+
+    def test_premium_without_force_reuses_terminal_cached_run(self):
+        executor = ExecutorSpy()
+        service = self.service(executor)
+        first = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+        )
+
+        RecommendationRepository(self.session).mark_failed(first.id, "fixture", "failed")
+        self.session.commit()
+        reused = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(force=False),
+            self.session,
+        )
+
+        self.assertEqual(reused.id, first.id)
+        self.assertEqual(executor.submitted, [first.id])
+
+    def test_active_run_reuse_is_scoped_to_plan(self):
+        executor = ExecutorSpy()
+        service = self.service(executor)
+        premium = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+        )
+        basic = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+            plan="basic",
+        )
+
+        self.assertNotEqual(premium.id, basic.id)
+        self.assertEqual(premium.plan, "premium")
+        self.assertEqual(basic.plan, "basic")
+        self.assertEqual(executor.submitted, [premium.id, basic.id])
 
 
 if __name__ == "__main__":

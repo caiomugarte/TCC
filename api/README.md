@@ -7,8 +7,12 @@ From repository root:
 
 ```bash
 cp api/.env.example api/.env
+set -a; source api/.env; set +a
+PYTHONPATH=api alembic -c api/alembic.ini upgrade head
 PYTHONPATH=api uvicorn app.main:app --reload --env-file api/.env
 ```
+
+Migrations are explicit and are not run automatically when the API starts.
 
 Health check: `GET http://127.0.0.1:8000/health`.
 

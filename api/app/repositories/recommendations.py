@@ -5,7 +5,7 @@ import hashlib
 import json
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from app.db.models import RecommendationRun, utc_now
@@ -60,11 +60,14 @@ class RecommendationRepository:
         profile_id: str,
         policy: object,
         provenance: Mapping[str, Any],
+        plan: str = "premium",
         policy_version: str | None = None,
         snapshot_id: str | None = None,
         snapshot_cutoff: str | None = None,
         model_version: str = "premium-v1",
     ) -> RecommendationRun:
+        if plan not in {"basic", "premium"}:
+            raise ValueError("recommendation plan must be basic or premium")
         policy_json = _json_copy(policy)
         provenance_json = _json_copy(provenance)
         if not isinstance(provenance_json, dict):
@@ -90,7 +93,7 @@ class RecommendationRepository:
         run = RecommendationRun(
             account_id=account_id,
             profile_id=profile_id,
-            plan="premium",
+            plan=plan,
             model_version=model_version,
             snapshot_id=resolved_snapshot_id,
             snapshot_cutoff=resolved_cutoff,
@@ -117,6 +120,42 @@ class RecommendationRepository:
                 RecommendationRun.id == run_id,
                 RecommendationRun.account_id == account_id,
             )
+        )
+
+    def get_latest_for_profile(
+        self,
+        account_id: str,
+        profile_id: str,
+        *,
+        plan: str = "premium",
+        statuses: tuple[str, ...] | None = None,
+    ) -> RecommendationRun | None:
+        statement = select(RecommendationRun).where(
+            RecommendationRun.account_id == account_id,
+            RecommendationRun.profile_id == profile_id,
+            RecommendationRun.plan == plan,
+        )
+        if statuses is not None:
+            statement = statement.where(RecommendationRun.status.in_(statuses))
+        return self.session.scalar(
+            statement.order_by(
+                desc(RecommendationRun.created_at),
+                desc(RecommendationRun.id),
+            ).limit(1)
+        )
+
+    def get_latest_completed_for_profile(
+        self,
+        account_id: str,
+        profile_id: str,
+        *,
+        plan: str,
+    ) -> RecommendationRun | None:
+        return self.get_latest_for_profile(
+            account_id,
+            profile_id,
+            plan=plan,
+            statuses=("completed",),
         )
 
     def mark_running(self, run_id: str) -> RecommendationRun:

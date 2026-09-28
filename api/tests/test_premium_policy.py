@@ -2,7 +2,14 @@ import unittest
 from decimal import Decimal
 
 from app.db.models import ProfileRecord
-from app.services.premium_policy import PremiumPolicyError, resolve_premium_policy
+from app.services.premium_policy import (
+    BASIC_POLICY_VERSION,
+    SYSTEM_GA_CONFIG,
+    PremiumPolicyError,
+    resolve_basic_policy,
+    resolve_premium_policy,
+    resolve_recommendation_policy,
+)
 
 
 def profile(
@@ -34,6 +41,15 @@ def profile(
 
 
 class PremiumPolicyTests(unittest.TestCase):
+    def test_system_ga_config_uses_max_quality_adaptive_defaults(self) -> None:
+        self.assertEqual(SYSTEM_GA_CONFIG["population"], 300)
+        self.assertEqual(SYSTEM_GA_CONFIG["generations"], 400)
+        self.assertEqual(SYSTEM_GA_CONFIG["run_count"], 150)
+        self.assertTrue(SYSTEM_GA_CONFIG["adaptive_mode"])
+        self.assertEqual(SYSTEM_GA_CONFIG["min_runs"], 40)
+        self.assertEqual(SYSTEM_GA_CONFIG["target_cv"], 0.02)
+        self.assertEqual(SYSTEM_GA_CONFIG["target_jaccard"], 0.75)
+
     def test_policy_has_stable_serialization_and_separate_sections(self) -> None:
         kwargs = {
             "source_snapshot_ids": ["allocation-v1", "stock-v1", "fii-v1"],
@@ -119,6 +135,70 @@ class PremiumPolicyTests(unittest.TestCase):
     def test_invalid_profile_input_fails_before_policy_is_built(self) -> None:
         with self.assertRaises(PremiumPolicyError):
             resolve_premium_policy(profile(score=1.2))
+
+    def test_basic_generic_profile_bands_map_to_discrete_stock_and_fii_rules(self) -> None:
+        expected = {
+            "conservador": (10, "conservador"),
+            "moderado": (12, "moderado"),
+            "arrojado": (15, "arrojado"),
+        }
+        for band, (asset_count, preset) in expected.items():
+            with self.subTest(band=band):
+                resolved = resolve_basic_policy(profile(generic_profile=band))
+                self.assertEqual(resolved.profile.generic_profile, band)
+                self.assertEqual(resolved.stocks.n_assets, asset_count)
+                self.assertEqual(resolved.fiis.n_assets, asset_count)
+                self.assertEqual(resolved.stocks.selection_preset, preset)
+                self.assertEqual(resolved.fiis.selection_preset, preset)
+                self.assertEqual(resolved.provenance.policy_version, BASIC_POLICY_VERSION)
+
+    def test_basic_policy_uses_shared_ga_and_profile_restrictions(self) -> None:
+        resolved = resolve_recommendation_policy(
+            profile(generic_profile="conservador", restrictions=["evitar_illiquidez"]),
+            plan="basic",
+        )
+
+        self.assertEqual(resolved.stocks.system_ga_config, SYSTEM_GA_CONFIG)
+        self.assertEqual(resolved.fiis.system_ga_config, SYSTEM_GA_CONFIG)
+        self.assertTrue(resolved.stocks.liquidity_and_size_filters["enforce_liquidity_and_size"])
+        self.assertTrue(resolved.fiis.liquidity_and_size_filters["enforce_liquidity_and_size"])
+        self.assertNotIn("caio", resolved.stocks.selection_preset)
+
+    def test_recommendation_policy_maps_premium_profile_fields_and_restrictions(self) -> None:
+        conservative = resolve_recommendation_policy(
+            profile(score=0.1, generic_profile="conservador"), plan="premium"
+        )
+        aggressive = resolve_recommendation_policy(
+            profile(score=0.9, generic_profile="arrojado"), plan="premium"
+        )
+        restricted = resolve_recommendation_policy(
+            profile(restrictions=["evitar_illiquidez"]), plan="premium"
+        )
+
+        self.assertNotEqual(conservative.stocks.factor_weights, aggressive.stocks.factor_weights)
+        self.assertTrue(restricted.stocks.liquidity_and_size_filters["enforce_liquidity_and_size"])
+        self.assertEqual(restricted.stocks.system_ga_config, SYSTEM_GA_CONFIG)
+
+    def test_same_basic_profile_resolves_identically(self) -> None:
+        expected = resolve_basic_policy(profile(generic_profile="moderado")).to_json()
+
+        self.assertEqual(
+            resolve_basic_policy(profile(generic_profile="moderado")).to_json(),
+            expected,
+        )
+
+    def test_plan_dispatch_keeps_existing_premium_mapping_unchanged(self) -> None:
+        kwargs = {
+            "source_snapshot_ids": ["allocation-v1"],
+            "source_snapshot_hashes": {"allocation-v1": "abc"},
+            "cutoff_date": "2026-07-21",
+            "random_seed": 42,
+        }
+
+        self.assertEqual(
+            resolve_recommendation_policy(profile(), plan="premium", **kwargs).to_json(),
+            resolve_premium_policy(profile(), **kwargs).to_json(),
+        )
 
 
 if __name__ == "__main__":
