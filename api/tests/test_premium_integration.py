@@ -12,6 +12,7 @@ from app.db.base import Base
 from app.db.models import Account, ProfileRecord
 from app.services.premium_executor import PremiumExecutor
 from app.services.premium_recommendation import PremiumRecommendationService
+from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
 from app.schemas.recommendation import PremiumRecommendationRequest
 
 
@@ -38,6 +39,23 @@ class Manifest:
             ],
             "sources": {},
         }
+
+
+def _default_selector_inputs():
+    return StatusInvestInputs(
+        stocks=SourceSnapshot(
+            Path("/tmp/run/status-invest/stocks.csv"),
+            "statusinvest",
+            "2026-07-21T00:00:00Z",
+            "stock-hash",
+        ),
+        fiis=SourceSnapshot(
+            Path("/tmp/run/status-invest/fiis.csv"),
+            "statusinvest",
+            "2026-07-21T00:00:00Z",
+            "fii-hash",
+        ),
+    )
 
 
 def policy(profile, **kwargs):
@@ -111,7 +129,7 @@ class PremiumIntegrationTests(unittest.TestCase):
         self.engine.dispose()
         self.temp.cleanup()
 
-    def runner(self, policy_value, manifest, workspace, capital):
+    def runner(self, policy_value, manifest, workspace, capital, *, selector_inputs=None):
         def allocation(*_args, **_kwargs):
             return {
                 "current_target": {
@@ -142,6 +160,7 @@ class PremiumIntegrationTests(unittest.TestCase):
             manifest,
             workspace,
             capital,
+            selector_inputs=selector_inputs or _default_selector_inputs(),
             snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
             allocation_engine=allocation,
             stock_engine=selector,
