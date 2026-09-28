@@ -257,12 +257,12 @@ T6 → T7 → T8
 
 **Done when**:
 
-- [ ] Basic POST returns `202` and a pollable run status; profile ownership is checked before dispatch.
-- [ ] Premium and Basic return the common completed-result shape.
-- [ ] `GET /v1/recommendations/latest-completed` returns only the authenticated account's current profile/plan completed result and is registered before `/{recommendation_id}`.
-- [ ] GET/status/latest-completed requests do not call Status Invest or execute optimization.
-- [ ] Add at least 5 route tests covering Basic, Premium, failed source, latest-completed filters, and GET without refresh.
-- [ ] Gate passes with all API tests.
+- [x] Basic POST returns `202` and a pollable run status; profile ownership is checked before dispatch.
+- [x] Premium and Basic return the common completed-result shape.
+- [x] `GET /v1/recommendations/latest-completed` returns only the authenticated account's current profile/plan completed result and is registered before `/{recommendation_id}`.
+- [x] GET/status/latest-completed requests do not call Status Invest or execute optimization.
+- [x] Add at least 5 route tests covering Basic, Premium, failed source, latest-completed filters, and GET without refresh.
+- [x] Gate passes with all API tests.
 
 **Tests**: integration
 **Gate**: full
