@@ -285,14 +285,14 @@ T6 → T7 → T8
 
 **Done when**:
 
-- [ ] Basic and Premium use the same async run/status contract.
-- [ ] Page load reads stored runs; only explicit new-run action triggers refresh.
-- [ ] Polling continues with capped backoff until terminal state and resumes after reload.
-- [ ] Reaching the current 30-second polling window never changes a queued/running result to failed.
-- [ ] Current failed/pending status appears separately from the latest completed result.
-- [ ] Both plans display class weights, BRL targets, stock/FII constituents, and Status Invest retrieval time.
-- [ ] Add at least 5 Node contract tests; `npm run typecheck`, build, and smoke pass.
-- [ ] Existing Premium retry/forced-run and truthful in-progress-state assertions remain passing.
+- [x] Basic and Premium use the same async run/status contract.
+- [x] Page load reads stored runs; only explicit new-run action triggers refresh.
+- [x] Polling continues with capped backoff until terminal state and resumes after reload.
+- [x] Reaching the current 30-second polling window never changes a queued/running result to failed.
+- [x] Current failed/pending status appears separately from the latest completed result.
+- [x] Both plans display class weights, BRL targets, stock/FII constituents, and Status Invest retrieval time.
+- [x] Add at least 5 Node contract tests; `npm run typecheck`, build, and smoke pass.
+- [x] Existing Premium retry/forced-run and truthful in-progress-state assertions remain passing.
 
 **Tests**: unit
 **Gate**: build

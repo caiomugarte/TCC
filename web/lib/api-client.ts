@@ -3,7 +3,6 @@ import type {
   ApiErrorPayload,
   PortfolioInput,
   PortfolioSnapshot,
-  PremiumRecommendation,
   PremiumRecommendationRequest,
   Profile,
   ProfileInput,
@@ -109,11 +108,15 @@ export function getLatestRecommendation(token?: AuthToken): Promise<Recommendati
   return request<Recommendation | null>("/v1/recommendations", {}, token);
 }
 
+export function getLatestCompletedRecommendation(token?: AuthToken): Promise<Recommendation | null> {
+  return request<Recommendation | null>("/v1/recommendations/latest-completed", {}, token);
+}
+
 export function startPremiumRecommendation(
   input: PremiumRecommendationRequest = {},
   token?: AuthToken,
-): Promise<PremiumRecommendation> {
-  return request<PremiumRecommendation>("/v1/premium/recommendations", {
+): Promise<Recommendation> {
+  return request<Recommendation>("/v1/premium/recommendations", {
     method: "POST",
     body: JSON.stringify(input),
   }, token);
@@ -122,8 +125,8 @@ export function startPremiumRecommendation(
 export function getRecommendation(
   recommendationId: string,
   token?: AuthToken,
-): Promise<PremiumRecommendation> {
-  return request<PremiumRecommendation>(`/v1/recommendations/${recommendationId}`, {}, token);
+): Promise<Recommendation> {
+  return request<Recommendation>(`/v1/recommendations/${recommendationId}`, {}, token);
 }
 
 export function savePortfolio(input: PortfolioInput, token?: AuthToken): Promise<PortfolioSnapshot> {
