@@ -13,13 +13,17 @@ from app.routers.portfolio import read_portfolio, save_portfolio
 from app.routers.profile import read_profile, save_profile
 from app.routers.recommendations import (
     create_recommendation,
+    read_latest_completed_recommendation,
     read_latest_recommendation,
     read_recommendation,
+    router as recommendations_router,
 )
 from app.routers.review import read_review
 from app.schemas.portfolio import PortfolioInput
 from app.schemas.profile import ProfileSubmission
 from app.schemas.recommendation import RecommendationRequest
+from app.repositories.recommendations import RecommendationRepository
+from app.services.premium_recommendation import PremiumRecommendationError
 from app.services.profile import compute_profile
 
 
@@ -69,6 +73,71 @@ class ProductRouteTests(unittest.TestCase):
             self.session,
         )
 
+    class QueueCoordinator:
+        def __init__(self):
+            self.submitted = []
+
+        def create_run(self, account, request, session, *, plan):
+            profile = session.get(ProfileRecord, request.profile_id) if request.profile_id else session.scalar(
+                select(ProfileRecord)
+                .where(ProfileRecord.account_id == account.id)
+                .order_by(ProfileRecord.version.desc())
+                .limit(1)
+            )
+            if profile is None or profile.account_id != account.id:
+                raise PremiumRecommendationError(
+                    "profile_not_found",
+                    "Perfil não encontrado.",
+                    404,
+                )
+            run = RecommendationRepository(session).create_queued(
+                account_id=account.id,
+                profile_id=profile.id,
+                policy={"plan": plan},
+                provenance={"plan": plan},
+                plan=plan,
+                snapshot_id="fixture-v1",
+                snapshot_cutoff="2026-07-21",
+                model_version=f"{plan}-v1",
+            )
+            session.commit()
+            session.refresh(run)
+            self.submitted.append(run.id)
+            return run
+
+    def post_basic(self, request=None):
+        coordinator = self.QueueCoordinator()
+        with patch(
+            "app.routers.recommendations.get_premium_recommendation_service",
+            return_value=coordinator,
+        ):
+            response = create_recommendation(
+                request or RecommendationRequest(),
+                self.account,
+                self.session,
+            )
+        return response, coordinator
+
+    def save_completed_run(self, profile, *, plan="basic", result=None):
+        repository = RecommendationRepository(self.session)
+        run = repository.create_queued(
+            account_id=profile.account_id,
+            profile_id=profile.id,
+            policy={"plan": plan},
+            provenance={"plan": plan},
+            plan=plan,
+            snapshot_id=f"{plan}-fixture",
+            snapshot_cutoff="2026-07-21",
+            model_version=f"{plan}-v1",
+        )
+        repository.mark_running(run.id)
+        repository.mark_completed(
+            run.id,
+            result or {"classes": [], "assumptions": [], "risks": []},
+        )
+        self.session.commit()
+        return run
+
     def test_profile_is_versioned_and_reloaded_for_current_account(self):
         first = self.save_valid_profile()
         second = self.save_valid_profile()
@@ -103,44 +172,98 @@ class ProductRouteTests(unittest.TestCase):
 
     def test_recommendation_is_persisted_and_cross_account_read_is_hidden(self):
         profile = self.save_valid_profile()
-        engine_result = {
-            "plan": "basic",
-            "model_version": "allocation-v1",
-            "snapshot_id": "fixture-v1",
-            "snapshot_cutoff": "2026-07-21",
-            "classes": [
-                {"key": "brazilian_stocks", "label": "Ações brasileiras", "target_weight": 0.2, "target_amount_brl": 20_000},
-                {"key": "fiis", "label": "FIIs", "target_weight": 0.2, "target_amount_brl": 20_000},
-                {"key": "international", "label": "Exposição internacional", "target_weight": 0.2, "target_amount_brl": 20_000},
-                {"key": "fixed_income", "label": "Renda fixa", "target_weight": 0.3, "target_amount_brl": 30_000},
-                {"key": "crypto", "label": "Criptoativos", "target_weight": 0.1, "target_amount_brl": 10_000},
-            ],
-            "assumptions": ["fixture"],
-            "risks": ["fixture"],
-        }
-        with patch("app.routers.recommendations.generate_basic_recommendation", return_value=engine_result):
-            recommendation = create_recommendation(RecommendationRequest(), self.account, self.session)
+        recommendation, coordinator = self.post_basic()
 
         loaded = read_recommendation(recommendation.id, self.account, self.session)
         self.assertEqual(loaded.profile_version, profile.version)
         self.assertEqual(loaded.snapshot_id, "fixture-v1")
+        self.assertEqual(loaded.status, "queued")
+        self.assertEqual(loaded.plan, "basic")
+        self.assertEqual(coordinator.submitted, [recommendation.id])
         with self.assertRaises(HTTPException) as error:
             read_recommendation(recommendation.id, self.other_account, self.session)
         self.assertEqual(error.exception.status_code, 404)
 
+    def test_basic_start_is_accepted_and_profile_is_account_scoped(self):
+        self.save_valid_profile()
+        recommendation, coordinator = self.post_basic()
+        post_route = next(
+            route for route in recommendations_router.routes
+            if getattr(route, "endpoint", None) is create_recommendation
+        )
+        self.assertEqual(post_route.status_code, 202)
+        self.assertEqual(recommendation.status, "queued")
+        self.assertEqual(coordinator.submitted, [recommendation.id])
+
+        other_profile = save_profile(
+            ProfileSubmission(
+                answers=valid_answers(),
+                investableCapitalBrl=100_000,
+                consented=True,
+            ),
+            self.other_account,
+            self.session,
+        )
+        coordinator = self.QueueCoordinator()
+        with patch(
+            "app.routers.recommendations.get_premium_recommendation_service",
+            return_value=coordinator,
+        ):
+            with self.assertRaises(HTTPException) as error:
+                create_recommendation(
+                    RecommendationRequest(profile_id=other_profile.id),
+                    self.account,
+                    self.session,
+                )
+        self.assertEqual(error.exception.status_code, 404)
+        self.assertEqual(coordinator.submitted, [])
+
+    def test_basic_and_premium_share_completed_result_shape(self):
+        profile = self.save_valid_profile()
+        result = {
+            "classes": [
+                {
+                    "key": "brazilian_stocks",
+                    "label": "Ações brasileiras",
+                    "target_weight": 0.4,
+                    "target_amount_brl": 40_000,
+                }
+            ],
+            "assumptions": ["fixture"],
+            "risks": ["fixture risk"],
+            "stocks": [
+                {
+                    "ticker": "AAA3",
+                    "sleeve_weight": 0.5,
+                    "portfolio_weight": 0.2,
+                    "target_amount_brl": 20_000,
+                    "reasons": ["fixture"],
+                }
+            ],
+            "fiis": [
+                {
+                    "ticker": "AAA11",
+                    "sleeve_weight": 1.0,
+                    "portfolio_weight": 0.2,
+                    "target_amount_brl": 20_000,
+                    "reasons": ["fixture"],
+                }
+            ],
+            "provenance": {"selector_sources": {"stocks": {}, "fiis": {}}},
+        }
+        for plan in ("basic", "premium"):
+            with self.subTest(plan=plan):
+                record = self.save_completed_run(profile, plan=plan, result=result)
+                response = read_recommendation(record.id, self.account, self.session)
+                self.assertEqual(response.status, "completed")
+                self.assertEqual(response.classes[0].target_amount_brl, 40_000)
+                self.assertEqual(response.stocks[0].ticker, "AAA3")
+                self.assertEqual(response.fiis[0].ticker, "AAA11")
+                self.assertEqual(response.provenance["selector_sources"]["stocks"], {})
+
     def test_latest_recommendation_matches_current_profile_and_plan(self):
         first_profile = self.save_valid_profile()
-        engine_result = {
-            "plan": "basic",
-            "model_version": "allocation-v1",
-            "snapshot_id": "fixture-v1",
-            "snapshot_cutoff": "2026-07-21",
-            "classes": [],
-            "assumptions": [],
-            "risks": [],
-        }
-        with patch("app.routers.recommendations.generate_basic_recommendation", return_value=engine_result):
-            basic = create_recommendation(RecommendationRequest(), self.account, self.session)
+        basic = self.save_completed_run(first_profile)
 
         self.save_valid_profile()
         self.assertIsNone(read_latest_recommendation(self.account, self.session))
@@ -158,20 +281,7 @@ class ProductRouteTests(unittest.TestCase):
                 status="active",
             )
         )
-        premium = RecommendationRun(
-            account_id=self.account.id,
-            profile_id=current_profile.id,
-            plan="premium",
-            model_version="premium-v1",
-            snapshot_id="fixture-v2",
-            snapshot_cutoff="2026-07-21",
-            classes=[],
-            assumptions=[],
-            risks=[],
-            status="completed",
-        )
-        self.session.add(premium)
-        self.session.commit()
+        premium = self.save_completed_run(current_profile, plan="premium")
         self.assertEqual(read_latest_recommendation(self.account, self.session).id, premium.id)
 
         self.session.scalar(
@@ -179,13 +289,21 @@ class ProductRouteTests(unittest.TestCase):
         ).status = "inactive"
         self.session.commit()
         self.assertIsNone(read_latest_recommendation(self.account, self.session))
-        self.assertNotEqual(basic.profile_version, current_profile.version)
+        self.assertNotEqual(first_profile.version, current_profile.version)
 
     def test_missing_recommendation_input_does_not_publish_partial_result(self):
         self.save_valid_profile()
+        class FailingCoordinator:
+            def create_run(self, *_args, **_kwargs):
+                raise PremiumRecommendationError(
+                    "snapshot_unavailable",
+                    "A recomendação não está disponível com os dados atuais.",
+                    409,
+                )
+
         with patch(
-            "app.routers.recommendations.generate_basic_recommendation",
-            side_effect=ValueError("snapshot missing"),
+            "app.routers.recommendations.get_premium_recommendation_service",
+            return_value=FailingCoordinator(),
         ):
             with self.assertRaises(HTTPException) as error:
                 create_recommendation(RecommendationRequest(), self.account, self.session)
@@ -195,6 +313,112 @@ class ProductRouteTests(unittest.TestCase):
             self.session.scalar(select(func.count()).select_from(RecommendationRun)),
             0,
         )
+
+    def test_failed_source_poll_exposes_only_sanitized_status(self):
+        profile = self.save_valid_profile()
+        repository = RecommendationRepository(self.session)
+        run = repository.create_queued(
+            account_id=self.account.id,
+            profile_id=profile.id,
+            policy={"plan": "basic"},
+            provenance={"plan": "basic"},
+            plan="basic",
+        )
+        repository.mark_running(run.id)
+        repository.mark_failed(
+            run.id,
+            "snapshot_unavailable",
+            "Os dados Premium não estão disponíveis para esta execução.",
+        )
+        self.session.commit()
+
+        response = read_recommendation(run.id, self.account, self.session)
+
+        self.assertEqual(response.status, "failed")
+        self.assertEqual(response.failure_code, "snapshot_unavailable")
+        self.assertEqual(response.classes, [])
+        self.assertEqual(response.stocks, [])
+        self.assertEqual(response.fiis, [])
+
+    def test_queued_and_failed_responses_do_not_expose_snapshot_paths(self):
+        profile = self.save_valid_profile()
+        repository = RecommendationRepository(self.session)
+        run = repository.create_queued(
+            account_id=self.account.id,
+            profile_id=profile.id,
+            policy={"plan": "basic"},
+            provenance={
+                "manifest_path": "/private/snapshots/manifest.json",
+                "manifest": {"sources": {"stocks": {"path": "/private/stocks.csv"}}},
+            },
+            plan="basic",
+        )
+        self.session.commit()
+
+        self.assertIsNone(read_recommendation(run.id, self.account, self.session).provenance)
+        repository.mark_running(run.id)
+        repository.mark_failed(run.id, "snapshot_unavailable", "safe diagnostic")
+        self.session.commit()
+        failed = read_recommendation(run.id, self.account, self.session)
+        self.assertEqual(failed.status, "failed")
+        self.assertIsNone(failed.provenance)
+
+    def test_latest_completed_skips_pending_and_follows_current_profile_and_plan(self):
+        old_profile = self.save_valid_profile()
+        self.save_completed_run(old_profile, plan="premium")
+        current_profile = self.save_valid_profile()
+        premium = self.save_completed_run(current_profile, plan="premium")
+        RecommendationRepository(self.session).create_queued(
+            account_id=self.account.id,
+            profile_id=current_profile.id,
+            policy={"plan": "premium"},
+            provenance={"plan": "premium"},
+            plan="premium",
+        )
+        self.save_completed_run(current_profile, plan="basic")
+        self.session.add(Entitlement(account_id=self.account.id, plan="premium", status="active"))
+        self.session.commit()
+
+        latest = read_latest_completed_recommendation(self.account, self.session)
+
+        self.assertEqual(latest.id, premium.id)
+        self.assertEqual(latest.profile_version, current_profile.version)
+        self.assertEqual(latest.plan, "premium")
+
+        self.session.scalar(
+            select(Entitlement).where(Entitlement.account_id == self.account.id)
+        ).status = "inactive"
+        self.session.commit()
+        self.assertEqual(
+            read_latest_completed_recommendation(self.account, self.session).plan,
+            "basic",
+        )
+
+    def test_latest_completed_is_database_only_and_route_precedes_id_route(self):
+        profile = self.save_valid_profile()
+        completed = self.save_completed_run(profile)
+        pending = RecommendationRepository(self.session).create_queued(
+            account_id=self.account.id,
+            profile_id=profile.id,
+            policy={"plan": "basic"},
+            provenance={"plan": "basic"},
+            plan="basic",
+        )
+        self.session.commit()
+        paths = [route.path for route in recommendations_router.routes]
+        self.assertLess(
+            paths.index("/v1/recommendations/latest-completed"),
+            paths.index("/v1/recommendations/{recommendation_id}"),
+        )
+
+        with patch(
+            "app.routers.recommendations.get_premium_recommendation_service",
+            side_effect=AssertionError("GET must not start or refresh a run"),
+        ):
+            latest = read_latest_completed_recommendation(self.account, self.session)
+            status = read_recommendation(pending.id, self.account, self.session)
+        self.assertEqual(latest.id, completed.id)
+        self.assertEqual(status.status, "queued")
 
     def test_portfolio_normalizes_values_and_preserves_history(self):
         first = save_portfolio(
@@ -270,8 +494,23 @@ class ProductRouteTests(unittest.TestCase):
             "assumptions": ["fixture"],
             "risks": ["fixture"],
         }
-        with patch("app.routers.recommendations.generate_basic_recommendation", return_value=engine_result):
+        coordinator = self.QueueCoordinator()
+        with patch(
+            "app.routers.recommendations.get_premium_recommendation_service",
+            return_value=coordinator,
+        ):
             recommendation = create_recommendation(RecommendationRequest(), account, self.session)
+        repository = RecommendationRepository(self.session)
+        repository.mark_running(recommendation.id)
+        repository.mark_completed(
+            recommendation.id,
+            {
+                "classes": engine_result["classes"],
+                "assumptions": engine_result["assumptions"],
+                "risks": engine_result["risks"],
+            },
+        )
+        self.session.commit()
         portfolio = save_portfolio(
             PortfolioInput(currency="BRL", classes={
                 "brazilian_stocks": 20_000,

@@ -6,6 +6,8 @@ from pathlib import Path
 import sys
 from typing import Any, Callable, Mapping
 
+from app.services.status_invest_inputs import StatusInvestInputs
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PY_ROOT = PROJECT_ROOT / "py"
@@ -37,6 +39,10 @@ def _default_stock_engine(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
         profile=None,
         n_runs=run_count,
         parallel=False,
+        adaptive_mode=bool(settings.get("adaptive_mode", False)) if isinstance(settings, Mapping) else False,
+        min_runs=int(settings.get("min_runs", 30)) if isinstance(settings, Mapping) else 30,
+        target_cv=float(settings.get("target_cv", 0.03)) if isinstance(settings, Mapping) else 0.03,
+        target_jaccard=float(settings.get("target_jaccard", 0.70)) if isinstance(settings, Mapping) else 0.70,
         selection_config=config,
         workspace=kwargs["workspace"],
         random_seed=int(kwargs["seed"]),
@@ -47,6 +53,13 @@ def _default_stock_engine(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
 def _default_fii_engine(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
     from fii_selection import run_fii_selection
 
+    config = kwargs.get("selection_config", kwargs.get("config", {}))
+    settings = config.get("system_ga_config", {}) if isinstance(config, Mapping) else {}
+    if isinstance(settings, Mapping):
+        kwargs.setdefault("adaptive_mode", bool(settings.get("adaptive_mode", False)))
+        kwargs.setdefault("min_runs", int(settings.get("min_runs", 30)))
+        kwargs.setdefault("target_cv", float(settings.get("target_cv", 0.03)))
+        kwargs.setdefault("target_jaccard", float(settings.get("target_jaccard", 0.70)))
     return run_fii_selection(*args, **kwargs)
 
 
@@ -102,46 +115,6 @@ def _manifest_value(manifest: object, name: str, default: object = None) -> obje
     if isinstance(manifest, Mapping):
         return manifest.get(name, default)
     return getattr(manifest, name, default)
-
-
-def _source_path(manifest: object, key: str) -> Path:
-    source: object | None = None
-    source_for = getattr(manifest, "source_for", None)
-    if callable(source_for):
-        try:
-            source = source_for(key)
-        except (KeyError, ValueError):
-            source = None
-
-    if source is None and isinstance(manifest, Mapping):
-        sources = manifest.get("sources", {})
-        if isinstance(sources, Mapping):
-            aliases = {"stock": "stocks", "fii": "fiis"}
-            source = sources.get(key) or sources.get(aliases.get(key, key))
-        source = source or manifest.get(f"{key}_source")
-
-    if source is None:
-        raise PremiumOptimizationError(
-            f"manifest source is missing: {key}", "snapshot_unavailable"
-        )
-    resolved_path = getattr(source, "resolved_path", None)
-    if callable(resolved_path):
-        return Path(resolved_path())
-    if isinstance(source, Mapping):
-        raw_path = source.get("path") or source.get("source_path")
-    else:
-        raw_path = source
-    if not raw_path:
-        raise PremiumOptimizationError(
-            f"manifest source path is missing: {key}", "snapshot_unavailable"
-        )
-    path = Path(str(raw_path)).expanduser()
-    if path.is_absolute():
-        return path
-    manifest_path = _manifest_value(manifest, "manifest_path")
-    if manifest_path:
-        return (Path(str(manifest_path)).parent / path).resolve()
-    return path.resolve()
 
 
 def _seed(policy: object, explicit_seed: int | None) -> int:
@@ -463,6 +436,7 @@ def run_premium_optimization(
     workspace: Path,
     investable_capital_brl: float,
     *,
+    selector_inputs: StatusInvestInputs,
     snapshot_loader: Callable[..., object] = _default_snapshot_loader,
     allocation_engine: Callable[..., Mapping[str, Any]] = _default_allocation_engine,
     stock_engine: Callable[..., Mapping[str, Any]] = _default_stock_engine,
@@ -473,6 +447,10 @@ def run_premium_optimization(
 
     if not math.isfinite(float(investable_capital_brl)) or investable_capital_brl <= 0:
         raise PremiumOptimizationError("investable capital must be positive", "policy_invalid")
+    if not isinstance(selector_inputs, StatusInvestInputs):
+        raise PremiumOptimizationError(
+            "validated Status Invest selector inputs are required", "snapshot_unavailable"
+        )
     workspace = Path(workspace)
     workspace.mkdir(parents=True, exist_ok=True)
     allocation_section = _policy_section(policy, "allocation")
@@ -517,7 +495,7 @@ def run_premium_optimization(
         stock_workspace = workspace / "stocks"
         try:
             stock_result = stock_engine(
-                input_path=_source_path(manifest, "stock"),
+                input_path=selector_inputs.stocks.path,
                 config=stock_config,
                 workspace=stock_workspace,
                 seed=run_seed,
@@ -549,7 +527,7 @@ def run_premium_optimization(
         fii_workspace = workspace / "fiis"
         try:
             fii_result = fii_engine(
-                input_path=_source_path(manifest, "fii"),
+                input_path=selector_inputs.fiis.path,
                 selection_config=fii_config,
                 n_runs=max(1, int(fii_config["system_ga_config"].get("run_count", 1))),
                 parallel=False,
@@ -578,16 +556,28 @@ def run_premium_optimization(
     else:
         fiis = []
 
-    provenance = _policy_section(policy, "provenance")
-    provenance = {
-        **provenance,
-        "manifest_id": _manifest_value(manifest, "manifest_id"),
-        "manifest_path": str(_manifest_value(manifest, "manifest_path"))
-        if _manifest_value(manifest, "manifest_path")
-        else None,
-        "workspace": str(workspace),
-        "random_seed": run_seed,
+    policy_provenance = _policy_section(policy, "provenance")
+    manifest_id = _manifest_value(manifest, "manifest_id")
+    allocation_history = {
+        "manifest_id": manifest_id,
+        "manifest_version": _manifest_value(manifest, "manifest_version"),
+        "cutoff_date": policy_provenance.get("cutoff_date"),
+        "source_snapshot_ids": policy_provenance.get("source_snapshot_ids", []),
+        "source_snapshot_hashes": policy_provenance.get("source_snapshot_hashes", {}),
     }
+    provenance = {
+        key: value
+        for key, value in policy_provenance.items()
+        if key not in {"cutoff_date", "source_snapshot_ids", "source_snapshot_hashes"}
+    }
+    provenance.update(
+        {
+            "manifest_id": manifest_id,
+            "random_seed": run_seed,
+            "allocation_history": allocation_history,
+            "selector_sources": selector_inputs.provenance(),
+        }
+    )
     return {
         "policy": policy_dict,
         "classes": classes,

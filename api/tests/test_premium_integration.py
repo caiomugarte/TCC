@@ -12,6 +12,8 @@ from app.db.base import Base
 from app.db.models import Account, ProfileRecord
 from app.services.premium_executor import PremiumExecutor
 from app.services.premium_recommendation import PremiumRecommendationService
+from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from app.repositories.recommendations import RecommendationRepository
 from app.schemas.recommendation import PremiumRecommendationRequest
 
 
@@ -38,6 +40,23 @@ class Manifest:
             ],
             "sources": {},
         }
+
+
+def _default_selector_inputs():
+    return StatusInvestInputs(
+        stocks=SourceSnapshot(
+            Path("/tmp/run/status-invest/stocks.csv"),
+            "statusinvest",
+            "2026-07-21T00:00:00Z",
+            "stock-hash",
+        ),
+        fiis=SourceSnapshot(
+            Path("/tmp/run/status-invest/fiis.csv"),
+            "statusinvest",
+            "2026-07-21T00:00:00Z",
+            "fii-hash",
+        ),
+    )
 
 
 def policy(profile, **kwargs):
@@ -111,7 +130,7 @@ class PremiumIntegrationTests(unittest.TestCase):
         self.engine.dispose()
         self.temp.cleanup()
 
-    def runner(self, policy_value, manifest, workspace, capital):
+    def runner(self, policy_value, manifest, workspace, capital, *, selector_inputs=None):
         def allocation(*_args, **_kwargs):
             return {
                 "current_target": {
@@ -142,6 +161,7 @@ class PremiumIntegrationTests(unittest.TestCase):
             manifest,
             workspace,
             capital,
+            selector_inputs=selector_inputs or _default_selector_inputs(),
             snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
             allocation_engine=allocation,
             stock_engine=selector,
@@ -154,6 +174,7 @@ class PremiumIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
+            status_invest_inputs_loader=lambda _workspace: _default_selector_inputs(),
             optimization_runner=self.runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
@@ -188,6 +209,52 @@ class PremiumIntegrationTests(unittest.TestCase):
             self.assertEqual(first_result["fiis"], replay["fiis"])
         finally:
             executor.shutdown()
+
+    def test_active_run_is_reused_and_force_creates_after_terminal(self):
+        manifest = Manifest()
+
+        class Executor:
+            def __init__(self):
+                self.submitted = []
+
+            def submit(self, run_id):
+                self.submitted.append(run_id)
+
+        executor = Executor()
+        service = PremiumRecommendationService(
+            manifest_loader=lambda: manifest,
+            manifest_validator=lambda value: value,
+            policy_resolver=policy,
+            executor=executor,
+        )
+
+        first = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+        )
+        reused = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(),
+            self.session,
+        )
+        self.assertEqual(reused.id, first.id)
+        self.assertEqual(executor.submitted, [first.id])
+
+        RecommendationRepository(self.session).mark_failed(
+            first.id,
+            "fixture_failure",
+            "fixture terminal state",
+        )
+        self.session.commit()
+
+        forced = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(force=True),
+            self.session,
+        )
+        self.assertNotEqual(forced.id, first.id)
+        self.assertEqual(executor.submitted, [first.id, forced.id])
 
 
 if __name__ == "__main__":

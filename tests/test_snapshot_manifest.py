@@ -129,6 +129,57 @@ class SnapshotManifestTests(unittest.TestCase):
             ):
                 validate_manifest(manifest_path, verify_hashes=False)
 
+    def test_selector_role_does_not_resolve_to_stock_class_benchmark(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            manifest = SnapshotManifest.from_dict(payload, base_dir=root)
+
+            self.assertEqual(
+                manifest.source_for("brazilian_stocks").resolved_path(),
+                (root / "allocation" / "caio_stocks.csv").resolve(),
+            )
+            self.assertEqual(
+                manifest.selector_source_for("stock").resolved_path(),
+                (root / "stocks.csv").resolve(),
+            )
+
+    def test_selector_lookup_requires_explicit_role_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            del payload["stock_source"]
+            manifest = SnapshotManifest.from_dict(payload, base_dir=root)
+
+            with self.assertRaisesRegex(
+                SnapshotManifestError, "explicit stock selector source"
+            ):
+                manifest.selector_source_for("stock")
+
+    def test_conflicting_selector_declarations_are_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            alternative = root / "alternate-stocks.csv"
+            alternative.write_text("TICKER\nBBB3\n", encoding="utf-8")
+            payload["sources"] = {
+                "stock": {
+                    "path": "stocks.csv",
+                    "sha256": sha256_path(root / "stocks.csv"),
+                    "provider": "fixture-stock",
+                }
+            }
+            payload["stock_source"] = {
+                "path": "alternate-stocks.csv",
+                "sha256": sha256_path(alternative),
+                "provider": "fixture-stock-alternate",
+            }
+
+            with self.assertRaisesRegex(
+                SnapshotManifestError, "ambiguous explicit stock selector sources"
+            ):
+                validate_manifest(payload, verify_hashes=False)
+
 
 if __name__ == "__main__":
     unittest.main()

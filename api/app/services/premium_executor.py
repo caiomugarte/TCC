@@ -11,6 +11,7 @@ from app.adapters.premium_optimization import PremiumOptimizationError, run_prem
 from app.db.models import ProfileRecord
 from app.db.session import SessionLocal
 from app.repositories.recommendations import RecommendationRepository, RecommendationStateError
+from app.services.status_invest_inputs import StatusInvestInputError, StatusInvestInputs, refresh_inputs
 
 
 def _open_session(factory: Callable[[], Any]) -> Any:
@@ -33,6 +34,7 @@ class PremiumExecutor:
         optimization_runner: Callable[..., Mapping[str, Any]] = run_premium_optimization,
         manifest_loader: Callable[[Mapping[str, Any]], object] | None = None,
         manifest_validator: Callable[[object], object] | None = None,
+        status_invest_inputs_loader: Callable[[Path], StatusInvestInputs] = refresh_inputs,
         workspace_root: Path | None = None,
         max_workers: int = 1,
         max_pending: int = 2,
@@ -45,6 +47,7 @@ class PremiumExecutor:
         self.optimization_runner = optimization_runner
         self.manifest_loader = manifest_loader
         self.manifest_validator = manifest_validator
+        self.status_invest_inputs_loader = status_invest_inputs_loader
         self.workspace_root = Path(workspace_root or Path(tempfile.gettempdir()) / "prumo-premium")
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="premium")
         self.futures: dict[str, Future[None]] = {}
@@ -98,7 +101,16 @@ class PremiumExecutor:
             manifest = self._load_manifest(provenance)
             workspace = self.workspace_root / run_id
             workspace.mkdir(parents=True, exist_ok=True)
-            result = self.optimization_runner(policy, manifest, workspace, capital)
+            selector_inputs = self.status_invest_inputs_loader(workspace)
+            if not isinstance(selector_inputs, StatusInvestInputs):
+                raise StatusInvestInputError("Status Invest inputs were not validated")
+            result = self.optimization_runner(
+                policy,
+                manifest,
+                workspace,
+                capital,
+                selector_inputs=selector_inputs,
+            )
             if not isinstance(result, Mapping):
                 raise RuntimeError("Premium optimization returned an invalid result")
         except Exception as exc:
@@ -160,6 +172,8 @@ class PremiumExecutor:
 
     @staticmethod
     def _failure_code(exc: Exception) -> str:
+        if isinstance(exc, StatusInvestInputError):
+            return "snapshot_unavailable"
         code = getattr(exc, "code", None)
         if isinstance(code, str) and code:
             return code[:64]

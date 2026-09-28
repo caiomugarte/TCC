@@ -22,6 +22,7 @@ class RecommendationRequest(ProfileSchema):
 
 class PremiumRecommendationRequest(ProfileSchema):
     profile_id: str | None = None
+    force: bool = False
 
 
 class AllocationClass(ProfileSchema):

@@ -208,16 +208,30 @@ class SnapshotManifest:
         supported_classes = tuple(str(item).strip() for item in raw_classes if str(item).strip())
 
         sources: dict[str, SnapshotSource] = {}
+
+        def add_source(key: str, source: SnapshotSource, label: str) -> None:
+            previous = sources.get(key)
+            if key in {"stock", "fii"} and previous is not None and previous != source:
+                raise SnapshotManifestError(
+                    f"ambiguous explicit {key} selector sources at {label}"
+                )
+            sources[key] = source
+
         raw_sources = value.get("sources", {})
         if raw_sources is not None:
             if not isinstance(raw_sources, Mapping):
                 raise SnapshotManifestError("sources must be an object")
             for key, raw_source in raw_sources.items():
                 # A class source map may use an alias accepted by source_for().
-                sources[str(key).strip()] = _source_value(
-                    raw_source,
-                    base_dir=base_dir,
-                    label=f"sources.{key}",
+                source_key = str(key).strip()
+                add_source(
+                    source_key,
+                    _source_value(
+                        raw_source,
+                        base_dir=base_dir,
+                        label=f"sources.{key}",
+                    ),
+                    f"sources.{key}",
                 )
 
         for key in ("allocation_source", "stock_source", "fii_source"):
@@ -226,16 +240,26 @@ class SnapshotManifest:
                 if isinstance(raw_source, Mapping) and "path" not in raw_source:
                     # Keep a class-to-file source map inside the flat registry.
                     for child_key, child_source in raw_source.items():
-                        sources[str(child_key).strip()] = _source_value(
-                            child_source,
-                            base_dir=base_dir,
-                            label=f"{key}.{child_key}",
+                        source_key = str(child_key).strip()
+                        add_source(
+                            source_key,
+                            _source_value(
+                                child_source,
+                                base_dir=base_dir,
+                                label=f"{key}.{child_key}",
+                            ),
+                            f"{key}.{child_key}",
                         )
                 else:
-                    sources[key.removesuffix("_source")] = _source_value(
-                        raw_source,
-                        base_dir=base_dir,
-                        label=key,
+                    source_key = key.removesuffix("_source")
+                    add_source(
+                        source_key,
+                        _source_value(
+                            raw_source,
+                            base_dir=base_dir,
+                            label=key,
+                        ),
+                        key,
                     )
 
         return cls(
@@ -293,6 +317,18 @@ class SnapshotManifest:
                     base_dir=allocation_path,
                 )
         raise SnapshotManifestError(f"manifest has no source for {key}")
+
+    def selector_source_for(self, role: str) -> SnapshotSource:
+        """Return explicit stock/FII selector input, never a class benchmark."""
+
+        if role not in {"stock", "fii"}:
+            raise SnapshotManifestError(f"unsupported selector role: {role}")
+        source = self.sources.get(role)
+        if source is None:
+            raise SnapshotManifestError(
+                f"manifest has no explicit {role} selector source"
+            )
+        return source
 
     def as_dict(self) -> dict[str, object]:
         sources = {
@@ -402,11 +438,7 @@ def validate_manifest(
                 )
     # Allocation files cannot double as the security-selection universes.
     for key in ("stock", "fii"):
-        source = checked.sources.get(key)
-        if source is None:
-            raise SnapshotManifestError(
-                f"manifest has no explicit {key} selector source"
-            )
+        source = checked.selector_source_for(key)
         source_path = source.resolved_path()
         if not source_path.exists():
             raise SnapshotManifestError(f"source {key} not found: {source_path}")

@@ -1,5 +1,38 @@
 # 🚀 Quick Start - Otimizações do Algoritmo Genético
 
+## API e frontend locais
+
+Na raiz do repositório, depois de configurar `api/.env` e `web/.env.local`
+(`web/.env` também é aceito). As portas padrão são `API_PORT=8000` e
+`WEB_PORT=3000`:
+
+```bash
+./scripts/run-local.sh
+```
+
+O comando usa `API_PORT` de `api/.env` e `WEB_PORT` de `web/.env.local` (ou
+`web/.env`), sem sobrescrever esses arquivos. Se
+`NEXT_PUBLIC_API_BASE_URL` não estiver configurada, o frontend usa
+`http://localhost:${API_PORT}`; uma URL explícita tem precedência. Se `WEB_PORT`
+mudar, atualize `CORS_ORIGINS` em `api/.env`, por exemplo:
+
+```dotenv
+# api/.env
+API_PORT=8100
+CORS_ORIGINS=http://localhost:3100
+CLERK_AUTHORIZED_PARTIES=http://localhost:3100
+
+# web/.env.local
+WEB_PORT=3100
+# Opcional; se omitida, a URL será derivada de API_PORT.
+# NEXT_PUBLIC_API_BASE_URL=http://localhost:8100
+```
+
+O comando inicia a API e o frontend nas portas configuradas. Migrações não são
+executadas automaticamente; use
+`./scripts/run-local.sh --migrate` quando essa aplicação explícita for necessária.
+Use `--api-only` ou `--web-only` para iniciar apenas um serviço.
+
 ## ⚡ Problema Resolvido
 
 Você estava tendo problemas com:

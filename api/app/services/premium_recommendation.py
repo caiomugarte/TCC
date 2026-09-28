@@ -4,6 +4,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 import hashlib
 import os
+from threading import RLock
 from typing import Any
 
 from sqlalchemy import desc, select
@@ -12,10 +13,17 @@ from sqlalchemy.orm import Session
 from app.db.models import Account, ProfileRecord, RecommendationRun
 from app.repositories.recommendations import RecommendationRepository
 from app.schemas.recommendation import PremiumRecommendationRequest
-from app.services.premium_policy import POLICY_VERSION, PremiumPolicyError, resolve_premium_policy
+from app.services.premium_policy import (
+    BASIC_POLICY_VERSION,
+    POLICY_VERSION,
+    PremiumPolicyError,
+    resolve_recommendation_policy,
+)
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
+# ponytail: process-local lock; add a database uniqueness guard if API becomes multi-process.
+_RUN_CREATION_LOCK = RLock()
 
 
 class PremiumRecommendationError(ValueError):
@@ -113,7 +121,7 @@ class PremiumRecommendationService:
         *,
         manifest_loader: Callable[[], object] = _default_manifest_loader,
         manifest_validator: Callable[[object], object] = _default_manifest_validator,
-        policy_resolver: Callable[..., object] = resolve_premium_policy,
+        policy_resolver: Callable[..., object] = resolve_recommendation_policy,
         repository_factory: Callable[[Session], RecommendationRepository] = RecommendationRepository,
         executor: object | None = None,
         rules_version: str = POLICY_VERSION,
@@ -130,9 +138,30 @@ class PremiumRecommendationService:
         account: Account | str,
         request: PremiumRecommendationRequest | None,
         session: Session,
+        *,
+        plan: str = "premium",
     ) -> RecommendationRun:
+        if plan not in {"basic", "premium"}:
+            raise PremiumRecommendationError("plan_invalid", "Plano de recomendação inválido.", 400)
         account_id = account.id if isinstance(account, Account) else str(account)
         profile = self._profile(session, account_id, getattr(request, "profile_id", None))
+        force = bool(getattr(request, "force", False))
+        reuse_terminal = plan == "premium" and not force
+        repository = self.repository_factory(session)
+
+        with _RUN_CREATION_LOCK:
+            active = repository.get_latest_for_profile(
+                account_id,
+                profile.id,
+                plan=plan,
+                statuses=("queued", "running"),
+            )
+            latest = active or repository.get_latest_for_profile(
+                account_id, profile.id, plan=plan
+            )
+            if latest is not None and (active is not None or reuse_terminal):
+                return latest
+
         try:
             manifest = self.manifest_validator(self.manifest_loader())
         except PremiumRecommendationError:
@@ -144,14 +173,16 @@ class PremiumRecommendationService:
             ) from exc
 
         manifest_id = str(_manifest_value(manifest, "manifest_id") or "premium-snapshot")
-        seed = derive_premium_seed(account_id, profile.id, manifest_id, self.rules_version)
+        rules_version = BASIC_POLICY_VERSION if plan == "basic" else self.rules_version
+        seed = derive_premium_seed(account_id, profile.id, manifest_id, rules_version)
         hashes = _manifest_hashes(manifest)
         cutoff = _manifest_value(manifest, "cutoff_date")
         cutoff_value = cutoff.isoformat() if hasattr(cutoff, "isoformat") else str(cutoff or "")
         try:
             policy = self.policy_resolver(
                 profile,
-                rules_version=self.rules_version,
+                rules_version=rules_version,
+                plan=plan,
                 source_snapshot_ids=(manifest_id,),
                 source_snapshot_hashes=hashes,
                 cutoff_date=cutoff_value,
@@ -172,6 +203,7 @@ class PremiumRecommendationService:
         provenance = {
             **dict(policy_provenance),
             "manifest_id": manifest_id,
+            "plan": plan,
             "manifest_path": _manifest_payload(manifest).get("manifest_path"),
             "manifest": _manifest_payload(manifest),
             "source_snapshot_ids": [manifest_id],
@@ -180,18 +212,30 @@ class PremiumRecommendationService:
             "random_seed": seed,
             "model_versions": dict(policy_provenance.get("model_versions", {})),
         }
-        repository = self.repository_factory(session)
-        run = repository.create_queued(
-            account_id=account_id,
-            profile_id=profile.id,
-            policy=policy_json,
-            provenance=provenance,
-            policy_version=str(policy_provenance.get("policy_version", self.rules_version)),
-            snapshot_id=manifest_id,
-            snapshot_cutoff=cutoff_value,
-            model_version="premium-v1",
-        )
-        session.commit()
+        with _RUN_CREATION_LOCK:
+            active = repository.get_latest_for_profile(
+                account_id,
+                profile.id,
+                plan=plan,
+                statuses=("queued", "running"),
+            )
+            latest = active or repository.get_latest_for_profile(
+                account_id, profile.id, plan=plan
+            )
+            if latest is not None and (active is not None or reuse_terminal):
+                return latest
+            run = repository.create_queued(
+                account_id=account_id,
+                profile_id=profile.id,
+                policy=policy_json,
+                provenance=provenance,
+                plan=plan,
+                policy_version=str(policy_provenance.get("policy_version", self.rules_version)),
+                snapshot_id=manifest_id,
+                snapshot_cutoff=cutoff_value,
+                model_version=f"{plan}-v1",
+            )
+            session.commit()
         if hasattr(session, "refresh"):
             session.refresh(run)
 

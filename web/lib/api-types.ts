@@ -40,6 +40,7 @@ export type RecommendationRequest = {
 
 export type PremiumRecommendationRequest = {
   profileId?: string;
+  force?: boolean;
 };
 
 export type RecommendationStatus = "queued" | "running" | "completed" | "failed";
@@ -60,6 +61,14 @@ export type RecommendationConstituent = {
   reasons: string[];
 };
 
+export type RecommendationProvenance = Record<string, unknown> & {
+  selector_sources?: Partial<Record<"stocks" | "fiis", {
+    provider?: string;
+    retrieved_at?: string;
+    sha256?: string;
+  }>>;
+};
+
 export type Recommendation = {
   id: string;
   profileVersion: number;
@@ -71,18 +80,6 @@ export type Recommendation = {
   assumptions: string[];
   risks: string[];
   createdAt: string;
-  status?: RecommendationStatus;
-  startedAt?: string | null;
-  completedAt?: string | null;
-  failureCode?: string | null;
-  failureMessage?: string | null;
-  stocks?: RecommendationConstituent[];
-  fiis?: RecommendationConstituent[];
-  policy?: Record<string, unknown> | null;
-  provenance?: Record<string, unknown> | null;
-};
-
-export type PremiumRecommendation = Recommendation & {
   status: RecommendationStatus;
   startedAt: string | null;
   completedAt: string | null;
@@ -91,8 +88,10 @@ export type PremiumRecommendation = Recommendation & {
   stocks: RecommendationConstituent[];
   fiis: RecommendationConstituent[];
   policy: Record<string, unknown> | null;
-  provenance: Record<string, unknown> | null;
+  provenance: RecommendationProvenance | null;
 };
+
+export type PremiumRecommendation = Recommendation;
 
 export type PortfolioInput = {
   currency: "BRL";
