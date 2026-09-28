@@ -34,11 +34,7 @@ def _response_with_profile(record: RecommendationRun, profile: ProfileRecord) ->
     stocks = result.get("stocks", []) if completed else []
     fiis = result.get("fiis", []) if completed else []
     policy = record.policy_json if isinstance(record.policy_json, dict) else None
-    provenance = (
-        result.get("provenance", record.provenance_json)
-        if completed
-        else record.provenance_json
-    )
+    provenance = result.get("provenance") if completed else None
     return RecommendationResponse(
         id=record.id,
         account_id=record.account_id,

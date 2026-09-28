@@ -340,6 +340,29 @@ class ProductRouteTests(unittest.TestCase):
         self.assertEqual(response.stocks, [])
         self.assertEqual(response.fiis, [])
 
+    def test_queued_and_failed_responses_do_not_expose_snapshot_paths(self):
+        profile = self.save_valid_profile()
+        repository = RecommendationRepository(self.session)
+        run = repository.create_queued(
+            account_id=self.account.id,
+            profile_id=profile.id,
+            policy={"plan": "basic"},
+            provenance={
+                "manifest_path": "/private/snapshots/manifest.json",
+                "manifest": {"sources": {"stocks": {"path": "/private/stocks.csv"}}},
+            },
+            plan="basic",
+        )
+        self.session.commit()
+
+        self.assertIsNone(read_recommendation(run.id, self.account, self.session).provenance)
+        repository.mark_running(run.id)
+        repository.mark_failed(run.id, "snapshot_unavailable", "safe diagnostic")
+        self.session.commit()
+        failed = read_recommendation(run.id, self.account, self.session)
+        self.assertEqual(failed.status, "failed")
+        self.assertIsNone(failed.provenance)
+
     def test_latest_completed_skips_pending_and_follows_current_profile_and_plan(self):
         old_profile = self.save_valid_profile()
         self.save_completed_run(old_profile, plan="premium")
