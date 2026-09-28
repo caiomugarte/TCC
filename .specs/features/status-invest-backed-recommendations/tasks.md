@@ -229,12 +229,12 @@ T6 → T7 → T8
 
 **Done when**:
 
-- [ ] Both plans use the same queued → running → completed/failed lifecycle.
-- [ ] Successful runs persist combined result, source provenance, and output hash.
-- [ ] Either source failure marks run failed without invoking the selector or replacing a completed result.
-- [ ] Failed runs store sanitized diagnostics and preserve per-run snapshots for reproduction.
-- [ ] Add at least 4 integration tests covering Basic/Premium success, partial refresh failure, provenance persistence, and previous-success preservation.
-- [ ] Gate passes with all API tests.
+- [x] Both plans use the same queued → running → completed/failed lifecycle.
+- [x] Successful runs persist combined result, source provenance, and output hash.
+- [x] Either source failure marks run failed without invoking the selector or replacing a completed result.
+- [x] Failed runs store sanitized diagnostics and preserve per-run snapshots for reproduction.
+- [x] Add at least 4 integration tests covering Basic/Premium success, partial refresh failure, provenance persistence, and previous-success preservation.
+- [x] Gate passes with all API tests.
 
 **Tests**: integration
 **Gate**: full

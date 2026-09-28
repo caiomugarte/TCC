@@ -173,6 +173,7 @@ class PremiumIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
+            status_invest_inputs_loader=lambda _workspace: _default_selector_inputs(),
             optimization_runner=self.runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
