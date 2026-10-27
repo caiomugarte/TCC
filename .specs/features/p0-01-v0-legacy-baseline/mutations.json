@@ -1,0 +1,72 @@
+[
+  {
+    "file": "baselines/v0-legacy/baseline.json",
+    "old": "\"sha256\": \"a7735d7a484bd474862da88e53bed985db38d0fefe16a7695fdf168763ed659e\"",
+    "new": "\"sha256\": \"a7735d7a484bd474862da88e53bed985db38d0fefe16a7695fdf168763ed659f\"",
+    "label": "one recorded sha256 digit moved",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_every_file_matches_its_commit_blob"
+  },
+  {
+    "file": "baselines/v0-legacy/protocol.json",
+    "old": "\"n_runs\": 30",
+    "new": "\"n_runs\": 29",
+    "label": "protocol declares 29 runs",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_runs_and_seed_formula_equal_the_archived_literals"
+  },
+  {
+    "file": "baselines/v0-legacy/protocol.json",
+    "old": "\"seed_base\": 42",
+    "new": "\"seed_base\": 43",
+    "label": "protocol declares seed base 43",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_runs_and_seed_formula_equal_the_archived_literals"
+  },
+  {
+    "file": "baselines/v0-legacy/code/ga.py",
+    "old": "\"generations\": 460",
+    "new": "\"generations\": 461",
+    "label": "archived caio generation count moved",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_ga_parameters_equal_the_archived_literals"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/build_manifest.py",
+    "old": "\"reference/\": \"outputs/\",",
+    "new": "\"reference/\": \"output/\",",
+    "label": "reference source_path prefix loses its s",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_builder_reproduces_the_committed_manifest"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/verify_manifest.py",
+    "old": "return EXIT_DRIFT",
+    "new": "return EXIT_VERIFIED",
+    "label": "drift exits zero",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_modified_file_is_reported_by_path_and_kind"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/replay.py",
+    "old": "if is_archived_driver(bundle, driver):",
+    "new": "if False:",
+    "label": "dependency probe skipped",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_missing_dependencies_are_named_and_exit_two"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/replay.py",
+    "old": "STDERR_TAIL_LIMIT = 4096",
+    "new": "STDERR_TAIL_LIMIT = 8192",
+    "label": "stderr_tail bound widened to 8192",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_nonzero_driver_exit_reports_runtime_error"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/replay.py",
+    "old": "\"golden_output_written\": False,",
+    "new": "\"golden_output_written\": True,",
+    "label": "report claims a golden output was written",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_reference_tree_is_untouched_and_no_golden_output"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/replay.py",
+    "old": "EXIT_UNTRUSTWORTHY = 3",
+    "new": "EXIT_UNTRUSTWORTHY = 1",
+    "label": "a bundle that moved mid-run exits 1",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_bundle_moved_during_the_run_exits_three"
+  }
+]
