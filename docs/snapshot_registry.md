@@ -103,6 +103,12 @@ Compose a `draft` manifest from local fetch output. `--snapshot-dir` (the
 `data/<snapshot_name>/` directory with the six CSVs), `--stock-universe`, and
 `--fii-universe` must all resolve INSIDE the registry root (escape after
 resolution is exit 2); `--created-at` is a required explicit ISO datetime.
+`--snapshot-dir` must also NOT be an ancestor of (or equal to) the destination
+manifest path - in particular `--snapshot-dir <registry>` itself is exit 2 with
+nothing written: the manifest would land inside the very tree whose
+`sha256_path` digest the manifest records, and `validate` could never pass. The
+documented layout `<registry>/data/<snapshot_name>/` is fine because it is not
+an ancestor of `<registry>/<manifest-id>.json`.
 `common_dates` is the sorted intersection of the five class series exactly as
 `load_premium_snapshot_bundle` consumes them (`international_equity`/`crypto`
 already multiplied by `ptax`, multi-ticker sleeves intersected like
@@ -157,7 +163,7 @@ data stay on disk) - and never rewrites non-envelope fields.
 | Code | Meaning |
 | ---- | ------- |
 | exit 0 | success |
-| exit 2 | usage/argument error: bad or missing `--created-at`, `--manifest-id` failing `^[A-Za-z0-9][A-Za-z0-9._-]*$` or equal to `metadata` or differing from the loaded `manifest_id`, a `build` input escaping the registry root, unknown flag |
+| exit 2 | usage/argument error: bad or missing `--created-at`, `--manifest-id` failing `^[A-Za-z0-9][A-Za-z0-9._-]*$` or equal to `metadata` or differing from the loaded `manifest_id`, a `build` input escaping the registry root, a `build` `--snapshot-dir` containing the destination manifest path, unknown flag |
 | exit 3 | the operator pointed at something that does not exist: registry directory or `<registry>/<manifest-id>.json` missing on disk, refused overwrite of an existing/published artifact, or a `build` source input missing on disk |
 | exit 4 | the artifact under audit does not hold up: hash divergence, `cutoff_date` != last `common_date`, empty `common_dates` intersection at `build`, or any required-source verification failure in `validate`/`validate --check` (series absent from the manifest OR file missing/unreadable on disk - after `publish` the data files are part of the audited artifact) |
 | exit 5 | invalid lifecycle transition |

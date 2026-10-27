@@ -290,6 +290,16 @@ def build_manifest(
     return result
 
 
+def _contains_path(container: Path, path: Path) -> bool:
+    """True when ``container`` equals or contains ``path`` (resolved forms)."""
+
+    try:
+        path.relative_to(container)
+    except ValueError:
+        return False
+    return True
+
+
 def _valid_iso_datetime(value: str) -> bool:
     try:
         datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -465,13 +475,26 @@ def _cmd_build(args: argparse.Namespace) -> int:
     snapshot_dir = Path(args.snapshot_dir)
     stock_universe = Path(args.stock_universe)
     fii_universe = Path(args.fii_universe)
+    target = registry_root / f"{args.manifest_id}.json"
     for label, path, kind in (
         ("--snapshot-dir", snapshot_dir, "dir"),
         ("--stock-universe", stock_universe, "file"),
         ("--fii-universe", fii_universe, "file"),
     ):
+        resolved = path.resolve()
+        if kind == "dir" and _contains_path(resolved, target.resolve()):
+            # The manifest must never land inside the hashed source tree:
+            # sha256_path(snapshot_dir) runs before the write, so the manifest
+            # would invalidate the very digest it records.
+            print(
+                f"{label} must not contain the destination manifest path: "
+                f"{path} contains {target}; place the snapshot in "
+                f"<registry>/data/<snapshot_name>/",
+                file=sys.stderr,
+            )
+            return EXIT_USAGE
         try:
-            path.resolve().relative_to(registry_root.resolve())
+            resolved.relative_to(registry_root.resolve())
         except ValueError:
             print(
                 f"{label} must resolve inside the registry root: {path}",
@@ -495,7 +518,6 @@ def _cmd_build(args: argparse.Namespace) -> int:
         )
         return EXIT_TARGET_MISSING
 
-    target = registry_root / f"{args.manifest_id}.json"
     if target.exists():
         print(f"manifest already exists: {target}", file=sys.stderr)
         return EXIT_TARGET_MISSING

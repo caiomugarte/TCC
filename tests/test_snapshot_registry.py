@@ -1,6 +1,7 @@
 import contextlib
 import io
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -470,6 +471,47 @@ class BuildCommandTests(unittest.TestCase):
 
             self.assertEqual(code, 2, err)
             self.assertEqual(sorted(root.glob("*.json")), [])
+
+    def test_build_snapshot_dir_containing_manifest_target_exits_2(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
+            # Judge repro: the six allocation CSVs sit at the registry root, so
+            # the only defect is the source tree containing the manifest target.
+            for filename in sorted(set(ALLOCATION_FILES.values())):
+                (snapshot_dir / filename).rename(root / filename)
+
+            code, _, err = run_cli(
+                "build",
+                "--registry",
+                str(root),
+                "--manifest-id",
+                "snap-2020-01",
+                "--created-at",
+                CREATED_AT,
+                "--snapshot-dir",
+                str(root),
+                "--stock-universe",
+                str(stock_universe),
+                "--fii-universe",
+                str(fii_universe),
+            )
+
+            self.assertEqual(code, 2, err)
+            self.assertIn("snap-2020-01.json", err)
+            self.assertEqual(sorted(root.glob("*.json")), [])
+
+    def test_build_registry_data_layout_still_builds_and_validates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            self.assertTrue((root / "data" / "snapshot-2020").is_dir())
+
+            code, _, err = run_validate(root)
+
+            self.assertEqual(code, 0, err)
+            self.assertEqual(load_raw(root / "snap-2020-01.json")["state"], "validated")
 
     def test_build_existing_target_or_missing_source_exits_3(self):
         with tempfile.TemporaryDirectory() as directory:
