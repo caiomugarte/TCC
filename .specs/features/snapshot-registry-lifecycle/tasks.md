@@ -229,11 +229,11 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] Publishing a `validated` manifest exits 0 and only envelope fields change (issue AC1)
-- [ ] Second `publish` exits 3 and the file bytes are unchanged (issue IT-3) (`test_publish_never_overwrites_published_manifest`)
-- [ ] `publish` on `draft`/`retired` exits 5 with no write
-- [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 3 new tests pass (no silent deletions)
+- [x] Publishing a `validated` manifest exits 0 and only envelope fields change (issue AC1)
+- [x] Second `publish` exits 3 and the file bytes are unchanged (issue IT-3) (`test_publish_never_overwrites_published_manifest`)
+- [x] `publish` on `draft`/`retired` exits 5 with no write
+- [x] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
+- [x] Test count: ≥ 3 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)

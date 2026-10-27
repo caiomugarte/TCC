@@ -363,6 +363,25 @@ def _cmd_validate(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _cmd_publish(args: argparse.Namespace) -> int:
+    code, manifest_path, manifest = _resolve_manifest(args)
+    if code != EXIT_OK:
+        return code
+    try:
+        rewrite_envelope(
+            manifest_path,
+            lambda payload: transition_state(payload, "publish", at=_now_iso()),
+        )
+    except AlreadyPublishedError:
+        print("published manifest is never overwritten", file=sys.stderr)
+        return EXIT_TARGET_MISSING
+    except InvalidTransitionError as exc:
+        print(f"invalid transition: {exc}", file=sys.stderr)
+        return EXIT_INVALID_TRANSITION
+    print(f"published {manifest_path}")
+    return EXIT_OK
+
+
 def _cmd_build(args: argparse.Namespace) -> int:
     registry_root = Path(args.registry)
     if not registry_root.is_dir():
@@ -459,6 +478,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="read-only audit in any lifecycle state (no writes)",
     )
     validate.set_defaults(handler=_cmd_validate)
+
+    publish = subparsers.add_parser(
+        "publish", help="freeze a validated manifest as published"
+    )
+    publish.add_argument("--registry", required=True, help="registry root directory")
+    publish.add_argument("--manifest-id", required=True, help="manifest identifier")
+    publish.set_defaults(handler=_cmd_publish)
 
     return parser
 

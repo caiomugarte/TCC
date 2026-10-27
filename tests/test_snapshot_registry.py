@@ -900,5 +900,73 @@ class ValidateCommandTests(unittest.TestCase):
             self.assertIn("differs from loaded manifest_id", err)
 
 
+def run_publish(root: Path, manifest_id: str = "snap-2020-01") -> tuple:
+    return run_cli("publish", "--registry", str(root), "--manifest-id", manifest_id)
+
+
+class PublishCommandTests(unittest.TestCase):
+    def test_publish_transitions_validated_to_published(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(run_validate(root)[0], 0)
+            target = root / "snap-2020-01.json"
+            before = load_raw(target)
+
+            code, _, err = run_publish(root)
+
+            self.assertEqual(code, 0, err)
+            after = load_raw(target)
+            self.assertEqual(after["state"], "published")
+            self.assertEqual(after["manifest_sha256"], before["manifest_sha256"])
+            before_content = {
+                key: value
+                for key, value in before.items()
+                if key not in ("state", "state_changed_at")
+            }
+            after_content = {
+                key: value
+                for key, value in after.items()
+                if key not in ("state", "state_changed_at")
+            }
+            self.assertEqual(after_content, before_content)
+
+    def test_publish_never_overwrites_published_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(run_validate(root)[0], 0)
+            self.assertEqual(run_publish(root)[0], 0)
+            target = root / "snap-2020-01.json"
+            frozen = target.read_bytes()
+
+            code, _, err = run_publish(root)
+
+            self.assertEqual(code, 3)
+            self.assertEqual(target.read_bytes(), frozen)
+
+    def test_publish_refuses_draft_and_retired(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            for state in ("draft", "retired"):
+                with self.subTest(state=state):
+                    root = base / state
+                    root.mkdir()
+                    code, _, err = run_build(root)
+                    self.assertEqual(code, 0, err)
+                    target = root / "snap-2020-01.json"
+                    if state == "retired":
+                        self.assertEqual(run_validate(root)[0], 0)
+                        set_manifest_state(target, "retired")
+                    frozen = target.read_bytes()
+
+                    code, _, err = run_publish(root)
+
+                    self.assertEqual(code, 5)
+                    self.assertEqual(target.read_bytes(), frozen)
+
+
 if __name__ == "__main__":
     unittest.main()
