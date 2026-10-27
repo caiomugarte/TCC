@@ -17,6 +17,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 BUNDLE = REPO / "baselines" / "v0-legacy"
 VERIFY = BUNDLE / "tools" / "verify_manifest.py"
+BUILD = BUNDLE / "tools" / "build_manifest.py"
 BASELINE_COMMIT = "97ea3275293da4e1902fcfeb684c814f04f5368f"
 TOTAL_BYTES = 632981
 COVERED_SUBTREES = ("code/", "data/", "reference/")
@@ -122,6 +123,31 @@ class ManifestSchemaTests(unittest.TestCase):
         self.assertEqual(sorted(excluded), sorted(EXCLUDED_PATHS))
         for path, reason in excluded.items():
             self.assertGreater(len(reason.strip()), 10, path)
+
+
+class BuilderTests(unittest.TestCase):
+    def test_builder_reproduces_the_committed_manifest(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "baseline.json"
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(BUILD),
+                    "--bundle",
+                    str(BUNDLE),
+                    "--out",
+                    str(out),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            summary = json.loads(completed.stdout)
+            self.assertEqual(summary["status"], "WROTE")
+            self.assertEqual(summary["bytes"], TOTAL_BYTES)
+            rebuilt = json.loads(out.read_text(encoding="utf-8"))
+
+        self.assertEqual(rebuilt, MANIFEST)
 
 
 class VerifyCliTests(unittest.TestCase):

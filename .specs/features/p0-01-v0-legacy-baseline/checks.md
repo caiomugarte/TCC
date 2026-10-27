@@ -24,9 +24,10 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k
 **C2** - Each covered file's `sha256`, `git_blob_sha1`, `bytes` and `mode` equal the blob at `97ea3275293da4e1902fcfeb684c814f04f5368f` for its `source_path` (AC 1)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_every_file_matches_its_commit_blob`
 
-**C3** - Every covered file records `path`, `source_path`, `sha256`, `git_blob_sha1`, `bytes`, `mode` and `role`, with `role` taking `executed`, `comparison` or `provenance_only`, and `data/processed/eligibility_filters.parquet` recorded as `provenance_only` (AC 2)
+**C3** - Every covered file records `path`, `source_path`, `sha256`, `git_blob_sha1`, `bytes`, `mode` and `role`, with `role` taking `executed`, `comparison` or `provenance_only`, `data/processed/eligibility_filters.parquet` is recorded as `provenance_only`, and `tools/build_manifest.py` regenerates exactly the committed `baseline.json` from those bytes (AC 2)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_every_file_records_the_seven_manifest_fields`
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_roles_and_the_provenance_only_parquet`
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_builder_reproduces_the_committed_manifest`
 
 **C4** - A covered file deleted from a bundle copy makes `tools/verify_manifest.py` exit 1 and report that `path` with kind `missing` (AC 3)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_missing_file_is_reported_by_path_and_kind`
