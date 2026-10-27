@@ -1,6 +1,6 @@
 # v0-legacy baseline bundle verification
 
-**Verdict**: FAIL (CHANGES_REQUIRED - 2 blocking, 3 nonblocking findings)
+**Verdict** (round 1): FAIL (CHANGES_REQUIRED - 2 blocking, 3 nonblocking findings)
 **Profile**: standard
 **Diff range**: 3371685..9679245 (HEAD `9679245`)
 **Round**: 1 - full
@@ -30,7 +30,7 @@ commit.
 | Source | Opened | Contradiction | Uncovered |
 | --- | --- | --- | --- |
 | `plan.md` (AC 1-28, doors B1-B4) | yes - full read | F6 below (AD-001 letter, not an AC) | - |
-| `checks.md` (35 checks) | yes - full read | none | F1, F2 below |
+| `checks.md` (35 checks) | yes - full read (its Uncovered items, F1 and F2 below, are both closed in round 2) | none | - |
 | `.specs/project/STATE.md` AD-001 | yes - full read | F6 - literal wording vs `MISMATCH`/`cause: null` | - |
 | commit `97ea327` blobs | yes - `git cat-file`/`hash-object`, independent of the manifest | none | - |
 | issue #6 (GitHub) | not opened - step 1 is `ui`-scoped and this profile is `standard` | - | - |
@@ -115,9 +115,9 @@ test exercises. The `REPRODUCED`/`MISMATCH` real-`numpy` path is a **declared pl
 | cause codes (6) | AD-001 vocabulary | C18, C19, C20, C23, C26, C27 | - |
 | CLI exit codes (4) | AC 26 | C33 (2 and 3), C8/C21 (0), C22 (1) | - |
 | replay flags (4) | AC 25 | C32 | - |
-| scanned production groups (3) | AC 27 | `py/` and `api/` provable (injected C34); **repo-root `*.py` not individually provable — fault V4 survived** | repo-root `*.py` |
+| scanned production groups (3) | AC 27 | `py/` and `api/` provable (injected C34); repo-root `*.py` was unproven at round 1 (fault V4 survived) - closed in round 2 by `C38`, fault V4 killed | - |
 | package markers (3) | AC 28 | C35 | - |
-| manifest structural-rejection arms (≈8: schema_version, coverage shape, missing field, bad role, **duplicate path**, outside-subtree, non-list files, non-object entry) | plan Observable "a file with two roles is a manifest error" + AC 26 exit 3 | only malformed-JSON → exit 3 (C33); **no arm individually proven — fault V2 survived** | the whole arm set |
+| manifest structural-rejection arms (≈8: schema_version, coverage shape, missing field, bad role, **duplicate path**, outside-subtree, non-list files, non-object entry) | plan Observable "a file with two roles is a manifest error" + AC 26 exit 3 | only malformed-JSON → exit 3 (C33) at round 1 - the whole arm set was unproven (fault V2 survived); closed in round 2 by `C36`, fault V2 killed | - |
 
 Both sweeps beyond the table found nothing else: no route/status/entity named in `plan.md`
 (`Landing`, `Relations`, `Observable`) lacks a proof except the two rows above.
@@ -159,7 +159,7 @@ every proof carrying a check had been made to fail at least once (author's ten p
 
 ## Findings
 
-**F1 (blocking, open - closed-by-commit expected from the author).** The manifest's structural
+**F1 (blocking, closed-by-commit `22913e5` - confirmed by the round-2 Verifier).** The manifest's structural
 validation arms are unproven. `load_manifest` rejects a manifest with a duplicate path, a bad
 role, a missing field, a wrong `schema_version`, a wrong `included_subtrees`, or a path outside
 the covered subtrees (`verify_manifest.py:76-106`) — all reaching exit 3 — and the plan's
@@ -168,7 +168,7 @@ only the malformed-JSON arm, so the fault V2 (duplicate guard removed) passes th
 behavior the plan names has no proof anywhere. Fix: one test feeding structurally broken
 manifest copies (duplicate entry at minimum) asserting exit 3 and the error text.
 
-**F2 (blocking, open - closed-by-commit expected from the author).** The Coverage row claims
+**F2 (blocking, closed-by-commit `00aa6bb` - confirmed by the round-2 Verifier).** The Coverage row claims
 `repo-root *.py` among "scanned production groups (3)" proved by C34, but the scan arm that
 enumerates root files (`tests/test_v0_legacy_isolation.py:44`) can be deleted and both C34
 proofs still pass (the injected fixture has no root-level offender; the real tree's two root
@@ -177,18 +177,18 @@ distinguish). Fix: extend the injected-fault test with a root-level offender (e.
 `root/reach.py` importing `replay` or containing the `baselines/` segment) and assert it is
 named.
 
-**F3 (nonblocking, open).** The mode re-check on the verify path is unproven: fault V1 survives
+**F3 (nonblocking, closed-by-commit `22913e5` - confirmed by the round-2 Verifier).** The mode re-check on the verify path was unproven: fault V1 survived
 because no test changes a covered file's permission. The real code is correct — probe: `chmod
 0755 code/ga.py` in a copy → exit 1, kind `modified`. Since AC 1 speaks of byte-identity and AC
 3 of missing/modified/unexpected content states, this is defense beyond the ACs; one `os.chmod`
 arm in the C5-style test would close it.
 
-**F4 (nonblocking, note).** The protocol checker's ast arm "run_ga breaks out of its generation
+**F4 (nonblocking, closed-by-commit `831fb45` - confirmed by the round-2 Verifier).** The protocol checker's ast arm "run_ga breaks out of its generation
 loop" (`tests/test_v0_legacy_protocol.py:218`) is not falsifiable by any fault in authored code —
 only by editing the frozen archive, which C2 pins independently byte-for-byte. Redundant
 defense, not a contract gap; recorded so nobody mistakes it for proven behavior.
 
-**F6 (nonblocking, open - docs).** AD-001's letter says "every status other than `REPRODUCED`
+**F6 (nonblocking, closed-by-commit `8a0ec4f` - confirmed by the round-2 Verifier).** AD-001's letter says "every status other than `REPRODUCED`
 carries exactly one cause code", but `MISMATCH` reports `cause: null` (`replay.py:395-400`) and
 no code in the six-value vocabulary fits a measured disagreement. Plan door B3 and AC 15 do not
 require a cause for `MISMATCH`, and the semantic intent (never fold `MISMATCH` into
@@ -256,4 +256,108 @@ The five findings are closed in commits (`22913e5`, `00aa6bb`, `831fb45`, `8a0ec
 check and proof updates in `d88948e`); the table is in `## Findings`. This file is not a round-2
 report and its verdict is unchanged: a scoped round 2 over the fix diff is the independent
 Verifier's to write, since the author may not re-sign its own work.
+
+---
+
+# Round 2 - closure verification (2026-10-27, `iw-6-verify-r2`)
+
+**Verdict**: PASS (APPROVED - 0 blocking, 1 nonblocking)
+**Profile**: standard
+**Diff range**: 9679245..bd7c203 (fix commits `22913e5`, `00aa6bb`, `831fb45`, `8a0ec4f`,
+`d88948e`, `ecfa439`, `355bb31`, `bd7c203`; no code or bundle change after `831fb45` —
+`git diff 831fb45..bd7c203 --stat` shows `.specs/` + `STATE.md` only)
+**Round**: 2 - closure
+**Verifier**: independent sub-agent (author != verifier; fresh run, clientRequestId
+`iw-6-verify-r2`). The round-1 record above stands as written; this section is the round-2
+Verdict.
+
+## Mechanical gate - my own run (round 2)
+
+```
+python3 ~/.claude/skills/tlc-spec-lean/scripts/check_proofs.py p0-01-v0-legacy-baseline \
+        --mutations .specs/features/p0-01-v0-legacy-baseline/mutations.json --root .
+**HEAD**: bd7c203
+**Tree**: clean
+**Result**: 48 pass, 0 fail; mutations 16 killed, 0 not
+```
+
+Reproduces the author's declared gate exactly (16/16 dead — my own run, not the author's
+number). Hygiene: the gate's regenerated `proofs.md` (HEAD pointer `ecfa439` -> `bd7c203`) is
+left uncommitted in the worktree — N1 below.
+
+## Re-injections (this Verifier's own edits; the author's `mutations.json` was not trusted)
+
+Control first: a fresh `git archive bd7c203` copy of the tree (with `.git`) runs the full
+48-test suite **48/48 OK**. Each fault was then applied by this Verifier as its own edit in a
+separate copy; the judge is the full suite (`unittest discover -s tests -p 'test_v0_legacy_*.py'`).
+Each injection produced **exactly one failure, and it is the test the closure names** — no
+collateral reddening, so the assertion fails for the right reason:
+
+| Fault | Edit (applied by hand) | Failing test | Finding closed |
+| --- | --- | --- | --- |
+| V1 | mode re-check `or file_mode(path) != entry["mode"]` -> `or False` (`verify_manifest.py`) | `test_mode_change_is_reported_by_path_and_kind` | F3 |
+| V2 | duplicate guard `if entry["path"] in seen:` -> `if False and ...` (`verify_manifest.py`) | `test_structurally_broken_manifest_is_rejected_naming_the_defect` (arm `duplicate path`) | F1 |
+| V4 | repo-root arm `targets.extend(sorted(root.glob("*.py")))` -> `pass` (isolation test helper) | `test_isolation_scan_flags_a_repo_root_offender` | F2 |
+| V5 | break arm -> `elif False and any(isinstance(node, ast.Break) ...)` (protocol test helper) | `test_break_in_the_generation_loop_is_rejected_naming_the_field` | F4 |
+
+Extra falsifiability probe beyond the arm V2 kills: with the `schema_version` guard removed
+from `load_manifest` (`verify_manifest.py:78-81`), exactly the `arm='schema_version'` subTest
+reddens. The structural test is arm-specific, not one blunt exit-3 assertion.
+
+## Final status per finding
+
+| Finding | Status | Round-2 evidence |
+| --- | --- | --- |
+| F1 | closed-by-commit `22913e5` | V2 kills exactly the duplicate-path arm; control 48/48; the ten broken-manifest arms each assert exit 3 + `status` ERROR + a stderr fragment naming that defect; a probe on a second guard confirms arm-specific falsifiability |
+| F2 | closed-by-commit `00aa6bb` | V4 kills exactly the repo-root offender test (`reach.py:1` bundle-module import, `segment.py:2` `baselines/` segment, `clean.py` silent); fixture lives in a tempdir |
+| F3 | closed-by-commit `22913e5` | V1 kills exactly the mode test: `chmod 0755` on bytes-equal `code/ga.py` -> exit 1, exact finding `[{"path": "code/ga.py", "kind": "modified"}]` |
+| F4 | closed-by-commit `831fb45` | V5 kills exactly the scratch `break` test: synthetic `break` in a scratch copy of `code/ga.py` -> violation starting `early_stopping.enabled`, and the archived file asserted byte-identical before/after |
+| F6 | closed-by-commit `8a0ec4f` | `STATE.md` AD-001 now requires a cause code only for `UNVERIFIABLE`, gives `MISMATCH` the `fields` payload, and dates the correction while keeping the human-confirmed three-status sentence. Coherent with the code: every `UNVERIFIABLE` in `replay.py` routes through `_unverifiable(report, cause, ...)` (`replay.py:196-197`, 15 call sites), `MISMATCH` keeps `cause: null` beside `fields` (`replay.py:393-400`) |
+
+## Immutability and counts (re-confirmed independently)
+
+- `git diff 9679245..bd7c203 -- baselines/` -> empty; the frozen bundle did not move.
+- All 17 covered files: byte-equal to `git cat-file blob 97ea327:<source_path>` (via each
+  entry's `source_path`, not the bundle path); recorded `sha256` and `git_blob_sha1` both match;
+  632,981 bytes total. **0 mismatches.**
+- `python3 -m unittest discover -s tests` -> 98 tests, 94 OK + 4 errors; the 4 are the
+  pre-existing import failures (`test_fii_backtest_analysis`, `test_fii_selection`,
+  `test_multi_run_backtest`, `test_premium_research_contracts`) — none new, none v0-legacy.
+- `validate_checks.py checks.md --strict` -> 0 errors, 0 warnings, exit 0. `C36`-`C39` are in
+  the Coverage join: repo-root `*.py` -> `C38`; manifest structural-rejection arms (10) ->
+  `C36`; early-stop arms (2) -> `C39`; `modified` detection inputs -> `C37`. `C1`-`C35` text
+  unchanged apart from the counts (35 -> 39 checks, 4 -> 5 slices).
+
+## Regression sweep - clean
+
+- Every new fixture lives in a `tempfile.TemporaryDirectory`: `bundle_copy` into a tmp bundle
+  (manifest tests), a scratch module copy (protocol test, which also asserts the frozen bytes
+  unchanged before and after), a scratch root for the read-only `scan()` (isolation test).
+- No new or existing v0-legacy test writes under `baselines/`, `outputs/` or `data/`.
+- No new global state or order dependence: the protocol test's control call
+  `violations(PROTOCOL)` is a pure function over module constants; each structural arm builds
+  its own fixture.
+
+## New findings
+
+**N1 (nonblocking, hygiene, docs-only).** The gate at `bd7c203` regenerated
+`.specs/features/p0-01-v0-legacy-baseline/proofs.md` (HEAD pointer `ecfa439` -> `bd7c203`,
+line 3) and the change is uncommitted in the worktree. The committed pointer (`355bb31`)
+targets `ecfa439`, a code-identical docs commit, so the recorded proofs are valid; and
+`check_proofs.py` rewrites the line on every run. Fix: one docs commit carrying the
+regenerated line — the Verifier may not commit.
+
+No surviving mutation and no loose assertion found: the sweep stopped here and nothing was
+re-opened. The round-1 declared-plan gap (real-`numpy`/`pandas` replay path) remains a plan
+gap, unchanged by the fix round and owned by P0-02.
+
+## Round-2 verdict
+
+All five round-1 findings are closed-by-commit, each re-proven falsifiable by this Verifier's
+own re-injections against a 48/48 control; the frozen bundle is byte-immutable; the mechanical
+gate passes at the current HEAD with all 16 mutations dead; `checks.md` stays valid with the
+four appended checks wired into the Coverage join. One nonblocking hygiene note (N1) remains.
+
+iw-verdict: APPROVED blocking=0 nonblocking=1
+
 
