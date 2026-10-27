@@ -347,6 +347,19 @@ class ExecutorFailureTests(unittest.TestCase):
 
 
 class ExecutorSeamTests(unittest.TestCase):
+    def test_archived_driver_compiles_and_names_runs_json(self):
+        source = (BUNDLE / "tools" / "_legacy_driver.py").read_text(encoding="utf-8")
+        tree = ast.parse(source, filename="_legacy_driver.py")
+        compile(tree, "_legacy_driver.py", "exec")
+        output = [
+            node.value.value
+            for node in tree.body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == "OUTPUT" for target in node.targets)
+            and isinstance(node.value, ast.Constant)
+        ]
+        self.assertEqual(output, ["runs.json"])
+
     def test_substitute_driver_is_resolved_and_recorded(self):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)

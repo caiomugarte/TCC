@@ -114,9 +114,10 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k t
 **C28** - A covered byte moved while the driver runs makes `tools/replay.py` report `bundle_stable` false, cause `hash_mismatch`, and exit 3 (AC 21)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_bundle_moved_during_the_run_exits_three`
 
-**C29** - `--driver` is resolved against the bundle and echoed in the report's `driver` field, the child runs with the scratch root as cwd and no `reference/` beside it, `<scratch_root>/runs.json` is the only datum source, a substitute driver needs neither `numpy` nor `pandas`, and a child that writes no `runs.json` yields `UNVERIFIABLE` with cause `runtime_error` (AC 22)
+**C29** - `--driver` is resolved against the bundle and echoed in the report's `driver` field, the child runs with the scratch root as cwd and no `reference/` beside it, `<scratch_root>/runs.json` is the only datum source, a substitute driver needs neither `numpy` nor `pandas`, the archived driver compiles and names that exact output file, and a child that writes no `runs.json` yields `UNVERIFIABLE` with cause `runtime_error` (AC 22)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_substitute_driver_is_resolved_and_recorded`
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_child_without_runs_json_reports_runtime_error`
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_archived_driver_compiles_and_names_runs_json`
 
 **C30** - Each report row carries `reported_fitness` from the CSV cell and `recomputed_fitness` from `runs.json`, and a substituted `recomputed_fitness` that matches nothing leaves the status `REPRODUCED` (AC 23)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_reported_and_recomputed_fitness_stay_independent`
