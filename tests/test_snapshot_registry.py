@@ -1,14 +1,21 @@
+import contextlib
+import io
 import json
 from pathlib import Path
+import re
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 sys.path.insert(0, str(Path(__file__).parent))
 
+import snapshot_registry  # noqa: E402
+from allocation_config import ASSET_CLASSES  # noqa: E402
+from allocation_data import load_premium_snapshot_bundle  # noqa: E402
 from snapshot_manifest import (  # noqa: E402
     SnapshotManifest,
     SnapshotManifestError,
@@ -16,6 +23,12 @@ from snapshot_manifest import (  # noqa: E402
     latest_compatible_manifest,
     manifest_canonical_sha256,
     validate_manifest,
+)
+from snapshot_registry import (  # noqa: E402
+    AlreadyPublishedError,
+    InvalidTransitionError,
+    rewrite_envelope,
+    transition_state,
 )
 from test_snapshot_manifest import build_manifest_fixture  # noqa: E402
 
@@ -254,6 +267,388 @@ class SelectionStateTests(unittest.TestCase):
                 SnapshotManifestError, "no compatible snapshot manifest found"
             ):
                 latest_compatible_manifest(root, include_validated=True)
+
+
+PLAIN_DATES = ["2020-01-01", "2020-01-02", "2020-01-03"]
+CREATED_AT = "2020-01-04T12:00:00+00:00"
+
+
+def write_levels_file(path: Path, columns: list, dates: list) -> None:
+    lines = ["date," + ",".join(columns)]
+    for index, current_date in enumerate(dates, start=1):
+        values = [str(100.0 + index + column_index) for column_index in range(len(columns))]
+        lines.append(",".join([current_date, *values]))
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def build_fetch_inputs(root: Path, **date_overrides) -> tuple:
+    """Lay out a fetch-style snapshot (``data/<name>/``) inside a registry."""
+
+    snapshot_dir = root / "data" / "snapshot-2020"
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    dates = {
+        name: date_overrides.get(f"{name}_dates", PLAIN_DATES)
+        for name in ("stocks", "fiis", "sp500", "di", "btc", "ptax")
+    }
+    write_levels_file(snapshot_dir / "caio_stocks.csv", ["AAA3", "BBB3"], dates["stocks"])
+    write_levels_file(snapshot_dir / "caio_fiis.csv", ["AAA11", "BBB11"], dates["fiis"])
+    write_levels_file(snapshot_dir / "sp500_total_return_usd.csv", ["value"], dates["sp500"])
+    write_levels_file(snapshot_dir / "di.csv", ["value"], dates["di"])
+    write_levels_file(snapshot_dir / "btc_usd.csv", ["value"], dates["btc"])
+    write_levels_file(snapshot_dir / "ptax.csv", ["value"], dates["ptax"])
+    stock_universe = root / "stocks.csv"
+    stock_universe.write_text("TICKER\nAAA3\n", encoding="utf-8")
+    fii_universe = root / "fiis.csv"
+    fii_universe.write_text("TICKER\nAAA11\n", encoding="utf-8")
+    return snapshot_dir, stock_universe, fii_universe
+
+
+def run_cli(*argv) -> tuple:
+    out, err = io.StringIO(), io.StringIO()
+    with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+        code = snapshot_registry.main(list(argv))
+    return code, out.getvalue(), err.getvalue()
+
+
+def run_build(root: Path, manifest_id: str = "snap-2020-01", **date_overrides) -> tuple:
+    snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(
+        root, **date_overrides
+    )
+    return run_cli(
+        "build",
+        "--registry",
+        str(root),
+        "--manifest-id",
+        manifest_id,
+        "--created-at",
+        CREATED_AT,
+        "--snapshot-dir",
+        str(snapshot_dir),
+        "--stock-universe",
+        str(stock_universe),
+        "--fii-universe",
+        str(fii_universe),
+    )
+
+
+class BuildCommandTests(unittest.TestCase):
+    def test_build_writes_valid_draft_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            raw = json.loads(target.read_text(encoding="utf-8"))
+            self.assertEqual(raw["state"], "draft")
+            self.assertEqual(raw["state_changed_at"], CREATED_AT)
+            self.assertEqual(raw["supported_classes"], list(ASSET_CLASSES))
+            manifest = SnapshotManifest.load(target)
+            validated = validate_manifest(manifest)
+            self.assertEqual(validated.manifest_sha256, raw["manifest_sha256"])
+            self.assertEqual(raw["manifest_sha256"], manifest_canonical_sha256(manifest))
+
+    def test_build_is_byte_reproducible_across_registries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            first, second = base / "registry-one", base / "registry-two"
+            for registry in (first, second):
+                registry.mkdir()
+                code, _, err = run_build(registry)
+                self.assertEqual(code, 0, err)
+
+            self.assertEqual(
+                (first / "snap-2020-01.json").read_bytes(),
+                (second / "snap-2020-01.json").read_bytes(),
+            )
+
+    def test_build_common_dates_match_premium_bundle_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(
+                root,
+                stocks_dates=["2020-01-01", "2020-01-02", "2020-01-04", "2020-01-05"],
+                fiis_dates=["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04", "2020-01-05"],
+                sp500_dates=["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04", "2020-01-05"],
+                di_dates=["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04", "2020-01-05"],
+                ptax_dates=["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-04"],
+                btc_dates=[
+                    "2020-01-01",
+                    "2020-01-02",
+                    "2020-01-03",
+                    "2020-01-04",
+                    "2020-01-05",
+                    "2020-01-06",
+                ],
+            )
+            self.assertEqual(code, 0, err)
+            raw = json.loads((root / "snap-2020-01.json").read_text(encoding="utf-8"))
+
+            bundle = load_premium_snapshot_bundle(
+                SnapshotManifest.load(root / "snap-2020-01.json")
+            )
+
+            row_dates = tuple(row.date.isoformat() for row in bundle.rows)
+            self.assertEqual(row_dates, tuple(raw["common_dates"]))
+            self.assertEqual(
+                raw["common_dates"], ["2020-01-01", "2020-01-02", "2020-01-04"]
+            )
+            self.assertEqual(raw["cutoff_date"], "2020-01-04")
+
+    def test_build_empty_intersection_exits_4(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(
+                root,
+                ptax_dates=["2021-01-01", "2021-01-02"],
+            )
+
+            self.assertEqual(code, 4)
+            self.assertFalse((root / "snap-2020-01.json").exists())
+
+    def test_build_requires_explicit_created_at(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
+            common = [
+                "build",
+                "--registry",
+                str(root),
+                "--manifest-id",
+                "snap-2020-01",
+                "--snapshot-dir",
+                str(snapshot_dir),
+                "--stock-universe",
+                str(stock_universe),
+                "--fii-universe",
+                str(fii_universe),
+            ]
+
+            code, _, _ = run_cli(*common)
+            self.assertEqual(code, 2)
+
+            code, _, _ = run_cli(*common, "--created-at", "not-a-datetime")
+            self.assertEqual(code, 2)
+            self.assertFalse((root / "snap-2020-01.json").exists())
+
+    def test_manifest_id_rejects_traversal_and_reserved_name(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for manifest_id in ("../../x", "metadata", ".hidden"):
+                with self.subTest(manifest_id=manifest_id):
+                    code, _, err = run_build(root, manifest_id=manifest_id)
+                    self.assertEqual(code, 2, err)
+            self.assertEqual(sorted(root.glob("*.json")), [])
+
+    def test_build_input_escaping_registry_root_exits_2(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root = base / "registry"
+            root.mkdir()
+            outside = base / "outside"
+            outside.mkdir()
+            write_levels_file(outside / "stocks.csv", ["TICKER"], PLAIN_DATES)
+
+            code, _, err = run_cli(
+                "build",
+                "--registry",
+                str(root),
+                "--manifest-id",
+                "snap-2020-01",
+                "--created-at",
+                CREATED_AT,
+                "--snapshot-dir",
+                str(outside),
+                "--stock-universe",
+                str(outside / "stocks.csv"),
+                "--fii-universe",
+                str(outside / "stocks.csv"),
+            )
+
+            self.assertEqual(code, 2, err)
+            self.assertEqual(sorted(root.glob("*.json")), [])
+
+    def test_build_existing_target_or_missing_source_exits_3(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            original = target.read_bytes()
+
+            code, _, err = run_build(root)
+            self.assertEqual(code, 3)
+            self.assertEqual(target.read_bytes(), original)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
+            (snapshot_dir / "caio_fiis.csv").unlink()
+            (snapshot_dir / "ifix.csv").write_text(
+                "date,value\n2020-01-01,100\n", encoding="utf-8"
+            )
+
+            code, _, err = run_cli(
+                "build",
+                "--registry",
+                str(root),
+                "--manifest-id",
+                "snap-2020-01",
+                "--created-at",
+                CREATED_AT,
+                "--snapshot-dir",
+                str(snapshot_dir),
+                "--stock-universe",
+                str(stock_universe),
+                "--fii-universe",
+                str(fii_universe),
+            )
+
+            self.assertEqual(code, 3)
+            self.assertIn("caio_fiis.csv", err)
+            self.assertFalse((root / "snap-2020-01.json").exists())
+
+    def test_failed_replace_keeps_original_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+            original = manifest_path.read_bytes()
+
+            with mock.patch("os.replace", side_effect=OSError("replace failed")):
+                with self.assertRaises(OSError):
+                    rewrite_envelope(
+                        manifest_path,
+                        lambda raw: {**raw, "state": "validated"},
+                    )
+
+            self.assertEqual(manifest_path.read_bytes(), original)
+            leftovers = [item for item in root.iterdir() if item.name.endswith(".tmp")]
+            self.assertEqual(leftovers, [])
+
+    def test_build_source_metadata_is_fixed_and_absolute_path_free(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            text = (root / "snap-2020-01.json").read_text(encoding="utf-8")
+            raw = json.loads(text)
+
+            allocation = raw["sources"]["allocation"]
+            self.assertEqual(allocation["provider"], "snapshot-build:allocation")
+            self.assertEqual(
+                allocation["metadata"],
+                {
+                    "files": {
+                        "brazilian_stocks": "caio_stocks.csv",
+                        "crypto": "btc_usd.csv",
+                        "fiis": "caio_fiis.csv",
+                        "fixed_income": "di.csv",
+                        "international_equity": "sp500_total_return_usd.csv",
+                        "ptax": "ptax.csv",
+                    }
+                },
+            )
+            self.assertEqual(allocation["path"], "data/snapshot-2020")
+            for role in ("stock", "fii"):
+                self.assertEqual(
+                    raw["sources"][role]["provider"], "snapshot-build:selector"
+                )
+                self.assertEqual(raw["sources"][role]["metadata"], {})
+            self.assertNotIn(str(root), text)
+            self.assertNotIn("portfolio_path", text)
+            self.assertNotIn("portfolio_artifacts", text)
+
+    def test_cli_source_has_no_network_imports(self):
+        source = (PROJECT_ROOT / "py" / "snapshot_registry.py").read_text(
+            encoding="utf-8"
+        )
+        self.assertIsNone(
+            re.search(r"urllib|socket|requests|http", source, re.IGNORECASE)
+        )
+
+    def test_registry_root_layout_keeps_loader_glob_intact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+
+            self.assertEqual(
+                sorted(path.name for path in root.glob("*.json")),
+                ["snap-2020-01.json"],
+            )
+            self.assertTrue((root / "data" / "snapshot-2020").is_dir())
+            loaded = SnapshotRegistry(root).manifests()
+            self.assertEqual(
+                [manifest.manifest_id for manifest in loaded], ["snap-2020-01"]
+            )
+
+
+class LifecycleHelperTests(unittest.TestCase):
+    def test_transition_state_enforces_the_state_machine(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            at = "2020-01-05T00:00:00+00:00"
+
+            validated = transition_state(dict(base), "validate", at=at)
+            self.assertEqual(validated["state"], "validated")
+            self.assertEqual(validated["state_changed_at"], at)
+            self.assertTrue(validated["manifest_sha256"])
+            drafted = transition_state(
+                dict(base, **DRAFT_ENVELOPE), "validate", at=at
+            )
+            self.assertEqual(drafted["state"], "validated")
+
+            noop = transition_state(dict(validated), "validate", at="2020-02-02T00:00:00+00:00")
+            self.assertEqual(noop, validated)
+
+            published = transition_state(dict(validated), "publish", at=at)
+            self.assertEqual(published["state"], "published")
+            with self.assertRaises(AlreadyPublishedError):
+                transition_state(dict(published), "publish", at=at)
+
+            retired = transition_state(
+                dict(published), "retire", at=at, reason="superseded"
+            )
+            self.assertEqual(retired["state"], "retired")
+            self.assertEqual(retired["retire_reason"], "superseded")
+
+            for action, payload in (
+                ("publish", dict(base)),
+                ("publish", dict(RETIRED_ENVELOPE, **base)),
+                ("retire", dict(base)),
+                ("retire", dict(RETIRED_ENVELOPE, **base)),
+                ("validate", dict(published)),
+                ("validate", dict(RETIRED_ENVELOPE, **base)),
+            ):
+                with self.subTest(action=action, state=payload.get("state")):
+                    with self.assertRaises(InvalidTransitionError):
+                        transition_state(payload, action, at=at)
+
+    def test_rewrite_envelope_preserves_unknown_keys(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            payload["operator_note"] = "kept verbatim"
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            updated = rewrite_envelope(
+                manifest_path,
+                lambda raw: transition_state(
+                    raw, "validate", at="2020-01-06T00:00:00+00:00"
+                ),
+            )
+
+            raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+            self.assertEqual(raw["operator_note"], "kept verbatim")
+            self.assertEqual(raw["state"], "validated")
+            self.assertEqual(raw["state_changed_at"], "2020-01-06T00:00:00+00:00")
+            for key in ("manifest_id", "created_at", "cutoff_date", "common_dates"):
+                self.assertEqual(raw[key], payload[key])
+            self.assertEqual(updated["operator_note"], "kept verbatim")
 
 
 if __name__ == "__main__":

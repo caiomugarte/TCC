@@ -169,16 +169,16 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] `build` writes a valid `draft` manifest (passes `validate_manifest`) and exits 0
-- [ ] Building the same `manifest_id` with identical inputs and `--created-at` in TWO different registries yields byte-identical files (`test_build_is_byte_reproducible_across_registries` - review F4; a repeated `build` in one registry is exit 3 by design)
-- [ ] `common_dates` equals the row dates `load_premium_snapshot_bundle` returns for a fixture whose `ptax`/`crypto` series carry extra dates (`test_build_common_dates_match_premium_bundle_rows`); an empty intersection exits 4
-- [ ] Missing `--created-at` exits 2; `--manifest-id` `../../x` / `metadata` / != loaded id exit 2 (`test_manifest_id_rejects_traversal_and_reserved_name`); input escaping the registry root exits 2; existing target or missing source exits 3; nothing is modified
-- [ ] A failing `os.replace` leaves the original manifest byte-identical (`test_failed_replace_keeps_original_manifest`)
-- [ ] Source `provider`/`metadata` are the fixed literals per source role (`metadata.files` / `{}`) with no absolute-path leak from fetch `metadata.json` (`test_build_source_metadata_is_fixed_and_absolute_path_free` - review N5)
-- [ ] The new module's source declares no network facility (`urllib|socket|requests|http` scan is empty) (`test_cli_source_has_no_network_imports` - issue AC18, review N7)
-- [ ] Registry root contains only manifest JSON (data in subdirectories) - layout test asserts the loader glob is unaffected
-- [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 9 new tests pass (no silent deletions)
+- [x] `build` writes a valid `draft` manifest (passes `validate_manifest`) and exits 0
+- [x] Building the same `manifest_id` with identical inputs and `--created-at` in TWO different registries yields byte-identical files (`test_build_is_byte_reproducible_across_registries` - review F4; a repeated `build` in one registry is exit 3 by design)
+- [x] `common_dates` equals the row dates `load_premium_snapshot_bundle` returns for a fixture whose `ptax`/`crypto` series carry extra dates (`test_build_common_dates_match_premium_bundle_rows`); an empty intersection exits 4
+- [x] Missing `--created-at` exits 2; `--manifest-id` `../../x` / `metadata` / != loaded id exit 2 (`test_manifest_id_rejects_traversal_and_reserved_name`); input escaping the registry root exits 2; existing target or missing source exits 3; nothing is modified
+- [x] A failing `os.replace` leaves the original manifest byte-identical (`test_failed_replace_keeps_original_manifest`)
+- [x] Source `provider`/`metadata` are the fixed literals per source role (`metadata.files` / `{}`) with no absolute-path leak from fetch `metadata.json` (`test_build_source_metadata_is_fixed_and_absolute_path_free` - review N5)
+- [x] The new module's source declares no network facility (`urllib|socket|requests|http` scan is empty) (`test_cli_source_has_no_network_imports` - issue AC18, review N7)
+- [x] Registry root contains only manifest JSON (data in subdirectories) - layout test asserts the loader glob is unaffected
+- [x] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
+- [x] Test count: ≥ 9 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)
