@@ -163,7 +163,7 @@ data stay on disk) - and never rewrites non-envelope fields.
 | Code | Meaning |
 | ---- | ------- |
 | exit 0 | success |
-| exit 2 | usage/argument error: bad or missing `--created-at`, `--manifest-id` failing `^[A-Za-z0-9][A-Za-z0-9._-]*$` or equal to `metadata` or differing from the loaded `manifest_id`, a `build` input escaping the registry root, a `build` `--snapshot-dir` containing the destination manifest path, unknown flag |
+| exit 2 | usage/argument error: bad or missing `--created-at`, `--manifest-id` failing `^[A-Za-z0-9][A-Za-z0-9._-]*$` or equal to `metadata` or differing from the loaded `manifest_id`, a `build` input escaping the registry root, a `build` `--snapshot-dir` containing the destination manifest path, a registry that is not readable/writable (`OSError` mapped here - never a traceback), unknown flag |
 | exit 3 | the operator pointed at something that does not exist: registry directory or `<registry>/<manifest-id>.json` missing on disk, refused overwrite of an existing/published artifact, or a `build` source input missing on disk |
 | exit 4 | the artifact under audit does not hold up: hash divergence, `cutoff_date` != last `common_date`, empty `common_dates` intersection at `build`, or any required-source verification failure in `validate`/`validate --check` (series absent from the manifest OR file missing/unreadable on disk - after `publish` the data files are part of the audited artifact) |
 | exit 5 | invalid lifecycle transition |
@@ -217,7 +217,13 @@ manifest. `fiis` resolves to `caio_fiis.csv` with no fallback.
 - No series fallback (no IFIX substitution, ever): a required class series is
   used exactly as declared or the command fails.
 - Single-operator writes: concurrent writers on the same manifest are
-  prohibited; atomic `os.replace` prevents torn files.
+  prohibited; atomic `os.replace` prevents torn files. Trade-off: there is no
+  OS-level exclusivity on the target (no `O_CREAT|O_EXCL` link/rename dance) -
+  an existing target is refused via a `Path.exists()` check and the temporary
+  file plus `os.replace` carries the atomicity. Writers racing on the SAME
+  manifest are out of scope for this single-operator tool (last `os.replace`
+  wins); published immutability is enforced by the transition table and the
+  overwrite refusal, not by OS-level file locking.
 
 ## Legacy compatibility
 

@@ -1208,6 +1208,28 @@ class RetireCommandTests(unittest.TestCase):
             self.assertEqual(after_raw["state"], "retired")
 
 
+class RegistryAccessTests(unittest.TestCase):
+    @unittest.skipIf(os.geteuid() == 0, "root bypasses filesystem permission checks")
+    def test_unwritable_registry_maps_oserror_to_exit_2_without_traceback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            frozen = target.read_bytes()
+            root.chmod(0o555)
+            try:
+                code, out, err = run_validate(root)
+            finally:
+                root.chmod(0o755)
+
+            self.assertEqual(code, 2)
+            self.assertIn("registry is not readable/writable", err)
+            self.assertNotIn("Traceback", err)
+            self.assertNotIn("Traceback", out)
+            self.assertEqual(target.read_bytes(), frozen)
+
+
 class ClassSeriesMapTests(unittest.TestCase):
     def test_class_series_map_hashes_the_file_not_the_directory(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -92,8 +92,10 @@ def write_manifest_atomic(
     directory plus ``os.replace``) so no partial manifest is observable.
 
     Without ``overwrite`` an existing target is refused before anything is
-    written; the target path itself is never opened exclusively - the
-    temporary file carries the exclusivity burden.
+    written.  Trade-off (single-operator tool): the target path itself is
+    never opened with ``O_CREAT|O_EXCL`` - writers racing on the same
+    manifest are out of scope; ``exists()`` plus ``os.replace`` is the
+    whole guard.
     """
 
     path = Path(path)
@@ -642,7 +644,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ):
         print(f"invalid --manifest-id: {args.manifest_id!r}", file=sys.stderr)
         return EXIT_USAGE
-    return args.handler(args)
+    try:
+        return args.handler(args)
+    except OSError as exc:
+        # Registry read/write failures stay inside the exit-code contract
+        # (0/2/3/4/5): no traceback, exit 2 with an actionable message.
+        print(
+            f"registry is not readable/writable: {args.registry} ({exc})",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE
 
 
 if __name__ == "__main__":
