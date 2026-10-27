@@ -203,6 +203,113 @@ class VerifyCliTests(unittest.TestCase):
             [{"path": "code/stray.py", "kind": "unexpected"}],
         )
 
+    def test_mode_change_is_reported_by_path_and_kind(self):
+        recorded = {entry["path"]: entry["mode"] for entry in MANIFEST["files"]}
+        self.assertEqual(recorded["code/ga.py"], "100644")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = bundle_copy(Path(tmp) / "bundle")
+            target = bundle / "code" / "ga.py"
+            target.chmod(0o755)
+            self.assertEqual(target.read_bytes(), (BUNDLE / "code" / "ga.py").read_bytes())
+            completed = run_verify(bundle)
+
+        self.assertEqual(completed.returncode, 1)
+        report = json.loads(completed.stdout)
+        self.assertEqual(report["status"], "DRIFT")
+        self.assertEqual(
+            report["findings"],
+            [{"path": "code/ga.py", "kind": "modified"}],
+        )
+
+
+class ManifestStructureTests(unittest.TestCase):
+    """Every structural arm of `load_manifest`, each reached through the CLI on its own fixture.
+
+    The plan decides "a file with two roles is a manifest error" (Observable) and AC 26 sends a
+    manifest the CLI cannot trust to exit 3. Malformed JSON is covered by C33; each closed-schema
+    arm below carries its own broken copy and its own message, so removing any guard reddens this
+    test instead of silently widening what the verifier accepts.
+    """
+
+    def assert_rejected(self, edit, *fragments):
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = bundle_copy(Path(tmp) / "bundle")
+            manifest = json.loads((bundle / "baseline.json").read_text(encoding="utf-8"))
+            edit(manifest)
+            (bundle / "baseline.json").write_text(
+                json.dumps(manifest, indent=2), encoding="utf-8"
+            )
+            completed = run_verify(bundle)
+
+        self.assertEqual(completed.returncode, 3, completed.stderr)
+        report = json.loads(completed.stdout)
+        self.assertEqual(report["status"], "ERROR")
+        self.assertTrue(completed.stderr.strip())
+        for fragment in fragments:
+            self.assertIn(fragment, completed.stderr)
+
+    def test_structurally_broken_manifest_is_rejected_naming_the_defect(self):
+        def first_entry(manifest):
+            return manifest["files"][0]
+
+        def relisted_entry(manifest, path):
+            entry = dict(first_entry(manifest))
+            entry["path"] = path
+            return entry
+
+        def drop_field(manifest):
+            del first_entry(manifest)["sha256"]
+
+        def bad_role(manifest):
+            first_entry(manifest)["role"] = "executor"
+
+        def duplicate(manifest):
+            manifest["files"].append(dict(first_entry(manifest)))
+
+        def outside_subtrees(manifest):
+            manifest["files"].append(relisted_entry(manifest, "tools/extra.py"))
+
+        def wrong_schema_version(manifest):
+            manifest["schema_version"] = 2
+
+        def coverage_not_an_object(manifest):
+            manifest["coverage"] = None
+
+        def coverage_narrows(manifest):
+            manifest["coverage"]["included_subtrees"] = ["code/"]
+
+        def empty_files(manifest):
+            manifest["files"] = []
+
+        def non_object_entry(manifest):
+            manifest["files"].append(1)
+
+        arms = {
+            "schema_version": (wrong_schema_version, "schema_version is 2", "expected 1"),
+            "coverage shape": (coverage_not_an_object, "has no coverage object"),
+            "coverage subtrees": (coverage_narrows, "coverage.included_subtrees"),
+            "empty files": (empty_files, "has no files array"),
+            "non-object entry": (non_object_entry, "non-object entry"),
+            "missing field": (drop_field, "code/ga.py is missing sha256"),
+            "bad role": (bad_role, "code/ga.py has role 'executor'"),
+            "duplicate path": (duplicate, "code/ga.py is listed twice"),
+            "outside subtrees": (outside_subtrees, "tools/extra.py is outside the covered subtrees"),
+        }
+        for name, (edit, *fragments) in arms.items():
+            with self.subTest(arm=name):
+                self.assert_rejected(edit, *fragments)
+
+    def test_manifest_that_is_not_a_json_object_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = bundle_copy(Path(tmp) / "bundle")
+            (bundle / "baseline.json").write_text("[]", encoding="utf-8")
+            completed = run_verify(bundle)
+
+        self.assertEqual(completed.returncode, 3, completed.stderr)
+        self.assertEqual(json.loads(completed.stdout)["status"], "ERROR")
+        self.assertIn("is not a JSON object", completed.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
