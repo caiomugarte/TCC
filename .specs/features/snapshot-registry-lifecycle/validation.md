@@ -217,3 +217,79 @@ None - no blocking gap. Non-blocking precision notes (no fix task required to ma
 **Issues found**: none blocking. The 7 precision notes above are hardening opportunities only.
 
 **Next steps**: none required for completion. Optional: persist the doc-content gate as a unittest and add the draft `--check --json` / missing-registry-dir cases.
+
+---
+
+## Post-fix re-validation (delta 063a8c3..eb67580)
+
+**Date**: 2026-10-27
+**Verifier**: independent sub-agent (author ≠ verifier), fresh re-derivation - the fixer's report was not trusted
+**HEAD**: `eb67580` on `t3/issue-16`, clean tree
+**Delta**: `063a8c3..eb67580` (3 commits: `b5f19d7` build source/target overlap, `373753a` state-aware selection error + rewrite guard, `eb67580` OSError mapping + docs)
+**Review under test**: PR #34 review `5671339117` (COMMENT - F1/F2 should-fix, F3/F4/F5 nits)
+**Diff shape**: 5 files, +301/-20; `tests/` pure addition (+152/-0), `py/` +113/-10, docs +38/-10.
+
+**Result**: PASS ✅ - F1..F5 are all fixed, each fix is killed by a named test, and nothing regressed.
+
+### Fix-by-fix verdict
+
+| # | Finding (review `5671339117`) | Fix location | Discriminating test | Revert → failure | Status |
+| - | ---------------------------- | ------------ | ------------------- | ---------------- | ------ |
+| F1 | `--snapshot-dir` equal to/ancestor of the registry root produced a manifest that could never validate | `py/snapshot_registry.py:329` (`_contains_path`), guard at `:520-531` | `tests/test_snapshot_registry.py:545` `test_build_snapshot_dir_containing_manifest_target_exits_2` + positive guard `:574` `test_build_registry_data_layout_still_builds_and_validates` | guard removed → `AssertionError: 0 != 2` (build accepted the overlap and exited 0) | ✅ fixed_confirmed |
+| F2 | `validated` manifests invisible to the only in-repo consumer, unrecorded in the design | `py/snapshot_manifest.py:546` `_non_selectable_state_hint`, raise at `:608-617`; fail-closed predicate unchanged at `:532`; recorded in `design.md:117` + `docs/snapshot_registry.md:237` | `:275` `test_selection_error_counts_states_and_instructs_publish`, `:318` `test_legacy_manifest_without_state_remains_selectable`, `:331` `test_published_manifest_remains_selectable` | hint neutered → `test_selection_error_counts_states_and_instructs_publish` fails (`"2 validated"` / `"publish"` absent) | ✅ fixed_confirmed |
+| F3 | `ENVELOPE_KEYS` was a dead constant | `py/snapshot_registry.py:124` `_assert_envelope_only`, invoked at `:174`; documented `design.md:130` | `:768` `test_rewrite_envelope_refuses_non_envelope_mutation` | call removed → mutation of `created_at` accepted, test fails (`SnapshotManifestError` not raised, bytes changed) | ✅ fixed_confirmed |
+| F4 | registry `OSError` escaped the exit-code table (traceback, exit 1) | `py/snapshot_registry.py:647-656` (`except OSError` at `:649`) | `:1213` `test_unwritable_registry_maps_oserror_to_exit_2_without_traceback` (`skipIf` root; uid 1000 here, so it ran) | `except` removed → `PermissionError: [Errno 13] ... .snap-2020-01.json.*.tmp` escapes `main()` (test errors) | ✅ fixed_confirmed |
+| F5 | design promised `O_CREAT\|O_EXCL`; code uses `exists()` + `os.replace` | `design.md:129` vs `py/snapshot_registry.py:98-117` | documentation-only; verified by reading both | n/a (no behavior) | ✅ fixed_confirmed |
+
+F2 is a resolution of the review's actual complaint ("sem registro no design"), not a weakening: `_state_selectable` (`py/snapshot_manifest.py:532`) and `include_validated=False` default are untouched, and mutation M2b (state filter removed) is still killed by four selection tests - fail-closed survives.
+
+### Discrimination sensor (post-fix)
+
+Isolated scratch `/tmp/opencode/p009-delta/scratch` (copies of `py/` + `tests/`); one behavior-level edit per run, restored from the real tree after each. Real tree never mutated - `git status --porcelain` empty before and after (`diff -r -x __pycache__` scratch/py vs real `py/` = identical).
+
+| ID | Mutation | Verdict | Killer |
+| -- | -------- | ------- | ------ |
+| M1 | F1 guard deleted (overlap accepted again) | **killed** | `test_build_snapshot_dir_containing_manifest_target_exits_2` (exit 0 != 2) |
+| M1b | F1 over-strict: every `kind == "dir"` rejected | **killed** | 8 `BuildCommandTests` incl. `test_build_registry_data_layout_still_builds_and_validates` (positive guard discriminates over-blocking) |
+| M2 | F2 hint forced empty | **killed** | `test_selection_error_counts_states_and_instructs_publish` |
+| M2b | F2 state filter removed (`draft`/`retired`/`validated` all selectable) | **killed** | `test_selection_excludes_draft_and_retired`, `test_selection_admits_validated_only_with_include_validated`, `test_selection_without_qualifying_candidate_raises`, `test_selection_error_counts_states_and_instructs_publish` |
+| M3 | F3 `_assert_envelope_only(baseline, result, path)` call removed | **killed** | `test_rewrite_envelope_refuses_non_envelope_mutation` |
+| M3b | F3 `manifest_sha256` clause removed (declared hash may be rewritten) | **SURVIVED** | none - see gap G1 |
+| M4 | F4 `except OSError` removed from `main()` | **killed** | `test_unwritable_registry_maps_oserror_to_exit_2_without_traceback` |
+
+6/7 mutants killed. M3b is a real (non-equivalent) survivor, so it is reported as a gap rather than folded into the PASS:
+
+**G1 (non-blocking, hardening)**: `_assert_envelope_only` (`py/snapshot_registry.py:141-149`) also forbids changing a *declared* `manifest_sha256` (backfill when absent stays legal). No test exercises that clause; `transition_state` never changes the hash, so the code path is defense-in-depth only. The F3 claim under test - content keys cannot change through `rewrite_envelope` - is fully proven. Suggested follow-up: one test in `LifecycleHelperTests` that mutates `manifest_sha256` in the `mutate` callable and expects `SnapshotManifestError`.
+
+### Checks (all commands re-run at `eb67580`)
+
+| Command | Exit | Result |
+| ------- | ---- | ------ |
+| `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data` | 0 | `Ran 67 tests ... OK` (was 60 at the pre-fix gate; +7 new) |
+| `python3 -m unittest discover -s tests` | 1 | `Ran 108 tests`, `FAILED (errors=4)` - exactly `test_fii_backtest_analysis`, `test_fii_selection`, `test_multi_run_backtest`, `test_premium_research_contracts` (`ModuleNotFoundError: pandas`, pre-existing) |
+| `python3 -m unittest tests.test_snapshot_registry -v` | 0 | `Ran 58 tests ... OK`, 0 skips executed |
+| `python3 -m py_compile py/snapshot_registry.py py/snapshot_manifest.py` | 0 | clean |
+| `python3 py/snapshot_registry.py --help` | 0 | clean |
+| E2E smoke, `mktemp -d`, real CLI process | 0 | `build` 0 → `validate` 0 → `publish` 0 → `publish` 3 (`published manifest is never overwritten`) → `validate --check --json` 0 (map 8 entries, key set == classes ∪ {ptax, stock, fii}) → `retire --reason smoke` 0 → `retire` 5 (`cannot retire a retired manifest`) |
+| E2E F1 repro: `build --snapshot-dir <registry>` | 2 | `--snapshot-dir must not contain the destination manifest path: <registry> contains <registry>/snap-conflict.json; place the snapshot in <registry>/data/<snapshot_name>/`; directory listing byte-identical before/after (no manifest, no temp file) |
+| `validate` on a data file `chmod 000` | 4 | `validation failed: [Errno 13] Permission denied: .../caio_fiis.csv`, no traceback (`--check` also 4) - the exit-4 "unreadable source" row of the docs is *not* shadowed by F4's exit-2 mapping |
+| `python3 .../validate_state.py snapshot-registry-lifecycle` | 0 | `0 error(s)` |
+
+### Contract checks (unchanged surfaces)
+
+- `sha256_path`, `file_sha256`, `ALLOCATION_FILES`, `SnapshotRegistry.manifests()`: no hunk in the delta touches them (`git diff 063a8c3..eb67580 -- py/snapshot_manifest.py` = +39/-3, all inside selection error reporting). `ALLOCATION_FILES` key set == `ASSET_CLASSES ∪ {ptax}` (6 entries, `fiis → caio_fiis.csv`).
+- Legacy manifest (no `state`/`manifest_sha256`): loads, `validate_manifest` passes, `latest_compatible_manifest` selects it (`state is None`) - `test_legacy_manifest_without_state_remains_selectable` + direct probe.
+- `from_dict(as_dict())` idempotent for legacy / draft / published / retired (fixed point after one normalization) - probe green.
+- `manifest_sha256` recomputable on the provenance path: persisted `as_dict()` + injected `manifest_path`, rehydrated with `SnapshotManifest.from_dict(..., base_dir=...)`, recomputed hash == stored hash (`43bec974…`) and `validate_manifest` accepts it.
+- No existing test weakened, skipped, or removed: `git diff 063a8c3..eb67580 -- tests/` is `152 0` (additions only, 7 new `def test_`), and the only `skipIf` in the suite is F4's root guard.
+
+### Regressions
+
+None. Behaviour that the pre-fix report certified still holds (67/67 quick gate, E2E lifecycle identical), and both new guards are shown to be *not* over-strict (M1b, plus the `data/` layout positive test).
+
+### Limitations
+
+1. **Premium path is validated by reading, not by execution** - `api/` imports pandas/FastAPI, unavailable offline. The chain `premium_recommendation._manifest_payload` → persisted `{"manifest_path", "manifest"}` (`api/app/services/premium_recommendation.py:79-90`, `:203-208`) → `premium_executor._load_manifest` → `from_dict` + `validate_manifest` (`:152-168`) was re-checked at `eb67580` and is unchanged by the delta; the hash recompute it depends on is proven by the probe above. No runtime proof of the F2 consumption semantics (that a `validated`-only registry makes Premium unavailable) beyond the selection tests.
+2. F2's hint for `include_validated=True` (validated counted as selectable, therefore absent from the counts) is correct by construction but has no test.
+3. Sensor mutations were applied to a file copy, not through the CLI process; the E2E smoke covers the process-level exit codes for the fixed behaviours (F1/F4 paths included).
+4. The 4 pandas errors are pre-existing and out of scope per the spec assumption; they were not re-triaged.
