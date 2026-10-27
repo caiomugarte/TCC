@@ -529,6 +529,20 @@ def validate_manifest(
     return checked
 
 
+def _state_selectable(state: Optional[str], include_validated: bool) -> bool:
+    """Selection semantics: legacy (no state) and published are selectable.
+
+    ``draft`` and ``retired`` are never selected; ``validated`` is selected
+    only with an explicit ``include_validated`` (AD-003).
+    """
+
+    if state is None:
+        return True
+    if state == "validated":
+        return include_validated
+    return state == "published"
+
+
 class SnapshotRegistry:
     """Filesystem registry selecting the latest compatible market cutoff."""
 
@@ -550,12 +564,14 @@ class SnapshotRegistry:
         *,
         required_classes: Sequence[str] = ASSET_CLASSES,
         max_cutoff_date: Optional[date] = None,
+        include_validated: bool = False,
     ) -> SnapshotManifest:
         candidates = [
             manifest
             for manifest in self.manifests()
             if set(required_classes).issubset(set(manifest.supported_classes))
             and (max_cutoff_date is None or manifest.cutoff_date <= max_cutoff_date)
+            and _state_selectable(manifest.state, include_validated)
         ]
         candidates.sort(
             key=lambda item: (item.cutoff_date, item.created_at, item.manifest_id),
@@ -575,12 +591,14 @@ def latest_compatible_manifest(
     *,
     required_classes: Sequence[str] = ASSET_CLASSES,
     max_cutoff_date: Optional[date] = None,
+    include_validated: bool = False,
 ) -> SnapshotManifest:
     """Select by declared market cutoff, never by ``date.today()``."""
 
     return SnapshotRegistry(registry_dir).latest_compatible(
         required_classes=required_classes,
         max_cutoff_date=max_cutoff_date,
+        include_validated=include_validated,
     )
 
 

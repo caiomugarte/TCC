@@ -140,12 +140,12 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] Selection excludes `draft` and `retired` regardless of cutoff recency
-- [ ] `include_validated=True` admits `validated`; default does not
-- [ ] Legacy-only fixture registry returns the same manifest as the current implementation
-- [ ] No-candidate case still raises `SnapshotManifestError` with no fallback
-- [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 4 new tests pass (no silent deletions)
+- [x] Selection excludes `draft` and `retired` regardless of cutoff recency
+- [x] `include_validated=True` admits `validated`; default does not
+- [x] Legacy-only fixture registry returns the same manifest as the current implementation
+- [x] No-candidate case still raises `SnapshotManifestError` with no fallback
+- [x] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
+- [x] Test count: ≥ 4 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)

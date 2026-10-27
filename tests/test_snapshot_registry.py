@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from snapshot_manifest import (  # noqa: E402
     SnapshotManifest,
     SnapshotManifestError,
+    SnapshotRegistry,
+    latest_compatible_manifest,
     manifest_canonical_sha256,
     validate_manifest,
 )
@@ -157,6 +159,101 @@ class CanonicalManifestHashTests(unittest.TestCase):
             validated = validate_manifest(legacy_path)
 
             self.assertIsNone(validated.manifest_sha256)
+
+
+def _manifest_variant(
+    base: dict,
+    manifest_id: str,
+    cutoff_date: str,
+    *,
+    state=None,
+    created_at: str = "2020-01-04T12:00:00+00:00",
+) -> dict:
+    common_dates = [item for item in base["common_dates"] if item <= cutoff_date]
+    payload = dict(
+        base,
+        manifest_id=manifest_id,
+        created_at=created_at,
+        common_dates=common_dates,
+        cutoff_date=cutoff_date,
+    )
+    if state is not None:
+        payload["state"] = state
+        payload["state_changed_at"] = created_at
+    return payload
+
+
+def _write_manifest(root: Path, payload: dict) -> Path:
+    path = root / f"{payload['manifest_id']}.json"
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+class SelectionStateTests(unittest.TestCase):
+    def test_selection_excludes_draft_and_retired(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            _write_manifest(root, _manifest_variant(base, "published-old", "2020-01-02", state="published"))
+            _write_manifest(root, _manifest_variant(base, "draft-new", "2020-01-03", state="draft"))
+            _write_manifest(root, _manifest_variant(base, "retired-new", "2020-01-03", state="retired"))
+
+            selected = latest_compatible_manifest(root)
+
+            self.assertEqual(selected.manifest_id, "published-old")
+            self.assertEqual(
+                SnapshotRegistry(root).latest_compatible().manifest_id,
+                "published-old",
+            )
+
+    def test_selection_admits_validated_only_with_include_validated(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            _write_manifest(root, _manifest_variant(base, "published-old", "2020-01-02", state="published"))
+            _write_manifest(root, _manifest_variant(base, "validated-new", "2020-01-03", state="validated"))
+
+            self.assertEqual(latest_compatible_manifest(root).manifest_id, "published-old")
+            self.assertEqual(
+                latest_compatible_manifest(root, include_validated=True).manifest_id,
+                "validated-new",
+            )
+            self.assertEqual(
+                SnapshotRegistry(root)
+                .latest_compatible(include_validated=True)
+                .manifest_id,
+                "validated-new",
+            )
+
+    def test_legacy_only_registry_selection_is_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            for manifest_id, cutoff_date in (("older", "2020-01-02"), ("newer", "2020-01-03")):
+                payload = _manifest_variant(base, manifest_id, cutoff_date)
+                self.assertNotIn("state", payload)
+                _write_manifest(root, payload)
+
+            selected = latest_compatible_manifest(root)
+
+            self.assertEqual(selected.manifest_id, "newer")
+            self.assertEqual(selected.cutoff_date.isoformat(), "2020-01-03")
+
+    def test_selection_without_qualifying_candidate_raises(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            _write_manifest(root, _manifest_variant(base, "draft-only", "2020-01-03", state="draft"))
+            _write_manifest(root, _manifest_variant(base, "retired-only", "2020-01-03", state="retired"))
+
+            with self.assertRaisesRegex(
+                SnapshotManifestError, "no compatible snapshot manifest found"
+            ):
+                latest_compatible_manifest(root)
+            with self.assertRaisesRegex(
+                SnapshotManifestError, "no compatible snapshot manifest found"
+            ):
+                latest_compatible_manifest(root, include_validated=True)
 
 
 if __name__ == "__main__":
