@@ -17,12 +17,14 @@ rerun anything. The cost is that the thesis' baseline is unfalsifiable: a re-run
 indistinguishable from a re-run on different data.
 
 Two contradictions already live only in a triage note, not in an artifact. First, the recorded caio
-outcome cannot be derived from the declared fundamental weights: regressing the recorded `AVG_*`
-columns onto the recorded `SCORE` recovers implicit weights `[0.29, 0.14, 0.26, 0.04, 0.26]` for
-caio, while the declared weights are `[0.22, 0.35, 0.08, 0.05, 0.30]`, and the controls
-(`arrojado`, `moderado`, `conservador`) are recovered exactly; the raw consensus columns do match
-the commit's caio dataset, so the dataset is the same and the recorded `SCORE` is what is
-inconsistent. Second, the reported fitness is not the score of the returned chromosome —
+outcome does not follow the declared fundamental weights: `SCORE` is the weighted sum of the
+recorded `AVG_*` columns with the weights `profiles.py` declares, and that sum reproduces the
+recorded `SCORE` for every control row that has one - `arrojado` 15/15, `moderado` 10/10,
+`conservador` 10/10, all within `1e-9` - and for none of the 7 caio rows that have one, where it
+misses by up to 0.42 against the declared `[0.22, 0.35, 0.08, 0.05, 0.30]`; the raw consensus
+columns do match the commit's caio dataset, so the dataset is the same and the recorded `SCORE` is
+what is inconsistent. What weights the caio run actually used stays with P0-02, which owns the
+diagnosis. Second, the reported fitness is not the score of the returned chromosome -
 `ga.py:132-134` indexes the new population with the previous generation's scores — which is why
 run 0 reports `fitness` 4.604746 with `hhi` 0.26 (implying `sum(SCORE)` 5.878746 =
 4.604746 + 0.49 · 0.26 · 10) while the ten returned assets' own scores sum to 1.281050. Both facts
