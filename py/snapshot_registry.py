@@ -14,6 +14,7 @@ audit does not hold up (contract divergence); 5 invalid lifecycle transition.
 from __future__ import annotations
 
 import argparse
+import copy
 from datetime import datetime, timezone
 import json
 import os
@@ -59,6 +60,7 @@ PROVIDER_SELECTOR = "snapshot-build:selector"
 # Fixed disk serializer for every manifest write (AD-004).
 DISK_JSON = dict(sort_keys=True, indent=2, ensure_ascii=False)
 
+# Lifecycle envelope keys a rewrite may change (``_assert_envelope_only``).
 ENVELOPE_KEYS = ("state", "state_changed_at", "retire_reason")
 
 
@@ -117,6 +119,34 @@ def write_manifest_atomic(
         raise
 
 
+def _assert_envelope_only(
+    baseline: Mapping[str, object],
+    result: Mapping[str, object],
+    path: Path,
+) -> None:
+    """Enforce the rewrite contract: only envelope keys may change.
+
+    ``manifest_sha256`` is self-referential: a transition may backfill it when
+    absent, but never change or drop a declared value.
+    """
+
+    allowed = set(ENVELOPE_KEYS) | {"manifest_sha256"}
+    for key in set(baseline) | set(result):
+        if key in allowed:
+            continue
+        if key not in baseline or key not in result or baseline[key] != result[key]:
+            raise SnapshotManifestError(
+                f"envelope rewrite must not change content key {key!r}: {path}"
+            )
+    if (
+        baseline.get("manifest_sha256") is not None
+        and result.get("manifest_sha256") != baseline.get("manifest_sha256")
+    ):
+        raise SnapshotManifestError(
+            f"envelope rewrite must not change manifest_sha256: {path}"
+        )
+
+
 def rewrite_envelope(
     path: Path,
     mutate: Callable[[dict], Optional[Mapping[str, object]]],
@@ -124,18 +154,22 @@ def rewrite_envelope(
     """Rewrite only the lifecycle envelope of a manifest file.
 
     The raw JSON payload is loaded so unknown keys survive verbatim; the
-    mutate callable may touch envelope keys only; the result is serialized
-    with the fixed disk form and atomically replaced.
+    mutate callable may touch ``ENVELOPE_KEYS`` only (enforced - any content
+    key that appears, disappears, or changes raises ``SnapshotManifestError``
+    before anything is written); the result is serialized with the fixed disk
+    form and atomically replaced.
     """
 
     path = Path(path)
     raw = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise SnapshotManifestError(f"manifest must be an object: {path}")
+    baseline = copy.deepcopy(raw)
     updated = mutate(raw)
     if updated is None:
         updated = raw
     result = dict(updated)
+    _assert_envelope_only(baseline, result, path)
     write_manifest_atomic(path, result, overwrite=True)
     return result
 

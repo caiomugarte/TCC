@@ -543,6 +543,29 @@ def _state_selectable(state: Optional[str], include_validated: bool) -> bool:
     return state == "published"
 
 
+def _non_selectable_state_hint(
+    non_selectable: Sequence[SnapshotManifest],
+) -> str:
+    """Actionable, state-aware suffix for a fail-closed selection miss.
+
+    Fail-closed selection (only ``published``/legacy are consumable) is
+    deliberate; the error must still tell the operator WHY nothing was
+    selected and how to fix it (publish).
+    """
+
+    if not non_selectable:
+        return ""
+    counts: dict = {}
+    for manifest in non_selectable:
+        key = manifest.state or "legacy"
+        counts[key] = counts.get(key, 0) + 1
+    summary = ", ".join(f"{counts[key]} {key}" for key in sorted(counts))
+    return (
+        f"; registry has {summary} manifest(s) in non-selectable state(s)"
+        "; publish them to make them selectable"
+    )
+
+
 class SnapshotRegistry:
     """Filesystem registry selecting the latest compatible market cutoff."""
 
@@ -566,19 +589,32 @@ class SnapshotRegistry:
         max_cutoff_date: Optional[date] = None,
         include_validated: bool = False,
     ) -> SnapshotManifest:
-        candidates = [
+        compatible = [
             manifest
             for manifest in self.manifests()
             if set(required_classes).issubset(set(manifest.supported_classes))
             and (max_cutoff_date is None or manifest.cutoff_date <= max_cutoff_date)
-            and _state_selectable(manifest.state, include_validated)
+        ]
+        candidates = [
+            manifest
+            for manifest in compatible
+            if _state_selectable(manifest.state, include_validated)
         ]
         candidates.sort(
             key=lambda item: (item.cutoff_date, item.created_at, item.manifest_id),
             reverse=True,
         )
         if not candidates:
-            raise SnapshotManifestError("no compatible snapshot manifest found")
+            raise SnapshotManifestError(
+                "no compatible snapshot manifest found"
+                + _non_selectable_state_hint(
+                    [
+                        manifest
+                        for manifest in compatible
+                        if not _state_selectable(manifest.state, include_validated)
+                    ]
+                )
+            )
         # Do not silently fall back when the newest market snapshot changed.
         return validate_manifest(candidates[0], required_classes=required_classes)
 

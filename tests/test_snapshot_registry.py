@@ -272,6 +272,76 @@ class SelectionStateTests(unittest.TestCase):
             ):
                 latest_compatible_manifest(root, include_validated=True)
 
+    def test_selection_error_counts_states_and_instructs_publish(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            for manifest_id, cutoff_date in (
+                ("validated-one", "2020-01-03"),
+                ("validated-two", "2020-01-02"),
+            ):
+                _write_manifest(
+                    root,
+                    _manifest_variant(base, manifest_id, cutoff_date, state="validated"),
+                )
+
+            with self.assertRaises(SnapshotManifestError) as raised:
+                latest_compatible_manifest(root)
+
+            message = str(raised.exception)
+            self.assertIn("no compatible snapshot manifest found", message)
+            self.assertIn("2 validated", message)
+            self.assertIn("publish", message)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            _write_manifest(
+                root, _manifest_variant(base, "validated-one", "2020-01-03", state="validated")
+            )
+            _write_manifest(
+                root, _manifest_variant(base, "draft-one", "2020-01-03", state="draft")
+            )
+            _write_manifest(
+                root, _manifest_variant(base, "retired-one", "2020-01-03", state="retired")
+            )
+
+            with self.assertRaises(SnapshotManifestError) as raised:
+                latest_compatible_manifest(root)
+
+            message = str(raised.exception)
+            self.assertIn("1 validated", message)
+            self.assertIn("1 draft", message)
+            self.assertIn("1 retired", message)
+            self.assertIn("publish", message)
+
+    def test_legacy_manifest_without_state_remains_selectable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            payload = _manifest_variant(base, "legacy-only", "2020-01-03")
+            self.assertNotIn("state", payload)
+            _write_manifest(root, payload)
+
+            selected = latest_compatible_manifest(root)
+
+            self.assertEqual(selected.manifest_id, "legacy-only")
+            self.assertIsNone(selected.state)
+
+    def test_published_manifest_remains_selectable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            _write_manifest(
+                root,
+                _manifest_variant(base, "published-only", "2020-01-03", state="published"),
+            )
+
+            selected = latest_compatible_manifest(root)
+
+            self.assertEqual(selected.manifest_id, "published-only")
+            self.assertEqual(selected.state, "published")
+
 
 PLAIN_DATES = ["2020-01-01", "2020-01-02", "2020-01-03"]
 CREATED_AT = "2020-01-04T12:00:00+00:00"
@@ -694,6 +764,24 @@ class LifecycleHelperTests(unittest.TestCase):
             for key in ("manifest_id", "created_at", "cutoff_date", "common_dates"):
                 self.assertEqual(raw[key], payload[key])
             self.assertEqual(updated["operator_note"], "kept verbatim")
+
+    def test_rewrite_envelope_refuses_non_envelope_mutation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+            original = manifest_path.read_bytes()
+
+            def touch_content(raw):
+                updated = dict(raw)
+                updated["created_at"] = "2020-02-01T00:00:00+00:00"
+                return updated
+
+            with self.assertRaisesRegex(SnapshotManifestError, "envelope"):
+                rewrite_envelope(manifest_path, touch_content)
+
+            self.assertEqual(manifest_path.read_bytes(), original)
 
 
 def run_validate(root: Path, manifest_id: str = "snap-2020-01", *flags) -> tuple:

@@ -228,6 +228,20 @@ selectable. `SnapshotRegistry.latest_compatible` never selects `draft` or
 `retired`, selects `validated` only with `include_validated=True`, and raises
 when no candidate qualifies - it never falls back to an older artifact.
 
+## Consumption requires `publish`
+
+Fail-closed selection is deliberate: only `published` (and legacy) manifests
+are consumable, so `publish` is a **prerequisite for consumption** - including
+the Premium path (`api/app/services/premium_recommendation.py` loads via
+`latest_compatible_manifest`, which defaults to `include_validated=False`).
+`draft` and `validated` are pre-publication states and are NOT selectable by
+default: after `build` + `validate` the registry still has no consumable
+candidate until `publish` runs. The selection error is state-aware and
+actionable: when compatible manifests exist but none is selectable it reports
+the per-state counts and instructs the operator to publish, e.g.
+`no compatible snapshot manifest found; registry has 2 validated manifest(s)
+in non-selectable state(s); publish them to make them selectable`.
+
 ## Walkthrough (manual)
 
 ```
