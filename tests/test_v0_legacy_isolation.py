@@ -201,6 +201,26 @@ class IsolationTests(unittest.TestCase):
         self.assertIn("py/config.py:2", offenders)
         self.assertIn("api/runner.py:1", offenders)
 
+    def test_isolation_scan_flags_a_repo_root_offender(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "py").mkdir()
+            (root / "api").mkdir()
+            (root / "reach.py").write_text(
+                "from replay import run_replay\n",
+                encoding="utf-8",
+            )
+            (root / "segment.py").write_text(
+                'import os\nPATH = "baselines/v0-legacy"\n',
+                encoding="utf-8",
+            )
+            (root / "clean.py").write_text("print('no bundle here')\n", encoding="utf-8")
+            offenders = scan(root)
+
+        self.assertIn("reach.py:1", offenders)
+        self.assertIn("segment.py:2", offenders)
+        self.assertNotIn("clean.py", " ".join(offenders))
+
     def test_no_package_marker_under_baselines(self):
         found = [
             path.relative_to(REPO).as_posix()
