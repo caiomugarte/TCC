@@ -3,7 +3,7 @@
 Profile: standard
 Plan: `.specs/features/p0-01-v0-legacy-baseline/plan.md`
 
-34 checks in 4 slices · 4 one-way doors · 0 open, of which 0 block
+35 checks in 4 slices · 4 one-way doors · 0 open, of which 0 block
 
 ## Intent
 
@@ -16,7 +16,7 @@ either reproduces them, names the exact fields where they do not reproduce, or s
 
 ## Checks
 
-### S1 - The frozen bundle and its manifest · 6 files · 633 KB · ~12k
+### S1 - The frozen bundle and its manifest · 4 authored files · 23 KB (+633 KB archived) · ~6k
 
 **C1** - `baselines/v0-legacy/baseline.json` lists exactly 17 covered files and their combined `bytes` is 632,981 (AC 1)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_bundle_holds_seventeen_files_and_632981_bytes`
@@ -44,7 +44,7 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k
 **C8** - `tools/verify_manifest.py` on the committed bundle exits 0 and writes exactly one JSON object to stdout with `status` `VERIFIED` and `files` 17 (AC 5)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_verified_bundle_exits_zero_with_seventeen_files`
 
-### S2 - The protocol as a machine-readable contract · 2 files · 14 KB · ~5k
+### S2 - The protocol as a machine-readable contract · 1 file · 2 KB (reads 3 archived modules) · ~0.5k
 
 **C9** - `protocol.json` declares profile `caio` with `n_assets` 10, `lambda` 0.49, `generations` 460 and `pop_size` 276, equal to the literals `ast` extracts from `code/ga.py` (AC 6)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_ga_parameters_equal_the_archived_literals`
@@ -75,7 +75,7 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_declared_early_stop_is_rejected_naming_the_field`
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_unknown_ga_parameter_is_rejected_naming_the_field`
 
-### S3 - Replay and its status · 3 files · 45 KB · ~14k
+### S3 - Replay and its status · 2 files · 21 KB · ~5k
 
 **C18** - One byte appended to `code/ga.py` in a bundle copy makes `tools/replay.py` report `UNVERIFIABLE` with cause `hash_mismatch`, exit 2, and spawn no driver (AC 12)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_manifest_drift_stops_before_the_driver_runs`
@@ -118,7 +118,7 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k t
 **C30** - Each report row carries `reported_fitness` from the CSV cell and `recomputed_fitness` from `runs.json`, and a substituted `recomputed_fitness` that matches nothing leaves the status `REPRODUCED` (AC 23)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_reported_and_recomputed_fitness_stay_independent`
 
-### S4 - CLI contract and production isolation · 5 files · 18 KB · ~6k
+### S4 - CLI contract and production isolation · 1 file · 8 KB · ~2k
 
 **C31** - `tools/verify_manifest.py` run with no arguments from the repository root verifies `baselines/v0-legacy` (AC 24)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_isolation.py' -k test_verifier_defaults_to_the_repository_bundle`
@@ -198,19 +198,25 @@ by a path that happens to traverse them.
 
 ## Handoff
 
-Slices: S1 bundle + manifest 633 KB archived · S2 protocol 14 KB · S3 replay 45 KB · S4 isolation 18 KB.
+Slices: S1 bundle + manifest 23 KB authored · S2 protocol 2 KB · S3 replay 21 KB · S4 isolation
+8 KB, plus 47 KB of tests and this file.
 
-Arithmetic: the archived surface is 632,981 bytes copied with `git show` (158k tokens if counted as
-build surface, but no line of it is authored or edited - it is data). The authored surface is
-4 tools (~24 KB), 4 test files (~45 KB), `protocol.json` (~4 KB), `README.md` (~4 KB),
-`baseline.json` (~5 KB) and this file (~14 KB) = ~96 KB = ~24k tokens. S2 enters S3 at ~9k and S4 at
-~20k, both under the 150k budget - one builder, no ask.
+Arithmetic: the archived surface is 632,981 bytes copied with `git show` - 158k tokens if counted
+as build surface, but not one line of it is authored or edited, so it is data and not work. The
+authored surface is the 12 new files at 112,217 bytes = ~28k tokens. S2 enters S3 at ~7k and S4
+at ~24k, both under the 150k budget - one builder, no ask.
 
 - Mechanism: one builder (this delegation). No handoff cut.
-- Boundary: S1-S4 built by one agent; the independent Verifier is dispatched by the orchestrator.
-
-<Appended by each builder as it finishes, three lines each:>
-
-- **Boundary:** pending - filled at the end of BUILD.
-- **Settled mid-build:** pending
-- **Abandoned:** pending
+- **Boundary:** closed in five commits - `061326c` for the first eight, `01cc288` for S2,
+  `0a517ac` for S3, `f56809c` for S4, and `4713100` for the builder proof added to C3.
+- **Settled mid-build:** the dependency probe applies to the archived driver only. AC 13 demands
+  `dependency_unavailable` when `numpy`/`pandas` are absent, and AC 22 demands a substitute
+  driver that needs neither; probing before every driver made those two contradict each other on
+  a machine without `numpy`, so the probe reads the import set from `code/` only when the
+  resolved driver is `tools/_legacy_driver.py`. C19 and C29 were reworded before the branch that
+  closes them and the reason is in `README.md`.
+- **Settled mid-build:** `build_manifest.py` takes its hash definitions from
+  `verify_manifest.py`, in that direction only, so a builder edit cannot define a manifest its
+  verifier disagrees with; C3 gained a proof that the committed `baseline.json` is regenerated
+  from the archived bytes.
+- **Abandoned:** none.
