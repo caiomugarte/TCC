@@ -9,7 +9,9 @@ and deliberately not their runtime semantics.
 import ast
 import copy
 import json
+import shutil
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -20,8 +22,8 @@ PROTOCOL = json.loads((BUNDLE / "protocol.json").read_text(encoding="utf-8"))
 LEGACY_MODULES = ("ga", "ga_multiple_runs", "profiles")
 
 
-def parse(name):
-    path = CODE / f"{name}.py"
+def parse(name, code_dir=CODE):
+    path = Path(code_dir) / f"{name}.py"
     return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
 
 
@@ -130,10 +132,12 @@ def generation_loop(tree):
     return None
 
 
-def violations(protocol):
+def violations(protocol, code_dir=CODE):
     """Every disagreement between a protocol document and the archived code, by field path."""
     problems = []
-    ga_tree, profiles_tree, runs_tree = parse("ga"), parse("profiles"), parse("ga_multiple_runs")
+    ga_tree = parse("ga", code_dir)
+    profiles_tree = parse("profiles", code_dir)
+    runs_tree = parse("ga_multiple_runs", code_dir)
 
     # ---- ga parameters (AC 6)
     code_ga = literal(ga_tree, "PERFIL_CONFIG")["caio"]
@@ -307,6 +311,43 @@ class ProtocolMatchesCodeTests(unittest.TestCase):
             if getattr(module, "__file__", None) and str(CODE) in str(module.__file__)
         ]
         self.assertEqual(from_bundle, [])
+
+
+class GenerationLoopArmTests(unittest.TestCase):
+    """The `break` arm, proven on a scratch copy of `code/ga.py` (AC 8, AC 11).
+
+    The frozen archive is never edited: its bytes are pinned by C2. The synthetic `break` goes
+    into a copy, so removing the arm from the checker makes this test fail instead of leaving the
+    arm as decoration.
+    """
+
+    def test_break_in_the_generation_loop_is_rejected_naming_the_field(self):
+        frozen = (CODE / "ga.py").read_bytes()
+        with tempfile.TemporaryDirectory() as tmp:
+            scratch = Path(tmp)
+            for module in LEGACY_MODULES:
+                shutil.copy(CODE / f"{module}.py", scratch / f"{module}.py")
+            source = (scratch / "ga.py").read_text(encoding="utf-8")
+            loop = generation_loop(ast.parse(source))
+            self.assertIsNotNone(loop)
+            lines = source.splitlines()
+            first = loop.body[0]
+            line = lines[first.lineno - 1]
+            indent = line[: len(line) - len(line.lstrip())]
+            lines.insert(first.lineno - 1, f"{indent}break  # synthetic early stop")
+            (scratch / "ga.py").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+            self.assertNotEqual((scratch / "ga.py").read_bytes(), frozen)
+            control = violations(PROTOCOL)
+            problems = violations(PROTOCOL, code_dir=scratch)
+            frozen_after = (CODE / "ga.py").read_bytes()
+
+        self.assertEqual(control, [])
+        self.assertTrue(
+            any(problem.startswith("early_stopping.enabled") for problem in problems),
+            problems,
+        )
+        self.assertEqual(frozen_after, frozen)
 
 
 class ProtocolDriftTests(unittest.TestCase):
