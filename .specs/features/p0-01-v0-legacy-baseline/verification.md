@@ -204,6 +204,24 @@ and `-5` → `runtime_budget_exceeded`, exit 2; relative `--bundle` → `VERIFIE
 unicode + space → `VERIFIED`, 17 files; nonexistent `--driver` → `runtime_error`, exit 2;
 `protocol.json` deleted → `protocol_mismatch`, exit 2.
 
+### Closure - author, 2026-10-27 (`iw-6-fix-r1`)
+
+Added by the implementation sub-agent, not by the Verifier: the findings, faults and every
+PASS/FAIL cell above stand as the round-1 record. No edit landed under `baselines/v0-legacy/`;
+the bundle is still 17 files and 632,981 bytes.
+
+| Finding | Closed | Evidence |
+| --- | --- | --- |
+| F1 - manifest structural arms unproven | `22913e5` (checks `C36` in `d88948e`) | `ManifestStructureTests` in `tests/test_v0_legacy_manifest.py` feeds ten broken manifest copies - not an object, `schema_version` 2, no `coverage`, narrowed `included_subtrees`, empty `files`, non-object entry, missing `sha256`, role `executor`, duplicate `code/ga.py`, `tools/extra.py` outside the subtrees - each on its own fixture, asserting exit 3 plus the stderr fragment naming that defect. Fault V2 is killed by the duplicate-path arm. |
+| F2 - repo-root `*.py` arm unfalsifiable | `00aa6bb` (checks `C38` in `d88948e`) | `test_isolation_scan_flags_a_repo_root_offender` in `tests/test_v0_legacy_isolation.py` injects `reach.py` (bundle-module import), `segment.py` (`baselines/` segment) and `clean.py` at a scratch root, and requires the first two named and the third silent. Fault V4 is killed. |
+| F3 - mode re-check unproven | `22913e5` (checks `C37` in `d88948e`) | `test_mode_change_is_reported_by_path_and_kind` in `tests/test_v0_legacy_manifest.py` chmods `code/ga.py` to `0755` in a bundle copy whose bytes are unchanged and requires exit 1 with `code/ga.py` / `modified`. Fault V1 is killed. |
+| F4 - `ast` early-stop arm only falsifiable in the archive | `831fb45` (checks `C39` in `d88948e`) | `test_break_in_the_generation_loop_is_rejected_naming_the_field` in `tests/test_v0_legacy_protocol.py` copies the three archived modules to scratch, inserts one synthetic `break` in `run_ga`'s generation loop, requires `early_stopping.enabled` in the violations and asserts `code/ga.py` is byte-identical before and after. Fault V5 is killed. |
+| F6 - AD-001 letter vs `MISMATCH` / `cause: null` | `8a0ec4f` | `.specs/project/STATE.md` AD-001 now requires exactly one cause code for `UNVERIFIABLE` and `fields` for `MISMATCH`, with the correction dated in the row. No code change: `MISMATCH` keeps `cause: null` beside `fields`. |
+
+Mechanical gate re-run by the author at the closing code commit (`8a0ec4f`, clean tree): 48 proofs
+pass, 0 fail; ten author faults plus the six verifier faults **all killed**. V1, V2, V4 and V5
+flipped from survived to killed, so no ledger item depends on an inference any more.
+
 ## Gate
 
 `python3 ~/.claude/skills/tlc-spec-lean/scripts/check_proofs.py p0-01-v0-legacy-baseline
@@ -232,33 +250,10 @@ iw-verdict: CHANGES_REQUIRED blocking=2 nonblocking=3
 
 ---
 
-## Closure of the round-1 findings - author, 2026-10-27
+## Author note after the fix round (`iw-6-fix-r1`, 2026-10-27)
 
-Written by the implementation sub-agent (`iw-6-fix-r1`), not by the Verifier. The verdict, the
-findings, the faults and every PASS/FAIL cell above stand as the round-1 record; this section only
-marks which finding each commit closes and how it is now proven. The bundle is byte-identical:
-17 files, 632,981 bytes, no edit under `baselines/v0-legacy/`.
+The five findings are closed in commits (`22913e5`, `00aa6bb`, `831fb45`, `8a0ec4f`, plus the
+check and proof updates in `d88948e`); the table is in `## Findings`. This file is not a round-2
+report and its verdict is unchanged: a scoped round 2 over the fix diff is the independent
+Verifier's to write, since the author may not re-sign its own work.
 
-| Finding | Status | Commit | Proof that it is closed |
-| --- | --- | --- | --- |
-| F1 - manifest structural arms unproven | closed | `22913e5` (checks `C36` in `d88948e`) | `tests/test_v0_legacy_manifest.py` - `ManifestStructureTests` feeds ten broken manifest copies (not an object, `schema_version` 2, no `coverage`, narrowed `included_subtrees`, empty `files`, non-object entry, missing `sha256`, role `executor`, duplicate `code/ga.py`, `tools/extra.py` outside the subtrees), each on its own fixture, asserting exit 3 and the stderr fragment naming that defect. V2 (duplicate guard removed) is killed by the duplicate-path arm. |
-| F2 - repo-root `*.py` arm unfalsifiable | closed | `00aa6bb` (checks `C38` in `d88948e`) | `tests/test_v0_legacy_isolation.py::test_isolation_scan_flags_a_repo_root_offender` injects `reach.py` (bundle-module import), `segment.py` (`baselines/` segment) and `clean.py` at a scratch root and requires the first two named and the third silent. V4 (root arm removed) is killed. |
-| F3 - mode re-check unproven | closed | `22913e5` (checks `C37` in `d88948e`) | `tests/test_v0_legacy_manifest.py::test_mode_change_is_reported_by_path_and_kind` chmods `code/ga.py` to `0755` in a bundle copy whose bytes are still identical, and requires exit 1 with `code/ga.py` / `modified`. V1 (mode re-check dropped) is killed. |
-| F4 - `ast` early-stop arm only falsifiable in the archive | closed | `831fb45` (checks `C39` in `d88948e`) | `tests/test_v0_legacy_protocol.py::test_break_in_the_generation_loop_is_rejected_naming_the_field` copies the three archived modules to scratch, inserts one synthetic `break` in `run_ga`'s generation loop, requires `early_stopping.enabled` in the violations and asserts `code/ga.py` is byte-identical before and after. V5 (arm disabled) is killed. |
-| F6 - AD-001 letter vs `MISMATCH`/`cause: null` | closed | `8a0ec4f` |`.specs/project/STATE.md` AD-001 now requires exactly one cause code for `UNVERIFIABLE` and `fields` for `MISMATCH`, with the correction dated in the row. No code change: `MISMATCH` still carries `cause: null` beside `fields`. |
-
-Mechanical gate re-run by the author at `8a0ec4f` (clean tree):
-
-```
-python3 ~/.claude/skills/tlc-spec-lean/scripts/check_proofs.py p0-01-v0-legacy-baseline \
-        --mutations .specs/features/p0-01-v0-legacy-baseline/mutations.json --root .
-**HEAD**: 8a0ec4f
-**Tree**: clean
-**Result**: 48 pass, 0 fail; mutations 16 killed, 0 not
-```
-
-All ten author faults and all six verifier faults (V1-V6) are killed; V1, V2, V4 and V5 flipped
-from survived to killed. `validate_checks.py --strict` exits 0. `validate_verification.py` still
-exits 1 on this file because its verdict is the round-1 FAIL - a PASS here would have to be written
-by the author, which the skill forbids; the scoped round 2 over `22913e5..HEAD` is the Verifier's
-to write.
