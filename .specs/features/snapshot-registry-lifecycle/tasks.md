@@ -156,7 +156,7 @@ T8 -> T9
 
 #### T4: Create registry CLI skeleton and `build` command
 
-**What**: New `py/snapshot_registry.py` with argparse dispatch, documented exit codes (0/2/3/4/5), `--manifest-id` validation (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, never `metadata`, must equal the loaded `manifest_id`; violations exit 2 - review F7), `write_manifest_atomic` (fixed disk serializer `json.dumps(..., sort_keys=True, indent=2, ensure_ascii=False)` + trailing `\n`; temp file created in the target's OWN directory - review F15 - then `os.replace`; create-exclusive when not overwriting), and `build`: require `--created-at` and inputs (`--snapshot-dir`, `--stock-universe`, `--fii-universe`) resolving under `<registry>/data/` (else exit 2 - review F5); emit exactly the `SnapshotManifest.as_dict()` form (single `allocation` source with `metadata.files`, explicit `stock`/`fii` selector sources, registry-root-relative POSIX paths); derive `common_dates` as the sorted intersection of the five class series exactly as `load_premium_snapshot_bundle` consumes them (`international_equity`/`crypto` already multiplied by `ptax`), `cutoff_date` = last date, exit 4 when the intersection is empty (review F3); hash sources via `sha256_path`/`file_sha256`; write `<registry>/<manifest_id>.json` as `draft` with `manifest_sha256`.
+**What**: New `py/snapshot_registry.py` with argparse dispatch, documented exit codes (0/2/3/4/5), `--manifest-id` validation (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, never `metadata`, must equal the loaded `manifest_id`; violations exit 2 - review F7), `write_manifest_atomic` (fixed disk serializer `json.dumps(..., sort_keys=True, indent=2, ensure_ascii=False)` + trailing `\n`; temp file created in the target's OWN directory - review F15 - then `os.replace`; create-exclusive when not overwriting), and `build`: require `--created-at` and inputs (`--snapshot-dir`, `--stock-universe`, `--fii-universe`) resolving INSIDE the registry root (escape after `Path.resolve()` ⇒ exit 2 - review F5, nit 3; `data/<snapshot_name>/` is the conventional layout); emit exactly the `SnapshotManifest.as_dict()` form (single `allocation` source with `metadata.files`, explicit `stock`/`fii` selector sources, registry-root-relative POSIX paths) with `supported_classes` derived from `ASSET_CLASSES` (`py/allocation_config.py:14-20`) in fixed order; fix each source's `provider` as a literal constant per source role and `metadata` exactly `{"files": {...}}` (`allocation`) or `{}` (selectors) - NEVER copy fetch `metadata.json` content (its absolute paths would break AC3 byte-reproducibility - review N5); derive `common_dates` as the sorted intersection of the five class series exactly as `load_premium_snapshot_bundle` consumes them (`international_equity`/`crypto` already multiplied by `ptax`), `cutoff_date` = last date, exit 4 when the intersection is empty (review F3); hash sources via `sha256_path`/`file_sha256`; write `<registry>/<manifest_id>.json` as `draft` with `manifest_sha256`.
 **Where**: `py/snapshot_registry.py`
 **Depends on**: T1, T2
 **Reuses**: `py/snapshot_manifest.py` (`sha256_path`, `file_sha256`, `SnapshotManifest`, `manifest_canonical_sha256`), `py/allocation_data.py:290-315` (`load_premium_snapshot_bundle` rows check), fixture layout of `tests/test_snapshot_manifest.py:31`
@@ -172,18 +172,20 @@ T8 -> T9
 - [ ] `build` writes a valid `draft` manifest (passes `validate_manifest`) and exits 0
 - [ ] Building the same `manifest_id` with identical inputs and `--created-at` in TWO different registries yields byte-identical files (`test_build_is_byte_reproducible_across_registries` - review F4; a repeated `build` in one registry is exit 3 by design)
 - [ ] `common_dates` equals the row dates `load_premium_snapshot_bundle` returns for a fixture whose `ptax`/`crypto` series carry extra dates (`test_build_common_dates_match_premium_bundle_rows`); an empty intersection exits 4
-- [ ] Missing `--created-at` exits 2; `--manifest-id` `../../x` / `metadata` / != loaded id exit 2 (`test_manifest_id_rejects_traversal_and_reserved_name`); input outside `<registry>/data/` exits 2; existing target or missing source exits 3; nothing is modified
+- [ ] Missing `--created-at` exits 2; `--manifest-id` `../../x` / `metadata` / != loaded id exit 2 (`test_manifest_id_rejects_traversal_and_reserved_name`); input escaping the registry root exits 2; existing target or missing source exits 3; nothing is modified
 - [ ] A failing `os.replace` leaves the original manifest byte-identical (`test_failed_replace_keeps_original_manifest`)
+- [ ] Source `provider`/`metadata` are the fixed literals per source role (`metadata.files` / `{}`) with no absolute-path leak from fetch `metadata.json` (`test_build_source_metadata_is_fixed_and_absolute_path_free` - review N5)
+- [ ] The new module's source declares no network facility (`urllib|socket|requests|http` scan is empty) (`test_cli_source_has_no_network_imports` - issue AC18, review N7)
 - [ ] Registry root contains only manifest JSON (data in subdirectories) - layout test asserts the loader glob is unaffected
 - [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 7 new tests pass (no silent deletions)
+- [ ] Test count: ≥ 9 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)
 
 #### T5: Implement `validate` command with divergence checks
 
-**What**: `validate` runs `validate_manifest` + `manifest_sha256` recomputation + `cutoff_date == last common_date` check; exits 4 on any hash/date divergence or on a required series absent from the manifest (hash divergente rejeitado; missing `caio_fiis.csv` fails with no IFIX fallback; review F10: `validate` = 4 for a missing series in the manifest); on success transitions `draft -> validated` via envelope-only rewrite (legacy: treat absent state as draft, backfill `manifest_sha256`); `published`/`retired` exit 5; failures modify nothing. Also implement `validate --check` (flag on `validate`, NOT a subcommand - review F6): read-only audit that recomputes `manifest_sha256` + every source hash in ANY lifecycle state and exits 0 (match) / 4 (divergence) without writing or transitioning.
+**What**: `validate` runs `validate_manifest` + `manifest_sha256` recomputation + `cutoff_date == last common_date` check; exits 4 on any hash/date divergence or on a required source of the manifest under audit being absent from the manifest OR missing/unreadable on disk (hash divergente rejeitado; missing `caio_fiis.csv` fails with no IFIX fallback; review F10 + ruling N1: in `validate`/`validate --check` every required-source failure is 4 - after `publish` the data files are part of the audited artifact); on success transitions `draft -> validated` via envelope-only rewrite (legacy: treat absent state as draft, backfill `manifest_sha256`); `published`/`retired` exit 5; failures modify nothing. Also implement `validate --check` (flag on `validate`, NOT a subcommand - review F6): read-only audit that runs the FULL `validate_manifest` verification set - skipping only the lifecycle-state gate ("hashes match" is necessary, not sufficient - review N2) - in ANY lifecycle state and exits 0 / 4 on any verification failure without writing or transitioning.
 **Where**: `py/snapshot_registry.py`
 **Depends on**: T4
 **Reuses**: `py/snapshot_manifest.py` `validate_manifest`, `transition_state` helper from T4 skeleton
@@ -199,13 +201,15 @@ T8 -> T9
 - [ ] Divergent source hash exits 4 and leaves the manifest byte-identical (issue IT-1) (`test_validate_rejects_divergent_source_hash`)
 - [ ] `cutoff_date` different from last `common_dates` entry exits 4 (issue AC2) (`test_validate_rejects_cutoff_date_divergence`)
 - [ ] Manifest missing `caio_fiis.csv` fails with exit 4; `ifix.csv` present is never substituted (issue IT-2) (`test_validate_requires_caio_fiis_without_ifix_fallback`)
+- [ ] A required source file missing/unreadable on disk (e.g. `caio_fiis.csv` unlinked, as `tests/test_allocation_data.py:45-57` builds it) exits 4 in BOTH `validate` and `validate --check`, modifying nothing (`test_validate_missing_source_file_exits_4` - review ruling N1)
+- [ ] `validate --check` runs the full `validate_manifest` set: a manifest with consistent source hashes but a contract violation (e.g. `fiis` absent, `cutoff_date` incoherent) exits 4 in `--check` exactly as in `validate` (`test_check_runs_full_validation_not_just_hashes` - review N2)
 - [ ] Success path sets `state: validated` and preserves `manifest_sha256` and unknown keys
 - [ ] Re-running `validate` on `validated` exits 0 with no write
 - [ ] `validate --check` exits 0 on a published fixture and 4 after a content field is tampered with, in every state, writing nothing (`test_verify_published_detects_tampering`)
 - [ ] `validate` on `published`/`retired` exits 5 and leaves the file byte-identical (`test_validate_on_published_or_retired_exits_5_without_writes`)
 - [ ] A legacy manifest without `manifest_sha256` gets it backfilled on its first `validate` (`test_validate_backfills_manifest_sha256_on_legacy_manifest`)
 - [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 8 new tests pass (no silent deletions)
+- [ ] Test count: ≥ 10 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)
@@ -252,7 +256,7 @@ T8 -> T9
 - [ ] `retire` on `published` sets `state: retired` (+ reason) and exits 0
 - [ ] No file in the registry is deleted (data files and manifest remain on disk)
 - [ ] `retire` on `draft`/`retired` exits 5 with no write
-- [ ] Content fields (normalized projection) are byte-identical before and after `retire`, and unknown keys in the file are preserved (issue AC9) (`test_retire_preserves_content_fields_byte_for_byte`)
+- [ ] Content fields (normalized projection) are byte-identical before and after `retire`, and unknown keys in the file are preserved (issue AC11/AC12) (`test_retire_preserves_content_fields_byte_for_byte`)
 - [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
 - [ ] Test count: ≥ 4 new tests pass (no silent deletions)
 
@@ -265,7 +269,7 @@ T8 -> T9
 
 #### T8: Expose auditable class-to-series mapping
 
-**What**: `class_series_map(manifest)` returns the deterministic class -> `{path, sha256, provider}` map (fiis -> `caio_fiis.csv`, no fallback) and is printed by `validate --json` (machine-readable, stable key order; review F11: `--json` is a `validate` flag only - `build` does not print the map).
+**What**: `class_series_map(manifest)` returns the deterministic class -> `{path, sha256, provider}` map (fiis -> `caio_fiis.csv`, no fallback) where `path` is registry-root-relative POSIX (re-relativized - `source_for` returns ABSOLUTE paths for derived series) and `sha256` is the `file_sha256` of the series FILE itself, never the `allocation` directory digest `source_for` hands back for derived classes (review N4); derived entries carry `derived_from: "allocation"`. Printed by `validate --json`, combinable with `--check` (`validate --check --json`, 0/4 semantics, zero writes) so the map is printable in EVERY lifecycle state including `published`/`retired` (review N3; review F11: `--json` is a `validate` flag only - `build` does not print the map).
 **Where**: `py/snapshot_registry.py`
 **Depends on**: T5
 **Reuses**: `SnapshotManifest.source_for`, `ALLOCATION_FILES` (`py/snapshot_manifest.py:26`) - referenced only, no refactor
@@ -280,16 +284,19 @@ T8 -> T9
 
 - [ ] Mapping covers every `supported_classes` entry plus `ptax` and the explicit selector sources - and ONLY those: `ifix.csv`/`ibovespa.csv` (always written by `py/fetch_allocation_snapshot.py:523-532`) are not class inputs and are never mapped (review F14)
 - [ ] `fiis` resolves to `caio_fiis.csv`; absence fails (no IFIX fallback)
+- [ ] Every entry's `sha256` is the `file_sha256` of the resolved file itself; `fiis`/`brazilian_stocks` entries never expose the `allocation` directory digest and carry `derived_from: "allocation"` (`test_class_series_map_hashes_the_file_not_the_directory` - review N4)
+- [ ] `path` values are registry-root-relative POSIX even for derived series (`test_class_series_map_uses_registry_relative_paths` - review N4)
+- [ ] `validate --check --json` prints the same map for a `published` (and `retired`) fixture with 0/4 semantics and zero writes (`test_check_json_prints_map_in_published_state` - review N3)
 - [ ] Output is byte-stable across runs on the same manifest
 - [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 3 new tests pass (no silent deletions)
+- [ ] Test count: ≥ 6 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)
 
 #### T9: Write reproducible registry documentation
 
-**What**: `docs/snapshot_registry.md`: registry layout (design AD-001), all four commands with exact invocations (`build`/`validate`/`publish`/`retire`, `validate --check`, `validate --json`), the exit code table (incl. the 3/4 "missing file vs contract divergence" split of review F10), the state machine table (incl. the legacy row fix of review F9), the canonical hash definition (AD-002, normalized `as_dict()` projection), and the prohibitions (no network, no overwrite of published artifacts, no deletion on `retire`, no series fallback, single-operator writes).
+**What**: `docs/snapshot_registry.md`: registry layout (design AD-001), all four commands with exact invocations (`build`/`validate`/`publish`/`retire`, `validate --check`, `validate --json`, `validate --check --json`), the exit code table (incl. the 3/4 split of review F10 as ruled in N1: exit 3 = missing CLI target / refused overwrite / `build` input, exit 4 = the audited artifact fails any required-source check), the state machine table (incl. the legacy row fix of review F9), the canonical hash definition (AD-002, `as_dict()` projection; `supported_classes` order pinned by `build` from `ASSET_CLASSES`), and the prohibitions (no network, no overwrite of published artifacts, no deletion on `retire`, no series fallback, single-operator writes).
 **Where**: `docs/snapshot_registry.md`
 **Depends on**: T4, T5, T6, T7, T8
 **Reuses**: `design.md` tables (state machine, exit codes, layout)
@@ -302,7 +309,7 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] Doc-content check passes (executable): `python3 -c "import pathlib,sys; t=pathlib.Path('docs/snapshot_registry.md').read_text(encoding='utf-8'); required=['build','validate --check','validate --json','publish','retire','exit 2','exit 3','exit 4','exit 5','os.replace','caio_fiis.csv','no network','never overwrite','never deletes','no fallback','single-operator']; missing=[s for s in required if s not in t]; sys.exit('missing: %s' % missing if missing else 0)"`
+- [ ] Doc-content check passes (executable): `python3 -c "import pathlib,sys; t=pathlib.Path('docs/snapshot_registry.md').read_text(encoding='utf-8'); required=['build','validate --check','validate --check --json','validate --json','publish','retire','exit 2','exit 3','exit 4','exit 5','os.replace','caio_fiis.csv','no network','never overwrite','never deletes','no fallback','single-operator']; missing=[s for s in required if s not in t]; sys.exit('missing: %s' % missing if missing else 0)"`
 - [ ] Flag parity check passes (executable): `for c in build validate publish retire; do python3 py/snapshot_registry.py "$c" --help >/dev/null || exit 1; done` and every documented flag appears in the corresponding `--help` output
 - [ ] Every documented exit code matches the implemented table (executable: the doc-content check asserts the five exit-code spellings above)
 - [ ] Reader walkthrough of a fixture `build -> validate -> publish -> retire` run from the doc alone: **manual** (not automated; explicitly out of the gate)
