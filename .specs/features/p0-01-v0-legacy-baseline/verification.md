@@ -360,4 +360,25 @@ four appended checks wired into the Coverage join. One nonblocking hygiene note 
 
 iw-verdict: APPROVED blocking=0 nonblocking=1
 
+## Round-2 judge fix - what moved after this verdict
+
+This is not a new verification round; it records what the FIX round (`iw-6-fix-r2`, responding to
+`the-judge` r1 on PR #35) changed after the round-2 verdict above, so a reader can tell which bytes
+the evidence above covers.
+
+| Ledger | Change | Covered by |
+| --- | --- | --- |
+| F1 (🟠) | `replay.py` `read_reference` now raises `ReferenceError` for an unreadable or malformed CSV, a missing `run_id` column and a non-integer `run_id`, and `execute` reports `UNVERIFIABLE` / `dataset_unavailable` where it used to raise `KeyError` (exit 1, no JSON). A recorded cell or `fitness` that cannot be coerced is `dataset_unavailable`; the same failure in `runs.json` stays `runtime_error` | C40, `ReferenceReadTests` |
+| F2 (🟠) | `plan.md` Problem no longer publishes the fitted vector `[0.29, 0.14, 0.26, 0.04, 0.26]`; it states the verifiable claim (declared weights reproduce the control `SCORE`s 15/15, 10/10, 10/10 within `1e-9`; caio 0/7, missing by 0.42) | C42, `RecordedScoreTests` |
+| F3 (🟡) | `replay.py` refuses `--report` resolved inside a covered subtree (`code/`, `data/`, `reference/`) with exit 3 before anything runs, naming the path and AC 18; no file is written and no driver spawns | C41, `ReportPathTests` |
+| docs | `baselines/v0-legacy/README.md` (authored, not covered) documents the `dataset_unavailable` reference-read arm and the refused `--report` path | n/a - prose |
+
+Unchanged by the fix: the 17 covered files, `baseline.json` and `protocol.json` (632,981 bytes,
+`verify_manifest.py` -> `VERIFIED` / 17), every existing status, cause code and exit code, and
+every `C1`-`C39` proof. `checks.md` gained `S6` (C40-C42, 39 -> 42 checks, 5 -> 6 slices) and
+`mutations.json` gained the two faults the fix round added (16 -> 18); `check_proofs.py` at the FIX
+commit reports **52 pass, 0 fail; mutations 18 killed, 0 not** and
+`python3 -m unittest discover tests` reports **102 tests, 98 OK + the same 4 pre-existing import
+errors** (94 + the 4 new proofs).
+
 

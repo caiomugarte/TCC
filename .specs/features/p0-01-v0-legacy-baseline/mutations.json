@@ -116,5 +116,21 @@
     "label": "verifier: protocol checker drops the ast early-stop (break) arm",
     "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_break_in_the_generation_loop_is_rejected_naming_the_field",
     "verifier_note": "survived round 1 - the arm was only falsifiable by editing the frozen archive; killed round 2 by the scratch-copy test test_break_in_the_generation_loop_is_rejected_naming_the_field"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/replay.py",
+    "old": "                if \"run_id\" not in row:\n",
+    "new": "                if False:\n",
+    "label": "judge r1 F1: reference reader stops naming the missing run_id column",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_reference_without_run_id_column_is_dataset_unavailable",
+    "verifier_note": "injected by the round-2 FIX (PR #35 judge ledger F1); killed by the missing-column test, whose CSV still verifies against a re-hashed manifest"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/replay.py",
+    "old": "    if refused is not None:\n",
+    "new": "    if False:\n",
+    "label": "judge r1 F3: report path inside a covered subtree is allowed again",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_report_inside_the_frozen_tree_is_refused_before_anything_runs",
+    "verifier_note": "injected by the round-2 FIX (PR #35 judge ledger F3); killed by the test that writes --report under reference/ in a bundle copy and requires exit 3 with no file written"
   }
 ]

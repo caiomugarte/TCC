@@ -1,12 +1,12 @@
 # v0-legacy baseline bundle - checks
 
-Mutations: 5 - the `standard` floor is one fault per assertion surface; the spec is `.specs/features/p0-01-v0-legacy-baseline/mutations.json` - the author's ten, all killed at `0857a52`, plus the six the round-1 Verifier injected; all sixteen are killed at the closure commit
+Mutations: 5 - the `standard` floor is one fault per assertion surface; the spec is `.specs/features/p0-01-v0-legacy-baseline/mutations.json` - the author's ten, all killed at `0857a52`, plus the six the round-1 Verifier injected, all killed at the closure commit, plus the two the round-2 judge round added, killed at the FIX commit
 Build: none - this repository configures no build, no type check and no lint; the proofs are stdlib `unittest` runs
 
 Profile: standard
 Plan: `.specs/features/p0-01-v0-legacy-baseline/plan.md`
 
-39 checks in 5 slices · 4 one-way doors · 0 open, of which 0 block
+42 checks in 6 slices · 4 one-way doors · 0 open, of which 0 block
 
 ## Intent
 
@@ -158,6 +158,22 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_isolation.py' -
 **C39** - A scratch copy of `code/ga.py` with a synthetic `break` inside its generation loop is rejected by the protocol checker naming `early_stopping.enabled`, while the archived `code/ga.py` is byte-identical before and after (AC 8, AC 11)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_break_in_the_generation_loop_is_rejected_naming_the_field`
 
+### S6 - Closure of the round-2 judge findings · tests and docs only · ~2k
+
+These three close the `the-judge` r1 ledger on PR #35 (F1, F2, F3): a crash path that broke the
+CLI contract, a published number the reviewer could not reproduce, and a `--report` path that could
+write into the frozen tree. They append, and no approved check above changes.
+
+**C40** - A reference metrics CSV rewritten without its `run_id` column, and one rewritten with a non-numeric `run_id`, each in a bundle copy whose manifest is re-hashed so it still verifies, make `tools/replay.py` report `UNVERIFIABLE` with cause `dataset_unavailable`, exit 2, exactly one JSON object on stdout naming the defect, no traceback on stderr, and no report file left behind (AC 26 exit-2 arm, AC 18 no side effect)
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_reference_without_run_id_column_is_dataset_unavailable`
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_reference_with_a_non_numeric_run_id_is_dataset_unavailable`
+
+**C41** - `--report` resolving inside a covered subtree (`reference/`) is refused with exit 3 before the driver is spawned; the report object and stderr name the resolved path, the subtree and AC 18; no file is created and the nine `reference/` files keep their `sha256` (AC 18, AC 26 exit-3 arm)
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_report_inside_the_frozen_tree_is_refused_before_anything_runs`
+
+**C42** - Applying the group weights `profiles.py` declares to the recorded `AVG_*` columns reproduces the recorded `SCORE` for 15/15 `arrojado`, 10/10 `moderado` and 10/10 `conservador` rows within `1e-9`, and for 0/7 `caio` rows, missing by 0.42 - the claim `plan.md` now makes instead of a fitted weight vector (plan.md Problem; F2 of the round-2 judge ledger)
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_declared_weights_reproduce_the_controls_and_not_caio`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
@@ -180,8 +196,11 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k
 | package markers (3) | `__init__.py` C35 · `setup.py` C35 · `pyproject.toml` C35 | - |
 | manifest structural-rejection arms (10) | not-an-object C36 · `schema_version` C36 · no `coverage` C36 · `included_subtrees` C36 · empty `files` C36 · non-object entry C36 · missing field C36 · bad role C36 · duplicate path C36 · outside subtrees C36 | - |
 | early-stop arms (2) | declared flag C12 · `ast` `break` C39 | - |
+| reference-read failures (2) | missing `run_id` column C40 · non-numeric `run_id` C40 | - |
+| refused report paths (1) | covered subtree C41 | - |
+| recorded-score claim (4) | `arrojado` C42 · `moderado` C42 · `conservador` C42 · `caio` C42 | - |
 
-- Claims naming a status, a cause code or a process exit: C18-C22, C26-C28, C33 - each has a proof that runs the CLI and reads the exit code.
+- Claims naming a status, a cause code or a process exit: C18-C22, C26-C28, C33, C40, C41 - each has a proof that runs the CLI and reads the exit code.
 - Claims naming a manifest field or a protocol value: C3, C7, C9-C13, C23 - each has a proof that asserts that field against the archived blob or the `ast` extraction.
 - `bundle_stable` takes two values and both are proven: true on every terminal path in C21-C30, false with exit 3 in C28.
 
@@ -200,26 +219,28 @@ about which level proves which code, so these rows are the bar this build runs u
 Evidence:
 
 - `baselines/v0-legacy/tools/verify_manifest.py`: three finding kinds, two terminal statuses, one manifest-trust guard -> decides, reached across a boundary (C4, C5, C6, C8)
-- `baselines/v0-legacy/tools/replay.py`: six cause codes, three statuses, four exit paths, one driver seam -> decides, reached across a boundary (C18-C30)
+- `baselines/v0-legacy/tools/replay.py`: six cause codes, three statuses, five exit paths, one driver seam, one reference reader and one report-path guard -> decides, reached across a boundary (C18-C30, C40, C41)
 - `baselines/v0-legacy/tools/build_manifest.py`: walks three subtrees and writes one file, no conditional on an outcome -> instrumentation, covered by C2 and C3
 - `baselines/v0-legacy/tools/_legacy_driver.py`: forwards the archived call sequence, writes one file -> instrumentation, covered by C29 and C30
 - closest analogue in the repo: `tests/test_snapshot_manifest.py`, same shape - a hashing CLI asserted through its exit code - already proven at its own layer with a missing/modified pair
 
 Cost: 10 proofs at their own layer across two deciding files, and 6 boundary proofs through the
-two CLIs. Without these rows the cause-code table and the three finding kinds would be proven only
-by a path that happens to traverse them.
+two CLIs, plus the three S6 proofs added after the round-2 judge round - two boundary proofs
+through the replay CLI and one assertion over the archived `reference/` bytes. Without these rows
+the cause-code table and the three finding kinds would be proven only by a path that happens to
+traverse them.
 
 ## Swept
 
-- validation: C3, C7 - a manifest missing a field or naming an unlisted subtree is rejected, C23 - a protocol missing a used value is rejected, C36 - each structural arm of the manifest is rejected by name
-- failure modes: C18, C26, C27, C28 - every terminal path names a status and a cause code
+- validation: C3, C7 - a manifest missing a field or naming an unlisted subtree is rejected, C23 - a protocol missing a used value is rejected, C36 - each structural arm of the manifest is rejected by name, C40 - a reference CSV that cannot supply `run_id` is reported by cause, not raised
+- failure modes: C18, C26, C27, C28, C40, C41 - every terminal path names a status and a cause code
 - idempotency: C25 - the replay writes nothing under `reference/` and re-verifies, so a second run reads the same bytes
 - authorization: n/a - in-repo CLIs with no auth boundary and no caller to authorize
 - concurrency: n/a - single-process CLIs; the only child is the driver, bounded by one timeout
 - data lifecycle: C1, C2 - the archived bytes are frozen and `data/` and `outputs/` are not rewritten, so no migration exists
 - dependency failure: C19, C27 - absent `numpy`/`pandas` and an over-budget executor each become a cause code, never a hang
-- state transitions: C18, C21, C22, C23 - one status out of three plus one cause code per terminal path, per AD-001
-- observability: C26, C33 - one JSON object on stdout, diagnostics on stderr, `stderr_tail` bounded at 4096
+- state transitions: C18, C21, C22, C23, C41 - one status out of three plus one cause code per terminal path, per AD-001
+- observability: C26, C33, C40 - one JSON object on stdout, diagnostics on stderr, `stderr_tail` bounded at 4096, no traceback on any reported refusal
 
 ## Handoff
 
