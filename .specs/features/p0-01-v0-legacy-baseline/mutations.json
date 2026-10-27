@@ -68,5 +68,53 @@
     "new": "EXIT_UNTRUSTWORTHY = 1",
     "label": "a bundle that moved mid-run exits 1",
     "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_replay.py' -k test_bundle_moved_during_the_run_exits_three"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/verify_manifest.py",
+    "old": "            or file_mode(path) != entry[\"mode\"]\n",
+    "new": "            or False\n",
+    "label": "verifier: mode re-check dropped from verify_bundle",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_mode_change_is_reported_by_path_and_kind",
+    "verifier_note": "survived round 1 - no test chmodded a covered file; killed round 2 by test_mode_change_is_reported_by_path_and_kind"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/verify_manifest.py",
+    "old": "        if entry[\"path\"] in seen:\n",
+    "new": "        if False and entry[\"path\"] in seen:\n",
+    "label": "verifier: duplicate-entry guard removed from load_manifest",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_structurally_broken_manifest_is_rejected_naming_the_defect",
+    "verifier_note": "survived round 1 - no test fed a structurally broken manifest; killed round 2 by the duplicate-path arm of test_structurally_broken_manifest_is_rejected_naming_the_defect"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/replay.py",
+    "old": "    if report[\"fields\"]:\n",
+    "new": "    if False:\n",
+    "label": "verifier: replay swallows differing fields, forces REPRODUCED",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_*.py'",
+    "verifier_note": "killed round 1 by test_one_differing_field_reports_mismatch"
+  },
+  {
+    "file": "baselines/v0-legacy/tools/replay.py",
+    "old": "                            \"recorded\": recorded,\n                            \"recomputed\": recomputed,\n",
+    "new": "                            \"recorded\": recomputed,\n                            \"recomputed\": recorded,\n",
+    "label": "verifier: recorded/recomputed swapped in fields entries",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_*.py'",
+    "verifier_note": "killed round 1 by the signed difference assertion in test_one_differing_field_reports_mismatch"
+  },
+  {
+    "file": "tests/test_v0_legacy_isolation.py",
+    "old": "    targets.extend(sorted(root.glob(\"*.py\")))\n",
+    "new": "    pass\n",
+    "label": "verifier: isolation scan drops the repo-root *.py arm",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_isolation.py' -k test_isolation_scan_flags_a_repo_root_offender",
+    "verifier_note": "survived round 1 - the injected-fault fixture had no root-level offender; killed round 2 by test_isolation_scan_flags_a_repo_root_offender"
+  },
+  {
+    "file": "tests/test_v0_legacy_protocol.py",
+    "old": "    elif any(isinstance(node, ast.Break) for node in ast.walk(loop)):\n",
+    "new": "    elif False and any(isinstance(node, ast.Break) for node in ast.walk(loop)):\n",
+    "label": "verifier: protocol checker drops the ast early-stop (break) arm",
+    "proof": "python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_break_in_the_generation_loop_is_rejected_naming_the_field",
+    "verifier_note": "survived round 1 - the arm was only falsifiable by editing the frozen archive; killed round 2 by the scratch-copy test test_break_in_the_generation_loop_is_rejected_naming_the_field"
   }
 ]

@@ -1,12 +1,12 @@
 # v0-legacy baseline bundle - checks
 
-Mutations: 5 - the `standard` floor is one fault per assertion surface; the author's own ten-fault spec is `.specs/features/p0-01-v0-legacy-baseline/mutations.json`, all ten killed at `0857a52`
+Mutations: 5 - the `standard` floor is one fault per assertion surface; the spec is `.specs/features/p0-01-v0-legacy-baseline/mutations.json` - the author's ten, all killed at `0857a52`, plus the six the round-1 Verifier injected; all sixteen are killed at the closure commit
 Build: none - this repository configures no build, no type check and no lint; the proofs are stdlib `unittest` runs
 
 Profile: standard
 Plan: `.specs/features/p0-01-v0-legacy-baseline/plan.md`
 
-35 checks in 4 slices · 4 one-way doors · 0 open, of which 0 block
+39 checks in 5 slices · 4 one-way doors · 0 open, of which 0 block
 
 ## Intent
 
@@ -140,12 +140,31 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_isolation.py' -
 **C35** - No `__init__.py`, `setup.py` or `pyproject.toml` exists at any depth under `baselines/` (AC 28)
 Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_isolation.py' -k test_no_package_marker_under_baselines`
 
+### S5 - Closure of the round-1 verification findings · tests only · ~2k
+
+These four are not new behaviour: each proves an arm the round-1 Verifier showed unproven (F1-F4 in
+`verification.md`). They append, and no approved check above changes.
+
+**C36** - A `baseline.json` copy that is not a JSON object, declares `schema_version` 2, has no `coverage` object, narrows `included_subtrees` to `["code/"]`, empties `files`, holds a non-object entry, drops an entry's `sha256`, gives an entry role `executor`, lists `code/ga.py` twice or lists `tools/extra.py` makes `tools/verify_manifest.py` exit 3 and name that defect on stderr (plan Observable "a file with two roles is a manifest error"; AC 26 exit 3)
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_structurally_broken_manifest_is_rejected_naming_the_defect`
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_manifest_that_is_not_a_json_object_is_rejected`
+
+**C37** - A covered file whose bytes are untouched but whose mode changes from `100644` to `100755` in a bundle copy makes `tools/verify_manifest.py` exit 1 and report that `path` with kind `modified` (AC 3 content state, including the recorded mode)
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_manifest.py' -k test_mode_change_is_reported_by_path_and_kind`
+
+**C38** - The isolation scan names `reach.py:1` for a repo-root `*.py` importing a bundle module, `segment.py:2` for a repo-root file carrying the segment `baselines/`, and nothing for a clean root file (AC 27, repo-root group)
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_isolation.py' -k test_isolation_scan_flags_a_repo_root_offender`
+
+**C39** - A scratch copy of `code/ga.py` with a synthetic `break` inside its generation loop is rejected by the protocol checker naming `early_stopping.enabled`, while the archived `code/ga.py` is byte-identical before and after (AC 8, AC 11)
+Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_protocol.py' -k test_break_in_the_generation_loop_is_rejected_naming_the_field`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
 | covered files (17) | C1, C2 - table-driven over all 17 | - |
 | finding kinds (3) | `missing` C4 · `modified` C5 · `unexpected` C6 | - |
+| `modified` detection inputs (2) | content sha256 C5 · recorded mode C37 | - |
 | file roles (3) | `executed` C3 · `comparison` C3 · `provenance_only` C3 | - |
 | covered subtrees (3) | `code/` C7 · `data/` C7 · `reference/` C7 | - |
 | excluded authored paths (4) | `baseline.json` C7 · `protocol.json` C7 · `README.md` C7 · `tools/` C7 | - |
@@ -157,8 +176,10 @@ Proof: `python3 -m unittest discover -s tests -p 'test_v0_legacy_isolation.py' -
 | cause codes (6) | `hash_mismatch` C18 · `dependency_unavailable` C19 · `dataset_unavailable` C20 · `protocol_mismatch` C23 · `runtime_error` C26 · `runtime_budget_exceeded` C27 | - |
 | CLI exit codes (4) | 0 C33 · 1 C33 · 2 C33 · 3 C33 | - |
 | replay flags (4) | `--bundle` C32 · `--report` C32 · `--budget-seconds` C32 · `--driver` C32 | - |
-| scanned production groups (3) | `py/` C34 · `api/` C34 · repo-root `*.py` C34 | - |
+| scanned production groups (3) | `py/` C34 · `api/` C34 · repo-root `*.py` C38 | - |
 | package markers (3) | `__init__.py` C35 · `setup.py` C35 · `pyproject.toml` C35 | - |
+| manifest structural-rejection arms (10) | not-an-object C36 · `schema_version` C36 · no `coverage` C36 · `included_subtrees` C36 · empty `files` C36 · non-object entry C36 · missing field C36 · bad role C36 · duplicate path C36 · outside subtrees C36 | - |
+| early-stop arms (2) | declared flag C12 · `ast` `break` C39 | - |
 
 - Claims naming a status, a cause code or a process exit: C18-C22, C26-C28, C33 - each has a proof that runs the CLI and reads the exit code.
 - Claims naming a manifest field or a protocol value: C3, C7, C9-C13, C23 - each has a proof that asserts that field against the archived blob or the `ast` extraction.
@@ -190,7 +211,7 @@ by a path that happens to traverse them.
 
 ## Swept
 
-- validation: C3, C7 - a manifest missing a field or naming an unlisted subtree is rejected, C23 - a protocol missing a used value is rejected
+- validation: C3, C7 - a manifest missing a field or naming an unlisted subtree is rejected, C23 - a protocol missing a used value is rejected, C36 - each structural arm of the manifest is rejected by name
 - failure modes: C18, C26, C27, C28 - every terminal path names a status and a cause code
 - idempotency: C25 - the replay writes nothing under `reference/` and re-verifies, so a second run reads the same bytes
 - authorization: n/a - in-repo CLIs with no auth boundary and no caller to authorize
