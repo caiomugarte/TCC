@@ -253,12 +253,12 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] `retire` on `published` sets `state: retired` (+ reason) and exits 0
-- [ ] No file in the registry is deleted (data files and manifest remain on disk)
-- [ ] `retire` on `draft`/`retired` exits 5 with no write
-- [ ] Content fields (normalized projection) are byte-identical before and after `retire`, and unknown keys in the file are preserved (issue AC11/AC12) (`test_retire_preserves_content_fields_byte_for_byte`)
-- [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 4 new tests pass (no silent deletions)
+- [x] `retire` on `published` sets `state: retired` (+ reason) and exits 0
+- [x] No file in the registry is deleted (data files and manifest remain on disk)
+- [x] `retire` on `draft`/`retired` exits 5 with no write
+- [x] Content fields (normalized projection) are byte-identical before and after `retire`, and unknown keys in the file are preserved (issue AC11/AC12) (`test_retire_preserves_content_fields_byte_for_byte`)
+- [x] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
+- [x] Test count: ≥ 4 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)

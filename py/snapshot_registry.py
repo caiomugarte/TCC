@@ -382,6 +382,24 @@ def _cmd_publish(args: argparse.Namespace) -> int:
     return EXIT_OK
 
 
+def _cmd_retire(args: argparse.Namespace) -> int:
+    code, manifest_path, manifest = _resolve_manifest(args)
+    if code != EXIT_OK:
+        return code
+    try:
+        rewrite_envelope(
+            manifest_path,
+            lambda payload: transition_state(
+                payload, "retire", at=_now_iso(), reason=args.reason
+            ),
+        )
+    except InvalidTransitionError as exc:
+        print(f"invalid transition: {exc}", file=sys.stderr)
+        return EXIT_INVALID_TRANSITION
+    print(f"retired {manifest_path}")
+    return EXIT_OK
+
+
 def _cmd_build(args: argparse.Namespace) -> int:
     registry_root = Path(args.registry)
     if not registry_root.is_dir():
@@ -485,6 +503,14 @@ def _build_parser() -> argparse.ArgumentParser:
     publish.add_argument("--registry", required=True, help="registry root directory")
     publish.add_argument("--manifest-id", required=True, help="manifest identifier")
     publish.set_defaults(handler=_cmd_publish)
+
+    retire = subparsers.add_parser(
+        "retire", help="mark a validated or published manifest as retired"
+    )
+    retire.add_argument("--registry", required=True, help="registry root directory")
+    retire.add_argument("--manifest-id", required=True, help="manifest identifier")
+    retire.add_argument("--reason", help="optional retirement reason")
+    retire.set_defaults(handler=_cmd_retire)
 
     return parser
 

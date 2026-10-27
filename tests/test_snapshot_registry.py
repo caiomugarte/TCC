@@ -968,5 +968,112 @@ class PublishCommandTests(unittest.TestCase):
                     self.assertEqual(target.read_bytes(), frozen)
 
 
+def run_retire(root: Path, manifest_id: str = "snap-2020-01", *flags) -> tuple:
+    return run_cli("retire", "--registry", str(root), "--manifest-id", manifest_id, *flags)
+
+
+class RetireCommandTests(unittest.TestCase):
+    def test_retire_sets_state_and_records_reason(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            for source_state in ("published", "validated"):
+                with self.subTest(source_state=source_state):
+                    root = base / source_state
+                    root.mkdir()
+                    code, _, err = run_build(root)
+                    self.assertEqual(code, 0, err)
+                    self.assertEqual(run_validate(root)[0], 0)
+                    if source_state == "published":
+                        self.assertEqual(run_publish(root)[0], 0)
+
+                    code, _, err = run_retire(root, "snap-2020-01", "--reason", "superseded")
+
+                    self.assertEqual(code, 0, err)
+                    raw = load_raw(root / "snap-2020-01.json")
+                    self.assertEqual(raw["state"], "retired")
+                    self.assertEqual(raw["retire_reason"], "superseded")
+
+    def test_retire_deletes_nothing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(run_validate(root)[0], 0)
+            self.assertEqual(run_publish(root)[0], 0)
+            before = sorted(
+                item.relative_to(root).as_posix()
+                for item in root.rglob("*")
+                if item.is_file()
+            )
+
+            code, _, err = run_retire(root)
+
+            self.assertEqual(code, 0, err)
+            after = sorted(
+                item.relative_to(root).as_posix()
+                for item in root.rglob("*")
+                if item.is_file()
+            )
+            self.assertEqual(after, before)
+            self.assertTrue((root / "snap-2020-01.json").is_file())
+            self.assertTrue(
+                (root / "data" / "snapshot-2020" / "caio_fiis.csv").is_file()
+            )
+
+    def test_retire_refuses_draft_and_retired(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            for state in ("draft", "retired"):
+                with self.subTest(state=state):
+                    root = base / state
+                    root.mkdir()
+                    code, _, err = run_build(root)
+                    self.assertEqual(code, 0, err)
+                    target = root / "snap-2020-01.json"
+                    if state == "retired":
+                        self.assertEqual(run_validate(root)[0], 0)
+                        self.assertEqual(run_publish(root)[0], 0)
+                        self.assertEqual(run_retire(root)[0], 0)
+                    frozen = target.read_bytes()
+
+                    code, _, err = run_retire(root)
+
+                    self.assertEqual(code, 5)
+                    self.assertEqual(target.read_bytes(), frozen)
+
+    def test_retire_preserves_content_fields_byte_for_byte(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(run_validate(root)[0], 0)
+            self.assertEqual(run_publish(root)[0], 0)
+            target = root / "snap-2020-01.json"
+            raw = load_raw(target)
+            raw["operator_note"] = "kept verbatim"
+            dump_raw(target, raw)
+            envelope = ("state", "state_changed_at", "retire_reason")
+            before = json.dumps(
+                {key: value for key, value in raw.items() if key not in envelope},
+                sort_keys=True,
+            ).encode("utf-8")
+
+            code, _, err = run_retire(root)
+
+            self.assertEqual(code, 0, err)
+            after_raw = load_raw(target)
+            after = json.dumps(
+                {
+                    key: value
+                    for key, value in after_raw.items()
+                    if key not in envelope
+                },
+                sort_keys=True,
+            ).encode("utf-8")
+            self.assertEqual(after, before)
+            self.assertEqual(after_raw["operator_note"], "kept verbatim")
+            self.assertEqual(after_raw["state"], "retired")
+
+
 if __name__ == "__main__":
     unittest.main()
