@@ -282,14 +282,14 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] Mapping covers every `supported_classes` entry plus `ptax` and the explicit selector sources - and ONLY those: `ifix.csv`/`ibovespa.csv` (always written by `py/fetch_allocation_snapshot.py:523-532`) are not class inputs and are never mapped (review F14)
-- [ ] `fiis` resolves to `caio_fiis.csv`; absence fails (no IFIX fallback)
-- [ ] Every entry's `sha256` is the `file_sha256` of the resolved file itself; `fiis`/`brazilian_stocks` entries never expose the `allocation` directory digest and carry `derived_from: "allocation"` (`test_class_series_map_hashes_the_file_not_the_directory` - review N4)
-- [ ] `path` values are registry-root-relative POSIX even for derived series (`test_class_series_map_uses_registry_relative_paths` - review N4)
-- [ ] `validate --check --json` prints the same map for a `published` (and `retired`) fixture with 0/4 semantics and zero writes (`test_check_json_prints_map_in_published_state` - review N3)
-- [ ] Output is byte-stable across runs on the same manifest
-- [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 6 new tests pass (no silent deletions)
+- [x] Mapping covers every `supported_classes` entry plus `ptax` and the explicit selector sources - and ONLY those: `ifix.csv`/`ibovespa.csv` (always written by `py/fetch_allocation_snapshot.py:523-532`) are not class inputs and are never mapped (review F14)
+- [x] `fiis` resolves to `caio_fiis.csv`; absence fails (no IFIX fallback)
+- [x] Every entry's `sha256` is the `file_sha256` of the resolved file itself; `fiis`/`brazilian_stocks` entries never expose the `allocation` directory digest and carry `derived_from: "allocation"` (`test_class_series_map_hashes_the_file_not_the_directory` - review N4)
+- [x] `path` values are registry-root-relative POSIX even for derived series (`test_class_series_map_uses_registry_relative_paths` - review N4)
+- [x] `validate --check --json` prints the same map for a `published` (and `retired`) fixture with 0/4 semantics and zero writes (`test_check_json_prints_map_in_published_state` - review N3)
+- [x] Output is byte-stable across runs on the same manifest
+- [x] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
+- [x] Test count: ≥ 6 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)

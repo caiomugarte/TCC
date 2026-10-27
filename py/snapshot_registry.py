@@ -337,6 +337,48 @@ def _resolve_manifest(args: argparse.Namespace) -> tuple:
     return EXIT_OK, manifest_path, manifest
 
 
+def class_series_map(manifest: SnapshotManifest) -> dict:
+    """Return the deterministic class-to-series audit map (SNAP-09).
+
+    One entry per supported class plus ``ptax`` and the explicit ``stock``/
+    ``fii`` selector sources - never non-class files.  Each entry carries the
+    registry-root-relative POSIX ``path`` and the ``file_sha256`` of the series
+    FILE itself (never the ``allocation`` directory digest); derived series add
+    ``derived_from: "allocation"`` for provenance (AD-006).
+    """
+
+    if manifest.manifest_path is not None:
+        root = Path(manifest.manifest_path).parent
+    elif manifest.sources:
+        root = Path(next(iter(manifest.sources.values())).base_dir or Path.cwd())
+    else:
+        root = Path.cwd()
+    root = root.resolve()
+
+    result: dict = {}
+    for key in (*ASSET_CLASSES, "ptax", "stock", "fii"):
+        if key in ("stock", "fii"):
+            source = manifest.selector_source_for(key)
+        else:
+            source = manifest.source_for(key)
+        resolved = Path(source.resolved_path())
+        try:
+            relative = resolved.resolve().relative_to(root).as_posix()
+        except ValueError:
+            raise SnapshotManifestError(
+                f"series path escapes the registry root: {resolved}"
+            )
+        entry = {
+            "path": relative,
+            "sha256": file_sha256(resolved),
+            "provider": source.provider,
+        }
+        if source.metadata.get("derived_from") == "allocation":
+            entry["derived_from"] = "allocation"
+        result[key] = entry
+    return result
+
+
 def _cmd_validate(args: argparse.Namespace) -> int:
     code, manifest_path, manifest = _resolve_manifest(args)
     if code != EXIT_OK:
@@ -346,20 +388,31 @@ def _cmd_validate(args: argparse.Namespace) -> int:
         return EXIT_INVALID_TRANSITION
     try:
         validate_manifest(manifest)
+        failure = None
     except (SnapshotManifestError, OSError) as exc:
-        print(f"validation failed: {exc}", file=sys.stderr)
+        failure = exc
+    if args.as_json:
+        try:
+            print(json.dumps(class_series_map(manifest), **DISK_JSON))
+        except (SnapshotManifestError, OSError) as exc:
+            if failure is None:
+                failure = exc
+    if failure is not None:
+        print(f"validation failed: {failure}", file=sys.stderr)
         return EXIT_CONTRACT_DIVERGENCE
+    # With --json the map owns stdout; status chatter moves to stderr.
+    status = sys.stderr if args.as_json else sys.stdout
     if args.check:
-        print("check: manifest contract holds")
+        print("check: manifest contract holds", file=status)
         return EXIT_OK
     if manifest.state == "validated":
-        print("manifest already validated; nothing to write")
+        print("manifest already validated; nothing to write", file=status)
         return EXIT_OK
     rewrite_envelope(
         manifest_path,
         lambda payload: transition_state(payload, "validate", at=_now_iso()),
     )
-    print(f"validated {manifest_path}")
+    print(f"validated {manifest_path}", file=status)
     return EXIT_OK
 
 
@@ -494,6 +547,12 @@ def _build_parser() -> argparse.ArgumentParser:
         "--check",
         action="store_true",
         help="read-only audit in any lifecycle state (no writes)",
+    )
+    validate.add_argument(
+        "--json",
+        action="store_true",
+        dest="as_json",
+        help="print the class-to-series audit map",
     )
     validate.set_defaults(handler=_cmd_validate)
 

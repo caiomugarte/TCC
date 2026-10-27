@@ -17,9 +17,11 @@ import snapshot_registry  # noqa: E402
 from allocation_config import ASSET_CLASSES  # noqa: E402
 from allocation_data import load_premium_snapshot_bundle  # noqa: E402
 from snapshot_manifest import (  # noqa: E402
+    ALLOCATION_FILES,
     SnapshotManifest,
     SnapshotManifestError,
     SnapshotRegistry,
+    file_sha256,
     latest_compatible_manifest,
     manifest_canonical_sha256,
     validate_manifest,
@@ -27,6 +29,7 @@ from snapshot_manifest import (  # noqa: E402
 from snapshot_registry import (  # noqa: E402
     AlreadyPublishedError,
     InvalidTransitionError,
+    class_series_map,
     rewrite_envelope,
     transition_state,
 )
@@ -1073,6 +1076,178 @@ class RetireCommandTests(unittest.TestCase):
             self.assertEqual(after, before)
             self.assertEqual(after_raw["operator_note"], "kept verbatim")
             self.assertEqual(after_raw["state"], "retired")
+
+
+class ClassSeriesMapTests(unittest.TestCase):
+    def test_class_series_map_hashes_the_file_not_the_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            manifest = SnapshotManifest.load(root / "snap-2020-01.json")
+            snapshot_dir = root / "data" / "snapshot-2020"
+            allocation_digest = manifest.sources["allocation"].sha256
+
+            mapping = class_series_map(manifest)
+
+            for key in ("brazilian_stocks", "fiis", "ptax"):
+                with self.subTest(key=key):
+                    entry = mapping[key]
+                    self.assertEqual(
+                        entry["sha256"],
+                        file_sha256(snapshot_dir / ALLOCATION_FILES[key]),
+                    )
+                    self.assertNotEqual(entry["sha256"], allocation_digest)
+                    self.assertEqual(entry["derived_from"], "allocation")
+            self.assertEqual(
+                mapping["stock"]["sha256"], file_sha256(root / "stocks.csv")
+            )
+            self.assertNotIn("derived_from", mapping["stock"])
+
+    def test_class_series_map_uses_registry_relative_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            manifest = SnapshotManifest.load(root / "snap-2020-01.json")
+
+            mapping = class_series_map(manifest)
+
+            expected = {
+                "brazilian_stocks": "data/snapshot-2020/caio_stocks.csv",
+                "fiis": "data/snapshot-2020/caio_fiis.csv",
+                "ptax": "data/snapshot-2020/ptax.csv",
+                "stock": "stocks.csv",
+                "fii": "fiis.csv",
+            }
+            for key, relative in expected.items():
+                with self.subTest(key=key):
+                    self.assertEqual(mapping[key]["path"], relative)
+                    self.assertFalse(mapping[key]["path"].startswith("/"))
+            self.assertNotIn(str(root), json.dumps(mapping))
+
+    def test_class_series_map_covers_only_class_inputs_ptax_and_selectors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
+            (snapshot_dir / "ifix.csv").write_text(
+                "date,value\n2020-01-01,100\n", encoding="utf-8"
+            )
+            (snapshot_dir / "ibovespa.csv").write_text(
+                "date,value\n2020-01-01,100\n", encoding="utf-8"
+            )
+            code, _, err = run_cli(
+                "build",
+                "--registry",
+                str(root),
+                "--manifest-id",
+                "snap-2020-01",
+                "--created-at",
+                CREATED_AT,
+                "--snapshot-dir",
+                str(snapshot_dir),
+                "--stock-universe",
+                str(stock_universe),
+                "--fii-universe",
+                str(fii_universe),
+            )
+            self.assertEqual(code, 0, err)
+
+            mapping = class_series_map(
+                SnapshotManifest.load(root / "snap-2020-01.json")
+            )
+
+            self.assertEqual(
+                set(mapping), set(ASSET_CLASSES) | {"ptax", "stock", "fii"}
+            )
+            serialized = json.dumps(mapping)
+            self.assertNotIn("ifix", serialized)
+            self.assertNotIn("ibovespa", serialized)
+
+    def test_class_series_map_resolves_fiis_without_ifix_fallback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            manifest = SnapshotManifest.load(root / "snap-2020-01.json")
+            self.assertEqual(
+                class_series_map(manifest)["fiis"]["path"],
+                "data/snapshot-2020/caio_fiis.csv",
+            )
+            snapshot_dir = root / "data" / "snapshot-2020"
+            (snapshot_dir / "caio_fiis.csv").unlink()
+            (snapshot_dir / "ifix.csv").write_text(
+                "date,value\n2020-01-01,100\n", encoding="utf-8"
+            )
+
+            with self.assertRaises(SnapshotManifestError):
+                class_series_map(manifest)
+
+            code, out, err = run_validate(root, "snap-2020-01", "--check", "--json")
+            self.assertEqual(code, 4)
+            self.assertNotIn("ifix", out)
+
+    def test_check_json_prints_map_in_published_state(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            for state in ("published", "retired"):
+                with self.subTest(state=state):
+                    root = base / state
+                    root.mkdir()
+                    code, _, err = run_build(root)
+                    self.assertEqual(code, 0, err)
+                    self.assertEqual(run_validate(root)[0], 0)
+                    if state == "published":
+                        self.assertEqual(run_publish(root)[0], 0)
+                    else:
+                        self.assertEqual(run_publish(root)[0], 0)
+                        self.assertEqual(run_retire(root)[0], 0)
+                    target = root / "snap-2020-01.json"
+                    frozen = target.read_bytes()
+
+                    code, out, err = run_validate(
+                        root, "snap-2020-01", "--check", "--json"
+                    )
+
+                    self.assertEqual(code, 0, err)
+                    self.assertEqual(
+                        json.loads(out),
+                        class_series_map(SnapshotManifest.load(target)),
+                    )
+                    self.assertEqual(target.read_bytes(), frozen)
+
+                    code, out, err = run_validate(root, "snap-2020-01", "--json")
+                    self.assertEqual(code, 5)
+                    self.assertEqual(out, "")
+
+    def test_class_series_map_is_byte_stable_across_runs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(run_validate(root)[0], 0)
+
+            first = run_validate(root, "snap-2020-01", "--check", "--json")
+            second = run_validate(root, "snap-2020-01", "--check", "--json")
+
+            self.assertEqual(first[0], 0)
+            self.assertEqual(second[0], 0)
+            self.assertEqual(first[1], second[1])
+
+    def test_validate_json_prints_map_and_transitions_draft(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+
+            code, out, err = run_validate(root, "snap-2020-01", "--json")
+
+            self.assertEqual(code, 0, err)
+            self.assertEqual(
+                json.loads(out),
+                class_series_map(SnapshotManifest.load(root / "snap-2020-01.json")),
+            )
+            self.assertEqual(load_raw(root / "snap-2020-01.json")["state"], "validated")
 
 
 if __name__ == "__main__":
