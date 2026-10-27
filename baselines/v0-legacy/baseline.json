@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "baseline_id": "v0-legacy",
+  "created_from": {
+    "commit": "97ea3275293da4e1902fcfeb684c814f04f5368f"
+  },
+  "coverage": {
+    "included_subtrees": [
+      "code/",
+      "data/",
+      "reference/"
+    ],
+    "excluded": [
+      {
+        "path": "baseline.json",
+        "reason": "the manifest cannot hash itself without a fixed point"
+      },
+      {
+        "path": "protocol.json",
+        "reason": "authored protocol, not an archived byte; equality with code/ is checked by tests/test_v0_legacy_protocol.py, which must be able to read it edited"
+      },
+      {
+        "path": "README.md",
+        "reason": "authored reader's guide, not evidence of the archived execution"
+      },
+      {
+        "path": "tools/",
+        "reason": "authored verifier and replay; hashing them would let a changed verifier still verify, because the manifest is what the verifier reads"
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "code/ga.py",
+      "source_path": "ga.py",
+      "sha256": "67f11ed5e39997dcce8b9c56d95e31c2181bba0626ae8f33a7e4971d17c3230d",
+      "git_blob_sha1": "83980746d12cd178096b8b778fb9766fb9a12d4d",
+      "bytes": 5255,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "code/ga_multiple_runs.py",
+      "source_path": "ga_multiple_runs.py",
+      "sha256": "75317e0a4e1819a22d39cb06935800e53f02e480acd342be581d99140e725365",
+      "git_blob_sha1": "32b5958154c147060d4395fa6a8e1cef7eec8a4a",
+      "bytes": 15085,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "code/profiles.py",
+      "source_path": "profiles.py",
+      "sha256": "80d818d4e3703a8104eb21eae71ae6f3a21182c507b1992c02c9ae18a817f0d8",
+      "git_blob_sha1": "3ef8edcbd2dc964ef909c75393bfe2408aabae0c",
+      "bytes": 4633,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "data/processed/eligibility_filters.parquet",
+      "source_path": "data/processed/eligibility_filters.parquet",
+      "sha256": "6d5ca6a2ef26e71f282ef448627917076048caebc0c61a6df2d94972c28829e7",
+      "git_blob_sha1": "16281ab9686728f7a5fa6ebb3266d0e1359cd52c",
+      "bytes": 12992,
+      "mode": "100644",
+      "role": "provenance_only"
+    },
+    {
+      "path": "data/processed/fundamentals_clean_arrojado.csv",
+      "source_path": "data/processed/fundamentals_clean_arrojado.csv",
+      "sha256": "b870c325ed63cf1de366ba848058431ba68b4dad45890327206e60dd763ef77e",
+      "git_blob_sha1": "c70da472bd76694c1a61fd7b4fe908f7c92e1529",
+      "bytes": 137495,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "data/processed/fundamentals_clean_caio.csv",
+      "source_path": "data/processed/fundamentals_clean_caio.csv",
+      "sha256": "a7735d7a484bd474862da88e53bed985db38d0fefe16a7695fdf168763ed659e",
+      "git_blob_sha1": "a0d4fc216f8bc29fcea7c2bf90c595c663523a65",
+      "bytes": 106875,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "data/processed/fundamentals_clean_conservador.csv",
+      "source_path": "data/processed/fundamentals_clean_conservador.csv",
+      "sha256": "980162d81ff64e8e6a0e3342154e6cb612f38d12e4c9b0d95e0728507c71c874",
+      "git_blob_sha1": "3ecee42a9fc9db3e780a8bb13383fdb23151d4ba",
+      "bytes": 55978,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "data/processed/fundamentals_clean_moderado.csv",
+      "source_path": "data/processed/fundamentals_clean_moderado.csv",
+      "sha256": "30010f8d6b9b0e1531b3000bc1d1b927428e4ac6121d518cfe95a39fd424c2ea",
+      "git_blob_sha1": "10f0b3163f4b48a35825306da509ba02c48db5ff",
+      "bytes": 98621,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "reference/carteira_arrojado_consensus.json",
+      "source_path": "outputs/carteira_arrojado_consensus.json",
+      "sha256": "0e93364b6f4ce536d18247c511349887ccfd28014984d2d0a6b4cf4d59603770",
+      "git_blob_sha1": "57dd2132a79b22629b4f2426ac98246c9b450945",
+      "bytes": 16667,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/carteira_caio_consensus.json",
+      "source_path": "outputs/carteira_caio_consensus.json",
+      "sha256": "3cf35865f59e3fe4180d390dd3e2300869eb6f0236d2cdf31f2f18a10eabd522",
+      "git_blob_sha1": "ab300f11b35675ac4ace10564c69baad361f1266",
+      "bytes": 11033,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/carteira_conservador_consensus.json",
+      "source_path": "outputs/carteira_conservador_consensus.json",
+      "sha256": "83e3cd9a7da101595c3c89532000b078655ec615179a8299f38c3d931af610ff",
+      "git_blob_sha1": "434ee1930a39c245d19d0e0909ab72b41882502a",
+      "bytes": 10705,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/carteira_moderado_consensus.json",
+      "source_path": "outputs/carteira_moderado_consensus.json",
+      "sha256": "4b3661aa056abd5fd19267d3036492535545aeeace9e736d11c2ee7e3008ea85",
+      "git_blob_sha1": "acf84a16ab758614890a572f4cb6fcaf81ec5e76",
+      "bytes": 13232,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/metrics_stability_arrojado.csv",
+      "source_path": "outputs/metrics_stability_arrojado.csv",
+      "sha256": "37eceb9baec7b1f46305641ed2b38f7869722bb51345510d0744ec8ffb8f60a5",
+      "git_blob_sha1": "51cf0af23807dcf00660ee457a0b99137c4d1d1b",
+      "bytes": 12923,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/metrics_stability_caio.csv",
+      "source_path": "outputs/metrics_stability_caio.csv",
+      "sha256": "4ee688c149bcf15b4909fe185547ba3dc13fe275187e807c2cc99d1e905721ed",
+      "git_blob_sha1": "f7ff97b6b1b2a1f48c75c3693f4e90b098175485",
+      "bytes": 10400,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/metrics_stability_conservador.csv",
+      "source_path": "outputs/metrics_stability_conservador.csv",
+      "sha256": "24eca3e0f218279759530805ceaf591d6b740b374eb8b4465c8eb7e547aa8e5d",
+      "git_blob_sha1": "666a0355e98a11e2bd0ed7616e9e7def2f86e48f",
+      "bytes": 10751,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/metrics_stability_moderado.csv",
+      "source_path": "outputs/metrics_stability_moderado.csv",
+      "sha256": "7b7bc15221eafea5af240cf61c51f43db92c616ca184c63a066717d7afac14f5",
+      "git_blob_sha1": "2af3eaa485226586b84962199e55f93441db9b0d",
+      "bytes": 11902,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/multiple_runs_summary.json",
+      "source_path": "outputs/multiple_runs_summary.json",
+      "sha256": "10f58d03627679a70f8eb5cf7317246bddf7caa109389cb457ffb947bb3e84b6",
+      "git_blob_sha1": "eaac511fbc3b9f598fe4d71fcf21671533500fcb",
+      "bytes": 98434,
+      "mode": "100644",
+      "role": "comparison"
+    }
+  ]
+}
