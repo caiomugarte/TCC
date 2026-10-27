@@ -309,11 +309,11 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] Doc-content check passes (executable): `python3 -c "import pathlib,sys; t=pathlib.Path('docs/snapshot_registry.md').read_text(encoding='utf-8'); required=['build','validate --check','validate --check --json','validate --json','publish','retire','exit 2','exit 3','exit 4','exit 5','os.replace','caio_fiis.csv','no network','never overwrite','never deletes','no fallback','single-operator']; missing=[s for s in required if s not in t]; sys.exit('missing: %s' % missing if missing else 0)"`
-- [ ] Flag parity check passes (executable): `for c in build validate publish retire; do python3 py/snapshot_registry.py "$c" --help >/dev/null || exit 1; done` and every documented flag appears in the corresponding `--help` output
-- [ ] Every documented exit code matches the implemented table (executable: the doc-content check asserts the five exit-code spellings above)
-- [ ] Reader walkthrough of a fixture `build -> validate -> publish -> retire` run from the doc alone: **manual** (not automated; explicitly out of the gate)
-- [ ] Build gate passes (full gate + compileall): `python3 -m unittest tests.test_allocation tests.test_allocation_data tests.test_snapshot_manifest tests.test_snapshot_registry tests.test_fetch_status_invest tests.test_fetch_status_invest_fii` and `python3 -m compileall -q py/snapshot_registry.py py/snapshot_manifest.py`
+- [x] Doc-content check passes (executable): `python3 -c "import pathlib,sys; t=pathlib.Path('docs/snapshot_registry.md').read_text(encoding='utf-8'); required=['build','validate --check','validate --check --json','validate --json','publish','retire','exit 2','exit 3','exit 4','exit 5','os.replace','caio_fiis.csv','no network','never overwrite','never deletes','no fallback','single-operator']; missing=[s for s in required if s not in t]; sys.exit('missing: %s' % missing if missing else 0)"`
+- [x] Flag parity check passes (executable): `for c in build validate publish retire; do python3 py/snapshot_registry.py "$c" --help >/dev/null || exit 1; done` and every documented flag appears in the corresponding `--help` output
+- [x] Every documented exit code matches the implemented table (executable: the doc-content check asserts the five exit-code spellings above)
+- [x] Reader walkthrough of a fixture `build -> validate -> publish -> retire` run from the doc alone: **manual** (not automated; explicitly out of the gate)
+- [x] Build gate passes (full gate + compileall): `python3 -m unittest tests.test_allocation tests.test_allocation_data tests.test_snapshot_manifest tests.test_snapshot_registry tests.test_fetch_status_invest tests.test_fetch_status_invest_fii` and `python3 -m compileall -q py/snapshot_registry.py py/snapshot_manifest.py`
 
 **Tests**: none (doc artifact; executable doc-content + flag-parity checks in Done when, walkthrough marked `manual`)
 **Gate**: build (full gate + `python3 -m compileall -q py/snapshot_registry.py py/snapshot_manifest.py`)
