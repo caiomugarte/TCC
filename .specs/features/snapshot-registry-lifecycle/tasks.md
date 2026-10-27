@@ -115,12 +115,12 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] Hash is deterministic across key order and identical for a manifest before/after lifecycle transitions (`test_manifest_hash_survives_transitions`)
-- [ ] `as_dict() → json → from_dict → validate_manifest` recomputes the same hash, including a `manifest_path` injected exactly as `api/app/services/premium_recommendation.py:87-88` persists it (`test_manifest_hash_survives_premium_rehydration`)
-- [ ] `validate_manifest` exits the failure path (`SnapshotManifestError`) on `manifest_sha256` divergence and passes when it matches
-- [ ] Legacy manifest without `manifest_sha256` still validates
-- [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 3 new tests pass (no silent deletions)
+- [x] Hash is deterministic across key order and identical for a manifest before/after lifecycle transitions (`test_manifest_hash_survives_transitions`)
+- [x] `as_dict() → json → from_dict → validate_manifest` recomputes the same hash, including a `manifest_path` injected exactly as `api/app/services/premium_recommendation.py:87-88` persists it (`test_manifest_hash_survives_premium_rehydration`)
+- [x] `validate_manifest` exits the failure path (`SnapshotManifestError`) on `manifest_sha256` divergence and passes when it matches
+- [x] Legacy manifest without `manifest_sha256` still validates
+- [x] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
+- [x] Test count: ≥ 3 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)

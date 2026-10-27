@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 from snapshot_manifest import (  # noqa: E402
     SnapshotManifest,
     SnapshotManifestError,
+    manifest_canonical_sha256,
+    validate_manifest,
 )
 from test_snapshot_manifest import build_manifest_fixture  # noqa: E402
 
@@ -91,6 +93,70 @@ class LifecycleEnvelopeTests(unittest.TestCase):
                         SnapshotManifest.from_dict(manifest.as_dict()).as_dict(),
                         manifest.as_dict(),
                     )
+
+
+class CanonicalManifestHashTests(unittest.TestCase):
+    def test_manifest_hash_survives_transitions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+
+            baseline = manifest_canonical_sha256(payload)
+            reordered = dict(reversed(list(payload.items())))
+            self.assertEqual(manifest_canonical_sha256(reordered), baseline)
+            for envelope in (DRAFT_ENVELOPE, RETIRED_ENVELOPE):
+                self.assertEqual(
+                    manifest_canonical_sha256(dict(payload, **envelope)),
+                    baseline,
+                )
+
+    def test_manifest_hash_survives_premium_rehydration(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            payload["manifest_sha256"] = manifest_canonical_sha256(payload)
+
+            # Persist exactly as api/app/services/premium_recommendation.py
+            # persists as_dict(), then rehydrate as premium_executor does.
+            persisted = json.loads(json.dumps(SnapshotManifest.from_dict(payload).as_dict()))
+            persisted["manifest_path"] = str(root / "manifest.json")
+            rehydrated = SnapshotManifest.from_dict(persisted, base_dir=root)
+
+            validated = validate_manifest(rehydrated)
+            self.assertEqual(validated.manifest_sha256, payload["manifest_sha256"])
+            self.assertEqual(manifest_canonical_sha256(persisted), payload["manifest_sha256"])
+
+    def test_validate_manifest_accepts_matching_hash_and_rejects_divergence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            payload["manifest_sha256"] = manifest_canonical_sha256(payload)
+            manifest_path = root / "manifest.json"
+            manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            self.assertEqual(
+                validate_manifest(manifest_path).manifest_sha256,
+                payload["manifest_sha256"],
+            )
+
+            payload["manifest_sha256"] = "c" * 64
+            manifest_path.write_text(json.dumps(payload), encoding="utf-8")
+            with self.assertRaisesRegex(
+                SnapshotManifestError, "manifest_sha256 does not match"
+            ):
+                validate_manifest(manifest_path)
+
+    def test_legacy_manifest_without_manifest_sha256_still_validates(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            self.assertNotIn("manifest_sha256", payload)
+            legacy_path = root / "legacy.json"
+            legacy_path.write_text(json.dumps(payload), encoding="utf-8")
+
+            validated = validate_manifest(legacy_path)
+
+            self.assertIsNone(validated.manifest_sha256)
 
 
 if __name__ == "__main__":

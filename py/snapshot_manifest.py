@@ -405,6 +405,37 @@ def _coerce_manifest(manifest: SnapshotManifest | Mapping[str, object] | Path) -
     return SnapshotManifest.from_dict(manifest)
 
 
+# Keys outside the audited content projection: self-reference and the
+# lifecycle envelope are excluded from manifest_sha256 by definition.
+_HASH_EXCLUDED_KEYS = ("manifest_sha256", "state", "state_changed_at", "retire_reason")
+
+
+def manifest_canonical_sha256(
+    payload_or_manifest: SnapshotManifest | Mapping[str, object],
+) -> str:
+    """Return the canonical content hash for a manifest payload.
+
+    Single canonicalization point (AD-002): the input is normalized through
+    ``SnapshotManifest.from_dict(raw).as_dict()`` so the hash recomputes
+    identically for file loads, dataclass instances, and persisted provenance
+    dictionaries.  Unknown payload keys are outside the projection and outside
+    the hash.
+    """
+
+    if isinstance(payload_or_manifest, SnapshotManifest):
+        raw = payload_or_manifest.as_dict()
+    else:
+        raw = payload_or_manifest
+    normalized = SnapshotManifest.from_dict(raw).as_dict()
+    payload = {
+        key: value for key, value in normalized.items() if key not in _HASH_EXCLUDED_KEYS
+    }
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
+
+
 def _validate_dates(manifest: SnapshotManifest) -> None:
     if not manifest.common_dates:
         raise SnapshotManifestError("manifest common_dates cannot be empty")
@@ -452,6 +483,10 @@ def validate_manifest(
         raise SnapshotManifestError(
             f"unsupported manifest version: {checked.manifest_version}"
         )
+    if checked.manifest_sha256 is not None:
+        recomputed = manifest_canonical_sha256(checked)
+        if recomputed != checked.manifest_sha256:
+            raise SnapshotManifestError("manifest_sha256 does not match the manifest content")
     if not set(required_classes).issubset(set(checked.supported_classes)):
         missing = sorted(set(required_classes) - set(checked.supported_classes))
         raise SnapshotManifestError(f"manifest does not support classes: {missing}")
