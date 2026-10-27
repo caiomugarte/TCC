@@ -46,6 +46,9 @@ DEFAULT_REPORT = "outputs/baseline_v0_legacy/replay_report.json"
 DEFAULT_BUDGET_SECONDS = 1800
 DEFAULT_DRIVER = "tools/_legacy_driver.py"
 
+# AC 18: the frozen tree is read-only for the replay, so the report may not land in it either.
+COVERED_SUBTREES = ("code", "data", "reference")
+
 EXIT_REPRODUCED = 0
 EXIT_MISMATCH = 1
 EXIT_UNVERIFIABLE = 2
@@ -490,6 +493,37 @@ def replay(bundle, driver_arg, budget_seconds):
     return report, exit_status
 
 
+def covered_subtree_of(bundle, report_path):
+    """The covered subtree `report_path` resolves into, or None when the path is safe."""
+    resolved = Path(report_path).resolve()
+    for subtree in COVERED_SUBTREES:
+        root = (Path(bundle) / subtree).resolve()
+        if resolved == root or root in resolved.parents:
+            return subtree
+    return None
+
+
+def refuse_report_path(bundle, driver_arg, report_path, subtree):
+    """AC 18: --report may not resolve inside the frozen tree, so refuse before running anything."""
+    bundle = Path(bundle).resolve()
+    resolved = Path(report_path).resolve()
+    report = new_report(bundle, resolve_driver(bundle, driver_arg))
+    _unverifiable(
+        report,
+        "runtime_error",
+        (
+            f"refusing to write the report to {resolved}: it resolves inside the covered subtree "
+            f"{subtree}/ of the frozen bundle, and the replay writes no file under code/, data/ "
+            "or reference/ (AC 18); nothing ran and no report was written"
+        ),
+    )
+    text = json.dumps(report, indent=2, sort_keys=True) + "\n"
+    print(f"replay: {report['status']}/{report['cause']} -> {resolved}", file=sys.stderr)
+    print(f"replay: {report['detail']}", file=sys.stderr)
+    print(text, end="")
+    return EXIT_UNTRUSTWORTHY
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(
         prog="replay.py",
@@ -519,6 +553,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
 
     report_path = Path(args.report)
+    refused = covered_subtree_of(args.bundle, report_path)
+    if refused is not None:
+        return refuse_report_path(args.bundle, args.driver, report_path, refused)
+
     report, exit_status = replay(args.bundle, args.driver, args.budget_seconds)
     text = json.dumps(report, indent=2, sort_keys=True) + "\n"
     report_path.parent.mkdir(parents=True, exist_ok=True)

@@ -341,6 +341,59 @@ class ReferenceReadTests(unittest.TestCase):
         self.assert_dataset_unavailable(completed, report, "not an integer")
 
 
+class ReportPathTests(unittest.TestCase):
+    def test_report_inside_the_frozen_tree_is_refused_before_anything_runs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            bundle = copy_bundle(directory / "bundle")
+            reference = bundle / "reference"
+
+            def snapshot():
+                return {
+                    path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                    for path in sorted(reference.iterdir())
+                    if path.is_file()
+                }
+
+            before = snapshot()
+            target = reference / "replay_report.json"
+            sentinel = directory / "spawned"
+            driver = write_script(
+                directory,
+                "sentinel.py",
+                "from pathlib import Path\n"
+                f"Path({str(sentinel)!r}).write_text('ran', encoding='utf-8')\n",
+            )
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    str(REPLAY),
+                    "--bundle",
+                    str(bundle),
+                    "--report",
+                    str(target),
+                    "--driver",
+                    str(driver),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+            written = target.exists()
+            after = snapshot()
+
+        self.assertEqual(completed.returncode, 3, completed.stderr)
+        report = json.loads(completed.stdout)
+        self.assertEqual(report["status"], "UNVERIFIABLE")
+        self.assertIn(str(target.resolve()), report["detail"])
+        self.assertIn("reference/", report["detail"])
+        self.assertIn("AC 18", report["detail"])
+        self.assertFalse(written, "the replay wrote its report inside reference/")
+        self.assertFalse(sentinel.exists(), "the driver ran for a report path that is refused")
+        self.assertEqual(after, before)
+        self.assertIn(str(target.resolve()), completed.stderr)
+
+
 class ExecutorFailureTests(unittest.TestCase):
     def test_nonzero_driver_exit_reports_runtime_error(self):
         with tempfile.TemporaryDirectory() as tmp:

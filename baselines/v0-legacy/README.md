@@ -54,8 +54,15 @@ run, not evidence) and the same JSON object goes to stdout. Flags: `--bundle`,
   `dependency_unavailable`, `dataset_unavailable`, `protocol_mismatch`, `runtime_error`,
   `runtime_budget_exceeded`
 
-Exit 3 means a covered byte moved while the driver ran, so no report from that run is
-trustworthy. Nothing is ever written under `reference/`; `golden_output_written` is always false.
+`dataset_unavailable` also covers a recorded CSV that cannot be read as `run_id` -> row - no
+`run_id` column, a `run_id` that is not an integer, an unreadable or malformed file - because then
+the recorded outcome is not available to compare against. Every such input is reported, never
+crashing the CLI.
+
+Exit 3 means no trustworthy report could be produced: either a covered byte moved while the driver
+ran, or `--report` resolved inside a covered subtree (`code/`, `data/` or `reference/`), in which
+case the replay refuses before running anything and names the path it refused. Nothing is ever
+written under `reference/`; `golden_output_written` is always false.
 
 ## Two numbers that do not agree, on purpose
 
