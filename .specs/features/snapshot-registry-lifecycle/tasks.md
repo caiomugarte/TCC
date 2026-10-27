@@ -90,12 +90,12 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] `SnapshotManifest` accepts and round-trips all four optional fields; absent fields are omitted from `as_dict()`
-- [ ] Unknown `state` string raises `SnapshotManifestError`; legacy manifest dict without `state` loads unchanged
-- [ ] Round-trip test: `from_dict(as_dict(m)).as_dict() == m.as_dict()` for legacy, draft, and retired payloads
-- [ ] `tests/test_snapshot_registry.py` exists with the harness and the T1 tests, so `python3 -m unittest tests.test_snapshot_registry` runs green from T1 onward
-- [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 4 new tests pass (no silent deletions)
+- [x] `SnapshotManifest` accepts and round-trips all four optional fields; absent fields are omitted from `as_dict()`
+- [x] Unknown `state` string raises `SnapshotManifestError`; legacy manifest dict without `state` loads unchanged
+- [x] Round-trip test: `from_dict(as_dict(m)).as_dict() == m.as_dict()` for legacy, draft, and retired payloads
+- [x] `tests/test_snapshot_registry.py` exists with the harness and the T1 tests, so `python3 -m unittest tests.test_snapshot_registry` runs green from T1 onward
+- [x] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
+- [x] Test count: ≥ 4 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)

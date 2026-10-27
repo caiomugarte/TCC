@@ -21,6 +21,10 @@ from allocation_config import ASSET_CLASSES
 MANIFEST_SCHEMA_VERSION = "1"
 MANIFEST_FILE_GLOB = "*.json"
 
+# Lifecycle states carried by the optional manifest envelope.  A manifest
+# without a ``state`` field is a legacy artifact and stays loadable.
+MANIFEST_STATES = ("draft", "validated", "published", "retired")
+
 # These names are the local snapshot contract.  A manifest may override them
 # with ``allocation_source.metadata.files`` or one source per class.
 ALLOCATION_FILES = {
@@ -175,6 +179,10 @@ class SnapshotManifest:
     common_dates: Tuple[date, ...]
     supported_classes: Tuple[str, ...]
     sources: Mapping[str, SnapshotSource]
+    state: Optional[str] = None
+    state_changed_at: Optional[str] = None
+    retire_reason: Optional[str] = None
+    manifest_sha256: Optional[str] = None
     manifest_path: Optional[Path] = field(default=None, compare=False, repr=False)
 
     @classmethod
@@ -262,6 +270,29 @@ class SnapshotManifest:
                         key,
                     )
 
+        raw_state = value.get("state")
+        state: Optional[str] = None
+        if raw_state is not None:
+            state = str(raw_state).strip()
+            if state not in MANIFEST_STATES:
+                raise SnapshotManifestError(f"unknown manifest state: {state}")
+
+        state_changed_at: Optional[str] = None
+        if value.get("state_changed_at") is not None:
+            state_changed_at = _as_iso_datetime(
+                value.get("state_changed_at"), "state_changed_at"
+            )
+
+        retire_reason: Optional[str] = None
+        if value.get("retire_reason") is not None:
+            retire_reason = str(value.get("retire_reason")).strip()
+
+        manifest_sha256: Optional[str] = None
+        if value.get("manifest_sha256") is not None:
+            manifest_sha256 = _normalise_hash(
+                value.get("manifest_sha256"), "manifest_sha256"
+            )
+
         return cls(
             manifest_id=manifest_id,
             manifest_version=manifest_version,
@@ -270,6 +301,10 @@ class SnapshotManifest:
             common_dates=common_dates,
             supported_classes=supported_classes,
             sources=sources,
+            state=state,
+            state_changed_at=state_changed_at,
+            retire_reason=retire_reason,
+            manifest_sha256=manifest_sha256,
             manifest_path=manifest_path,
         )
 
@@ -347,6 +382,16 @@ class SnapshotManifest:
         for key in ("allocation", "stock", "fii"):
             if key in sources:
                 result[f"{key}_source"] = sources[key]
+        # Optional lifecycle envelope: absent fields are omitted entirely so
+        # legacy payloads round-trip byte-identically.
+        if self.state is not None:
+            result["state"] = self.state
+        if self.state_changed_at is not None:
+            result["state_changed_at"] = self.state_changed_at
+        if self.retire_reason is not None:
+            result["retire_reason"] = self.retire_reason
+        if self.manifest_sha256 is not None:
+            result["manifest_sha256"] = self.manifest_sha256
         return result
 
     to_dict = as_dict
