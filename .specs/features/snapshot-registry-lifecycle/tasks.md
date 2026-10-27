@@ -198,18 +198,18 @@ T8 -> T9
 
 **Done when**:
 
-- [ ] Divergent source hash exits 4 and leaves the manifest byte-identical (issue IT-1) (`test_validate_rejects_divergent_source_hash`)
-- [ ] `cutoff_date` different from last `common_dates` entry exits 4 (issue AC2) (`test_validate_rejects_cutoff_date_divergence`)
-- [ ] Manifest missing `caio_fiis.csv` fails with exit 4; `ifix.csv` present is never substituted (issue IT-2) (`test_validate_requires_caio_fiis_without_ifix_fallback`)
-- [ ] A required source file missing/unreadable on disk (e.g. `caio_fiis.csv` unlinked, as `tests/test_allocation_data.py:45-57` builds it) exits 4 in BOTH `validate` and `validate --check`, modifying nothing (`test_validate_missing_source_file_exits_4` - review ruling N1)
-- [ ] `validate --check` runs the full `validate_manifest` set: a manifest with consistent source hashes but a contract violation (e.g. `fiis` absent, `cutoff_date` incoherent) exits 4 in `--check` exactly as in `validate` (`test_check_runs_full_validation_not_just_hashes` - review N2)
-- [ ] Success path sets `state: validated` and preserves `manifest_sha256` and unknown keys
-- [ ] Re-running `validate` on `validated` exits 0 with no write
-- [ ] `validate --check` exits 0 on a published fixture and 4 after a content field is tampered with, in every state, writing nothing (`test_verify_published_detects_tampering`)
-- [ ] `validate` on `published`/`retired` exits 5 and leaves the file byte-identical (`test_validate_on_published_or_retired_exits_5_without_writes`)
-- [ ] A legacy manifest without `manifest_sha256` gets it backfilled on its first `validate` (`test_validate_backfills_manifest_sha256_on_legacy_manifest`)
-- [ ] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
-- [ ] Test count: ≥ 10 new tests pass (no silent deletions)
+- [x] Divergent source hash exits 4 and leaves the manifest byte-identical (issue IT-1) (`test_validate_rejects_divergent_source_hash`)
+- [x] `cutoff_date` different from last `common_dates` entry exits 4 (issue AC2) (`test_validate_rejects_cutoff_date_divergence`)
+- [x] Manifest missing `caio_fiis.csv` fails with exit 4; `ifix.csv` present is never substituted (issue IT-2) (`test_validate_requires_caio_fiis_without_ifix_fallback`)
+- [x] A required source file missing/unreadable on disk (e.g. `caio_fiis.csv` unlinked, as `tests/test_allocation_data.py:45-57` builds it) exits 4 in BOTH `validate` and `validate --check`, modifying nothing (`test_validate_missing_source_file_exits_4` - review ruling N1)
+- [x] `validate --check` runs the full `validate_manifest` set: a manifest with consistent source hashes but a contract violation (e.g. `fiis` absent, `cutoff_date` incoherent) exits 4 in `--check` exactly as in `validate` (`test_check_runs_full_validation_not_just_hashes` - review N2)
+- [x] Success path sets `state: validated` and preserves `manifest_sha256` and unknown keys
+- [x] Re-running `validate` on `validated` exits 0 with no write
+- [x] `validate --check` exits 0 on a published fixture and 4 after a content field is tampered with, in every state, writing nothing (`test_verify_published_detects_tampering`)
+- [x] `validate` on `published`/`retired` exits 5 and leaves the file byte-identical (`test_validate_on_published_or_retired_exits_5_without_writes`)
+- [x] A legacy manifest without `manifest_sha256` gets it backfilled on its first `validate` (`test_validate_backfills_manifest_sha256_on_legacy_manifest`)
+- [x] Gate check passes: `python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`
+- [x] Test count: ≥ 10 new tests pass (no silent deletions)
 
 **Tests**: unit (`tests.test_snapshot_registry`)
 **Gate**: quick (`python3 -m unittest tests.test_snapshot_registry tests.test_snapshot_manifest tests.test_allocation_data`)

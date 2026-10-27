@@ -651,5 +651,254 @@ class LifecycleHelperTests(unittest.TestCase):
             self.assertEqual(updated["operator_note"], "kept verbatim")
 
 
+def run_validate(root: Path, manifest_id: str = "snap-2020-01", *flags) -> tuple:
+    return run_cli(
+        "validate", "--registry", str(root), "--manifest-id", manifest_id, *flags
+    )
+
+
+def load_raw(path: Path) -> dict:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def dump_raw(path: Path, raw: dict) -> None:
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+
+def rehash_manifest(raw: dict) -> dict:
+    raw["manifest_sha256"] = manifest_canonical_sha256(raw)
+    return raw
+
+
+def set_manifest_state(path: Path, state: str) -> None:
+    raw = load_raw(path)
+    raw["state"] = state
+    raw["state_changed_at"] = "2020-01-05T00:00:00+00:00"
+    dump_raw(path, raw)
+
+
+class ValidateCommandTests(unittest.TestCase):
+    def test_validate_rejects_divergent_source_hash(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            original = target.read_bytes()
+            (root / "stocks.csv").write_text("TICKER\nCHANGED\n", encoding="utf-8")
+
+            code, _, err = run_validate(root)
+            self.assertEqual(code, 4)
+            self.assertEqual(target.read_bytes(), original)
+
+            code, _, err = run_validate(root, "snap-2020-01", "--check")
+            self.assertEqual(code, 4)
+            self.assertEqual(target.read_bytes(), original)
+
+    def test_validate_rejects_cutoff_date_divergence(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            raw = load_raw(target)
+            raw["cutoff_date"] = "2020-01-02"
+            rehash_manifest(raw)
+            dump_raw(target, raw)
+
+            code, _, err = run_validate(root)
+
+            self.assertEqual(code, 4)
+            self.assertEqual(load_raw(target)["cutoff_date"], "2020-01-02")
+
+    def test_validate_requires_caio_fiis_without_ifix_fallback(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            snapshot_dir = root / "data" / "snapshot-2020"
+            (snapshot_dir / "ifix.csv").write_text(
+                "date,value\n2020-01-01,100\n", encoding="utf-8"
+            )
+            raw = load_raw(target)
+            raw["supported_classes"] = [
+                name for name in raw["supported_classes"] if name != "fiis"
+            ]
+            rehash_manifest(raw)
+            dump_raw(target, raw)
+
+            code, _, err = run_validate(root)
+            self.assertEqual(code, 4)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            snapshot_dir = root / "data" / "snapshot-2020"
+            (snapshot_dir / "caio_fiis.csv").unlink()
+            (snapshot_dir / "ifix.csv").write_text(
+                "date,value\n2020-01-01,100\n", encoding="utf-8"
+            )
+
+            code, _, err = run_validate(root)
+
+            self.assertEqual(code, 4)
+
+    def test_validate_missing_source_file_exits_4(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            (root / "data" / "snapshot-2020" / "caio_fiis.csv").unlink()
+            original = target.read_bytes()
+
+            for flags in ((), ("--check",)):
+                with self.subTest(flags=flags):
+                    code, _, err = run_validate(root, "snap-2020-01", *flags)
+                    self.assertEqual(code, 4)
+                    self.assertEqual(target.read_bytes(), original)
+
+    def test_check_runs_full_validation_not_just_hashes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            raw = load_raw(target)
+            raw["supported_classes"] = [
+                name for name in raw["supported_classes"] if name != "fiis"
+            ]
+            rehash_manifest(raw)
+            dump_raw(target, raw)
+
+            self.assertEqual(run_validate(root)[0], 4)
+            self.assertEqual(run_validate(root, "snap-2020-01", "--check")[0], 4)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            raw = load_raw(target)
+            raw["cutoff_date"] = "2020-01-02"
+            rehash_manifest(raw)
+            dump_raw(target, raw)
+
+            self.assertEqual(run_validate(root)[0], 4)
+            self.assertEqual(run_validate(root, "snap-2020-01", "--check")[0], 4)
+
+    def test_validate_success_sets_validated_and_preserves_content(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            raw = load_raw(target)
+            raw["operator_note"] = "kept verbatim"
+            dump_raw(target, raw)
+            declared_hash = raw["manifest_sha256"]
+
+            code, _, err = run_validate(root)
+
+            self.assertEqual(code, 0, err)
+            after = load_raw(target)
+            self.assertEqual(after["state"], "validated")
+            self.assertEqual(after["manifest_sha256"], declared_hash)
+            self.assertEqual(after["operator_note"], "kept verbatim")
+
+    def test_validate_on_validated_is_idempotent_with_no_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            self.assertEqual(run_validate(root)[0], 0)
+            target = root / "snap-2020-01.json"
+            frozen = target.read_bytes()
+
+            code, _, err = run_validate(root)
+
+            self.assertEqual(code, 0, err)
+            self.assertEqual(target.read_bytes(), frozen)
+
+    def test_verify_published_detects_tampering(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            for state in ("draft", "validated", "published", "retired"):
+                with self.subTest(state=state):
+                    root = base / state
+                    root.mkdir()
+                    code, _, err = run_build(root)
+                    self.assertEqual(code, 0, err)
+                    target = root / "snap-2020-01.json"
+                    set_manifest_state(target, state)
+
+                    code, _, err = run_validate(root, "snap-2020-01", "--check")
+                    self.assertEqual(code, 0, err)
+
+                    raw = load_raw(target)
+                    raw["created_at"] = "2020-02-01T00:00:00+00:00"
+                    dump_raw(target, raw)
+                    tampered = target.read_bytes()
+
+                    code, _, err = run_validate(root, "snap-2020-01", "--check")
+                    self.assertEqual(code, 4)
+                    self.assertEqual(target.read_bytes(), tampered)
+
+    def test_validate_on_published_or_retired_exits_5_without_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            for state in ("published", "retired"):
+                with self.subTest(state=state):
+                    root = base / state
+                    root.mkdir()
+                    code, _, err = run_build(root)
+                    self.assertEqual(code, 0, err)
+                    target = root / "snap-2020-01.json"
+                    set_manifest_state(target, state)
+                    raw = load_raw(target)
+                    raw["created_at"] = "2020-02-01T00:00:00+00:00"
+                    dump_raw(target, raw)
+                    frozen = target.read_bytes()
+
+                    code, _, err = run_validate(root)
+
+                    self.assertEqual(code, 5)
+                    self.assertEqual(target.read_bytes(), frozen)
+
+    def test_validate_backfills_manifest_sha256_on_legacy_manifest(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            raw = load_raw(target)
+            for key in ("state", "state_changed_at", "manifest_sha256"):
+                raw.pop(key, None)
+            raw["operator_note"] = "kept verbatim"
+            dump_raw(target, raw)
+
+            code, _, err = run_validate(root)
+
+            self.assertEqual(code, 0, err)
+            after = load_raw(target)
+            self.assertEqual(after["state"], "validated")
+            self.assertEqual(after["manifest_sha256"], manifest_canonical_sha256(after))
+            self.assertEqual(after["operator_note"], "kept verbatim")
+
+    def test_manifest_id_mismatch_with_loaded_manifest_exits_2(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            (root / "snap-2020-01.json").rename(root / "renamed.json")
+
+            code, _, err = run_validate(root, "renamed")
+
+            self.assertEqual(code, 2)
+            self.assertIn("differs from loaded manifest_id", err)
+
+
 if __name__ == "__main__":
     unittest.main()

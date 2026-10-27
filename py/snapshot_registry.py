@@ -39,6 +39,7 @@ from snapshot_manifest import (
     file_sha256,
     manifest_canonical_sha256,
     sha256_path,
+    validate_manifest,
 )
 
 EXIT_OK = 0
@@ -301,6 +302,67 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _resolve_manifest(args: argparse.Namespace) -> tuple:
+    """Shared CLI preamble for manifest-consuming commands.
+
+    Returns ``(exit_code, manifest_path, manifest)``.  Missing registry dir or
+    manifest file is exit 3; an unloadable manifest (including an unknown
+    ``state``) is exit 4; a ``--manifest-id`` that differs from the loaded
+    ``manifest_id`` is exit 2.
+    """
+
+    registry_root = Path(args.registry)
+    if not registry_root.is_dir():
+        print(f"registry directory not found: {registry_root}", file=sys.stderr)
+        return EXIT_TARGET_MISSING, None, None
+    manifest_path = registry_root / f"{args.manifest_id}.json"
+    if not manifest_path.is_file():
+        print(f"manifest file not found: {manifest_path}", file=sys.stderr)
+        return EXIT_TARGET_MISSING, None, None
+    try:
+        raw = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest = SnapshotManifest.from_dict(
+            raw, base_dir=registry_root, manifest_path=manifest_path
+        )
+    except (OSError, ValueError, SnapshotManifestError) as exc:
+        print(f"manifest cannot be loaded: {exc}", file=sys.stderr)
+        return EXIT_CONTRACT_DIVERGENCE, None, None
+    if manifest.manifest_id != args.manifest_id:
+        print(
+            f"--manifest-id {args.manifest_id!r} differs from loaded "
+            f"manifest_id {manifest.manifest_id!r}",
+            file=sys.stderr,
+        )
+        return EXIT_USAGE, None, None
+    return EXIT_OK, manifest_path, manifest
+
+
+def _cmd_validate(args: argparse.Namespace) -> int:
+    code, manifest_path, manifest = _resolve_manifest(args)
+    if code != EXIT_OK:
+        return code
+    if not args.check and manifest.state in ("published", "retired"):
+        print(f"manifest is {manifest.state}: frozen, refusing to validate", file=sys.stderr)
+        return EXIT_INVALID_TRANSITION
+    try:
+        validate_manifest(manifest)
+    except (SnapshotManifestError, OSError) as exc:
+        print(f"validation failed: {exc}", file=sys.stderr)
+        return EXIT_CONTRACT_DIVERGENCE
+    if args.check:
+        print("check: manifest contract holds")
+        return EXIT_OK
+    if manifest.state == "validated":
+        print("manifest already validated; nothing to write")
+        return EXIT_OK
+    rewrite_envelope(
+        manifest_path,
+        lambda payload: transition_state(payload, "validate", at=_now_iso()),
+    )
+    print(f"validated {manifest_path}")
+    return EXIT_OK
+
+
 def _cmd_build(args: argparse.Namespace) -> int:
     registry_root = Path(args.registry)
     if not registry_root.is_dir():
@@ -385,6 +447,18 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--stock-universe", required=True, help="stock selector CSV")
     build.add_argument("--fii-universe", required=True, help="FII selector CSV")
     build.set_defaults(handler=_cmd_build)
+
+    validate = subparsers.add_parser(
+        "validate", help="verify a manifest and upgrade draft to validated"
+    )
+    validate.add_argument("--registry", required=True, help="registry root directory")
+    validate.add_argument("--manifest-id", required=True, help="manifest identifier")
+    validate.add_argument(
+        "--check",
+        action="store_true",
+        help="read-only audit in any lifecycle state (no writes)",
+    )
+    validate.set_defaults(handler=_cmd_validate)
 
     return parser
 
