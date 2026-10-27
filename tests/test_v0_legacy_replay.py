@@ -107,6 +107,20 @@ def copy_bundle(destination):
     return Path(destination)
 
 
+def rewrite_reference(bundle, rewrite):
+    """Rewrite the recorded caio metrics CSV and re-hash the copy so the manifest still verifies."""
+    metrics = bundle / "reference" / "metrics_stability_caio.csv"
+    rewrite(metrics)
+    rebuilt = subprocess.run(
+        [sys.executable, str(bundle / "tools" / "build_manifest.py"), "--bundle", str(bundle)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    if rebuilt.returncode != 0:
+        raise AssertionError(f"build_manifest.py failed: {rebuilt.stderr}")
+
+
 def blocked_dependency_env(directory):
     blocker = Path(directory) / "block"
     blocker.mkdir()
@@ -275,6 +289,56 @@ class ComparisonTests(unittest.TestCase):
         first = report["runs"][0]
         self.assertAlmostEqual(first["reported_fitness"], float(reference_rows()[0]["fitness"]), places=12)
         self.assertEqual(first["recomputed_fitness"], -999.5)
+
+
+class ReferenceReadTests(unittest.TestCase):
+    """The recorded CSV is untrusted input: a bad one is `dataset_unavailable`, never a traceback.
+
+    The replay exits 1 only for `MISMATCH`, so an exception escaping the reference reader would
+    report a disagreement that was never measured. Each case re-hashes the copy first, otherwise
+    the manifest check stops the replay before the reader is reached.
+    """
+
+    def run_with_rewritten_reference(self, rewrite):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            bundle = copy_bundle(directory / "bundle")
+            rewrite_reference(bundle, rewrite)
+            driver = runs_driver(directory)
+            return run_replay(bundle, directory, driver=driver)
+
+    def assert_dataset_unavailable(self, completed, report, needle):
+        self.assertEqual(completed.returncode, 2, completed.stderr)
+        self.assertIsNotNone(report, completed.stderr)
+        self.assertEqual(report["status"], "UNVERIFIABLE")
+        self.assertEqual(report["cause"], "dataset_unavailable")
+        self.assertIn(needle, report["detail"])
+        self.assertNotIn("Traceback", completed.stderr)
+        self.assertTrue(completed.stderr.strip())
+
+    def test_reference_without_run_id_column_is_dataset_unavailable(self):
+        def drop_run_id(path):
+            with open(path, newline="", encoding="utf-8") as handle:
+                rows = list(csv.reader(handle))
+            column = rows[0].index("run_id")
+            with open(path, "w", newline="", encoding="utf-8") as handle:
+                writer = csv.writer(handle)
+                for row in rows:
+                    writer.writerow([cell for index, cell in enumerate(row) if index != column])
+
+        completed, report, _ = self.run_with_rewritten_reference(drop_run_id)
+        self.assert_dataset_unavailable(completed, report, "run_id")
+
+    def test_reference_with_a_non_numeric_run_id_is_dataset_unavailable(self):
+        def spoil_run_id(path):
+            with open(path, newline="", encoding="utf-8") as handle:
+                rows = list(csv.reader(handle))
+            rows[1][rows[0].index("run_id")] = "first"
+            with open(path, "w", newline="", encoding="utf-8") as handle:
+                csv.writer(handle).writerows(rows)
+
+        completed, report, _ = self.run_with_rewritten_reference(spoil_run_id)
+        self.assert_dataset_unavailable(completed, report, "not an integer")
 
 
 class ExecutorFailureTests(unittest.TestCase):

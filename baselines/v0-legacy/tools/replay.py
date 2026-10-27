@@ -7,8 +7,8 @@ Order of operations, and why:
 2. load `protocol.json` - every parameter and every expected value comes from it, from the
    archived code or from `reference/`; a value it needs and does not carry is
    `protocol_mismatch`
-3. resolve the metrics file the protocol names; a dataset the manifest does not cover is
-   `dataset_unavailable`
+3. resolve the metrics file the protocol names; a dataset the manifest does not cover, or a
+   reference CSV that cannot be read as `run_id` -> row, is `dataset_unavailable`
 4. probe the third-party modules the archived `code/` imports in a child process; anything
    missing is `dependency_unavailable`, listed by name
 5. build a scratch root from `code/`, `data/` and `protocol.json`, spawn the driver there, and
@@ -57,6 +57,10 @@ COMPARISON_KINDS = ("int", "float", "tickers", "str")
 
 class ProtocolError(Exception):
     """A value the replay needs is absent from protocol.json, or is of an unknown shape."""
+
+
+class ReferenceError(Exception):
+    """The recorded metrics CSV cannot supply a row or a cell the comparison needs."""
 
 
 def _getter(protocol):
@@ -182,9 +186,46 @@ def _equal(recorded, recomputed, kind, rtol, atol):
 
 
 def read_reference(metrics_path):
-    """run_id -> row, from the recorded metrics CSV."""
-    with open(metrics_path, newline="", encoding="utf-8") as handle:
-        return {int(row["run_id"]): row for row in csv.DictReader(handle)}
+    """run_id -> row, from the recorded metrics CSV, or raise ReferenceError.
+
+    Every way the recorded CSV can fail to be `run_id` -> row lands here: an unreadable or
+    malformed file, a missing `run_id` column, and a `run_id` that is not an integer. The caller
+    turns this into `UNVERIFIABLE` / `dataset_unavailable`; a traceback here would exit 1, which
+    the CLI reserves for `MISMATCH`, and could leave a half-written report behind.
+    """
+    rows = {}
+    try:
+        with open(metrics_path, newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle, strict=True)
+            for number, row in enumerate(reader, start=2):
+                if "run_id" not in row:
+                    raise ReferenceError(f"{metrics_path} has no run_id column")
+                try:
+                    run_id = int(row["run_id"])
+                except (TypeError, ValueError):
+                    raise ReferenceError(
+                        f"{metrics_path} line {number} has run_id {row['run_id']!r}, not an integer"
+                    ) from None
+                rows[run_id] = row
+    except (OSError, csv.Error, UnicodeDecodeError) as exc:
+        raise ReferenceError(f"cannot read {metrics_path}: {exc}") from exc
+    return rows
+
+
+def _unusable(report, cause, detail):
+    """Record a value the replay cannot read and return its exit code."""
+    _unverifiable(report, cause, detail)
+    return EXIT_UNVERIFIABLE
+
+
+def _recorded_cell(row, name, kind, metrics_rel, run_id):
+    """One recorded cell, or ReferenceError when the CSV cannot supply a usable value."""
+    try:
+        return _coerce(row[name], kind)
+    except (KeyError, TypeError, ValueError, SyntaxError) as exc:
+        raise ReferenceError(
+            f"{metrics_rel} has no usable {name} for run {run_id}: {exc}"
+        ) from exc
 
 
 def _stderr_tail(text):
@@ -330,7 +371,10 @@ def execute(bundle, driver, report, budget_seconds):
                 return EXIT_UNVERIFIABLE
             actual[run["run_id"]] = run
 
-        expected = read_reference(metrics_path)
+        try:
+            expected = read_reference(metrics_path)
+        except ReferenceError as exc:
+            return _unusable(report, "dataset_unavailable", str(exc))
         first, count = values["run_id_start"], values["n_runs"]
         for run_id in range(first, first + count):
             if run_id not in expected:
@@ -361,8 +405,18 @@ def execute(bundle, driver, report, budget_seconds):
                         f"runs.json run {run_id} has no {name}",
                     )
                     return EXIT_UNVERIFIABLE
-                recorded = _coerce(recorded_row[name], kind)
-                recomputed = _coerce(actual_row[name], kind)
+                try:
+                    recorded = _recorded_cell(recorded_row, name, kind, metrics_rel, run_id)
+                except ReferenceError as exc:
+                    return _unusable(report, "dataset_unavailable", str(exc))
+                try:
+                    recomputed = _coerce(actual_row[name], kind)
+                except (TypeError, ValueError, SyntaxError) as exc:
+                    return _unusable(
+                        report,
+                        "runtime_error",
+                        f"runs.json run {run_id} has an unusable {name}: {exc}",
+                    )
                 if not _equal(recorded, recomputed, kind, values["rtol"], values["atol"]):
                     report["fields"].append(
                         {
@@ -379,12 +433,24 @@ def execute(bundle, driver, report, budget_seconds):
                     f"runs.json run {run_id} has no recomputed_fitness",
                 )
                 return EXIT_UNVERIFIABLE
+            try:
+                reported_fitness = _recorded_cell(recorded_row, "fitness", "float", metrics_rel, run_id)
+            except ReferenceError as exc:
+                return _unusable(report, "dataset_unavailable", str(exc))
+            try:
+                recomputed_fitness = _coerce(actual_row["recomputed_fitness"], "float")
+            except (TypeError, ValueError) as exc:
+                return _unusable(
+                    report,
+                    "runtime_error",
+                    f"runs.json run {run_id} has an unusable recomputed_fitness: {exc}",
+                )
             report["runs"].append(
                 {
                     "run_id": run_id,
                     "seed": actual_row.get("seed"),
-                    "reported_fitness": _coerce(recorded_row["fitness"], "float"),
-                    "recomputed_fitness": _coerce(actual_row["recomputed_fitness"], "float"),
+                    "reported_fitness": reported_fitness,
+                    "recomputed_fitness": recomputed_fitness,
                 }
             )
     finally:
@@ -452,9 +518,9 @@ def main(argv=None):
     )
     args = parser.parse_args(argv)
 
+    report_path = Path(args.report)
     report, exit_status = replay(args.bundle, args.driver, args.budget_seconds)
     text = json.dumps(report, indent=2, sort_keys=True) + "\n"
-    report_path = Path(args.report)
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(text, encoding="utf-8")
 
