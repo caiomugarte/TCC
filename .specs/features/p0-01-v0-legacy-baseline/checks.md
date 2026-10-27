@@ -1,5 +1,8 @@
 # v0-legacy baseline bundle - checks
 
+Mutations: 5 - the `standard` floor is one fault per assertion surface; the author's own ten-fault spec is `.specs/features/p0-01-v0-legacy-baseline/mutations.json`, all ten killed at `0857a52`
+Build: none - this repository configures no build, no type check and no lint; the proofs are stdlib `unittest` runs
+
 Profile: standard
 Plan: `.specs/features/p0-01-v0-legacy-baseline/plan.md`
 
