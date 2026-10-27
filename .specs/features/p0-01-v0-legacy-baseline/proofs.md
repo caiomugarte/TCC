@@ -1,6 +1,6 @@
 # p0-01-v0-legacy-baseline proofs
 
-**HEAD**: 0e6a961
+**HEAD**: 87bbf9d
 **Tree**: clean
 **Result**: 52 pass, 0 fail; mutations 18 killed, 0 not
 
