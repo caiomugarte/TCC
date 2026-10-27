@@ -313,6 +313,56 @@ class ProtocolMatchesCodeTests(unittest.TestCase):
         self.assertEqual(from_bundle, [])
 
 
+class RecordedScoreTests(unittest.TestCase):
+    """The plan's claim about the recorded `SCORE` column, recomputed from the archived bytes.
+
+    `profiles.py` defines `SCORE` as the weighted sum of the five recorded group averages, so the
+    recorded score is checked against the declared weights directly - no fitted vector, no
+    least-squares estimate - over the rows whose five averages and score are all present. The
+    control profiles reproduce their recorded score inside the replays' `1e-9` tolerance; caio
+    reproduces none of its seven rows and misses by 0.42.
+    """
+
+    GROUPS = ("liquidez", "rent", "value", "growth", "div")
+    COLUMNS = ("AVG_LIQUIDEZ", "AVG_RENT", "AVG_VALUE", "AVG_GROWTH", "AVG_DIV")
+    PROFILES = ("arrojado", "moderado", "conservador", "caio")
+
+    def deviations(self, profile, weights):
+        path = BUNDLE / "reference" / f"carteira_{profile}_consensus.json"
+        rows = json.loads(path.read_text(encoding="utf-8"))
+        usable = [
+            row
+            for row in rows
+            if row["SCORE"] is not None and all(row[column] is not None for column in self.COLUMNS)
+        ]
+        return [
+            abs(sum(weight * row[column] for weight, column in zip(weights, self.COLUMNS)) - row["SCORE"])
+            for row in usable
+        ]
+
+    def test_declared_weights_reproduce_the_controls_and_not_caio(self):
+        declared = literal(parse("profiles"), "PROFILE_WEIGHTS")
+        measured = {
+            profile: self.deviations(
+                profile, [declared[profile][group] for group in self.GROUPS]
+            )
+            for profile in self.PROFILES
+        }
+
+        self.assertEqual({profile: len(found) for profile, found in measured.items()},
+                         {"arrojado": 15, "moderado": 10, "conservador": 10, "caio": 7})
+        self.assertEqual(
+            {
+                profile: sum(deviation <= 1e-9 for deviation in found)
+                for profile, found in measured.items()
+            },
+            {"arrojado": 15, "moderado": 10, "conservador": 10, "caio": 0},
+        )
+        worst = max(measured["caio"])
+        self.assertGreater(worst, 0.41)
+        self.assertLess(worst, 0.43)
+
+
 class GenerationLoopArmTests(unittest.TestCase):
     """The `break` arm, proven on a scratch copy of `code/ga.py` (AC 8, AC 11).
 
