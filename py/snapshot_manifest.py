@@ -21,6 +21,10 @@ from allocation_config import ASSET_CLASSES
 MANIFEST_SCHEMA_VERSION = "1"
 MANIFEST_FILE_GLOB = "*.json"
 
+# Lifecycle states carried by the optional manifest envelope.  A manifest
+# without a ``state`` field is a legacy artifact and stays loadable.
+MANIFEST_STATES = ("draft", "validated", "published", "retired")
+
 # These names are the local snapshot contract.  A manifest may override them
 # with ``allocation_source.metadata.files`` or one source per class.
 ALLOCATION_FILES = {
@@ -175,6 +179,10 @@ class SnapshotManifest:
     common_dates: Tuple[date, ...]
     supported_classes: Tuple[str, ...]
     sources: Mapping[str, SnapshotSource]
+    state: Optional[str] = None
+    state_changed_at: Optional[str] = None
+    retire_reason: Optional[str] = None
+    manifest_sha256: Optional[str] = None
     manifest_path: Optional[Path] = field(default=None, compare=False, repr=False)
 
     @classmethod
@@ -262,6 +270,29 @@ class SnapshotManifest:
                         key,
                     )
 
+        raw_state = value.get("state")
+        state: Optional[str] = None
+        if raw_state is not None:
+            state = str(raw_state).strip()
+            if state not in MANIFEST_STATES:
+                raise SnapshotManifestError(f"unknown manifest state: {state}")
+
+        state_changed_at: Optional[str] = None
+        if value.get("state_changed_at") is not None:
+            state_changed_at = _as_iso_datetime(
+                value.get("state_changed_at"), "state_changed_at"
+            )
+
+        retire_reason: Optional[str] = None
+        if value.get("retire_reason") is not None:
+            retire_reason = str(value.get("retire_reason")).strip()
+
+        manifest_sha256: Optional[str] = None
+        if value.get("manifest_sha256") is not None:
+            manifest_sha256 = _normalise_hash(
+                value.get("manifest_sha256"), "manifest_sha256"
+            )
+
         return cls(
             manifest_id=manifest_id,
             manifest_version=manifest_version,
@@ -270,6 +301,10 @@ class SnapshotManifest:
             common_dates=common_dates,
             supported_classes=supported_classes,
             sources=sources,
+            state=state,
+            state_changed_at=state_changed_at,
+            retire_reason=retire_reason,
+            manifest_sha256=manifest_sha256,
             manifest_path=manifest_path,
         )
 
@@ -347,6 +382,16 @@ class SnapshotManifest:
         for key in ("allocation", "stock", "fii"):
             if key in sources:
                 result[f"{key}_source"] = sources[key]
+        # Optional lifecycle envelope: absent fields are omitted entirely so
+        # legacy payloads round-trip byte-identically.
+        if self.state is not None:
+            result["state"] = self.state
+        if self.state_changed_at is not None:
+            result["state_changed_at"] = self.state_changed_at
+        if self.retire_reason is not None:
+            result["retire_reason"] = self.retire_reason
+        if self.manifest_sha256 is not None:
+            result["manifest_sha256"] = self.manifest_sha256
         return result
 
     to_dict = as_dict
@@ -358,6 +403,37 @@ def _coerce_manifest(manifest: SnapshotManifest | Mapping[str, object] | Path) -
     if isinstance(manifest, (str, Path)):
         return SnapshotManifest.load(Path(manifest))
     return SnapshotManifest.from_dict(manifest)
+
+
+# Keys outside the audited content projection: self-reference and the
+# lifecycle envelope are excluded from manifest_sha256 by definition.
+_HASH_EXCLUDED_KEYS = ("manifest_sha256", "state", "state_changed_at", "retire_reason")
+
+
+def manifest_canonical_sha256(
+    payload_or_manifest: SnapshotManifest | Mapping[str, object],
+) -> str:
+    """Return the canonical content hash for a manifest payload.
+
+    Single canonicalization point (AD-002): the input is normalized through
+    ``SnapshotManifest.from_dict(raw).as_dict()`` so the hash recomputes
+    identically for file loads, dataclass instances, and persisted provenance
+    dictionaries.  Unknown payload keys are outside the projection and outside
+    the hash.
+    """
+
+    if isinstance(payload_or_manifest, SnapshotManifest):
+        raw = payload_or_manifest.as_dict()
+    else:
+        raw = payload_or_manifest
+    normalized = SnapshotManifest.from_dict(raw).as_dict()
+    payload = {
+        key: value for key, value in normalized.items() if key not in _HASH_EXCLUDED_KEYS
+    }
+    canonical = json.dumps(
+        payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def _validate_dates(manifest: SnapshotManifest) -> None:
@@ -407,6 +483,10 @@ def validate_manifest(
         raise SnapshotManifestError(
             f"unsupported manifest version: {checked.manifest_version}"
         )
+    if checked.manifest_sha256 is not None:
+        recomputed = manifest_canonical_sha256(checked)
+        if recomputed != checked.manifest_sha256:
+            raise SnapshotManifestError("manifest_sha256 does not match the manifest content")
     if not set(required_classes).issubset(set(checked.supported_classes)):
         missing = sorted(set(required_classes) - set(checked.supported_classes))
         raise SnapshotManifestError(f"manifest does not support classes: {missing}")
@@ -449,6 +529,43 @@ def validate_manifest(
     return checked
 
 
+def _state_selectable(state: Optional[str], include_validated: bool) -> bool:
+    """Selection semantics: legacy (no state) and published are selectable.
+
+    ``draft`` and ``retired`` are never selected; ``validated`` is selected
+    only with an explicit ``include_validated`` (AD-003).
+    """
+
+    if state is None:
+        return True
+    if state == "validated":
+        return include_validated
+    return state == "published"
+
+
+def _non_selectable_state_hint(
+    non_selectable: Sequence[SnapshotManifest],
+) -> str:
+    """Actionable, state-aware suffix for a fail-closed selection miss.
+
+    Fail-closed selection (only ``published``/legacy are consumable) is
+    deliberate; the error must still tell the operator WHY nothing was
+    selected and how to fix it (publish).
+    """
+
+    if not non_selectable:
+        return ""
+    counts: dict = {}
+    for manifest in non_selectable:
+        key = manifest.state or "legacy"
+        counts[key] = counts.get(key, 0) + 1
+    summary = ", ".join(f"{counts[key]} {key}" for key in sorted(counts))
+    return (
+        f"; registry has {summary} manifest(s) in non-selectable state(s)"
+        "; publish them to make them selectable"
+    )
+
+
 class SnapshotRegistry:
     """Filesystem registry selecting the latest compatible market cutoff."""
 
@@ -470,19 +587,34 @@ class SnapshotRegistry:
         *,
         required_classes: Sequence[str] = ASSET_CLASSES,
         max_cutoff_date: Optional[date] = None,
+        include_validated: bool = False,
     ) -> SnapshotManifest:
-        candidates = [
+        compatible = [
             manifest
             for manifest in self.manifests()
             if set(required_classes).issubset(set(manifest.supported_classes))
             and (max_cutoff_date is None or manifest.cutoff_date <= max_cutoff_date)
+        ]
+        candidates = [
+            manifest
+            for manifest in compatible
+            if _state_selectable(manifest.state, include_validated)
         ]
         candidates.sort(
             key=lambda item: (item.cutoff_date, item.created_at, item.manifest_id),
             reverse=True,
         )
         if not candidates:
-            raise SnapshotManifestError("no compatible snapshot manifest found")
+            raise SnapshotManifestError(
+                "no compatible snapshot manifest found"
+                + _non_selectable_state_hint(
+                    [
+                        manifest
+                        for manifest in compatible
+                        if not _state_selectable(manifest.state, include_validated)
+                    ]
+                )
+            )
         # Do not silently fall back when the newest market snapshot changed.
         return validate_manifest(candidates[0], required_classes=required_classes)
 
@@ -495,12 +627,14 @@ def latest_compatible_manifest(
     *,
     required_classes: Sequence[str] = ASSET_CLASSES,
     max_cutoff_date: Optional[date] = None,
+    include_validated: bool = False,
 ) -> SnapshotManifest:
     """Select by declared market cutoff, never by ``date.today()``."""
 
     return SnapshotRegistry(registry_dir).latest_compatible(
         required_classes=required_classes,
         max_cutoff_date=max_cutoff_date,
+        include_validated=include_validated,
     )
 
 
