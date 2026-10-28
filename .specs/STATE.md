@@ -122,6 +122,14 @@
 - **Date**: 2026-10-27 (new at spec review round 2)
 - **Status**: active
 
+### AD-016
+- **Decision**: VC-25's archive comparison for the three control profiles is bounded by float reproducibility, not strict bit-identity: a control row SHALL be either bit-identical to the archive or within **4 ULP** (float64, compared on packed bits), with every non-identical row recorded (archived value, corrected value, ULP distance) in `proofs/control_ulp_drift.json`, a table separate from the caio-only `reference_divergences.json`; a control row beyond 4 ULP fails the gate outright. The comparison that isolates the hunk stays strictly bit-identical: legacy vs corrected in the same declared environment, measured 0 of 120 rows differing. The methodological note states the measured numbers (78/90 bit-identical, 12 rows at 1-2 ULP, max relative 4.3e-16, 120/120 exact in-environment).
+- **Reason**: The strict bit-identity claim was generalized from spot-checks and does not hold over 90 rows: generation found 12 of 90 control rows off by 1-2 ULP while the frozen writer and the corrected driver agree bit-for-bit on all 120 rows in this environment. The archive's generating environment is unrecorded - `baselines/v0-legacy/protocol.json` declares `dependencies: UNVERIFIABLE` - so bit-identity to it is not a property the feature can establish, and requiring it would block on an unprovable reconstruction rather than on the defect. A ULP bound keeps the anti-tampering teeth (a rewritten frozen copy or a semantic change moves fitness by far more than 4 ULP) without asserting reproducibility the archive cannot support.
+- **Trade-off**: The gate no longer proves the archive's exact bytes; it proves agreement to float64 precision plus exact in-environment equality. A future environment change could widen the drift, so the 4 ULP bound is a measured margin (max observed 2), not a guarantee.
+- **Scope**: VC-25, VC-17/VC-18 note wording, `proofs/control_ulp_drift.json`, `tests/test_v0_corrected_bundle.py`, T9 in `tasks.md`.
+- **Date**: 2026-10-28 (blocking finding during EXECUTE batch B; human ruling: amend to a bounded ULP tolerance)
+- **Status**: active
+
 ## Handoff
 
 - **Feature**: p0-02-v0-corrected (Issue #7 / P0-02) - `.specs/features/p0-02-v0-corrected/`

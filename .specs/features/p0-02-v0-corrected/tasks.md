@@ -408,11 +408,11 @@ T8 -> T19
 
 ### T9: Record the VC-25 early verdict and the divergence table
 
-**What**: Compare the committed reference to the archive per (run_id, seed): the three control profiles must be bit-identical (`struct.pack('>d')`) or the run reports a **blocking finding for a human** (human decision 2 - never a table entry); caio divergences are recorded with (archived, corrected) values in `proofs/reference_divergences.json` (caio rows only).
-**Where**: `.specs/features/p0-02-v0-corrected/proofs/reference_divergences.json`
+**What**: Compare the committed reference to the archive per (run_id, seed): the three control profiles must be bit-identical (`struct.pack('>d')`) **or within 4 ULP** (AD-016, human ruling after the batch-B blocking finding) with every non-identical row recorded in `proofs/control_ulp_drift.json`; a control row beyond 4 ULP reports a **blocking finding for a human** (never a table entry); caio divergences are recorded with (archived, corrected) values in `proofs/reference_divergences.json` (caio rows only).
+**Where**: `.specs/features/p0-02-v0-corrected/proofs/reference_divergences.json` and `.specs/features/p0-02-v0-corrected/proofs/control_ulp_drift.json`
 **Depends on**: T8
-**Files touched**: `.specs/features/p0-02-v0-corrected/proofs/reference_divergences.json`, `tests/test_v0_corrected_bundle.py`
-**Reuses**: `_verdict.float_bitwise_equal`; the generated reference; the archive CSVs read-only
+**Files touched**: `.specs/features/p0-02-v0-corrected/proofs/reference_divergences.json`, `.specs/features/p0-02-v0-corrected/proofs/control_ulp_drift.json`, `tests/test_v0_corrected_bundle.py`
+**Reuses**: `_verdict.float_bitwise_equal` + a ULP-distance helper; the generated reference; the archive CSVs read-only
 **Closes**: VC-25 (AC3), VC-29 (forged-reference negative, D-f)
 
 **Tools**:
@@ -422,17 +422,18 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Control-profile `fitness` is bit-identical to the archive per (run_id, seed) for all 70 control rows; on ANY divergence the batch stops with a blocking finding for a human
-- [ ] `reference_divergences.json` holds exactly the divergent caio rows with (archived, corrected) values; any unrecorded divergence or stale entry fails the gate
-- [ ] Tests (5) green, including the two escalation-branch negatives (control divergence fails outright; forged reference row fails the tie)
-- [ ] Quick gate green (52 P0-01 + 27 new)
+- [ ] Control-profile `fitness` is bit-identical to the archive per (run_id, seed) for 78 of the **90** control rows (3 control profiles x 30 runs) and within 4 ULP for the rest, each of those recorded with (archived, corrected, ULP distance) in `control_ulp_drift.json`; a control row beyond 4 ULP stops the batch with a blocking finding for a human
+- [ ] `reference_divergences.json` holds exactly the divergent caio rows with (archived, corrected) values and no control row; any unrecorded divergence or stale entry fails the gate
+- [ ] Tests (6) green, including the two escalation-branch negatives (control row beyond 4 ULP fails outright; forged reference row fails the tie) and the ULP-drift table completeness check
+- [ ] Quick gate green (52 P0-01 + 34 new)
 
 **Tests**: unit (derived from VC-25/VC-29 criteria, `tests/test_v0_corrected_bundle.py`):
 
-- `test_control_profile_fitness_is_bit_identical_to_the_archive_per_run_id_seed`
+- `test_control_profile_fitness_is_bit_identical_or_within_4_ulp_of_the_archive_per_run_id_seed`
+- `test_control_ulp_drift_table_records_exactly_the_non_identical_control_rows`
 - `test_divergence_table_holds_caio_rows_only_and_exactly_the_divergent_ones`
 - `test_stale_divergence_entry_fails_the_gate`
-- `test_control_profile_divergence_fails_outright_instead_of_becoming_an_entry`
+- `test_control_profile_divergence_beyond_4_ulp_fails_outright_instead_of_becoming_an_entry`
 - `test_forged_reference_row_with_legacy_chromosomes_fails_the_row_tie`
 
 **Gate**: `python3 -m unittest discover -s tests -p 'test_v0_*.py'`
