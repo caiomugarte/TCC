@@ -27,6 +27,7 @@ import importlib.util
 import io
 import json
 import os
+import struct
 import subprocess
 import sys
 import tempfile
@@ -674,6 +675,400 @@ class GenerationEvidenceTests(unittest.TestCase):
         report = self.vm.verify_bundle(CORRECTED)
         self.assertEqual(report["status"], "VERIFIED")
         self.assertEqual(report["findings"], [])
+
+
+ARCHIVE_REFERENCE = LEGACY / "reference"
+CONTROL_PROFILES = ("conservador", "moderado", "arrojado")
+ULP_BOUND = 4  # AD-016: a control row is bit-identical or within 4 ULP; beyond = FAIL
+CONTROL_ULP_DRIFT = PROOFS / "control_ulp_drift.json"
+REFERENCE_DIVERGENCES = PROOFS / "reference_divergences.json"
+
+
+def ordered_bits(value):
+    """Packed float64 bits mapped to sign-flipped ordered integers (ULP order)."""
+    bits = struct.unpack(">Q", struct.pack(">d", float(value)))[0]
+    return bits ^ 0xFFFFFFFFFFFFFFFF if bits & (1 << 63) else bits | (1 << 63)
+
+
+def from_ordered_bits(ordered):
+    """The float64 whose ordered-bit representation is `ordered`."""
+    bits = (
+        ordered ^ 0xFFFFFFFFFFFFFFFF if not ordered & (1 << 63) else ordered ^ (1 << 63)
+    )
+    return struct.unpack(">d", struct.pack(">Q", bits))[0]
+
+
+def ulp_distance(a, b):
+    """Absolute ULP distance between two float64 values (0 = bit-identical)."""
+    return abs(ordered_bits(a) - ordered_bits(b))
+
+
+def shift_ulp(value, distance):
+    """The float64 `distance` ULP above `value` (ordered-bit arithmetic)."""
+    return from_ordered_bits(ordered_bits(value) + distance)
+
+
+def archive_rows(profile):
+    """Archived run rows of one profile keyed by run_id - the archive CSV's own cells."""
+    path = ARCHIVE_REFERENCE / f"metrics_stability_{profile}.csv"
+    rows = {}
+    with open(path, newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle, strict=True):
+            rows[int(row["run_id"])] = {
+                "run_id": int(row["run_id"]),
+                "seed": int(row["seed"]),
+                "tickers": list(ast.literal_eval(row["tickers"])),
+                "fitness": float(row["fitness"]),
+                "hhi": float(row["hhi"]),
+            }
+    return rows
+
+
+def measure_archive_rows():
+    """(profile, run_id) -> both trees' archived and corrected cells, re-read from disk.
+
+    The VC-25 comparison is re-measured here from the two committed CSVs - never read
+    back from the proof tables - so a forged table cannot confirm itself (T9: the old
+    blocking-evidence JSON is not the oracle, the artifacts are).
+    """
+    rows = {}
+    for profile in ("conservador", "moderado", "arrojado", "caio"):
+        archived = archive_rows(profile)
+        corrected = reference_rows(profile)
+        if set(archived) != set(corrected):
+            raise AssertionError(f"{profile}: run_id sets differ between the two trees")
+        for run_id in sorted(archived):
+            if archived[run_id]["seed"] != corrected[run_id]["seed"]:
+                raise AssertionError(
+                    f"{profile} run_id {run_id}: seed mismatch, (run_id, seed) key is broken"
+                )
+            rows[(profile, run_id)] = {
+                "seed": archived[run_id]["seed"],
+                "archived": archived[run_id]["fitness"],
+                "corrected": corrected[run_id]["fitness"],
+                "archived_row": archived[run_id],
+                "corrected_row": corrected[run_id],
+            }
+    return rows
+
+
+class ArchiveComparisonTests(unittest.TestCase):
+    """VC-25/VC-29: the committed reference against the archive, per (run_id, seed).
+
+    Control profiles: bit-identical (`struct.pack('>d')`) or within 4 ULP with every
+    non-identical row recorded in `proofs/control_ulp_drift.json`; beyond 4 ULP the
+    gate fails outright and the row never becomes a table entry. caio: exactly the
+    divergent rows in `proofs/reference_divergences.json`, no control row. Both proof
+    tables are checked against a fresh measurement of the two CSV trees.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        sys.dont_write_bytecode = True  # before any bundle import (AD-013)
+        cls._scratch = tempfile.TemporaryDirectory()
+        cls._saved_cwd = os.getcwd()
+        os.chdir(cls._scratch.name)  # bundle imports run with cwd in a scratch root
+        cls.vd = load_bundle_tool("_verdict")
+        cls.rows = measure_archive_rows()
+        cls.ulp_table = json.loads(CONTROL_ULP_DRIFT.read_text(encoding="utf-8"))
+        cls.divergence_table = json.loads(REFERENCE_DIVERGENCES.read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        os.chdir(cls._saved_cwd)
+        cls._scratch.cleanup()
+
+    def check_archive_tables(self, rows, ulp_table, divergence_table, max_ulp=ULP_BOUND):
+        """Problems proving both VC-25 proof tables exactly match the measured rows ([] = clean).
+
+        Control rows: bit-identical, or recorded in the ULP table with (archived,
+        corrected, ULP distance) while within `max_ulp`; a control row beyond the bound
+        is a blocking finding for a human - it fails outright and never becomes a table
+        entry. caio rows: every divergence recorded with (archived, corrected) values.
+        Unrecorded divergences, stale entries and recorded-value drift all fail.
+        """
+        problems = []
+        measured_ulp = {}
+        measured_div = {}
+        for key in sorted(rows):
+            row = rows[key]
+            profile, run_id = key
+            if row["archived"] is None or row["corrected"] is None:
+                problems.append(f"row {profile} run_id {run_id} is missing from one tree")
+                continue
+            distance = ulp_distance(row["archived"], row["corrected"])
+            if profile in CONTROL_PROFILES:
+                if distance == 0:
+                    continue
+                if distance <= max_ulp:
+                    measured_ulp[key] = (row, distance)
+                else:
+                    problems.append(
+                        f"blocking finding for a human: control row {profile} run_id {run_id} "
+                        f"is {distance} ULP from the archive (bound {max_ulp}) - fails the "
+                        f"gate outright, never a table entry"
+                    )
+                continue
+            if distance != 0:
+                measured_div[key] = (row, distance)
+        problems += self._ulp_table_problems(measured_ulp, ulp_table)
+        problems += self._divergence_table_problems(measured_div, divergence_table)
+        return problems
+
+    @staticmethod
+    def _indexed(entries):
+        indexed = {}
+        for entry in entries:
+            key = (entry.get("profile"), entry.get("run_id"))
+            if key in indexed:
+                indexed[key] = "duplicate"
+            else:
+                indexed[key] = entry
+        return indexed
+
+    def _ulp_table_problems(self, measured, ulp_table):
+        problems = []
+        recorded = self._indexed(ulp_table.get("entries", []))
+        for key, entry in sorted(recorded.items(), key=lambda kv: str(kv[0])):
+            if entry == "duplicate":
+                problems.append(f"control_ulp_drift.json records {key[0]} run_id {key[1]} twice")
+        recorded = {k: v for k, v in recorded.items() if v != "duplicate"}
+        for key in sorted(set(measured) - set(recorded)):
+            row, distance = measured[key]
+            problems.append(
+                f"unrecorded control drift: {key[0]} run_id {key[1]} is not bit-identical "
+                f"to the archive ({distance} ULP) but has no control_ulp_drift.json entry"
+            )
+        for key in sorted(set(recorded) - set(measured)):
+            problems.append(
+                f"stale control_ulp_drift.json entry: {key[0]} run_id {key[1]} no longer "
+                f"drifts from the archive"
+            )
+        for key in sorted(set(measured) & set(recorded)):
+            row, distance = measured[key]
+            entry = recorded[key]
+            expected = {
+                "seed": row["seed"],
+                "archived_fitness": row["archived"],
+                "corrected_fitness": row["corrected"],
+                "ulp_distance": distance,
+            }
+            for field, value in expected.items():
+                got = entry.get(field)
+                if field in ("archived_fitness", "corrected_fitness"):
+                    same = got is not None and self.vd.float_bitwise_equal(got, value)
+                else:
+                    same = got == value
+                if not same:
+                    problems.append(
+                        f"control_ulp_drift.json entry {key[0]} run_id {key[1]} records "
+                        f"{field}={got!r}, measured {value!r}"
+                    )
+        return problems
+
+    def _divergence_table_problems(self, measured, divergence_table):
+        problems = []
+        recorded = self._indexed(divergence_table.get("entries", []))
+        for key, entry in sorted(recorded.items(), key=lambda kv: str(kv[0])):
+            if entry == "duplicate":
+                problems.append(f"reference_divergences.json records {key[0]} run_id {key[1]} twice")
+        recorded = {k: v for k, v in recorded.items() if v != "duplicate"}
+        for key in sorted(recorded):
+            if key[0] in CONTROL_PROFILES:
+                problems.append(
+                    f"control row {key[0]} run_id {key[1]} appears in the divergence table: "
+                    f"the table is caio-only and a control row never becomes an entry"
+                )
+        for key in sorted(set(measured) - set(recorded)):
+            problems.append(
+                f"unrecorded divergence: caio run_id {key[1]} diverges from the archive but "
+                f"has no reference_divergences.json entry"
+            )
+        for key in sorted(set(recorded) - set(measured)):
+            problems.append(
+                f"stale divergence entry: {key[0]} run_id {key[1]} no longer diverges from "
+                f"the archive"
+            )
+        for key in sorted(set(measured) & set(recorded)):
+            row, distance = measured[key]
+            entry = recorded[key]
+            expected = {
+                "seed": row["seed"],
+                "archived_fitness": row["archived"],
+                "corrected_fitness": row["corrected"],
+            }
+            for field, value in expected.items():
+                got = entry.get(field)
+                if field.endswith("_fitness"):
+                    same = got is not None and self.vd.float_bitwise_equal(got, value)
+                else:
+                    same = got == value
+                if not same:
+                    problems.append(
+                        f"reference_divergences.json entry {key[0]} run_id {key[1]} records "
+                        f"{field}={got!r}, measured {value!r}"
+                    )
+        return problems
+
+    def test_control_profile_fitness_is_bit_identical_or_within_4_ulp_of_the_archive_per_run_id_seed(self):
+        control = [key for key in self.rows if key[0] in CONTROL_PROFILES]
+        self.assertEqual(len(control), 90)  # 3 control profiles x 30 runs
+        identical = 0
+        drifted = []
+        for key in sorted(control):
+            row = self.rows[key]
+            if self.vd.float_bitwise_equal(row["archived"], row["corrected"]):
+                identical += 1
+            else:
+                drifted.append((key, ulp_distance(row["archived"], row["corrected"])))
+        self.assertEqual(identical, 78)  # 78 of 90 control rows bit-identical (T9)
+        self.assertEqual(len(drifted), 12)  # the rest drift within the bound
+        for key, distance in drifted:
+            with self.subTest(row=key):
+                self.assertLessEqual(distance, ULP_BOUND)
+        self.assertEqual(self.check_archive_tables(self.rows, self.ulp_table, self.divergence_table), [])
+
+    def test_control_ulp_drift_table_records_exactly_the_non_identical_control_rows(self):
+        measured = {}
+        for key, row in sorted(self.rows.items()):
+            if key[0] in CONTROL_PROFILES and not self.vd.float_bitwise_equal(
+                row["archived"], row["corrected"]
+            ):
+                measured[key] = (row, ulp_distance(row["archived"], row["corrected"]))
+        self.assertEqual(len(measured), 12)
+        entries = self.ulp_table["entries"]
+        self.assertEqual(len(entries), 12)
+        recorded = {(entry["profile"], entry["run_id"]): entry for entry in entries}
+        self.assertEqual(set(recorded), set(measured))
+        for key, (row, distance) in measured.items():
+            with self.subTest(row=key):
+                entry = recorded[key]
+                self.assertEqual(
+                    set(entry),
+                    {"profile", "run_id", "seed", "archived_fitness", "corrected_fitness",
+                     "ulp_distance"},
+                )
+                self.assertEqual(entry["seed"], row["seed"])
+                self.assertTrue(
+                    self.vd.float_bitwise_equal(entry["archived_fitness"], row["archived"])
+                )
+                self.assertTrue(
+                    self.vd.float_bitwise_equal(entry["corrected_fitness"], row["corrected"])
+                )
+                self.assertEqual(entry["ulp_distance"], distance)
+                self.assertGreaterEqual(entry["ulp_distance"], 1)
+                self.assertLessEqual(entry["ulp_distance"], ULP_BOUND)
+        summary = self.ulp_table["summary"]
+        self.assertEqual(summary["control_rows"], 90)
+        self.assertEqual(summary["bit_identical"], 78)
+        self.assertEqual(summary["recorded_drift_rows"], 12)
+        self.assertEqual(summary["max_ulp_distance"], 2)
+
+    def test_divergence_table_holds_caio_rows_only_and_exactly_the_divergent_ones(self):
+        measured = {}
+        for key, row in sorted(self.rows.items()):
+            if key[0] == "caio" and not self.vd.float_bitwise_equal(
+                row["archived"], row["corrected"]
+            ):
+                measured[key] = row
+        self.assertEqual(len(measured), 30)  # exactly the divergent caio rows
+        entries = self.divergence_table["entries"]
+        recorded = {(entry["profile"], entry["run_id"]): entry for entry in entries}
+        self.assertEqual(len(recorded), len(entries))  # no duplicates
+        self.assertEqual(set(recorded), set(measured))
+        self.assertTrue(all(entry["profile"] == "caio" for entry in entries))  # no control row
+        for key, row in measured.items():
+            with self.subTest(row=key):
+                entry = recorded[key]
+                self.assertEqual(
+                    set(entry),
+                    {"profile", "run_id", "seed", "archived_fitness", "corrected_fitness",
+                     "reason"},
+                )
+                self.assertEqual(entry["seed"], row["seed"])
+                self.assertTrue(
+                    self.vd.float_bitwise_equal(entry["archived_fitness"], row["archived"])
+                )
+                self.assertTrue(
+                    self.vd.float_bitwise_equal(entry["corrected_fitness"], row["corrected"])
+                )
+                self.assertTrue(str(entry["reason"]).strip())
+        summary = self.divergence_table["summary"]
+        self.assertEqual(summary["caio_rows"], 30)
+        self.assertEqual(summary["divergent_rows"], 30)
+        self.assertEqual(summary["control_rows_in_table"], 0)
+
+    def test_stale_divergence_entry_fails_the_gate(self):
+        # the real tables are clean - the gate only reddens on mutation
+        self.assertEqual(self.check_archive_tables(self.rows, self.ulp_table, self.divergence_table), [])
+        # a recorded entry whose row no longer diverges is stale
+        rows = dict(self.rows)
+        key = ("caio", 0)
+        rows[key] = dict(rows[key], corrected=rows[key]["archived"])
+        problems = self.check_archive_tables(rows, self.ulp_table, self.divergence_table)
+        self.assertTrue(any("stale divergence entry" in p for p in problems), problems)
+        # an entry that no measurement supports is stale too
+        ghost = {"profile": "caio", "run_id": 99, "seed": 141, "archived_fitness": 1.0,
+                 "corrected_fitness": 2.0, "reason": "ghost"}
+        entries = [dict(e) for e in self.divergence_table["entries"]]
+        problems = self.check_archive_tables(self.rows, self.ulp_table, {"entries": entries + [ghost]})
+        self.assertTrue(any("stale divergence entry" in p for p in problems), problems)
+        # an unrecorded divergence fails just as loudly
+        problems = self.check_archive_tables(self.rows, self.ulp_table, {"entries": entries[1:]})
+        self.assertTrue(any("unrecorded divergence" in p for p in problems), problems)
+        # a stale ULP-drift entry is caught by the same gate
+        rows = dict(self.rows)
+        key = ("moderado", 2)
+        rows[key] = dict(rows[key], corrected=rows[key]["archived"])
+        problems = self.check_archive_tables(rows, self.ulp_table, self.divergence_table)
+        self.assertTrue(any("stale control_ulp_drift.json entry" in p for p in problems), problems)
+
+    def test_control_profile_divergence_beyond_4_ulp_fails_outright_instead_of_becoming_an_entry(self):
+        rows = dict(self.rows)
+        key = ("conservador", 0)  # bit-identical in the real measurement - clean to mutate
+        self.assertTrue(
+            self.vd.float_bitwise_equal(rows[key]["archived"], rows[key]["corrected"])
+        )
+        rows[key] = dict(rows[key], corrected=shift_ulp(rows[key]["archived"], ULP_BOUND + 1))
+        problems = self.check_archive_tables(rows, self.ulp_table, self.divergence_table)
+        blocking = [p for p in problems if "blocking finding" in p and "conservador run_id 0" in p]
+        self.assertEqual(len(blocking), 1, problems)  # fails the gate outright
+        # it never becomes a table entry: no unrecorded/stale problem is raised for it
+        self.assertFalse(any("conservador run_id 0" in p and "unrecorded" in p for p in problems))
+        self.assertFalse(any("stale" in p for p in problems), problems)
+        # and recording it in either table is refused
+        ghost = {"profile": "conservador", "run_id": 0, "seed": 42,
+                 "archived_fitness": rows[key]["archived"],
+                 "corrected_fitness": rows[key]["corrected"], "ulp_distance": ULP_BOUND + 1}
+        ulp_entries = [dict(e) for e in self.ulp_table["entries"]] + [ghost]
+        problems = self.check_archive_tables(rows, {"entries": ulp_entries}, self.divergence_table)
+        self.assertTrue(any("stale control_ulp_drift.json entry" in p for p in problems), problems)
+        div_ghost = {"profile": "conservador", "run_id": 0, "seed": 42,
+                     "archived_fitness": rows[key]["archived"],
+                     "corrected_fitness": rows[key]["corrected"], "reason": "refused"}
+        div_entries = [dict(e) for e in self.divergence_table["entries"]] + [div_ghost]
+        problems = self.check_archive_tables(rows, self.ulp_table, {"entries": div_entries})
+        self.assertTrue(any("caio-only" in p for p in problems), problems)
+
+    def test_forged_reference_row_with_legacy_chromosomes_fails_the_row_tie(self):
+        proof = json.loads(GENERATION_PROOF.read_text(encoding="utf-8"))
+        driver = {(row["profile"], row["run_id"]): row for row in proof["driver_rows"]}
+        flagged = 0
+        for key in sorted(self.rows):
+            row = self.rows[key]
+            # forged row: the legacy chromosome kept, the corrected fitness re-written on
+            # it (D-f VC-29 fixture) - what a relabelled legacy reference would look like
+            forged = {
+                "tickers": row["archived_row"]["tickers"],
+                "fitness": row["corrected_row"]["fitness"],
+                "hhi": row["corrected_row"]["hhi"],
+            }
+            problems = self.vd.tie_row(forged, driver[key])
+            if problems:
+                flagged += 1
+                with self.subTest(row=key):
+                    self.assertTrue(any("tickers" in p for p in problems), problems)
+        self.assertEqual(flagged, 120)  # every archived chromosome differs from its row
 
 
 if __name__ == "__main__":

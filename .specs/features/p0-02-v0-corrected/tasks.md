@@ -422,10 +422,10 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Control-profile `fitness` is bit-identical to the archive per (run_id, seed) for 78 of the **90** control rows (3 control profiles x 30 runs) and within 4 ULP for the rest, each of those recorded with (archived, corrected, ULP distance) in `control_ulp_drift.json`; a control row beyond 4 ULP stops the batch with a blocking finding for a human
-- [ ] `reference_divergences.json` holds exactly the divergent caio rows with (archived, corrected) values and no control row; any unrecorded divergence or stale entry fails the gate
-- [ ] Tests (6) green, including the two escalation-branch negatives (control row beyond 4 ULP fails outright; forged reference row fails the tie) and the ULP-drift table completeness check
-- [ ] Quick gate green (52 P0-01 + 34 new)
+- [x] Control-profile `fitness` is bit-identical to the archive per (run_id, seed) for 78 of the **90** control rows (3 control profiles x 30 runs) and within 4 ULP for the rest, each of those recorded with (archived, corrected, ULP distance) in `control_ulp_drift.json`; a control row beyond 4 ULP stops the batch with a blocking finding for a human
+- [x] `reference_divergences.json` holds exactly the divergent caio rows with (archived, corrected) values and no control row; any unrecorded divergence or stale entry fails the gate
+- [x] Tests (6) green, including the two escalation-branch negatives (control row beyond 4 ULP fails outright; forged reference row fails the tie) and the ULP-drift table completeness check
+- [x] Quick gate green (52 P0-01 + 35 new)
 
 **Tests**: unit (derived from VC-25/VC-29 criteria, `tests/test_v0_corrected_bundle.py`):
 

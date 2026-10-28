@@ -1,0 +1,261 @@
+{
+  "schema_version": 1,
+  "description": "VC-25 divergent caio rows (archived vs corrected fitness). The table is bounded: caio rows only - the sole profile with a proven score-provenance gap. Control rows never appear here.",
+  "comparison": {
+    "archived": "baselines/v0-legacy/reference/metrics_stability_<profile>.csv column fitness",
+    "corrected": "baselines/v0-corrected/reference/metrics_stability_<profile>.csv column fitness",
+    "matched_on": [
+      "run_id",
+      "seed"
+    ],
+    "ulp_definition": "float64 packed bits mapped to sign-flipped ordered integers; distance = absolute difference",
+    "tolerance_ulp": 4
+  },
+  "summary": {
+    "caio_rows": 30,
+    "divergent_rows": 30,
+    "control_rows_in_table": 0
+  },
+  "entries": [
+    {
+      "profile": "caio",
+      "run_id": 0,
+      "seed": 42,
+      "archived_fitness": 4.604745955851804,
+      "corrected_fitness": 6.244563491908496,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 1,
+      "seed": 43,
+      "archived_fitness": 4.760749635751237,
+      "corrected_fitness": 5.77786623390308,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 2,
+      "seed": 44,
+      "archived_fitness": 4.351968942764973,
+      "corrected_fitness": 5.735452017951532,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 3,
+      "seed": 45,
+      "archived_fitness": 4.626206254574813,
+      "corrected_fitness": 6.524197102167857,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 4,
+      "seed": 46,
+      "archived_fitness": 4.922658411012796,
+      "corrected_fitness": 6.082038086765876,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 5,
+      "seed": 47,
+      "archived_fitness": 4.650080744718644,
+      "corrected_fitness": 5.904693316229388,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 6,
+      "seed": 48,
+      "archived_fitness": 4.734274953280014,
+      "corrected_fitness": 5.702921458063555,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 7,
+      "seed": 49,
+      "archived_fitness": 4.822618013230641,
+      "corrected_fitness": 5.99949146028016,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 8,
+      "seed": 50,
+      "archived_fitness": 4.597461401133929,
+      "corrected_fitness": 6.719312841828144,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 9,
+      "seed": 51,
+      "archived_fitness": 4.8969325628488285,
+      "corrected_fitness": 5.554130362946383,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 10,
+      "seed": 52,
+      "archived_fitness": 4.4597394112097675,
+      "corrected_fitness": 5.572475087254862,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 11,
+      "seed": 53,
+      "archived_fitness": 4.844840708896462,
+      "corrected_fitness": 6.2419032476009315,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 12,
+      "seed": 54,
+      "archived_fitness": 4.603580119844715,
+      "corrected_fitness": 5.675089848080731,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 13,
+      "seed": 55,
+      "archived_fitness": 4.739377062258887,
+      "corrected_fitness": 6.028854318946744,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 14,
+      "seed": 56,
+      "archived_fitness": 4.842104338814125,
+      "corrected_fitness": 5.819400013841628,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 15,
+      "seed": 57,
+      "archived_fitness": 4.375655182447996,
+      "corrected_fitness": 6.107709577328229,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 16,
+      "seed": 58,
+      "archived_fitness": 4.289476051747964,
+      "corrected_fitness": 6.083075194863736,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 17,
+      "seed": 59,
+      "archived_fitness": 4.761190690233724,
+      "corrected_fitness": 5.8953852186269,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 18,
+      "seed": 60,
+      "archived_fitness": 4.496147596567958,
+      "corrected_fitness": 6.075004989086389,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 19,
+      "seed": 61,
+      "archived_fitness": 5.141707055755412,
+      "corrected_fitness": 6.036820298428452,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 20,
+      "seed": 62,
+      "archived_fitness": 4.3299923001602565,
+      "corrected_fitness": 5.966332331769413,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 21,
+      "seed": 63,
+      "archived_fitness": 4.642277957818519,
+      "corrected_fitness": 7.021019544166888,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 22,
+      "seed": 64,
+      "archived_fitness": 4.847704767822275,
+      "corrected_fitness": 6.6453621699261625,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 23,
+      "seed": 65,
+      "archived_fitness": 4.296326541852592,
+      "corrected_fitness": 5.862500633873737,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 24,
+      "seed": 66,
+      "archived_fitness": 4.424990172387061,
+      "corrected_fitness": 5.6403194117988695,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 25,
+      "seed": 67,
+      "archived_fitness": 4.8668698786797115,
+      "corrected_fitness": 6.039274642259284,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 26,
+      "seed": 68,
+      "archived_fitness": 4.4460562855151515,
+      "corrected_fitness": 5.67741618457883,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 27,
+      "seed": 69,
+      "archived_fitness": 4.745408089036524,
+      "corrected_fitness": 6.01029161959248,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 28,
+      "seed": 70,
+      "archived_fitness": 4.403331411430953,
+      "corrected_fitness": 5.992594199723842,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    },
+    {
+      "profile": "caio",
+      "run_id": 29,
+      "seed": 71,
+      "archived_fitness": 4.445657215814946,
+      "corrected_fitness": 6.200235929854611,
+      "reason": "archived caio values come from a scoring configuration/version the archive does not record (P0-01: declared weights reproduce the control SCOREs but miss caio 0/7); not attributable to the capture defect"
+    }
+  ]
+}
