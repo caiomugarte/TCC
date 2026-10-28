@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "baseline_id": "v0-corrected",
+  "created_from": {
+    "pinned_base_commit": "181453f986cce7941addf9092e38c6e005e18844"
+  },
+  "coverage": {
+    "included_subtrees": [
+      "code/",
+      "data/",
+      "reference/"
+    ],
+    "excluded": [
+      {
+        "path": "baseline.json",
+        "reason": "the manifest cannot hash itself without a fixed point"
+      },
+      {
+        "path": "protocol.json",
+        "reason": "authored derived protocol, not a copied or generated artifact byte; its deep-equality with the v0-legacy protocol is checked by tests/test_v0_corrected_bundle.py, which must be able to read it edited"
+      },
+      {
+        "path": "README.md",
+        "reason": "authored reader's guide and methodological note, not evidence of a generated execution"
+      },
+      {
+        "path": "tools/",
+        "reason": "authored verifier and generator; hashing them would let a changed verifier still verify, because the manifest is what the verifier reads"
+      },
+      {
+        "path": "status.json",
+        "reason": "authored verdict map derived from the covered artifacts; it records their digests and must be able to change without pinning itself"
+      },
+      {
+        "path": "environment.txt",
+        "reason": "authored declaration of the generating environment, not an artifact byte"
+      },
+      {
+        "path": "requirements.txt",
+        "reason": "authored install pin for the declared environment, not an artifact byte"
+      }
+    ]
+  },
+  "files": [
+    {
+      "path": "code/ga.py",
+      "source_path": "baselines/v0-legacy/code/ga.py#canonical-transform",
+      "sha256": "58218a606d05324eae7c90736fcc8a046781a64f1b32fc71b1ac30759f735697",
+      "git_blob_sha1": "f83addc2a2708f95b2f12aeb39bd8b54c2e117a1",
+      "bytes": 5255,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "code/ga_multiple_runs.py",
+      "source_path": "baselines/v0-legacy/code/ga_multiple_runs.py",
+      "sha256": "75317e0a4e1819a22d39cb06935800e53f02e480acd342be581d99140e725365",
+      "git_blob_sha1": "32b5958154c147060d4395fa6a8e1cef7eec8a4a",
+      "bytes": 15085,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "code/profiles.py",
+      "source_path": "baselines/v0-legacy/code/profiles.py",
+      "sha256": "80d818d4e3703a8104eb21eae71ae6f3a21182c507b1992c02c9ae18a817f0d8",
+      "git_blob_sha1": "3ef8edcbd2dc964ef909c75393bfe2408aabae0c",
+      "bytes": 4633,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "data/processed/eligibility_filters.parquet",
+      "source_path": "baselines/v0-legacy/data/processed/eligibility_filters.parquet",
+      "sha256": "6d5ca6a2ef26e71f282ef448627917076048caebc0c61a6df2d94972c28829e7",
+      "git_blob_sha1": "16281ab9686728f7a5fa6ebb3266d0e1359cd52c",
+      "bytes": 12992,
+      "mode": "100644",
+      "role": "provenance_only"
+    },
+    {
+      "path": "data/processed/fundamentals_clean_arrojado.csv",
+      "source_path": "baselines/v0-legacy/data/processed/fundamentals_clean_arrojado.csv",
+      "sha256": "b870c325ed63cf1de366ba848058431ba68b4dad45890327206e60dd763ef77e",
+      "git_blob_sha1": "c70da472bd76694c1a61fd7b4fe908f7c92e1529",
+      "bytes": 137495,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "data/processed/fundamentals_clean_caio.csv",
+      "source_path": "baselines/v0-legacy/data/processed/fundamentals_clean_caio.csv",
+      "sha256": "a7735d7a484bd474862da88e53bed985db38d0fefe16a7695fdf168763ed659e",
+      "git_blob_sha1": "a0d4fc216f8bc29fcea7c2bf90c595c663523a65",
+      "bytes": 106875,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "data/processed/fundamentals_clean_conservador.csv",
+      "source_path": "baselines/v0-legacy/data/processed/fundamentals_clean_conservador.csv",
+      "sha256": "980162d81ff64e8e6a0e3342154e6cb612f38d12e4c9b0d95e0728507c71c874",
+      "git_blob_sha1": "3ecee42a9fc9db3e780a8bb13383fdb23151d4ba",
+      "bytes": 55978,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "data/processed/fundamentals_clean_moderado.csv",
+      "source_path": "baselines/v0-legacy/data/processed/fundamentals_clean_moderado.csv",
+      "sha256": "30010f8d6b9b0e1531b3000bc1d1b927428e4ac6121d518cfe95a39fd424c2ea",
+      "git_blob_sha1": "10f0b3163f4b48a35825306da509ba02c48db5ff",
+      "bytes": 98621,
+      "mode": "100644",
+      "role": "executed"
+    },
+    {
+      "path": "reference/carteira_arrojado_consensus.json",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "70f89fd31dc902d5cd495113d1a0340a79e40248a472e9b651ba5e46c5aab068",
+      "git_blob_sha1": "a9d9075ef323a022cbbd8c2925c606bedd3d81c2",
+      "bytes": 16485,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/carteira_caio_consensus.json",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "8af4d7d72ef16a3af7863319f69bdacc861e653fc01a128050b78ea95d639e58",
+      "git_blob_sha1": "8c9b5e02e61e303eb18e16ea44c6604f139ce153",
+      "bytes": 10993,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/carteira_conservador_consensus.json",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "e53007738d172b5409ddad0eee666513f1aa02f2fcd9ab1425f5b4fa313cf81a",
+      "git_blob_sha1": "dc9442d2e56721658c9d854623e270b46c02ff09",
+      "bytes": 10975,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/carteira_moderado_consensus.json",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "d1b9148ef6444a2bd074623695c82f178a1f95f082a236955d525723a4f09105",
+      "git_blob_sha1": "9adf43138f580c9258a93ec7cde40b0486aa346f",
+      "bytes": 13109,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/metrics_stability_arrojado.csv",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "df5261e00ed856c0eff21df33bfe4387e49a650419fabbe17652a9adafbfadc5",
+      "git_blob_sha1": "e56408013486949b7a89376d04abcf148cc0a9d6",
+      "bytes": 13073,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/metrics_stability_caio.csv",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "b7bf3f6abb7aa55b50d349d314a8034b0a05b50609ac1c940e55d90cbe4e0623",
+      "git_blob_sha1": "5fd59d7faf0bc923423622a908537192c8289252",
+      "bytes": 10633,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/metrics_stability_conservador.csv",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "c3d4e47f8ad6feb723c9e7d449bf889a0320b28f5184bf0c496ff7b61055d2fa",
+      "git_blob_sha1": "c986a13a3fe24c0d53e6e7cde1b258ee23c57278",
+      "bytes": 10584,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/metrics_stability_moderado.csv",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "b2e093cf5b52a932f51b36515a0724c0db457a3680ce77f584a2c4bf694bebe8",
+      "git_blob_sha1": "d7d9b0c4f19fd14907e753cec218acba3a7180a8",
+      "bytes": 11908,
+      "mode": "100644",
+      "role": "comparison"
+    },
+    {
+      "path": "reference/multiple_runs_summary.json",
+      "source_path": "generated:tools/generate_reference.py#pass-a",
+      "sha256": "b0a90a4c728fdc4d7e9de65a89e72351a82c14cb7472d8f92b2eeb27875dab0a",
+      "git_blob_sha1": "c39fe36491c3351a58a4c580b866d43017ad3d53",
+      "bytes": 98884,
+      "mode": "100644",
+      "role": "comparison"
+    }
+  ]
+}

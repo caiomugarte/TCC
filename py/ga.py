@@ -126,13 +126,13 @@ def run_ga(df_ranked: pd.DataFrame, profile: str) -> pd.DataFrame:
             mutate(c1, n)
             mutate(c2, n)
             new_pop.extend([c1, c2])
-        population = new_pop
-
         # regista melhor
         gen_best_idx = int(scores.argmax())
         if scores[gen_best_idx] > best_fitness:
             best_fitness = scores[gen_best_idx]
             best_chrom = population[gen_best_idx].copy()
+
+        population = new_pop
 
     if best_chrom is None:
         raise RuntimeError("GA não convergiu para nenhuma solução válida.")
