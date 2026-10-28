@@ -290,7 +290,7 @@ T8 -> T19
 - [x] `build_manifest.build()` emits `files[]` with `path`, `source_path`, `sha256`, `git_blob_sha1`, `bytes`, `mode`, `role` and refuses overwrite (exit 3)
 - [x] `verify_manifest.verify_bundle()` reports `missing`/`modified`/`unexpected` by path and kind, exits 0 `VERIFIED` / 1 `DRIFT` / 3 untrustworthy, `DEFAULT_BUNDLE = baselines/v0-corrected`
 - [x] A file appearing later under an excluded path (e.g. `status.json`) is NOT `unexpected`
-- [x] Tests (4) green on synthetic `TemporaryDirectory()` bundles only; quick gate green (52 P0-01 + 13 new)
+- [x] Tests (4) green on synthetic `TemporaryDirectory()` bundles only; quick gate green (52 P0-01 + 16 new = 68; the earlier "+13" was stale arithmetic)
 
 **Tests**: unit (derived from VC-04/VC-28 mechanics, `tests/test_v0_corrected_bundle.py`):
 
@@ -322,10 +322,10 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Every decision-table row resolves in the spec's order for `fitness`, `score` and `derived` kinds; `data_snapshot_match == false` resolves before any producer rule
-- [ ] The corrected-capture mispairing row raises `MispairingError` - a gate failure, never a verdict
-- [ ] `defect_ref` attaches only to `invalid_fitness`/`invalid_beyond_fitness`; every other non-`valid` verdict requires a `reason`
-- [ ] Tests (6) green on system python3 (pure stdlib); quick gate green (52 P0-01 + 19 new)
+- [x] Every decision-table row resolves in the spec's order for `fitness`, `score` and `derived` kinds; `data_snapshot_match == false` resolves before any producer rule
+- [x] The corrected-capture mispairing row raises `MispairingError` - a gate failure, never a verdict
+- [x] `defect_ref` attaches only to `invalid_fitness`/`invalid_beyond_fitness`; every other non-`valid` verdict requires a `reason`
+- [x] Tests (6) green on system python3 (pure stdlib); quick gate green (52 P0-01 + 22 new = 74)
 
 **Tests**: unit (derived from VC-12/VC-25/VC-29 semantics, `tests/test_v0_corrected_status.py`):
 
