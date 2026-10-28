@@ -719,10 +719,10 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] The proof JSON records per run both drivers' reported and recomputed fitness, ticker sets and hhi; the summary carries `denominator: 80` and the E1-E4 numerators
-- [ ] E1-E4 hold over the computed denominator, or the run reports `unexpected divergence` and the finding goes to a human (never a silent fold)
-- [ ] A later spot re-run's output equals the committed rows (proof-as-record contract)
-- [ ] Tests (3) green (proof-schema, fold-vs-summary, corrected-row tie); quick gate green
+- [x] The proof JSON records per run both drivers' reported and recomputed fitness, ticker sets and hhi; the summary carries `denominator: 80` and the E1-E4 numerators
+- [x] E1-E4 hold over the computed denominator, or the run reports `unexpected divergence` and the finding goes to a human (never a silent fold)
+- [x] A later spot re-run's output equals the committed rows (proof-as-record contract)
+- [x] Tests (3) green (proof-schema, fold-vs-summary, corrected-row tie); quick gate green
 
 **Tests**: unit (derived from VC-20 criteria, `tests/test_v0_corrected_replay.py`):
 

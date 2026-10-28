@@ -271,6 +271,78 @@ class ReplayCheckerTests(unittest.TestCase):
             self.assertIn("E1", err)
 
 
+class CommittedProofTests(unittest.TestCase):
+    """VC-20/VC-29 over the committed proof: schema + denominator, fold, reference tie."""
+
+    @classmethod
+    def setUpClass(cls):
+        sys.dont_write_bytecode = True  # before any bundle import (AD-013)
+        cls._scratch = tempfile.TemporaryDirectory()
+        cls._saved_cwd = os.getcwd()
+        os.chdir(cls._scratch.name)  # bundle imports run with cwd in a scratch root
+        cls.cr = load_replay_tool()
+        cls.proof = json.loads(PROOF_PATH.read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        os.chdir(cls._saved_cwd)
+        cls._scratch.cleanup()
+
+    def test_committed_proof_schema_carries_the_80_denominator_runs_and_env_stamp(self):
+        cr, proof = self.cr, self.proof
+        self.assertEqual(cr.check_schema(proof), [])
+        self.assertEqual(proof["schema_version"], 1)
+        self.assertEqual(proof["denominator"], 80)
+        self.assertEqual(proof["denominator"], len(proof["runs"]))  # computed, not asserted
+        self.assertEqual(proof["run_id_range"], [0, 19])
+        self.assertEqual(proof["seeds"], list(range(42, 62)))
+        self.assertEqual(proof["profiles"], list(PROFILES))
+        self.assertEqual(
+            [(r["profile"], r["run_id"]) for r in proof["runs"]],
+            [(p, run_id) for p in PROFILES for run_id in range(20)],
+        )
+        # per run BOTH drivers record reported and recomputed fitness, tickers and hhi
+        for run in proof["runs"]:
+            for side in ("legacy", "corrected"):
+                driver = run[side]
+                for key in ("reported_fitness", "recomputed_fitness", "hhi"):
+                    self.assertIsInstance(driver[key], (int, float), (run["profile"], run["run_id"], side, key))
+                self.assertTrue(driver["tickers"], (run["profile"], run["run_id"], side))
+        # the env stamp names the declared environment both drivers ran in (VC-19 pins)
+        env = proof["env"]
+        self.assertEqual(set(env), {"python_VV", "numpy", "pandas"})
+        self.assertTrue(env["python_VV"].startswith("Python "))
+        pins = {}
+        for line in (CORRECTED / "requirements.txt").read_text(encoding="utf-8").splitlines():
+            name, _, version = line.partition("==")
+            pins[name.strip()] = version.strip()
+        self.assertEqual(env["numpy"], pins["numpy"])
+        self.assertEqual(env["pandas"], pins["pandas"])
+
+    def test_proof_fold_matches_its_summary_numerators_over_the_denominator(self):
+        cr, proof = self.cr, self.proof
+        fold = independent_fold(proof["runs"])
+        recorded = {row["name"]: row for row in proof["expectations"]}
+        self.assertEqual(sorted(recorded), ["E1", "E2", "E3", "E4"])
+        for name, numerator in fold.items():
+            self.assertEqual(recorded[name]["numerator"], numerator, name)
+            self.assertEqual(recorded[name]["denominator"], 80, name)
+        # E1-E4 hold over the computed denominator (the spec's thresholds as data)
+        self.assertEqual(fold["E1"], 80)   # bit-identical on 80/80 runs
+        self.assertEqual(fold["E2"], 80)   # corrected recomputed == reported on 80/80 rows
+        self.assertGreaterEqual(fold["E3"], 41)  # ticker sets differ on >= 41/80 runs
+        self.assertGreaterEqual(fold["E4"], 1)   # legacy recomputed != reported on >= 1 run
+        for row in proof["expectations"]:
+            self.assertIs(row["held"], True, row["name"])
+        self.assertEqual(cr.check_expectations(proof), [])
+
+    def test_proof_corrected_rows_tie_to_the_committed_reference_for_run_id_0_19(self):
+        cr, proof = self.cr, self.proof
+        self.assertEqual(len(proof["runs"]), 80)
+        problems = cr.check_proof_vs_reference(proof, CORRECTED / "reference")
+        self.assertEqual(problems, [])
+
+
 class _EnvFlag:
     """Context manager: set TCC_V0_CORRECTED_REPLAY to a value (None removes it)."""
 

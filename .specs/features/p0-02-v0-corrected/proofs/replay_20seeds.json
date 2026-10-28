@@ -1,0 +1,3549 @@
+{
+  "denominator": 80,
+  "env": {
+    "numpy": "2.5.4",
+    "pandas": "3.1.0",
+    "python_VV": "Python 3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]"
+  },
+  "expectations": [
+    {
+      "denominator": 80,
+      "held": true,
+      "name": "E1",
+      "numerator": 80
+    },
+    {
+      "denominator": 80,
+      "held": true,
+      "name": "E2",
+      "numerator": 80
+    },
+    {
+      "denominator": 80,
+      "held": true,
+      "name": "E3",
+      "numerator": 80
+    },
+    {
+      "denominator": 80,
+      "held": true,
+      "name": "E4",
+      "numerator": 80
+    }
+  ],
+  "profiles": [
+    "conservador",
+    "moderado",
+    "arrojado",
+    "caio"
+  ],
+  "run_id_range": [
+    0,
+    19
+  ],
+  "runs": [
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 4.480605754022773,
+        "reported_fitness": 4.480605754022773,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "CMIG4",
+          "DIRR3",
+          "GMAT3",
+          "ISAE4",
+          "SLCE3",
+          "STBP3",
+          "TAEE4",
+          "UNIP6"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000003,
+        "recomputed_fitness": 0.8156341406041691,
+        "reported_fitness": 4.480605754022773,
+        "tickers": [
+          "BRFS3",
+          "BRKM5",
+          "CSMG3",
+          "DIRR3",
+          "HYPE3",
+          "IGTI11",
+          "PETR4",
+          "POMO3",
+          "UNIP6",
+          "USIM5"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 0,
+      "seed": 42,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 4.653746079945347,
+        "reported_fitness": 4.653746079945347,
+        "tickers": [
+          "BBDC4",
+          "BBSE3",
+          "BRAP4",
+          "BRFS3",
+          "FLRY3",
+          "ISAE4",
+          "ITSA4",
+          "POMO4",
+          "SMFT3",
+          "UNIP6"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 0.9319397220042448,
+        "reported_fitness": 4.653746079945347,
+        "tickers": [
+          "ALPA4",
+          "B3SA3",
+          "BBDC3",
+          "BBSE3",
+          "BRKM5",
+          "FLRY3",
+          "MOTV3",
+          "POMO4",
+          "PRIO3",
+          "SMTO3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 1,
+      "seed": 43,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 4.552642298021354,
+        "reported_fitness": 4.552642298021354,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "BRAP4",
+          "BRFS3",
+          "CMIG4",
+          "CSAN3",
+          "ENGI11",
+          "FLRY3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 1.8174219206536983,
+        "reported_fitness": 4.552642298021354,
+        "tickers": [
+          "BBDC3",
+          "CPLE5",
+          "ISAE4",
+          "ITUB4",
+          "KLBN11",
+          "KLBN3",
+          "ODPV3",
+          "TAEE11",
+          "TIMS3",
+          "VULC3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 2,
+      "seed": 44,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 4.214213411252171,
+        "reported_fitness": 4.214213411252171,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "BRAP4",
+          "BRAV3",
+          "DIRR3",
+          "ECOR3",
+          "FLRY3",
+          "ISAE4",
+          "POMO4",
+          "TAEE4"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 1.056777273609622,
+        "reported_fitness": 4.214213411252171,
+        "tickers": [
+          "BRKM5",
+          "ITSA4",
+          "ITUB3",
+          "KLBN3",
+          "MULT3",
+          "RADL3",
+          "SLCE3",
+          "TOTS3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 3,
+      "seed": 45,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": 4.601835441127066,
+        "reported_fitness": 4.601835441127066,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "CXSE3",
+          "DIRR3",
+          "ISAE4",
+          "ITSA3",
+          "TAEE11",
+          "VIVA3",
+          "VULC3",
+          "WEGE3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 0.62924721549795,
+        "reported_fitness": 4.601835441127066,
+        "tickers": [
+          "BBDC3",
+          "COGN3",
+          "CSAN3",
+          "CSNA3",
+          "FRAS3",
+          "GMAT3",
+          "JHSF3",
+          "SAPR11",
+          "SAPR4",
+          "SLCE3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 4,
+      "seed": 46,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 4.45783603890443,
+        "reported_fitness": 4.45783603890443,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "BRAP4",
+          "CYRE3",
+          "ECOR3",
+          "GMAT3",
+          "ISAE4",
+          "SLCE3",
+          "TAEE11",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 0.3100235712825612,
+        "reported_fitness": 4.45783603890443,
+        "tickers": [
+          "ABCB4",
+          "ABEV3",
+          "BRFS3",
+          "BRKM5",
+          "DIRR3",
+          "ITUB4",
+          "MBRF3",
+          "MGLU3",
+          "TAEE11",
+          "TIMS3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 5,
+      "seed": 47,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 4.559404626112981,
+        "reported_fitness": 4.559404626112981,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "ISAE4",
+          "JBSS3",
+          "MBRF3",
+          "ODPV3",
+          "STBP3",
+          "TAEE11",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": -0.15487719125206167,
+        "reported_fitness": 4.559404626112981,
+        "tickers": [
+          "AESB3",
+          "ALPA4",
+          "BBDC4",
+          "CMIG4",
+          "ISAE4",
+          "ITUB3",
+          "RAIL3",
+          "SMFT3",
+          "USIM5",
+          "VIVA3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 6,
+      "seed": 48,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.24000000000000007,
+        "recomputed_fitness": 4.76627969593238,
+        "reported_fitness": 4.76627969593238,
+        "tickers": [
+          "BBDC4",
+          "BRFS3",
+          "CXSE3",
+          "ISAE4",
+          "ITSA3",
+          "ITSA4",
+          "MBRF3",
+          "POMO4",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 1.90779685741607,
+        "reported_fitness": 4.76627969593238,
+        "tickers": [
+          "BRAP4",
+          "CPLE6",
+          "FLRY3",
+          "ISAE4",
+          "ITSA4",
+          "ODPV3",
+          "POMO3",
+          "RENT3",
+          "TAEE11",
+          "VBBR3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 7,
+      "seed": 49,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 4.332378413530536,
+        "reported_fitness": 4.332378413530536,
+        "tickers": [
+          "ABEV3",
+          "BBSE3",
+          "BRAP4",
+          "DIRR3",
+          "ISAE4",
+          "ITSA4",
+          "NATU3",
+          "NTCO3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.26000000000000006,
+        "recomputed_fitness": 0.2627198009104239,
+        "reported_fitness": 4.332378413530536,
+        "tickers": [
+          "BBSE3",
+          "DIRR3",
+          "GGPS3",
+          "MOTV3",
+          "NEOE3",
+          "SAPR4",
+          "STBP3",
+          "SULA11",
+          "TIMS3",
+          "WEGE3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 8,
+      "seed": 50,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 4.629114474901427,
+        "reported_fitness": 4.629114474901427,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "BRFS3",
+          "BRKM5",
+          "DIRR3",
+          "FLRY3",
+          "ITSA4",
+          "TAEE4",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.22000000000000008,
+        "recomputed_fitness": 0.9024638776313969,
+        "reported_fitness": 4.629114474901427,
+        "tickers": [
+          "BBAS3",
+          "CYRE3",
+          "ENGI11",
+          "GMAT3",
+          "ITSA3",
+          "ITSA4",
+          "PETR3",
+          "SANB11",
+          "TOTS3",
+          "USIM3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 9,
+      "seed": 51,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.24000000000000007,
+        "recomputed_fitness": 4.482755514932661,
+        "reported_fitness": 4.482755514932661,
+        "tickers": [
+          "BBAS3",
+          "BBDC3",
+          "BBSE3",
+          "BRAP4",
+          "GMAT3",
+          "ISAE4",
+          "ITUB3",
+          "POMO4",
+          "TAEE4",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": -1.399765768801137,
+        "reported_fitness": 4.482755514932661,
+        "tickers": [
+          "CMIN3",
+          "CPLE3",
+          "CSMG3",
+          "GGBR4",
+          "MDIA3",
+          "ODPV3",
+          "POMO4",
+          "PRIO3",
+          "RAIZ4",
+          "UGPA3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 10,
+      "seed": 52,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": 4.649146857784051,
+        "reported_fitness": 4.649146857784051,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "CXSE3",
+          "ISAE4",
+          "ITSA3",
+          "PRIO3",
+          "SAPR11",
+          "TAEE11",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 2.237887348077619,
+        "reported_fitness": 4.649146857784051,
+        "tickers": [
+          "B3SA3",
+          "BBSE3",
+          "ECOR3",
+          "FLRY3",
+          "GMAT3",
+          "ISAE4",
+          "ITSA3",
+          "POMO3",
+          "TOTS3",
+          "TTEN3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 11,
+      "seed": 53,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 4.3645286470058675,
+        "reported_fitness": 4.3645286470058675,
+        "tickers": [
+          "ALUP11",
+          "BBDC3",
+          "BBSE3",
+          "BRFS3",
+          "ISAE4",
+          "ITSA4",
+          "SAPR11",
+          "UNIP6",
+          "VULC3",
+          "WEGE3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 2.824796774847205,
+        "reported_fitness": 4.3645286470058675,
+        "tickers": [
+          "BBDC4",
+          "CMIG4",
+          "CURY3",
+          "CYRE3",
+          "ENGI11",
+          "POMO3",
+          "RAIZ4",
+          "TAEE11",
+          "TIMS3",
+          "UNIP6"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 12,
+      "seed": 54,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 4.940638627862043,
+        "reported_fitness": 4.940638627862043,
+        "tickers": [
+          "BBDC3",
+          "BBDC4",
+          "BRAP4",
+          "DIRR3",
+          "FLRY3",
+          "ITSA3",
+          "POMO3",
+          "POMO4",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.28,
+        "recomputed_fitness": -0.5591160550949196,
+        "reported_fitness": 4.940638627862043,
+        "tickers": [
+          "ALPA4",
+          "BBDC4",
+          "BPAN4",
+          "DIRR3",
+          "ECOR3",
+          "FLRY3",
+          "ITSA3",
+          "KLBN3",
+          "SMFT3",
+          "SULA11"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 13,
+      "seed": 55,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 4.9150311399822755,
+        "reported_fitness": 4.9150311399822755,
+        "tickers": [
+          "BRAP4",
+          "BRFS3",
+          "GMAT3",
+          "ISAE4",
+          "ITSA3",
+          "POMO3",
+          "TAEE4",
+          "TIMS3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": 1.4887973777650396,
+        "reported_fitness": 4.9150311399822755,
+        "tickers": [
+          "ALPA4",
+          "AURE3",
+          "BBDC4",
+          "BRFS3",
+          "ISAE4",
+          "ITSA4",
+          "SMFT3",
+          "TAEE11",
+          "UGPA3",
+          "VULC3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 14,
+      "seed": 56,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 4.887734257701216,
+        "reported_fitness": 4.887734257701216,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "CXSE3",
+          "ISAE4",
+          "ITSA4",
+          "ODPV3",
+          "TAEE11",
+          "UGPA3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 1.0958608068322901,
+        "reported_fitness": 4.887734257701216,
+        "tickers": [
+          "ABEV3",
+          "BBSE3",
+          "EQTL3",
+          "GUAR3",
+          "KLBN3",
+          "SAPR11",
+          "TAEE11",
+          "VALE3",
+          "VIVT3",
+          "VULC3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 15,
+      "seed": 57,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 4.462288027760984,
+        "reported_fitness": 4.462288027760984,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "BRAP4",
+          "BRFS3",
+          "CURY3",
+          "DIRR3",
+          "ENGI11",
+          "ISAE4",
+          "ITSA3",
+          "TIMS3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 1.7192828228796215,
+        "reported_fitness": 4.462288027760984,
+        "tickers": [
+          "AURE3",
+          "BBSE3",
+          "BRAP4",
+          "ENGI11",
+          "ISAE4",
+          "ITSA3",
+          "PETR4",
+          "UGPA3",
+          "USIM3",
+          "WEGE3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 16,
+      "seed": 58,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 4.909798509003906,
+        "reported_fitness": 4.909798509003906,
+        "tickers": [
+          "BBDC3",
+          "BBDC4",
+          "BBSE3",
+          "BRAP4",
+          "CMIG4",
+          "CSAN3",
+          "ISAE4",
+          "POMO4",
+          "STBP3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 0.4965460887985593,
+        "reported_fitness": 4.909798509003906,
+        "tickers": [
+          "B3SA3",
+          "BBDC4",
+          "BRAP4",
+          "CSNA3",
+          "CURY3",
+          "EMBJ3",
+          "PETR3",
+          "POMO3",
+          "UGPA3",
+          "WEGE3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 17,
+      "seed": 59,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 4.676540115139346,
+        "reported_fitness": 4.676540115139346,
+        "tickers": [
+          "BBDC4",
+          "BBSE3",
+          "BRAP4",
+          "CMIG4",
+          "ISAE4",
+          "ITSA3",
+          "NATU3",
+          "POMO3",
+          "UNIP6",
+          "VIVA3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 0.5896718910121124,
+        "reported_fitness": 4.676540115139346,
+        "tickers": [
+          "ABCB4",
+          "CRFB3",
+          "FLRY3",
+          "ITUB4",
+          "KLBN11",
+          "MDIA3",
+          "SLCE3",
+          "UNIP6",
+          "VIVA3",
+          "VULC3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 18,
+      "seed": 60,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 4.500597923288048,
+        "reported_fitness": 4.500597923288048,
+        "tickers": [
+          "AESB3",
+          "BBSE3",
+          "GMAT3",
+          "ISAE4",
+          "ITSA4",
+          "POMO3",
+          "TAEE11",
+          "TOTS3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 1.7139847389172052,
+        "reported_fitness": 4.500597923288048,
+        "tickers": [
+          "ALUP11",
+          "BBDC4",
+          "BBSE3",
+          "ISAE4",
+          "RADL3",
+          "RAIZ4",
+          "SMTO3",
+          "STBP3",
+          "TIMS3",
+          "UGPA3"
+        ]
+      },
+      "profile": "conservador",
+      "run_id": 19,
+      "seed": 61,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 4.099440217049433,
+        "reported_fitness": 4.099440217049433,
+        "tickers": [
+          "AMER3",
+          "BBSE3",
+          "BMGB4",
+          "BMOB3",
+          "BRAP4",
+          "CYRE3",
+          "FIQE3",
+          "ISAE4",
+          "ITSA3",
+          "POMO4",
+          "SAPR3",
+          "UNIP6"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.1527777777777778,
+        "recomputed_fitness": 0.6758959700163963,
+        "reported_fitness": 4.099440217049433,
+        "tickers": [
+          "ANIM3",
+          "AURE3",
+          "BRAV3",
+          "CRFB3",
+          "CYRE3",
+          "ECOR3",
+          "GOAU3",
+          "ITSA3",
+          "PNVL3",
+          "RECV3",
+          "SLCE3",
+          "VULC3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 0,
+      "seed": 42,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.1527777777777778,
+        "recomputed_fitness": 4.326425375558944,
+        "reported_fitness": 4.326425375558944,
+        "tickers": [
+          "ABCB4",
+          "BBSE3",
+          "BMOB3",
+          "BRAP3",
+          "BRFS3",
+          "CEAB3",
+          "CYRE3",
+          "ENGI11",
+          "LAVV3",
+          "RECV3",
+          "SHUL4",
+          "UNIP3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18055555555555558,
+        "recomputed_fitness": 1.0064061016396966,
+        "reported_fitness": 4.326425375558944,
+        "tickers": [
+          "CLSC4",
+          "CXSE3",
+          "DIRR3",
+          "FIQE3",
+          "GGBR3",
+          "ITSA3",
+          "LOGN3",
+          "MDNE3",
+          "MYPK3",
+          "PCAR3",
+          "SANB3",
+          "TTEN3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 1,
+      "seed": 43,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 4.29250608965946,
+        "reported_fitness": 4.29250608965946,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "BMOB3",
+          "BRAP4",
+          "EZTC3",
+          "FESA4",
+          "FIQE3",
+          "INTB3",
+          "LAVV3",
+          "POMO3",
+          "SAPR3",
+          "SUZB3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.26388888888888884,
+        "recomputed_fitness": -1.0187420353001297,
+        "reported_fitness": 4.29250608965946,
+        "tickers": [
+          "ALPA4",
+          "ALUP11",
+          "AMER3",
+          "EMBJ3",
+          "EQTL3",
+          "EZTC3",
+          "ITUB3",
+          "JHSF3",
+          "KLBN3",
+          "LIGT3",
+          "RECV3",
+          "RENT3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 2,
+      "seed": 44,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.19444444444444448,
+        "recomputed_fitness": 4.098210432643084,
+        "reported_fitness": 4.098210432643084,
+        "tickers": [
+          "ABCB4",
+          "BBAS3",
+          "BBDC4",
+          "BBSE3",
+          "BMOB3",
+          "CMIG3",
+          "FIQE3",
+          "LAVV3",
+          "ODPV3",
+          "PFRM3",
+          "POMO4",
+          "TAEE11"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.13888888888888887,
+        "recomputed_fitness": 0.018074340284393253,
+        "reported_fitness": 4.098210432643084,
+        "tickers": [
+          "ENGI11",
+          "EQTL3",
+          "GOAU4",
+          "GUAR3",
+          "ISAE4",
+          "LOGN3",
+          "LWSA3",
+          "MBRF3",
+          "MULT3",
+          "ONCO3",
+          "OPCT3",
+          "RECV3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 3,
+      "seed": 45,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 4.389332206871998,
+        "reported_fitness": 4.389332206871998,
+        "tickers": [
+          "BBAS3",
+          "BBDC3",
+          "BBSE3",
+          "BMOB3",
+          "CSAN3",
+          "FIQE3",
+          "GMAT3",
+          "INTB3",
+          "JHSF3",
+          "LAVV3",
+          "MBRF3",
+          "UNIP3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.1527777777777778,
+        "recomputed_fitness": 0.3022759545905602,
+        "reported_fitness": 4.389332206871998,
+        "tickers": [
+          "BRAV3",
+          "BRFS3",
+          "BRKM5",
+          "EVEN3",
+          "FIQE3",
+          "GOAU3",
+          "GUAR3",
+          "JSLG3",
+          "MILS3",
+          "PNVL3",
+          "SIMH3",
+          "TEND3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 4,
+      "seed": 46,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.1388888888888889,
+        "recomputed_fitness": 4.045812938046046,
+        "reported_fitness": 4.045812938046046,
+        "tickers": [
+          "BBSE3",
+          "BRAP3",
+          "BRAP4",
+          "BRST3",
+          "ENAT3",
+          "ENGI11",
+          "FIQE3",
+          "ISAE4",
+          "ITSA4",
+          "MRVE3",
+          "PFRM3",
+          "SHUL4"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": -0.510929460527517,
+        "reported_fitness": 4.045812938046046,
+        "tickers": [
+          "BRST3",
+          "CAML3",
+          "CPFE3",
+          "CRFB3",
+          "CSED3",
+          "JSLG3",
+          "MOTV3",
+          "ONCO3",
+          "PGMN3",
+          "PNVL3",
+          "UNIP3",
+          "VULC3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 5,
+      "seed": 47,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.1527777777777778,
+        "recomputed_fitness": 4.51038025277143,
+        "reported_fitness": 4.51038025277143,
+        "tickers": [
+          "BBDC4",
+          "BBSE3",
+          "BIOM3",
+          "BRAP3",
+          "BRFS3",
+          "ISAE4",
+          "LAVV3",
+          "LEVE3",
+          "POMO3",
+          "UNIP6",
+          "VIVT3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.19444444444444448,
+        "recomputed_fitness": -0.4956881222540489,
+        "reported_fitness": 4.51038025277143,
+        "tickers": [
+          "CBAV3",
+          "DASA3",
+          "EGIE3",
+          "ENGI11",
+          "GRND3",
+          "MULT3",
+          "PETR4",
+          "POMO3",
+          "PORT3",
+          "RAIL3",
+          "VBBR3",
+          "VLID3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 6,
+      "seed": 48,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.19444444444444448,
+        "recomputed_fitness": 4.3237942047732805,
+        "reported_fitness": 4.3237942047732805,
+        "tickers": [
+          "BBDC3",
+          "BMOB3",
+          "BRAP3",
+          "BRAP4",
+          "BRFS3",
+          "CSNA3",
+          "ENGI11",
+          "FIQE3",
+          "ISAE4",
+          "ITUB3",
+          "SLCE3",
+          "TAEE11"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 1.2660383130460753,
+        "reported_fitness": 4.3237942047732805,
+        "tickers": [
+          "ALUP11",
+          "ARML3",
+          "BBSE3",
+          "FLRY3",
+          "GOAU4",
+          "MGLU3",
+          "SBFG3",
+          "SOJA3",
+          "TAEE4",
+          "UNIP3",
+          "USIM5",
+          "VAMO3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 7,
+      "seed": 49,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20833333333333334,
+        "recomputed_fitness": 4.447263810976249,
+        "reported_fitness": 4.447263810976249,
+        "tickers": [
+          "BBAS3",
+          "BBSE3",
+          "EVEN3",
+          "FIQE3",
+          "ISAE4",
+          "ITSA4",
+          "POMO3",
+          "SAPR4",
+          "TAEE4",
+          "UNIP6",
+          "VIVA3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.1527777777777778,
+        "recomputed_fitness": 0.22309398975419226,
+        "reported_fitness": 4.447263810976249,
+        "tickers": [
+          "ARML3",
+          "AURE3",
+          "BBDC4",
+          "BHIA3",
+          "BRBI11",
+          "GOAU4",
+          "IGTI11",
+          "INTB3",
+          "JSLG3",
+          "MBRF3",
+          "PFRM3",
+          "TTEN3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 8,
+      "seed": 50,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.26388888888888884,
+        "recomputed_fitness": 4.103966091129617,
+        "reported_fitness": 4.103966091129617,
+        "tickers": [
+          "BBDC3",
+          "BBDC4",
+          "BBSE3",
+          "CURY3",
+          "DIRR3",
+          "FIQE3",
+          "ISAE4",
+          "ITSA3",
+          "PCAR3",
+          "POMO3",
+          "PSSA3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18055555555555558,
+        "recomputed_fitness": 0.054140770602414845,
+        "reported_fitness": 4.103966091129617,
+        "tickers": [
+          "BPAN4",
+          "CSAN3",
+          "EZTC3",
+          "FIQE3",
+          "ITSA3",
+          "LIGT3",
+          "LOGG3",
+          "MOTV3",
+          "PFRM3",
+          "RADL3",
+          "SANB3",
+          "VALE3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 9,
+      "seed": 51,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.1527777777777778,
+        "recomputed_fitness": 4.208003570934731,
+        "reported_fitness": 4.208003570934731,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "CMIG4",
+          "CYRE3",
+          "FIQE3",
+          "INTB3",
+          "JHSF3",
+          "POMO3",
+          "SOJA3",
+          "TAEE3",
+          "UGPA3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.3888888888888889,
+        "recomputed_fitness": -1.5502041013680796,
+        "reported_fitness": 4.208003570934731,
+        "tickers": [
+          "BPAC11",
+          "CURY3",
+          "GUAR3",
+          "INTB3",
+          "JHSF3",
+          "LEVE3",
+          "LREN3",
+          "MGLU3",
+          "PORT3",
+          "SBFG3",
+          "SULA11",
+          "SUZB3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 10,
+      "seed": 52,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18055555555555558,
+        "recomputed_fitness": 3.9872187756923045,
+        "reported_fitness": 3.9872187756923045,
+        "tickers": [
+          "BBDC4",
+          "BBSE3",
+          "BRAP3",
+          "CMIG4",
+          "LAVV3",
+          "MBRF3",
+          "MILS3",
+          "PFRM3",
+          "SIMH3",
+          "SOJA3",
+          "STBP3",
+          "TGMA3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.26388888888888884,
+        "recomputed_fitness": -0.3824409386258477,
+        "reported_fitness": 3.9872187756923045,
+        "tickers": [
+          "ASAI3",
+          "BHIA3",
+          "BRAP4",
+          "CXSE3",
+          "EVEN3",
+          "GRND3",
+          "GUAR3",
+          "IGTI11",
+          "KEPL3",
+          "MYPK3",
+          "NEOE3",
+          "SULA11"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 11,
+      "seed": 53,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20833333333333337,
+        "recomputed_fitness": 4.033974216021188,
+        "reported_fitness": 4.033974216021188,
+        "tickers": [
+          "BBAS3",
+          "BBSE3",
+          "BRAP3",
+          "ENGI11",
+          "EUCA4",
+          "GRND3",
+          "KEPL3",
+          "MILS3",
+          "RECV3",
+          "TAEE4",
+          "UNIP3",
+          "UNIP6"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 0.7742512036161746,
+        "reported_fitness": 4.033974216021188,
+        "tickers": [
+          "AESB3",
+          "BMGB4",
+          "BRAP4",
+          "CSNA3",
+          "CURY3",
+          "GRND3",
+          "INTB3",
+          "ITSA3",
+          "KEPL3",
+          "NEOE3",
+          "SANB3",
+          "UGPA3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 12,
+      "seed": 54,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.22222222222222224,
+        "recomputed_fitness": 4.331435618463996,
+        "reported_fitness": 4.331435618463996,
+        "tickers": [
+          "BBDC3",
+          "BBDC4",
+          "BBSE3",
+          "BRAP3",
+          "BRAP4",
+          "BRFS3",
+          "CURY3",
+          "HYPE3",
+          "JHSF3",
+          "MULT3",
+          "TAEE3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.1527777777777778,
+        "recomputed_fitness": 0.8450758816872975,
+        "reported_fitness": 4.331435618463996,
+        "tickers": [
+          "ABEV3",
+          "CSNA3",
+          "DXCO3",
+          "IGTI11",
+          "INTB3",
+          "LAVV3",
+          "MATD3",
+          "POMO3",
+          "POMO4",
+          "TAEE4",
+          "VAMO3",
+          "VIVA3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 13,
+      "seed": 55,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.13888888888888887,
+        "recomputed_fitness": 4.323571661489387,
+        "reported_fitness": 4.323571661489387,
+        "tickers": [
+          "BBDC3",
+          "BMOB3",
+          "BRAP4",
+          "BRFS3",
+          "JHSF3",
+          "ONCO3",
+          "POMO3",
+          "POMO4",
+          "RANI3",
+          "RECV3",
+          "TAEE3",
+          "TGMA3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.1527777777777778,
+        "recomputed_fitness": 1.076959671847879,
+        "reported_fitness": 4.323571661489387,
+        "tickers": [
+          "ASAI3",
+          "BBAS3",
+          "BMOB3",
+          "CMIG3",
+          "CVCB3",
+          "FIQE3",
+          "LAVV3",
+          "ONCO3",
+          "PNVL3",
+          "PRIO3",
+          "SIMH3",
+          "SMFT3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 14,
+      "seed": 56,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 4.394125021542794,
+        "reported_fitness": 4.394125021542794,
+        "tickers": [
+          "BBDC4",
+          "BBSE3",
+          "BRAP3",
+          "CXSE3",
+          "DASA3",
+          "ENGI11",
+          "ISAE4",
+          "MILS3",
+          "MOVI3",
+          "POMO3",
+          "RAIZ4",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 2.719177363157006,
+        "reported_fitness": 4.394125021542794,
+        "tickers": [
+          "BBSE3",
+          "CLSC4",
+          "CSNA3",
+          "DESK3",
+          "ISAE4",
+          "MBRF3",
+          "POMO4",
+          "RANI3",
+          "SBSP3",
+          "TGMA3",
+          "TTEN3",
+          "VULC3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 15,
+      "seed": 57,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 4.399451604394023,
+        "reported_fitness": 4.399451604394023,
+        "tickers": [
+          "BBSE3",
+          "BRAP3",
+          "EUCA4",
+          "FIQE3",
+          "GMAT3",
+          "ISAE4",
+          "ITSA4",
+          "LAVV3",
+          "MOVI3",
+          "SUZB3",
+          "TAEE3",
+          "TGMA3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.19444444444444448,
+        "recomputed_fitness": 1.5352640334934344,
+        "reported_fitness": 4.399451604394023,
+        "tickers": [
+          "BBDC3",
+          "BBDC4",
+          "BHIA3",
+          "BIOM3",
+          "CSMG3",
+          "CXSE3",
+          "ECOR3",
+          "GMAT3",
+          "MULT3",
+          "NTCO3",
+          "PNVL3",
+          "UNIP6"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 16,
+      "seed": 58,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.22222222222222224,
+        "recomputed_fitness": 4.133160704938232,
+        "reported_fitness": 4.133160704938232,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "BMOB3",
+          "BRAP4",
+          "CXSE3",
+          "DIRR3",
+          "ONCO3",
+          "RANI3",
+          "TAEE3",
+          "TAEE4",
+          "UNIP3",
+          "USIM3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.25,
+        "recomputed_fitness": 0.6157352193343892,
+        "reported_fitness": 4.133160704938232,
+        "tickers": [
+          "ANIM3",
+          "CSED3",
+          "ENAT3",
+          "EZTC3",
+          "JHSF3",
+          "MATD3",
+          "MILS3",
+          "MRVE3",
+          "NATU3",
+          "PFRM3",
+          "RAPT4",
+          "UNIP6"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 17,
+      "seed": 59,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16666666666666669,
+        "recomputed_fitness": 4.279311819184501,
+        "reported_fitness": 4.279311819184501,
+        "tickers": [
+          "BBDC4",
+          "BBSE3",
+          "BMOB3",
+          "BRAP3",
+          "CLSC4",
+          "FIQE3",
+          "GOAU3",
+          "ITSA4",
+          "PFRM3",
+          "POMO3",
+          "TTEN3",
+          "UNIP3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.22222222222222224,
+        "recomputed_fitness": 0.6402422087281534,
+        "reported_fitness": 4.279311819184501,
+        "tickers": [
+          "BBSE3",
+          "BPAN4",
+          "CLSC4",
+          "CMIN3",
+          "CSNA3",
+          "CXSE3",
+          "LWSA3",
+          "SBSP3",
+          "SHUL4",
+          "TAEE11",
+          "TAEE3",
+          "VULC3"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 18,
+      "seed": 60,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18055555555555558,
+        "recomputed_fitness": 3.9832234557457458,
+        "reported_fitness": 3.9832234557457458,
+        "tickers": [
+          "ANIM3",
+          "BBSE3",
+          "BMOB3",
+          "BRFS3",
+          "ENAT3",
+          "ISAE4",
+          "ITSA3",
+          "MILS3",
+          "MRVE3",
+          "SIMH3",
+          "TAEE3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16666666666666666,
+        "recomputed_fitness": 0.7324394393243117,
+        "reported_fitness": 3.9832234557457458,
+        "tickers": [
+          "BRAP3",
+          "CRFB3",
+          "CSNA3",
+          "EZTC3",
+          "FLRY3",
+          "ITSA4",
+          "MYPK3",
+          "PINE4",
+          "RADL3",
+          "RAIZ4",
+          "RDOR3",
+          "TAEE4"
+        ]
+      },
+      "profile": "moderado",
+      "run_id": 19,
+      "seed": 61,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.2,
+        "recomputed_fitness": 5.341006400851939,
+        "reported_fitness": 5.341006400851939,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "BRFS3",
+          "CSUD3",
+          "DIRR3",
+          "GMAT3",
+          "LAVV3",
+          "MILS3",
+          "MOVI3",
+          "NGRD3",
+          "RANI3",
+          "RECV3",
+          "SHUL4",
+          "STBP3",
+          "TUPY3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16444444444444445,
+        "recomputed_fitness": -0.24408843398803334,
+        "reported_fitness": 5.341006400851939,
+        "tickers": [
+          "ALOS3",
+          "AMER3",
+          "B3SA3",
+          "BMGB4",
+          "CEBR3",
+          "CPLE6",
+          "CSED3",
+          "CURY3",
+          "JHSF3",
+          "LWSA3",
+          "PORT3",
+          "PRIO3",
+          "RANI3",
+          "SOJA3",
+          "TKNO4"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 0,
+      "seed": 42,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.2355555555555556,
+        "recomputed_fitness": 5.348352799033937,
+        "reported_fitness": 5.348352799033937,
+        "tickers": [
+          "ARML3",
+          "BALM4",
+          "BBDC4",
+          "BBSE3",
+          "CEAB3",
+          "CVCB3",
+          "EUCA4",
+          "FIQE3",
+          "GPIV33",
+          "LAVV3",
+          "MGLU3",
+          "MOTV3",
+          "RECV3",
+          "VIVA3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.23555555555555557,
+        "recomputed_fitness": 1.3667376623450305,
+        "reported_fitness": 5.348352799033937,
+        "tickers": [
+          "BMOB3",
+          "BPAC3",
+          "CURY3",
+          "EUCA4",
+          "EVEN3",
+          "GGPS3",
+          "JSLG3",
+          "LAVV3",
+          "LIGT3",
+          "MOVI3",
+          "SAPR11",
+          "SAPR3",
+          "TAEE4",
+          "TUPY3",
+          "ZAMP3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 1,
+      "seed": 43,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.2,
+        "recomputed_fitness": 5.040225958814552,
+        "reported_fitness": 5.040225958814552,
+        "tickers": [
+          "AZZA3",
+          "BAZA3",
+          "BBDC4",
+          "BBSE3",
+          "BMOB3",
+          "BRFS3",
+          "CEBR3",
+          "CEBR6",
+          "ELMD3",
+          "ENGI11",
+          "LAVV3",
+          "MEAL3",
+          "POMO3",
+          "SANB11",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.17333333333333334,
+        "recomputed_fitness": -0.2982746874390168,
+        "reported_fitness": 5.040225958814552,
+        "tickers": [
+          "AMER3",
+          "AURE3",
+          "BALM4",
+          "BAZA3",
+          "BEEF3",
+          "CEBR6",
+          "CPFE3",
+          "CSUD3",
+          "EQTL3",
+          "JBSS3",
+          "JHSF3",
+          "LIGT3",
+          "PETR3",
+          "TOTS3",
+          "USIM5"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 2,
+      "seed": 44,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16444444444444445,
+        "recomputed_fitness": 5.417603819847008,
+        "reported_fitness": 5.417603819847008,
+        "tickers": [
+          "ARML3",
+          "BBSE3",
+          "BMOB3",
+          "BRAP4",
+          "BRFS3",
+          "FHER3",
+          "IRBR3",
+          "RECV3",
+          "TAEE4",
+          "TASA3",
+          "TUPY3",
+          "UNIP5",
+          "UNIP6",
+          "VSTE3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18222222222222223,
+        "recomputed_fitness": -0.4852806876776755,
+        "reported_fitness": 5.417603819847008,
+        "tickers": [
+          "ALUP11",
+          "BPAC5",
+          "CASH3",
+          "CRFB3",
+          "DXCO3",
+          "ENGI11",
+          "ENGI3",
+          "HBOR3",
+          "LJQQ3",
+          "MDNE3",
+          "MOTV3",
+          "RDOR3",
+          "RENT3",
+          "SAPR11",
+          "SCAR3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 3,
+      "seed": 45,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.2266666666666667,
+        "recomputed_fitness": 5.092652543071114,
+        "reported_fitness": 5.092652543071114,
+        "tickers": [
+          "AESB3",
+          "BMOB3",
+          "CEAB3",
+          "CGRA3",
+          "CXSE3",
+          "CYRE3",
+          "ELMD3",
+          "ENGI3",
+          "FRAS3",
+          "JSLG3",
+          "LAVV3",
+          "MGLU3",
+          "UNIP3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.17333333333333334,
+        "recomputed_fitness": 2.209428462121568,
+        "reported_fitness": 5.092652543071114,
+        "tickers": [
+          "ABCB4",
+          "AZUL4",
+          "BLAU3",
+          "BPAC11",
+          "BRAP3",
+          "COGN3",
+          "CSED3",
+          "CSUD3",
+          "ENAT3",
+          "ENGI3",
+          "JHSF3",
+          "LOGN3",
+          "PFRM3",
+          "POMO3",
+          "SAPR11"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 4,
+      "seed": 46,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18222222222222223,
+        "recomputed_fitness": 5.4764952043759685,
+        "reported_fitness": 5.4764952043759685,
+        "tickers": [
+          "BALM4",
+          "BIOM3",
+          "BMGB4",
+          "BRFS3",
+          "CEAB3",
+          "CEEB3",
+          "ENGI4",
+          "FIQE3",
+          "JHSF3",
+          "LAVV3",
+          "MGLU3",
+          "MILS3",
+          "UNIP6",
+          "VLID3",
+          "ZAMP3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.17333333333333334,
+        "recomputed_fitness": 0.5034438021130816,
+        "reported_fitness": 5.4764952043759685,
+        "tickers": [
+          "ASAI3",
+          "BEES3",
+          "EVEN3",
+          "FRAS3",
+          "GOAU3",
+          "JHSF3",
+          "KLBN11",
+          "KLBN4",
+          "MDNE3",
+          "MOTV3",
+          "MTRE3",
+          "NTCO3",
+          "PGMN3",
+          "SANB4",
+          "TOTS3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 5,
+      "seed": 47,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.1466666666666667,
+        "recomputed_fitness": 5.277214412410658,
+        "reported_fitness": 5.277214412410658,
+        "tickers": [
+          "BBSE3",
+          "BMOB3",
+          "BRFS3",
+          "BRSR3",
+          "CSAN3",
+          "CSUD3",
+          "FIQE3",
+          "JHSF3",
+          "LAVV3",
+          "MBRF3",
+          "SOJA3",
+          "STBP3",
+          "TASA4",
+          "UGPA3",
+          "UNIP3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18222222222222223,
+        "recomputed_fitness": 2.5942954685768376,
+        "reported_fitness": 5.277214412410658,
+        "tickers": [
+          "ABCB4",
+          "ALUP11",
+          "BBDC3",
+          "BIOM3",
+          "BRFS3",
+          "CBAV3",
+          "GPIV33",
+          "LWSA3",
+          "MDNE3",
+          "MGLU3",
+          "MOAR3",
+          "PLPL3",
+          "RECV3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 6,
+      "seed": 48,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16444444444444445,
+        "recomputed_fitness": 4.9941519995749735,
+        "reported_fitness": 4.9941519995749735,
+        "tickers": [
+          "ALUP4",
+          "ARML3",
+          "BMOB3",
+          "BRFS3",
+          "CXSE3",
+          "CYRE3",
+          "DIRR3",
+          "ISAE4",
+          "ITSA3",
+          "LOGG3",
+          "MELK3",
+          "PFRM3",
+          "POMO3",
+          "SYNE3",
+          "UNIP3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.15555555555555556,
+        "recomputed_fitness": -0.1299298573577886,
+        "reported_fitness": 4.9941519995749735,
+        "tickers": [
+          "ABEV3",
+          "ALPA4",
+          "AZZA3",
+          "BEES3",
+          "BRAV3",
+          "BRKM3",
+          "CMIG4",
+          "COGN3",
+          "FLRY3",
+          "LEVE3",
+          "OPCT3",
+          "PFRM3",
+          "POMO3",
+          "TAEE3",
+          "USIM5"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 7,
+      "seed": 49,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.2266666666666667,
+        "recomputed_fitness": 5.207562494404878,
+        "reported_fitness": 5.207562494404878,
+        "tickers": [
+          "BMOB3",
+          "BRFS3",
+          "BSLI3",
+          "CEAB3",
+          "MDNE3",
+          "MELK3",
+          "MGLU3",
+          "ONCO3",
+          "PFRM3",
+          "PLPL3",
+          "SAPR4",
+          "SIMH3",
+          "TAEE4",
+          "UNIP3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.19111111111111112,
+        "recomputed_fitness": 1.2313160307001696,
+        "reported_fitness": 5.207562494404878,
+        "tickers": [
+          "ALUP11",
+          "BRFS3",
+          "CMIG4",
+          "CPLE5",
+          "CRFB3",
+          "CSUD3",
+          "EMAE4",
+          "LREN3",
+          "PFRM3",
+          "PNVL3",
+          "SANB11",
+          "TAEE4",
+          "TGMA3",
+          "UNIP3",
+          "VSTE3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 8,
+      "seed": 50,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.2266666666666667,
+        "recomputed_fitness": 5.012787586527389,
+        "reported_fitness": 5.012787586527389,
+        "tickers": [
+          "ALLD3",
+          "AZZA3",
+          "BALM4",
+          "BBSE3",
+          "BMOB3",
+          "CEAB3",
+          "CYRE3",
+          "EVEN3",
+          "FIQE3",
+          "LAVV3",
+          "MBRF3",
+          "OPCT3",
+          "POMO4",
+          "RAPT4",
+          "TAEE4"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20888888888888893,
+        "recomputed_fitness": 1.379990983473474,
+        "reported_fitness": 5.012787586527389,
+        "tickers": [
+          "BRST3",
+          "BSLI3",
+          "CEBR6",
+          "CRFB3",
+          "CVCB3",
+          "DIRR3",
+          "MDNE3",
+          "MGLU3",
+          "OFSA3",
+          "PETR3",
+          "SMFT3",
+          "TGMA3",
+          "TTEN3",
+          "UNIP5",
+          "YDUQ3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 9,
+      "seed": 51,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.1377777777777778,
+        "recomputed_fitness": 5.507789360836134,
+        "reported_fitness": 5.507789360836134,
+        "tickers": [
+          "ALOS3",
+          "BMOB3",
+          "BRAP3",
+          "BRFS3",
+          "CXSE3",
+          "ENGI3",
+          "FRAS3",
+          "GMAT3",
+          "MGLU3",
+          "MTRE3",
+          "PFRM3",
+          "RENT3",
+          "TAEE3",
+          "UNIP3",
+          "WEGE3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.2,
+        "recomputed_fitness": 1.028166714809649,
+        "reported_fitness": 5.507789360836134,
+        "tickers": [
+          "ALUP3",
+          "AZZA3",
+          "BBSE3",
+          "BRKM3",
+          "CGRA4",
+          "EVEN3",
+          "IGTI3",
+          "MOAR3",
+          "ONCO3",
+          "SANB11",
+          "SHUL4",
+          "TUPY3",
+          "UNIP6",
+          "VIVA3",
+          "VVEO3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 10,
+      "seed": 52,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.2,
+        "recomputed_fitness": 4.972813346732325,
+        "reported_fitness": 4.972813346732325,
+        "tickers": [
+          "BMOB3",
+          "BRAP3",
+          "BRFS3",
+          "CAMB3",
+          "CEEB3",
+          "CYRE3",
+          "DIRR3",
+          "MGLU3",
+          "OFSA3",
+          "RENT3",
+          "SULA11",
+          "TAEE3",
+          "TAEE4",
+          "TKNO4",
+          "TTEN3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18222222222222226,
+        "recomputed_fitness": -0.41899576675946143,
+        "reported_fitness": 4.972813346732325,
+        "tickers": [
+          "ABEV3",
+          "ALPA4",
+          "AZZA3",
+          "BRKM3",
+          "CPFE3",
+          "DMVF3",
+          "ENGI11",
+          "ETER3",
+          "HYPE3",
+          "LAVV3",
+          "LIGT3",
+          "PETR4",
+          "TGMA3",
+          "TPIS3",
+          "TRIS3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 11,
+      "seed": 53,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.1466666666666667,
+        "recomputed_fitness": 5.009767800874937,
+        "reported_fitness": 5.009767800874937,
+        "tickers": [
+          "ABCB4",
+          "BBSE3",
+          "BMOB3",
+          "BRAP4",
+          "BRFS3",
+          "CEAB3",
+          "CXSE3",
+          "DEXP3",
+          "ENGI11",
+          "EVEN3",
+          "FRAS3",
+          "RADL3",
+          "RDOR3",
+          "RNEW4",
+          "UNIP3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.30666666666666664,
+        "recomputed_fitness": 1.3141937538899797,
+        "reported_fitness": 5.009767800874937,
+        "tickers": [
+          "AMER3",
+          "BRSR3",
+          "CEAB3",
+          "DESK3",
+          "EZTC3",
+          "FESA4",
+          "GPIV33",
+          "IGTI11",
+          "JHSF3",
+          "PETR3",
+          "SBFG3",
+          "SOMA3",
+          "UNIP3",
+          "UNIP5",
+          "VULC3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 12,
+      "seed": 54,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16444444444444445,
+        "recomputed_fitness": 5.258251909725743,
+        "reported_fitness": 5.258251909725743,
+        "tickers": [
+          "BLAU3",
+          "BMOB3",
+          "BRFS3",
+          "CASH3",
+          "ENGI11",
+          "ENGI3",
+          "GOAU4",
+          "IRBR3",
+          "LAVV3",
+          "MGLU3",
+          "MILS3",
+          "POMO3",
+          "SOMA3",
+          "STBP3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.2355555555555556,
+        "recomputed_fitness": 0.7285709146478674,
+        "reported_fitness": 5.258251909725743,
+        "tickers": [
+          "ALUP4",
+          "BAZA3",
+          "BPAC3",
+          "CBAV3",
+          "CEEB3",
+          "CGAS5",
+          "CSUD3",
+          "EQTL3",
+          "MATD3",
+          "NEOE3",
+          "RENT3",
+          "SAPR3",
+          "SOJA3",
+          "VIVA3",
+          "VULC3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 13,
+      "seed": 55,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18222222222222226,
+        "recomputed_fitness": 5.399639490753497,
+        "reported_fitness": 5.399639490753497,
+        "tickers": [
+          "BBDC4",
+          "BBSE3",
+          "BRFS3",
+          "CEAB3",
+          "CYRE3",
+          "ENGI11",
+          "FIQE3",
+          "ISAE4",
+          "JBSS3",
+          "LAVV3",
+          "MBRF3",
+          "MRVE3",
+          "RANI3",
+          "SIMH3",
+          "TOTS3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18222222222222226,
+        "recomputed_fitness": 3.1750727104386525,
+        "reported_fitness": 5.399639490753497,
+        "tickers": [
+          "ABCB4",
+          "CYRE3",
+          "DASA3",
+          "ENGI4",
+          "FRAS3",
+          "GMAT3",
+          "LAVV3",
+          "MEAL3",
+          "OPCT3",
+          "RANI3",
+          "SAPR4",
+          "TKNO4",
+          "USIM5",
+          "VLID3",
+          "VULC3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 14,
+      "seed": 56,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16444444444444448,
+        "recomputed_fitness": 5.172516864713454,
+        "reported_fitness": 5.172516864713454,
+        "tickers": [
+          "AZZA3",
+          "BBSE3",
+          "BRAP3",
+          "BRFS3",
+          "CEBR3",
+          "CMIN3",
+          "ECOR3",
+          "JHSF3",
+          "MBRF3",
+          "MILS3",
+          "OFSA3",
+          "PFRM3",
+          "POMO3",
+          "RDOR3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18222222222222223,
+        "recomputed_fitness": 1.6913061739805904,
+        "reported_fitness": 5.172516864713454,
+        "tickers": [
+          "BBSE3",
+          "CASH3",
+          "CRFB3",
+          "CYRE3",
+          "FRAS3",
+          "GPIV33",
+          "ITSA4",
+          "ODPV3",
+          "OFSA3",
+          "PSSA3",
+          "SAPR4",
+          "SIMH3",
+          "SMFT3",
+          "SUZB3",
+          "VLID3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 15,
+      "seed": 57,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.17333333333333334,
+        "recomputed_fitness": 5.139804743556708,
+        "reported_fitness": 5.139804743556708,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "BRFS3",
+          "BRKM3",
+          "CSNA3",
+          "DIRR3",
+          "MBRF3",
+          "MILS3",
+          "POMO3",
+          "PSSA3",
+          "RECV3",
+          "UNIP6",
+          "VIVT3",
+          "VLID3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18222222222222223,
+        "recomputed_fitness": 0.853631711999599,
+        "reported_fitness": 5.139804743556708,
+        "tickers": [
+          "BMOB3",
+          "CEAB3",
+          "CGAS5",
+          "DESK3",
+          "DEXP3",
+          "EALT4",
+          "ENGI3",
+          "EVEN3",
+          "GGBR3",
+          "LPSB3",
+          "MNPR3",
+          "SANB11",
+          "TRIS3",
+          "VSTE3",
+          "VTRU3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 16,
+      "seed": 58,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.15555555555555556,
+        "recomputed_fitness": 5.067025862187076,
+        "reported_fitness": 5.067025862187076,
+        "tickers": [
+          "BRAP3",
+          "BRFS3",
+          "DIRR3",
+          "ECOR3",
+          "ENGI3",
+          "LAVV3",
+          "MILS3",
+          "MTRE3",
+          "NATU3",
+          "PRIO3",
+          "PSSA3",
+          "RANI3",
+          "TAEE11",
+          "TOTS3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.2444444444444445,
+        "recomputed_fitness": -0.07600889942151051,
+        "reported_fitness": 5.067025862187076,
+        "tickers": [
+          "ALPA4",
+          "ALUP11",
+          "BPAC3",
+          "BRAV3",
+          "BRBI11",
+          "CEBR5",
+          "CEEB3",
+          "CMIG4",
+          "COCE5",
+          "FIQE3",
+          "JSLG3",
+          "LOGN3",
+          "SANB4",
+          "TAEE4",
+          "VIVA3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 17,
+      "seed": 59,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16444444444444445,
+        "recomputed_fitness": 5.482287463539002,
+        "reported_fitness": 5.482287463539002,
+        "tickers": [
+          "ARML3",
+          "AZZA3",
+          "BRAP3",
+          "BRFS3",
+          "CGRA3",
+          "FIQE3",
+          "GMAT3",
+          "MILS3",
+          "ODPV3",
+          "PLPL3",
+          "RECV3",
+          "TAEE11",
+          "UNIP3",
+          "VITT3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.19111111111111112,
+        "recomputed_fitness": -0.24665835053731383,
+        "reported_fitness": 5.482287463539002,
+        "tickers": [
+          "DASA3",
+          "ENGI11",
+          "FESA4",
+          "GMAT3",
+          "HBOR3",
+          "LOGG3",
+          "LREN3",
+          "PFRM3",
+          "PGMN3",
+          "QUAL3",
+          "RAIZ4",
+          "SBFG3",
+          "SIMH3",
+          "TRIS3",
+          "VBBR3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 18,
+      "seed": 60,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.1111111111111111,
+        "recomputed_fitness": 5.202386421188639,
+        "reported_fitness": 5.202386421188639,
+        "tickers": [
+          "BMOB3",
+          "BRAP4",
+          "CXSE3",
+          "ENAT3",
+          "ENGI11",
+          "EUCA4",
+          "FIQE3",
+          "LAVV3",
+          "MBRF3",
+          "NEOE3",
+          "PGMN3",
+          "RECV3",
+          "SCAR3",
+          "SHUL4",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.1466666666666667,
+        "recomputed_fitness": 2.8695023382009803,
+        "reported_fitness": 5.202386421188639,
+        "tickers": [
+          "BGIP4",
+          "BRAP4",
+          "BRFS3",
+          "CSED3",
+          "CSUD3",
+          "ELMD3",
+          "ENGI4",
+          "GRND3",
+          "MRVE3",
+          "NATU3",
+          "POMO3",
+          "RECV3",
+          "SMTO3",
+          "SULA11",
+          "USIM3"
+        ]
+      },
+      "profile": "arrojado",
+      "run_id": 19,
+      "seed": 61,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 6.244563491908496,
+        "reported_fitness": 6.244563491908496,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "BRFS3",
+          "DEXP3",
+          "FIQE3",
+          "INTB3",
+          "MELK3",
+          "SCAR3",
+          "VLID3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 1.9418282996375469,
+        "reported_fitness": 6.244563491908496,
+        "tickers": [
+          "AZUL4",
+          "BLAU3",
+          "CBAV3",
+          "CXSE3",
+          "DIRR3",
+          "KLBN3",
+          "PETR4",
+          "SLCE3",
+          "VBBR3",
+          "VLID3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 0,
+      "seed": 42,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 5.77786623390308,
+        "reported_fitness": 5.77786623390308,
+        "tickers": [
+          "BBSE3",
+          "BLAU3",
+          "BRAP4",
+          "CXSE3",
+          "INTB3",
+          "KEPL3",
+          "MTRE3",
+          "POMO4",
+          "VLID3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 4.820717205770752,
+        "reported_fitness": 5.77786623390308,
+        "tickers": [
+          "ABEV3",
+          "AZUL4",
+          "BBSE3",
+          "FIQE3",
+          "FLRY3",
+          "LAVV3",
+          "ODPV3",
+          "USIM5",
+          "VULC3",
+          "WIZC3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 1,
+      "seed": 43,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 5.735452017951532,
+        "reported_fitness": 5.735452017951532,
+        "tickers": [
+          "BLAU3",
+          "BMOB3",
+          "INTB3",
+          "ISAE4",
+          "PETR3",
+          "PETR4",
+          "SCAR3",
+          "TRIS3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 0.41113395576655964,
+        "reported_fitness": 5.735452017951532,
+        "tickers": [
+          "BBDC3",
+          "BMGB4",
+          "CASH3",
+          "MOVI3",
+          "ODPV3",
+          "RECV3",
+          "SOMA3",
+          "TGMA3",
+          "TRIS3",
+          "UGPA3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 2,
+      "seed": 44,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 6.524197102167857,
+        "reported_fitness": 6.524197102167857,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "BRFS3",
+          "ISAE4",
+          "PNVL3",
+          "POMO4",
+          "SCAR3",
+          "SLCE3",
+          "USIM3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 1.765237798952398,
+        "reported_fitness": 6.524197102167857,
+        "tickers": [
+          "DEXP3",
+          "EZTC3",
+          "GRND3",
+          "ITUB3",
+          "MILS3",
+          "PCAR3",
+          "PORT3",
+          "PRIO3",
+          "SAPR3",
+          "SCAR3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 3,
+      "seed": 45,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": 6.082038086765876,
+        "reported_fitness": 6.082038086765876,
+        "tickers": [
+          "ALLD3",
+          "BBSE3",
+          "BLAU3",
+          "BRAP3",
+          "ITSA4",
+          "POMO4",
+          "SCAR3",
+          "UNIP3",
+          "VIVA3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": -1.5436414015868496,
+        "reported_fitness": 6.082038086765876,
+        "tickers": [
+          "AESB3",
+          "ARML3",
+          "AURE3",
+          "BRSR6",
+          "CMIN3",
+          "CSED3",
+          "FESA4",
+          "IRBR3",
+          "SLCE3",
+          "VIVT3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 4,
+      "seed": 46,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 5.904693316229388,
+        "reported_fitness": 5.904693316229388,
+        "tickers": [
+          "BRAP3",
+          "ISAE4",
+          "KEPL3",
+          "LAVV3",
+          "MBRF3",
+          "PMAM3",
+          "SCAR3",
+          "TGMA3",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 1.2785946909557566,
+        "reported_fitness": 5.904693316229388,
+        "tickers": [
+          "AURE3",
+          "BMOB3",
+          "ITUB4",
+          "MDNE3",
+          "NATU3",
+          "PFRM3",
+          "POMO3",
+          "POMO4",
+          "SAPR11",
+          "SLCE3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 5,
+      "seed": 47,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 5.702921458063555,
+        "reported_fitness": 5.702921458063555,
+        "tickers": [
+          "BRAP4",
+          "DIRR3",
+          "ITSA4",
+          "KEPL3",
+          "MILS3",
+          "ODPV3",
+          "SCAR3",
+          "TAEE3",
+          "VLID3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.30000000000000004,
+        "recomputed_fitness": 1.2956249012145795,
+        "reported_fitness": 5.702921458063555,
+        "tickers": [
+          "BHIA3",
+          "CVCB3",
+          "DEXP3",
+          "EQTL3",
+          "GRND3",
+          "MBRF3",
+          "MOVI3",
+          "MTRE3",
+          "POMO4",
+          "TIMS3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 6,
+      "seed": 48,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.14,
+        "recomputed_fitness": 5.99949146028016,
+        "reported_fitness": 5.99949146028016,
+        "tickers": [
+          "ABEV3",
+          "BBSE3",
+          "FLRY3",
+          "FRAS3",
+          "INTB3",
+          "ISAE4",
+          "MELK3",
+          "SHUL4",
+          "UNIP3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": -0.0603452352165772,
+        "reported_fitness": 5.99949146028016,
+        "tickers": [
+          "BBSE3",
+          "DEXP3",
+          "DXCO3",
+          "ECOR3",
+          "HBOR3",
+          "LOGG3",
+          "MILS3",
+          "PETR3",
+          "TUPY3",
+          "VALE3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 7,
+      "seed": 49,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 6.719312841828144,
+        "reported_fitness": 6.719312841828144,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "CMIG3",
+          "CURY3",
+          "DIRR3",
+          "ISAE4",
+          "KEPL3",
+          "POMO4",
+          "UNIP3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": 0.4272034666255631,
+        "reported_fitness": 6.719312841828144,
+        "tickers": [
+          "AZZA3",
+          "BBSE3",
+          "BLAU3",
+          "CSED3",
+          "CURY3",
+          "MULT3",
+          "ONCO3",
+          "PFRM3",
+          "USIM5",
+          "VBBR3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 8,
+      "seed": 50,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 5.554130362946383,
+        "reported_fitness": 5.554130362946383,
+        "tickers": [
+          "BBSE3",
+          "BRAP4",
+          "BRKM5",
+          "FRAS3",
+          "ISAE4",
+          "ITSA4",
+          "LAVV3",
+          "MBRF3",
+          "PRIO3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": -0.4487105352320492,
+        "reported_fitness": 5.554130362946383,
+        "tickers": [
+          "BLAU3",
+          "CBAV3",
+          "HBRE3",
+          "NTCO3",
+          "PCAR3",
+          "PETR3",
+          "PGMN3",
+          "RCSL4",
+          "RENT3",
+          "ROMI3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 9,
+      "seed": 51,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 5.572475087254862,
+        "reported_fitness": 5.572475087254862,
+        "tickers": [
+          "BBSE3",
+          "BRAP3",
+          "CEAB3",
+          "FLRY3",
+          "ITSA3",
+          "LAVV3",
+          "PLPL3",
+          "POMO3",
+          "TAEE11",
+          "TAEE4"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.26,
+        "recomputed_fitness": -0.4831537080068199,
+        "reported_fitness": 5.572475087254862,
+        "tickers": [
+          "AZEV4",
+          "BBDC3",
+          "CEAB3",
+          "CYRE3",
+          "GGBR4",
+          "KLBN4",
+          "PORT3",
+          "RCSL4",
+          "SYNE3",
+          "USIM3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 10,
+      "seed": 52,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 6.2419032476009315,
+        "reported_fitness": 6.2419032476009315,
+        "tickers": [
+          "BBSE3",
+          "CMIG3",
+          "CXSE3",
+          "FRAS3",
+          "PFRM3",
+          "POMO3",
+          "POMO4",
+          "TAEE4",
+          "UNIP6",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": -0.4181565136943798,
+        "reported_fitness": 6.2419032476009315,
+        "tickers": [
+          "BBAS3",
+          "BEEF3",
+          "BMEB4",
+          "BRAP3",
+          "BRBI11",
+          "CSAN3",
+          "DIRR3",
+          "GUAR3",
+          "NATU3",
+          "SMFT3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 11,
+      "seed": 53,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 5.675089848080731,
+        "reported_fitness": 5.675089848080731,
+        "tickers": [
+          "ANIM3",
+          "BBSE3",
+          "CMIN3",
+          "ECOR3",
+          "ISAE4",
+          "ODPV3",
+          "POMO4",
+          "SCAR3",
+          "TAEE4",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": 1.6446063650904883,
+        "reported_fitness": 5.675089848080731,
+        "tickers": [
+          "ABCB4",
+          "BMOB3",
+          "DEXP3",
+          "INTB3",
+          "ITUB3",
+          "MDIA3",
+          "SCAR3",
+          "SHUL4",
+          "TEND3",
+          "UNIP6"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 12,
+      "seed": 54,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.14,
+        "recomputed_fitness": 6.028854318946744,
+        "reported_fitness": 6.028854318946744,
+        "tickers": [
+          "BBSE3",
+          "BLAU3",
+          "BMOB3",
+          "BRFS3",
+          "DEXP3",
+          "GMAT3",
+          "ISAE4",
+          "JHSF3",
+          "VLID3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.20000000000000004,
+        "recomputed_fitness": -0.2341322538262005,
+        "reported_fitness": 6.028854318946744,
+        "tickers": [
+          "B3SA3",
+          "BRFS3",
+          "DEXP3",
+          "KLBN11",
+          "LIGT3",
+          "MOVI3",
+          "RECV3",
+          "SANB4",
+          "SIMH3",
+          "TAEE4"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 13,
+      "seed": 55,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 5.819400013841628,
+        "reported_fitness": 5.819400013841628,
+        "tickers": [
+          "BBSE3",
+          "EGIE3",
+          "INTB3",
+          "ISAE4",
+          "JBSS3",
+          "JHSF3",
+          "RAIL3",
+          "SCAR3",
+          "UNIP3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.22000000000000008,
+        "recomputed_fitness": 0.9351460593695888,
+        "reported_fitness": 5.819400013841628,
+        "tickers": [
+          "BBDC4",
+          "BMOB3",
+          "ECOR3",
+          "LIGT3",
+          "MILS3",
+          "SMTO3",
+          "TGMA3",
+          "TUPY3",
+          "USIM3",
+          "VIVT3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 14,
+      "seed": 56,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 6.107709577328229,
+        "reported_fitness": 6.107709577328229,
+        "tickers": [
+          "BBSE3",
+          "BRFS3",
+          "CSAN3",
+          "CURY3",
+          "EZTC3",
+          "FLRY3",
+          "SLCE3",
+          "TIMS3",
+          "VLID3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.24000000000000002,
+        "recomputed_fitness": 0.7428003398355651,
+        "reported_fitness": 6.107709577328229,
+        "tickers": [
+          "AZUL4",
+          "BRAP4",
+          "CMIG3",
+          "IGTI11",
+          "MYPK3",
+          "OPCT3",
+          "PORT3",
+          "SCAR3",
+          "SULA11",
+          "TRIS3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 15,
+      "seed": 57,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 6.083075194863736,
+        "reported_fitness": 6.083075194863736,
+        "tickers": [
+          "BBDC3",
+          "BBSE3",
+          "INTB3",
+          "ITSA3",
+          "LEVE3",
+          "MBRF3",
+          "OIBR3",
+          "POMO4",
+          "TAEE4",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": -0.43607951231141007,
+        "reported_fitness": 6.083075194863736,
+        "tickers": [
+          "AMBP3",
+          "ANIM3",
+          "BPAN4",
+          "CAML3",
+          "CMIG4",
+          "CXSE3",
+          "KLBN3",
+          "LOGN3",
+          "MRVE3",
+          "RCSL4"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 16,
+      "seed": 58,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 5.8953852186269,
+        "reported_fitness": 5.8953852186269,
+        "tickers": [
+          "BBDC4",
+          "BBSE3",
+          "CMIG4",
+          "LAVV3",
+          "MBRF3",
+          "PETR4",
+          "PFRM3",
+          "UNIP3",
+          "VIVA3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.32000000000000006,
+        "recomputed_fitness": 0.43646070045257956,
+        "reported_fitness": 5.8953852186269,
+        "tickers": [
+          "ALPA4",
+          "CPFE3",
+          "CSED3",
+          "DIRR3",
+          "EZTC3",
+          "MELK3",
+          "PETR4",
+          "SLCE3",
+          "VAMO3",
+          "WEGE3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 17,
+      "seed": 59,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.22000000000000003,
+        "recomputed_fitness": 6.075004989086389,
+        "reported_fitness": 6.075004989086389,
+        "tickers": [
+          "BBSE3",
+          "BRAP3",
+          "CURY3",
+          "GGBR4",
+          "ISAE4",
+          "JHSF3",
+          "PETR4",
+          "SCAR3",
+          "TAEE11",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": -0.49188235179595696,
+        "reported_fitness": 6.075004989086389,
+        "tickers": [
+          "ALLD3",
+          "B3SA3",
+          "CPLE3",
+          "DEXP3",
+          "GGPS3",
+          "HYPE3",
+          "MBRF3",
+          "MOTV3",
+          "SAPR3",
+          "SAPR4"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 18,
+      "seed": 60,
+      "ticker_sets_equal": false
+    },
+    {
+      "corrected": {
+        "hhi": 0.16000000000000006,
+        "recomputed_fitness": 6.036820298428452,
+        "reported_fitness": 6.036820298428452,
+        "tickers": [
+          "AZUL4",
+          "BBSE3",
+          "BRAP4",
+          "GRND3",
+          "ISAE4",
+          "MBRF3",
+          "ODPV3",
+          "PGMN3",
+          "TAEE3",
+          "VULC3"
+        ]
+      },
+      "legacy": {
+        "hhi": 0.18000000000000005,
+        "recomputed_fitness": 2.7652178255399296,
+        "reported_fitness": 6.036820298428452,
+        "tickers": [
+          "AZUL4",
+          "CMIG3",
+          "CSNA3",
+          "FESA4",
+          "INTB3",
+          "ISAE4",
+          "KLBN11",
+          "MELK3",
+          "SCAR3",
+          "SOJA3"
+        ]
+      },
+      "profile": "caio",
+      "run_id": 19,
+      "seed": 61,
+      "ticker_sets_equal": false
+    }
+  ],
+  "schema_version": 1,
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49,
+    50,
+    51,
+    52,
+    53,
+    54,
+    55,
+    56,
+    57,
+    58,
+    59,
+    60,
+    61
+  ]
+}
