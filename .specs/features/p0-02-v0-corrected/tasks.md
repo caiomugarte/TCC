@@ -256,9 +256,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Deep-equal to the legacy protocol minus `baseline_id`/`derived_from`; `derived_from` names `v0-legacy` and the pinned base
-- [ ] AST-extracted `PERFIL_CONFIG`, `GROUPS`, `PROFILE_WEIGHTS`, `NCROSS_RATE`, `MUT_RATE` from both bundles' `code/` are equal, four frozen configs only
-- [ ] Tests (3) green; quick gate green (52 P0-01 + 12 new)
+- [x] Deep-equal to the legacy protocol minus `baseline_id`/`derived_from`; `derived_from` names `v0-legacy` and the pinned base
+- [x] AST-extracted `PERFIL_CONFIG`, `GROUPS`, `PROFILE_WEIGHTS`, `NCROSS_RATE`, `MUT_RATE` from both bundles' `code/` are equal, four frozen configs only
+- [x] Tests (3) green; quick gate green (52 P0-01 + 12 new)
 
 **Tests**: unit (derived from VC-05, `tests/test_v0_corrected_bundle.py`):
 

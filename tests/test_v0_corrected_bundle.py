@@ -166,5 +166,86 @@ class FrozenCopyTests(unittest.TestCase):
                 self.assertEqual(corrected, legacy)
 
 
+def deep_equal_except(left, right, ignored):
+    """Dict deep-equality after dropping `ignored` keys from both sides."""
+    drop = set(ignored)
+    a = {k: v for k, v in left.items() if k not in drop}
+    b = {k: v for k, v in right.items() if k not in drop}
+    return a == b
+
+
+def last_assignment(tree, name):
+    found = None
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            if any(isinstance(target, ast.Name) and target.id == name for target in node.targets):
+                found = node.value
+        elif isinstance(node, ast.AnnAssign):
+            if isinstance(node.target, ast.Name) and node.target.id == name:
+                found = node.value
+    return found
+
+
+def ast_constant(code_dir, module, name):
+    """A module-level constant read out of the source - extracted, never imported."""
+    path = Path(code_dir) / f"{module}.py"
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    value = last_assignment(tree, name)
+    if value is None:
+        raise AssertionError(f"{name} is not assigned at module level in {path}")
+    return ast.literal_eval(value)
+
+
+class ProtocolTests(unittest.TestCase):
+    """VC-05: derived protocol deep-equal except baseline_id/derived_from, AST-equal constants."""
+
+    FROZEN_CONFIGS = {"conservador", "moderado", "arrojado", "caio"}
+    CONSTANTS = (
+        ("ga", "PERFIL_CONFIG"),
+        ("ga", "NCROSS_RATE"),
+        ("ga", "MUT_RATE"),
+        ("profiles", "GROUPS"),
+        ("profiles", "PROFILE_WEIGHTS"),
+    )
+
+    def test_protocol_is_deep_equal_except_baseline_id_and_derived_from(self):
+        legacy = json.loads((LEGACY / "protocol.json").read_text(encoding="utf-8"))
+        corrected = json.loads((CORRECTED / "protocol.json").read_text(encoding="utf-8"))
+        self.assertTrue(
+            deep_equal_except(corrected, legacy, ("baseline_id", "derived_from")),
+            "protocol.json must be deeply equal to the legacy protocol except "
+            "baseline_id and derived_from",
+        )
+        self.assertEqual(corrected["baseline_id"], "v0-corrected")
+        derived = corrected["derived_from"]
+        self.assertEqual(derived["baseline_id"], "v0-legacy")
+        self.assertEqual(derived["pinned_base_commit"], PINNED_BASE)
+
+    def test_ast_extracted_constants_equal_the_legacy_values_without_caio_last(self):
+        for module, name in self.CONSTANTS:
+            with self.subTest(constant=name):
+                legacy_value = ast_constant(LEGACY / "code", module, name)
+                corrected_value = ast_constant(CORRECTED / "code", module, name)
+                self.assertEqual(corrected_value, legacy_value)
+        configs = ast_constant(CORRECTED / "code", "ga", "PERFIL_CONFIG")
+        self.assertEqual(set(configs), self.FROZEN_CONFIGS)
+        self.assertNotIn("caio_last", configs)
+        weights = ast_constant(CORRECTED / "code", "profiles", "PROFILE_WEIGHTS")
+        self.assertEqual(set(weights), self.FROZEN_CONFIGS)
+
+    def test_an_extra_protocol_key_is_rejected_by_the_deep_equal_check(self):
+        legacy = json.loads((LEGACY / "protocol.json").read_text(encoding="utf-8"))
+        corrected = json.loads((CORRECTED / "protocol.json").read_text(encoding="utf-8"))
+        self.assertTrue(
+            deep_equal_except(corrected, legacy, ("baseline_id", "derived_from"))
+        )
+        tampered = dict(corrected)
+        tampered["extra_key"] = 1
+        self.assertFalse(
+            deep_equal_except(tampered, legacy, ("baseline_id", "derived_from")),
+            "an extra protocol key must break the deep-equal check",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
