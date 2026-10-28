@@ -63,3 +63,7 @@ Next: optionally refresh the real snapshot with the selected FII artifact, then
 measure the three anchor reference sleeves empirically and compare the result
 with the v2 policy-anchor personalized run. Results remain historical, gross,
 and proxy-based; they are not tax-adjusted personal advice.
+
+## Handoff
+
+- 2026-10-28 — issue #12 (P0-05, `fii-universe-feasibility`) lote 1 (T1–T5) complete on `t3/issue-12`: T1 `594e083` (calibração `size_min` 3e9 + bump `premium-policy-v2`/`basic-policy-v2` + pin tests + AD-0002), T2 `d7c3e17` (matriz normativa pinada no snapshot), T3 `086ba61` (`FiiUniverseInfeasibleError` + pré-condição só no branch explícito; check legado byte-idêntico), T4 `c6a524e` (classificação `infeasible_universe` com `details`), T5 `fd2f6b7` (template PT sanitizado no executor). Gates finais: quick 23 OK, full 100 OK, build 7 OK. Próximo: lote 2 (T6–T9 — publicação Basic fechada, drift guards, banda de interpolação, âncora sob `limitar_concentracao`); checkboxes T6–T9 do `tasks.md` e traceability do `spec.md` seguem abertos.
