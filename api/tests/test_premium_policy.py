@@ -1,5 +1,6 @@
 import re
 import unittest
+from collections import Counter
 from decimal import Decimal
 from pathlib import Path
 
@@ -11,11 +12,17 @@ from app.services.premium_policy import (
     STOCK_RULES,
     SYSTEM_GA_CONFIG,
     PremiumPolicyError,
+    _selector_policy,
     resolve_basic_policy,
     resolve_premium_policy,
     resolve_recommendation_policy,
 )
-from fii_selection import apply_fii_eligibility, load_fii_data
+from fii_selection import (
+    apply_fii_eligibility,
+    build_fii_scores,
+    load_fii_data,
+    preprocess_fii,
+)
 
 
 SUITABILITY_PAGE = Path(__file__).resolve().parents[2] / "suitability.html"
@@ -307,6 +314,130 @@ class PolicyDriftGuardTests(unittest.TestCase):
                     )
                     self.assertEqual(flagged["TICKER"].tolist(), expected)
                     self.assertEqual(len(flagged), len(baseline))
+
+
+def _raw_snapshot():
+    """The committed snapshot, loaded once (read-only; the pipeline copies)."""
+    global _RAW_SNAPSHOT
+    if _RAW_SNAPSHOT is None:
+        _RAW_SNAPSHOT = load_fii_data()
+    return _RAW_SNAPSHOT
+
+
+_RAW_SNAPSHOT = None
+
+
+def _min_sector_hhi_sq(sector_multiplicities, n_assets):
+    """Exact count-based DP for the minimum achievable sector HHI numerator.
+
+    An equal-weight portfolio of ``n_assets`` assets has sector HHI
+    ``Σ (c_s/n)² = Σ c_s² / n²`` over its sector counts ``c_s``, so the minimum
+    achievable sector HHI is ``min Σ c_s² / n²`` subject to ``Σ c_s = n_assets``
+    and ``0 ≤ c_s ≤ m_s`` (``m_s`` = sector multiplicities of the ranked
+    universe). The DP below computes that minimum exactly in integers; subset
+    enumeration is deliberately never used (``C(57, 12)`` is infeasible).
+    """
+    best = {0: 0}
+    for multiplicity in sector_multiplicities:
+        updated = {}
+        for taken, squared in best.items():
+            for count in range(0, min(multiplicity, n_assets - taken) + 1):
+                total = taken + count
+                value = squared + count * count
+                if total not in updated or value < updated[total]:
+                    updated[total] = value
+        best = updated
+    return best[n_assets]
+
+
+def _band_point(selector_score):
+    """Resolve one band point through the real ``_selector_policy``/``_interpolate``
+    path with ``limitar_concentracao`` and score it with the production pipeline
+    (``load_fii_data`` → ``preprocess_fii`` → ``build_fii_scores``)."""
+    policy = _selector_policy(FII_RULES, selector_score, {"limitar_concentracao"})
+    clean = preprocess_fii(
+        _raw_snapshot(),
+        eligibility_filters=dict(policy.liquidity_and_size_filters),
+    )
+    ranked = build_fii_scores(clean, None, factor_weights=policy.factor_weights)
+    multiplicities = sorted(Counter(ranked["SETOR"]).values(), reverse=True)
+    if len(ranked) < policy.n_assets:
+        min_hhi = float("inf")
+    else:
+        min_hhi = _min_sector_hhi_sq(multiplicities, policy.n_assets) / (
+            policy.n_assets**2
+        )
+    return policy, len(ranked), min_hhi
+
+
+class PremiumInterpolationBandTests(unittest.TestCase):
+    """POL-03 band half: ADR-0002's band claim made executable (21 + 21 points)."""
+
+    def _assert_segment_feasible(self, label, score_of):
+        failures = []
+        for step in range(21):
+            fraction = step / 20
+            score = score_of(fraction)
+            policy, ranked_count, min_hhi = _band_point(score)
+            with self.subTest(segment=label, fraction=f"{fraction:.2f}", score=score):
+                self.assertGreaterEqual(ranked_count, policy.n_assets)
+                self.assertLessEqual(min_hhi, 0.25 + 1e-12)
+            if ranked_count < policy.n_assets or min_hhi > 0.25 + 1e-12:
+                failures.append(
+                    (round(score, 4), ranked_count, policy.n_assets, round(min_hhi, 4))
+                )
+        self.assertEqual(
+            failures, [], f"{label}: expected 0/21 failing band points, got {failures}"
+        )
+
+    def test_min_sector_hhi_dp_matches_the_hand_computed_pins(self) -> None:
+        conservador = _selector_policy(FII_RULES, 0.0, {"limitar_concentracao"})
+        raw = _raw_snapshot()
+
+        # 10-of-12 at the 3e9 anchor (sector multiplicities 5/3/2/1/1):
+        # min Σc² = 3²+3²+2²+1²+1² = 24 -> 24/100 = 0.2400.
+        anchor_ranked = build_fii_scores(
+            preprocess_fii(
+                raw,
+                eligibility_filters=dict(conservador.liquidity_and_size_filters),
+            ),
+            None,
+            factor_weights=conservador.factor_weights,
+        )
+        self.assertEqual(len(anchor_ranked), 12)
+        anchor_sq = _min_sector_hhi_sq(Counter(anchor_ranked["SETOR"]).values(), 10)
+        self.assertEqual(anchor_sq, 24)
+        self.assertAlmostEqual(anchor_sq / 100, 0.2400, places=4)
+
+        # The 7-asset set at the pre-calibration 5e9 anchor IS the portfolio
+        # (multiplicities 3/2/1/1): min Σc² = 3²+2²+1²+1² = 15 -> 15/49 = 0.3061.
+        full_ranked = build_fii_scores(
+            preprocess_fii(
+                raw,
+                eligibility_filters={"size_min": 5_000_000_000, "liq_min": 2_000_000},
+            ),
+            None,
+            factor_weights=conservador.factor_weights,
+        )
+        self.assertEqual(len(full_ranked), 7)
+        full_sq = _min_sector_hhi_sq(Counter(full_ranked["SETOR"]).values(), 7)
+        self.assertEqual(full_sq, 15)
+        self.assertAlmostEqual(full_sq / 49, 0.3061, places=4)
+
+    def test_conservador_to_moderado_band_is_feasible_at_all_21_points(self) -> None:
+        self._assert_segment_feasible(
+            "conservador->moderado", lambda fraction: 0.5 * fraction
+        )
+        # The coarse score grid 0.00…0.50 step 0.05 is a subset of the sweep
+        # (segment fraction steps of 0.05 = score steps of 0.025).
+        swept_scores = {round(0.5 * (step / 20), 6) for step in range(21)}
+        coarse_scores = {round(0.05 * index, 2) for index in range(11)}
+        self.assertTrue(coarse_scores <= swept_scores)
+
+    def test_moderado_to_arrojado_band_is_feasible_at_all_21_points(self) -> None:
+        self._assert_segment_feasible(
+            "moderado->arrojado", lambda fraction: 0.5 + 0.5 * fraction
+        )
 
 
 if __name__ == "__main__":

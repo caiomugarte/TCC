@@ -423,10 +423,10 @@ the production pipeline for counts (`py/fii_selection.py:566-572`).
 
 **Done when**:
 
-- [ ] Band-grid test asserts both checks at every one of the 21 conservador→moderado points and all 21 moderado→arrojado points (0/21 failing per segment, matching ADR-0002); the coarse score grid `0.00…0.50` step 0.05 is a subset of the swept points.
-- [ ] Min-HHI is computed by the exact count-based DP and the method is sanity-pinned against hand-computed values (10-of-12 at the 3e9 anchor = 0.2400; the 7-asset set = 15/49 = 0.3061); subset enumeration appears nowhere.
-- [ ] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
-- [ ] Test count: ≥ 3 new tests pass.
+- [x] Band-grid test asserts both checks at every one of the 21 conservador→moderado points and all 21 moderado→arrojado points (0/21 failing per segment, matching ADR-0002); the coarse score grid `0.00…0.50` step 0.05 is a subset of the swept points.
+- [x] Min-HHI is computed by the exact count-based DP and the method is sanity-pinned against hand-computed values (10-of-12 at the 3e9 anchor = 0.2400; the 7-asset set = 15/49 = 0.3061); subset enumeration appears nowhere.
+- [x] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
+- [x] Test count: ≥ 3 new tests pass.
 
 **Tests**: unit
 **Gate**: full
