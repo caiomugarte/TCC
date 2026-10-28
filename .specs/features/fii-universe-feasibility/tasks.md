@@ -378,11 +378,11 @@ eligible set when present.
 
 **Done when**:
 
-- [ ] Guard test reads `suitability.html` and fails if its three anchor filter pairs diverge from `STOCK_RULES`.
-- [ ] Contract test proves eligibility is identical with and without `enforce_liquidity_and_size` in the filters mapping.
-- [ ] Review checklist (spec Out of Scope, not observable behavior): the diff does not alter how `filters["enforce_liquidity_and_size"]` is computed (`api/app/services/premium_policy.py:228`) or consumed.
-- [ ] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
-- [ ] Test count: ≥ 2 new tests pass.
+- [x] Guard test reads `suitability.html` and fails if its three anchor filter pairs diverge from `STOCK_RULES`.
+- [x] Contract test proves eligibility is identical with and without `enforce_liquidity_and_size` in the filters mapping.
+- [x] Review checklist (spec Out of Scope, not observable behavior): the diff does not alter how `filters["enforce_liquidity_and_size"]` is computed (`api/app/services/premium_policy.py:228`) or consumed.
+- [x] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
+- [x] Test count: ≥ 2 new tests pass.
 
 **Tests**: unit
 **Gate**: full

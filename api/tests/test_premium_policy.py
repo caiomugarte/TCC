@@ -1,5 +1,7 @@
+import re
 import unittest
 from decimal import Decimal
+from pathlib import Path
 
 from app.db.models import ProfileRecord
 from app.services.premium_policy import (
@@ -13,6 +15,10 @@ from app.services.premium_policy import (
     resolve_premium_policy,
     resolve_recommendation_policy,
 )
+from fii_selection import apply_fii_eligibility, load_fii_data
+
+
+SUITABILITY_PAGE = Path(__file__).resolve().parents[2] / "suitability.html"
 
 
 def profile(
@@ -253,6 +259,54 @@ class PremiumPolicyTests(unittest.TestCase):
 
         self.assertEqual(premium.provenance.policy_version, "premium-policy-v2")
         self.assertEqual(basic.provenance.policy_version, "basic-policy-v2")
+
+
+class PolicyDriftGuardTests(unittest.TestCase):
+    """DFT-01: suitability.html mirrors STOCK_RULES; the flag key stays inert."""
+
+    def test_suitability_anchor_filter_pairs_match_stock_rules(self) -> None:
+        text = SUITABILITY_PAGE.read_text(encoding="utf-8")
+        block = re.search(r"const BASE_PROFILES = \[(.*?)\n    \];", text, re.DOTALL)
+        self.assertIsNotNone(block, "suitability.html BASE_PROFILES block not found")
+
+        anchors = [
+            (match.group("key"), int(match.group("cap_min")), int(match.group("liq_min")))
+            for match in re.finditer(
+                r'key:\s*"(?P<key>conservador|moderado|arrojado)"'
+                r"[^{}]*?"
+                r"filters:\s*\{\s*cap_min:\s*(?P<cap_min>\d+)\s*,\s*liq_min:\s*(?P<liq_min>\d+)\s*\}",
+                block.group(1),
+            )
+        ]
+
+        self.assertEqual(
+            [key for key, _cap_min, _liq_min in anchors],
+            ["conservador", "moderado", "arrojado"],
+        )
+        for key, cap_min, liq_min in anchors:
+            with self.subTest(anchor=key):
+                self.assertEqual(
+                    {"cap_min": cap_min, "liq_min": liq_min},
+                    STOCK_RULES[key]["filters"],
+                )
+
+    def test_enforce_liquidity_and_size_flag_never_changes_the_eligible_set(self) -> None:
+        raw = load_fii_data()
+        for filters in (
+            {"size_min": 3_000_000_000, "liq_min": 2_000_000},
+            {"size_min": 1_000_000_000, "liq_min": 500_000},
+        ):
+            baseline = apply_fii_eligibility(raw, filters=dict(filters))
+            expected = baseline["TICKER"].tolist()
+            self.assertTrue(expected)
+            for flag in (True, False):
+                with self.subTest(filters=filters, flag=flag):
+                    flagged = apply_fii_eligibility(
+                        raw,
+                        filters={**filters, "enforce_liquidity_and_size": flag},
+                    )
+                    self.assertEqual(flagged["TICKER"].tolist(), expected)
+                    self.assertEqual(len(flagged), len(baseline))
 
 
 if __name__ == "__main__":
