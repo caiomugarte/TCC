@@ -301,11 +301,11 @@ count, required count, `size_min`, `liq_min`, profile label) for
 
 **Done when**:
 
-- [ ] Persisted message equals the frozen template rendering — asserted as the exact full string, e.g. `Universo FII insuficiente: 7 ativos utilizáveis (7 elegíveis) para 10 exigidos; limiares size_min=5000000000, liq_min=2000000; perfil conservador.` for the 5e9/2e6 shortage — containing all six mandated fields (this exact-string assertion supersedes substring checks).
-- [ ] Message contains no `/`-path fragments and no raw exception text (extend the existing sanitisation tests); length ≤ 512 and code ≤ 64 as stored.
-- [ ] Executor end-to-end test: a run whose optimization raises the typed shortage stores `failure_code="infeasible_universe"` and the rendered message; all other codes keep their existing fixed strings (existing tests unchanged).
-- [ ] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
-- [ ] Test count: existing tests plus ≥ 3 new tests pass.
+- [x] Persisted message equals the frozen template rendering — asserted as the exact full string, e.g. `Universo FII insuficiente: 7 ativos utilizáveis (7 elegíveis) para 10 exigidos; limiares size_min=5000000000, liq_min=2000000; perfil conservador.` for the 5e9/2e6 shortage — containing all six mandated fields (this exact-string assertion supersedes substring checks).
+- [x] Message contains no `/`-path fragments and no raw exception text (extend the existing sanitisation tests); length ≤ 512 and code ≤ 64 as stored.
+- [x] Executor end-to-end test: a run whose optimization raises the typed shortage stores `failure_code="infeasible_universe"` and the rendered message; all other codes keep their existing fixed strings (existing tests unchanged).
+- [x] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
+- [x] Test count: existing tests plus ≥ 3 new tests pass.
 
 **Tests**: unit
 **Gate**: full
