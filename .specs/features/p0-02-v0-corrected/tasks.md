@@ -195,8 +195,8 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] `baselines/v0-corrected/code/ga.py` equals `old->new` applied to `baselines/v0-legacy/code/ga.py` byte-for-byte (0-byte delta); `old_bytes` occurs exactly once in the legacy file
-- [ ] Tests (3) green; quick gate green (52 P0-01 + 6 new)
+- [x] `baselines/v0-corrected/code/ga.py` equals `old->new` applied to `baselines/v0-legacy/code/ga.py` byte-for-byte (0-byte delta); `old_bytes` occurs exactly once in the legacy file
+- [x] Tests (3) green; quick gate green (52 P0-01 + 6 new)
 
 **Tests**: unit (derived from VC-02, `tests/test_v0_corrected_bundle.py`):
 

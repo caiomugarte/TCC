@@ -95,5 +95,36 @@ class LiveGaByteEqualityTests(unittest.TestCase):
         self.assertNotEqual(bytes(mutated), expected)
 
 
+class CorrectedCodeCopyTests(unittest.TestCase):
+    """VC-02: the frozen code copy is the canonical transform of the legacy bundle file."""
+
+    def test_corrected_code_ga_equals_the_transform_of_the_legacy_bundle_file(self):
+        legacy = (LEGACY / "code" / "ga.py").read_bytes()
+        expected = canonical_transform(legacy)
+        actual = (CORRECTED / "code" / "ga.py").read_bytes()
+        self.assertEqual(len(actual) - len(expected), 0)  # 0-byte delta
+        self.assertEqual(actual, expected)
+
+    def test_old_bytes_occur_exactly_once_in_the_legacy_bundle_file(self):
+        legacy = (LEGACY / "code" / "ga.py").read_bytes()
+        self.assertEqual(legacy.count(OLD_BYTES), 1)
+        self.assertEqual(legacy.count(NEW_BYTES), 0)
+
+    def test_transform_replacement_never_touches_the_rng_or_tie_semantics(self):
+        legacy = (LEGACY / "code" / "ga.py").read_bytes()
+        corrected = (CORRECTED / "code" / "ga.py").read_bytes()
+        old_at = legacy.find(OLD_BYTES)
+        new_at = corrected.find(NEW_BYTES)
+        self.assertGreaterEqual(old_at, 0)
+        self.assertGreaterEqual(new_at, 0)
+        # every byte outside the replaced region is untouched: strict ">", RNG call order,
+        # roulette selection, crossover, mutation and seeding all live there
+        self.assertEqual(legacy[:old_at], corrected[:new_at])
+        self.assertEqual(
+            legacy[old_at + len(OLD_BYTES):],
+            corrected[new_at + len(NEW_BYTES):],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
