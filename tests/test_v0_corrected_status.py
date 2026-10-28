@@ -629,5 +629,61 @@ class LegacyReadmeBannerTests(unittest.TestCase):
         self.assertEqual(on_disk, expected)
 
 
+class MethodNoteTests(unittest.TestCase):
+    """The methodological note's claim surface (spec.md VC-17, VC-18; tasks T16).
+
+    The statement lists below are the spec's own clauses, copied verbatim; each is a
+    single physical line in `baselines/v0-corrected/README.md`, so the substring test
+    is exact. The note may add measured precision around a statement but never
+    reword, wrap or over-claim it.
+    """
+
+    # VC-17's invalidation-scope statement list, verbatim
+    INVALIDATION_SCOPE = (
+        "reported fitness is invalid wherever the legacy capture recorded a generation best",
+        "portfolio-return interpretation is unchanged and returns/tickers/hhi stand on their own measured self-consistency",
+        "rows whose recorded score fields do not reproduce from the frozen snapshot under the declared weights are marked `score_provenance_inconsistent` and rows whose producer or chromosome cannot be reconstructed are marked `not_verifiable_at_head` - neither is attributed to the capture defect",
+        "no blanket invalidation of historical backtests is presumed",
+    )
+
+    # VC-18's reproducibility limits, verbatim
+    REPRODUCIBILITY_LIMITS = (
+        "archived v0-legacy values are not reachable in the declared environment where measured (caio run 0 replays to fitness 6.244563 - legacy and corrected agree - with hhi 0.16 from the legacy driver against the archived 4.604746 with hhi 0.26, the corrected driver's hhi for that run being 0.18)",
+        "the production `outputs/carteira_caio_consensus.json` was produced by the corrected optimizer over a 150-run set the archive does not contain (its FREQUENCY values are exact counts over 150: 38, 34, 33, 25, 22, 21, 21, 20, 20, 17, and its sibling `outputs/metrics_stability_caio.csv` carries `generations_run`/`converged_early`) while the archived consensus came from the defective capture - so the membership difference is a provenance difference, not evidence that the live recommendation is defective",
+        "the archive's `fitness` column is bit-identical to the corrected reference for 78 of 90 control-profile rows, the other 12 differing by at most 2 ULP (4.3e-16 relative) because the archive's generating environment is unrecorded, while legacy and corrected agree bit-for-bit on 120 of 120 rows in the declared environment",
+        "no reproducibility claim is made beyond the committed proofs",
+    )
+
+    def setUp(self):
+        self.note = (CORRECTED / "README.md").read_text(encoding="utf-8")
+
+    def test_note_states_the_invalidation_scope_statements_verbatim(self):
+        for statement in self.INVALIDATION_SCOPE:
+            with self.subTest(statement=statement[:60]):
+                self.assertIn(statement, self.note)
+        # the note cites status.json as the verdict map (VC-12/AD-007)
+        self.assertIn("`baselines/v0-corrected/status.json` is the verdict map", self.note)
+
+    def test_note_states_the_reproducibility_limits_verbatim(self):
+        for limit in self.REPRODUCIBILITY_LIMITS:
+            with self.subTest(limit=limit[:60]):
+                self.assertIn(limit, self.note)
+        # AD-016's measured precision on the ULP bound
+        self.assertIn("1-2 ULP", self.note)
+        self.assertIn("maximum relative difference is 4.3e-16", self.note)
+        # the note cites the 20-seed proof as the comparison of record
+        self.assertIn("proofs/replay_20seeds.json", self.note)
+        self.assertIn("comparison of record", self.note)
+        # no over-claiming sentence survives (VC-18's "no claim beyond the proofs")
+        for overclaim in (
+            "fully reproducible",
+            "exactly reproducible",
+            "reproducible in any environment",
+            "the archive reproduces",
+        ):
+            with self.subTest(overclaim=overclaim):
+                self.assertNotIn(overclaim, self.note)
+
+
 if __name__ == "__main__":
     unittest.main()

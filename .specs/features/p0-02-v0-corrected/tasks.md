@@ -656,9 +656,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Every VC-17 statement and every VC-18 reproducibility limit is present verbatim (substring tests enforce); no over-claiming sentence survives
-- [ ] The note cites `status.json` as the verdict map and `proofs/replay_20seeds.json` as the comparison of record
-- [ ] Tests (2) green; quick gate green
+- [x] Every VC-17 statement and every VC-18 reproducibility limit is present verbatim (substring tests enforce); no over-claiming sentence survives
+- [x] The note cites `status.json` as the verdict map and `proofs/replay_20seeds.json` as the comparison of record
+- [x] Tests (2) green; quick gate green
 
 **Tests**: unit (derived from VC-17/VC-18 criteria, `tests/test_v0_corrected_status.py`):
 
