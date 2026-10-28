@@ -13,6 +13,7 @@ from app.adapters.premium_optimization import (
 )
 from app.services.premium_policy import resolve_recommendation_policy
 from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from fii_selection import FiiSelectionError, FiiUniverseInfeasibleError
 
 
 class Source:
@@ -445,6 +446,104 @@ class PremiumOptimizationTests(unittest.TestCase):
 
         self.assertEqual(sum(amounts.values()), 0.01)
         self.assertTrue(all(value >= 0 for value in amounts.values()))
+
+    def test_fii_universe_shortage_maps_to_infeasible_universe_with_details(self):
+        shortage = FiiUniverseInfeasibleError(
+            "conservador", 7, 7, 10, 5_000_000_000.0, 2_000_000.0
+        )
+
+        with self.assertRaises(PremiumOptimizationError) as error:
+            run_premium_optimization(
+                policy(),
+                Manifest(),
+                Path("/tmp/prumo-test-run"),
+                100_000,
+                selector_inputs=selector_inputs(),
+                snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+                allocation_engine=lambda *_args, **_kwargs: allocation_result(),
+                stock_engine=lambda **_kwargs: selector_result(["AAA3"]),
+                fii_engine=lambda **_kwargs: (_ for _ in ()).throw(shortage),
+            )
+
+        failure = error.exception
+        self.assertEqual(failure.code, "infeasible_universe")
+        self.assertEqual(
+            dict(failure.details),
+            {
+                "profile": "conservador",
+                "eligible_count": 7,
+                "universe_count": 7,
+                "required_count": 10,
+                "size_min": 5_000_000_000.0,
+                "liq_min": 2_000_000.0,
+            },
+        )
+
+    def test_fii_universe_shortage_never_maps_to_constraint_or_engine_codes(self):
+        with self.assertRaises(PremiumOptimizationError) as error:
+            run_premium_optimization(
+                policy(selector_hhi_max=0.25),
+                Manifest(),
+                Path("/tmp/prumo-test-run"),
+                100_000,
+                selector_inputs=selector_inputs(),
+                snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+                allocation_engine=lambda *_args, **_kwargs: allocation_result(),
+                stock_engine=lambda **_kwargs: {
+                    "selected_tickers": ["AAA3"],
+                    "sleeve_weights": {"AAA3": 1.0},
+                    "metrics": {"hhi": 0.2},
+                },
+                fii_engine=lambda **_kwargs: (_ for _ in ()).throw(
+                    FiiUniverseInfeasibleError(
+                        "conservador", 13, 12, 13, 3_000_000_000.0, 2_000_000.0
+                    )
+                ),
+            )
+
+        self.assertEqual(error.exception.code, "infeasible_universe")
+
+    def test_hhi_breach_text_path_keeps_infeasible_constraints_classification(self):
+        with self.assertRaises(PremiumOptimizationError) as error:
+            run_premium_optimization(
+                policy(selector_hhi_max=0.25),
+                Manifest(),
+                Path("/tmp/prumo-test-run"),
+                100_000,
+                selector_inputs=selector_inputs(),
+                snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+                allocation_engine=lambda *_args, **_kwargs: allocation_result(),
+                stock_engine=lambda **_kwargs: {
+                    "selected_tickers": ["AAA3"],
+                    "sleeve_weights": {"AAA3": 1.0},
+                    "metrics": {"hhi": 0.2},
+                },
+                fii_engine=lambda **_kwargs: (_ for _ in ()).throw(
+                    FiiSelectionError("FII selection violates the configured HHI limit")
+                ),
+            )
+
+        self.assertEqual(error.exception.code, "infeasible_constraints")
+
+    def test_other_fii_selection_errors_still_classify_as_engine_error(self):
+        with self.assertRaises(PremiumOptimizationError) as error:
+            run_premium_optimization(
+                policy(),
+                Manifest(),
+                Path("/tmp/prumo-test-run"),
+                100_000,
+                selector_inputs=selector_inputs(),
+                snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+                allocation_engine=lambda *_args, **_kwargs: allocation_result(),
+                stock_engine=lambda **_kwargs: selector_result(["AAA3"]),
+                fii_engine=lambda **_kwargs: (_ for _ in ()).throw(
+                    FiiSelectionError("fixture boom")
+                ),
+            )
+
+        failure = error.exception
+        self.assertEqual(failure.code, "engine_error")
+        self.assertIsNone(failure.details)
 
 
 if __name__ == "__main__":

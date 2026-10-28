@@ -9,9 +9,26 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.db.base import Base
 from app.db.models import Account, ProfileRecord
+from app.adapters.premium_optimization import PremiumOptimizationError
 from app.repositories.recommendations import RecommendationRepository, _output_hash
 from app.services.premium_executor import PremiumExecutor
 from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputError, StatusInvestInputs
+
+
+SHORTAGE_FIELDS = {
+    "profile": "conservador",
+    "eligible_count": 7,
+    "universe_count": 7,
+    "required_count": 10,
+    "size_min": 5_000_000_000.0,
+    "liq_min": 2_000_000.0,
+}
+
+FROZEN_SHORTAGE_MESSAGE = (
+    "Universo FII insuficiente: 7 ativos utilizáveis (7 elegíveis) "
+    "para 10 exigidos; limiares size_min=5000000000, liq_min=2000000; "
+    "perfil conservador."
+)
 
 
 def create_run(session, account, profile, status="queued", plan="premium"):
@@ -280,6 +297,79 @@ class PremiumExecutorTests(unittest.TestCase):
         with self.sessions() as check:
             self.assertEqual(check.get(type(queued), queued.id).status, "failed")
             self.assertEqual(check.get(type(running), running.id).status, "failed")
+
+    def test_universe_shortage_persists_the_frozen_diagnostic(self):
+        run = create_run(self.session, self.account, self.profile, plan="basic")
+        shortage = PremiumOptimizationError(
+            "7 ativos utilizáveis (7 elegíveis) para 10 exigidos",
+            "infeasible_universe",
+            dict(SHORTAGE_FIELDS),
+        )
+        executor = PremiumExecutor(
+            session_factory=self.sessions,
+            manifest_loader=lambda _provenance: {"fixture": True},
+            status_invest_inputs_loader=selector_inputs_for,
+            optimization_runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(shortage),
+        )
+        try:
+            executor.execute_run(run.id)
+        finally:
+            executor.shutdown()
+
+        with self.sessions() as check:
+            stored = check.get(type(run), run.id)
+            self.assertEqual(stored.status, "failed")
+            self.assertEqual(stored.failure_code, "infeasible_universe")
+            self.assertEqual(stored.failure_message, FROZEN_SHORTAGE_MESSAGE)
+            self.assertIsNone(stored.result_json)
+
+    def test_shortage_message_never_leaks_raw_text_or_paths(self):
+        run = create_run(self.session, self.account, self.profile)
+        shortage = PremiumOptimizationError(
+            "fixture boom at /private/statusinvest/session.log",
+            "infeasible_universe",
+            dict(SHORTAGE_FIELDS),
+        )
+        executor = PremiumExecutor(
+            session_factory=self.sessions,
+            manifest_loader=lambda _provenance: {"fixture": True},
+            status_invest_inputs_loader=selector_inputs_for,
+            optimization_runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(shortage),
+        )
+        try:
+            executor.execute_run(run.id)
+        finally:
+            executor.shutdown()
+
+        with self.sessions() as check:
+            stored = check.get(type(run), run.id)
+            self.assertEqual(stored.failure_code, "infeasible_universe")
+            self.assertEqual(stored.failure_message, FROZEN_SHORTAGE_MESSAGE)
+            self.assertNotIn("fixture boom", stored.failure_message)
+            self.assertNotIn("/private/statusinvest", stored.failure_message)
+            self.assertNotIn("/", stored.failure_message)
+            self.assertLessEqual(len(stored.failure_message), 512)
+            self.assertLessEqual(len(stored.failure_code), 64)
+
+    def test_other_failure_codes_keep_their_fixed_strings(self):
+        fixed = {
+            "snapshot_changed": "Os dados Premium foram alterados e a execução foi cancelada.",
+            "snapshot_unavailable": "Os dados Premium não estão disponíveis para esta execução.",
+            "infeasible_constraints": "As restrições do perfil não produziram uma carteira factível.",
+            "policy_invalid": "O perfil não produziu uma política Premium válida.",
+            "submission_failed": "A execução Premium não pôde ser enviada ao worker.",
+            "worker_restarted": "A execução foi interrompida e precisa ser solicitada novamente.",
+            "engine_error": "A execução Premium não produziu um resultado.",
+        }
+        for code, message in fixed.items():
+            with self.subTest(code=code):
+                self.assertEqual(PremiumExecutor._safe_failure_message(code), message)
+        self.assertEqual(
+            PremiumExecutor._safe_failure_message(
+                "infeasible_constraints", dict(SHORTAGE_FIELDS)
+            ),
+            fixed["infeasible_constraints"],
+        )
 
 
 if __name__ == "__main__":

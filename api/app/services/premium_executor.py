@@ -93,7 +93,7 @@ class PremiumExecutor:
             capital = float(profile.investable_capital_brl)
         except Exception as exc:
             _close_session(session)
-            self._fail(run_id, self._failure_code(exc), str(exc))
+            self._fail(run_id, self._failure_code(exc), exc)
             return
         _close_session(session)
 
@@ -114,7 +114,7 @@ class PremiumExecutor:
             if not isinstance(result, Mapping):
                 raise RuntimeError("Premium optimization returned an invalid result")
         except Exception as exc:
-            self._fail(run_id, self._failure_code(exc), str(exc))
+            self._fail(run_id, self._failure_code(exc), exc)
             return
 
         session = _open_session(self.session_factory)
@@ -127,7 +127,7 @@ class PremiumExecutor:
         except Exception as exc:
             session.rollback()
             _close_session(session)
-            self._fail(run_id, self._failure_code(exc), str(exc))
+            self._fail(run_id, self._failure_code(exc), exc)
             return
         finally:
             _close_session(session)
@@ -186,12 +186,15 @@ class PremiumExecutor:
             return exc.code
         return "engine_error"
 
-    def _fail(self, run_id: str, code: str, message: str) -> None:
+    def _fail(self, run_id: str, code: str, exc: Exception) -> None:
         session = _open_session(self.session_factory)
         try:
             repository = RecommendationRepository(session)
             try:
-                repository.mark_failed(run_id, code, self._safe_failure_message(code))
+                fields = getattr(exc, "details", None)
+                repository.mark_failed(
+                    run_id, code, self._safe_failure_message(code, fields)
+                )
             except RecommendationStateError:
                 session.rollback()
                 return
@@ -200,7 +203,19 @@ class PremiumExecutor:
             _close_session(session)
 
     @staticmethod
-    def _safe_failure_message(code: str) -> str:
+    def _safe_failure_message(
+        code: str, fields: Mapping[str, Any] | None = None
+    ) -> str:
+        if code == "infeasible_universe" and isinstance(fields, Mapping):
+            return (
+                "Universo FII insuficiente: "
+                f"{float(fields['universe_count']):.0f} ativos utilizáveis "
+                f"({float(fields['eligible_count']):.0f} elegíveis) "
+                f"para {float(fields['required_count']):.0f} exigidos; "
+                f"limiares size_min={float(fields['size_min']):.0f}, "
+                f"liq_min={float(fields['liq_min']):.0f}; "
+                f"perfil {fields['profile']}."
+            )
         return {
             "snapshot_changed": "Os dados Premium foram alterados e a execução foi cancelada.",
             "snapshot_unavailable": "Os dados Premium não estão disponíveis para esta execução.",
