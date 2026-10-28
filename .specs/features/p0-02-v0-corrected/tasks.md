@@ -688,9 +688,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Any violated expectation reports `unexpected divergence`, names the row and exits non-zero - never folded into "expected"
-- [ ] The env gate refuses execution before any driver spawns (exit 2) when `TCC_V0_CORRECTED_REPLAY` is unset
-- [ ] Tests (3) green on synthetic in-memory/tempdir proofs (stdlib, no execution); quick gate green
+- [x] Any violated expectation reports `unexpected divergence`, names the row and exits non-zero - never folded into "expected"
+- [x] The env gate refuses execution before any driver spawns (exit 2) when `TCC_V0_CORRECTED_REPLAY` is unset
+- [x] Tests (3) green on synthetic in-memory/tempdir proofs (stdlib, no execution); quick gate green
 
 **Tests**: unit (derived from VC-21/VC-22/VC-27 criteria, `tests/test_v0_corrected_replay.py`):
 
