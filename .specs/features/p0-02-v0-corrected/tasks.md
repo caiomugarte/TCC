@@ -491,10 +491,10 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] `verify_artifacts.py` exits 0 over `reference/`: 100% of 120 rows have reported == recomputed (1e-9) and hhi self-recompute passes
-- [ ] FAIL branches proven by runtime fixtures in `TemporaryDirectory()`: mutated ticker set (size != n), duplicated TICKER, live-only ticker, NaN-SCORE semantics
-- [ ] A failing row stays in `rows_total` - never dropped, never counted as passing
-- [ ] Tests (6) green under tcc-venv; Full gate green
+- [x] `verify_artifacts.py` exits 0 over `reference/`: 100% of 120 rows have reported == recomputed (1e-9) and hhi self-recompute passes
+- [x] FAIL branches proven by runtime fixtures in `TemporaryDirectory()`: mutated ticker set (size != n), duplicated TICKER, live-only ticker, NaN-SCORE semantics
+- [x] A failing row stays in `rows_total` - never dropped, never counted as passing
+- [x] Tests (6) green under tcc-venv; Full gate green
 
 **Tests**: integration (derived from VC-01/VC-09/VC-10/VC-11/VC-24/VC-26 criteria, `tests/test_v0_corrected_artifacts.py`):
 
