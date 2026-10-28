@@ -287,10 +287,10 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] `build_manifest.build()` emits `files[]` with `path`, `source_path`, `sha256`, `git_blob_sha1`, `bytes`, `mode`, `role` and refuses overwrite (exit 3)
-- [ ] `verify_manifest.verify_bundle()` reports `missing`/`modified`/`unexpected` by path and kind, exits 0 `VERIFIED` / 1 `DRIFT` / 3 untrustworthy, `DEFAULT_BUNDLE = baselines/v0-corrected`
-- [ ] A file appearing later under an excluded path (e.g. `status.json`) is NOT `unexpected`
-- [ ] Tests (4) green on synthetic `TemporaryDirectory()` bundles only; quick gate green (52 P0-01 + 13 new)
+- [x] `build_manifest.build()` emits `files[]` with `path`, `source_path`, `sha256`, `git_blob_sha1`, `bytes`, `mode`, `role` and refuses overwrite (exit 3)
+- [x] `verify_manifest.verify_bundle()` reports `missing`/`modified`/`unexpected` by path and kind, exits 0 `VERIFIED` / 1 `DRIFT` / 3 untrustworthy, `DEFAULT_BUNDLE = baselines/v0-corrected`
+- [x] A file appearing later under an excluded path (e.g. `status.json`) is NOT `unexpected`
+- [x] Tests (4) green on synthetic `TemporaryDirectory()` bundles only; quick gate green (52 P0-01 + 13 new)
 
 **Tests**: unit (derived from VC-04/VC-28 mechanics, `tests/test_v0_corrected_bundle.py`):
 

@@ -17,9 +17,15 @@ imported. Nothing here writes under either bundle.
 """
 
 import ast
+import contextlib
 import hashlib
+import importlib.util
+import io
 import json
+import os
 import subprocess
+import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -245,6 +251,168 @@ class ProtocolTests(unittest.TestCase):
             deep_equal_except(tampered, legacy, ("baseline_id", "derived_from")),
             "an extra protocol key must break the deep-equal check",
         )
+
+
+def load_bundle_tool(name):
+    """Import a bundle tool from baselines/v0-corrected/tools/ under a unique module name.
+
+    Callers must have set sys.dont_write_bytecode first and must run with cwd inside a
+    scratch root (AD-013): importing bundle code writes __pycache__ and `ga_multiple_runs`
+    creates outputs/ at import time.
+    """
+    sys.dont_write_bytecode = True  # before the bundle import (AD-013)
+    path = CORRECTED / "tools" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(f"_test_v0_corrected_{name}", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class ManifestToolingTests(unittest.TestCase):
+    """VC-04/VC-28 machinery: build/verify contract on synthetic TemporaryDirectory bundles."""
+
+    EXCLUDED_PATHS = {
+        "baseline.json",
+        "protocol.json",
+        "README.md",
+        "tools/",
+        "status.json",
+        "environment.txt",
+        "requirements.txt",
+    }
+    REQUIRED_FIELDS = (
+        "path",
+        "source_path",
+        "sha256",
+        "git_blob_sha1",
+        "bytes",
+        "mode",
+        "role",
+    )
+
+    @classmethod
+    def setUpClass(cls):
+        sys.dont_write_bytecode = True  # before any bundle import (AD-013)
+        cls._scratch = tempfile.TemporaryDirectory()
+        cls._saved_cwd = os.getcwd()
+        os.chdir(cls._scratch.name)  # bundle imports run with cwd in a scratch root
+        cls.vm = load_bundle_tool("verify_manifest")
+        cls.bm = load_bundle_tool("build_manifest")
+
+    @classmethod
+    def tearDownClass(cls):
+        os.chdir(cls._saved_cwd)
+        cls._scratch.cleanup()
+
+    @staticmethod
+    def make_bundle(root):
+        """A synthetic bundle: files across all covered subtrees - never the real bundles."""
+        (root / "code").mkdir(parents=True)
+        (root / "data" / "processed").mkdir(parents=True)
+        (root / "reference").mkdir(parents=True)
+        (root / "code" / "ga.py").write_bytes(b"print('ga')\n")
+        (root / "code" / "profiles.py").write_bytes(b"print('profiles')\n")
+        (root / "code" / "ga_multiple_runs.py").write_bytes(b"print('runs')\n")
+        (root / "data" / "processed" / "fundamentals_clean_caio.csv").write_bytes(
+            b"TICKER,SCORE\nX,1.0\n"
+        )
+        (root / "data" / "processed" / "eligibility_filters.parquet").write_bytes(b"PARQUET")
+        (root / "reference" / "metrics_stability_caio.csv").write_bytes(b"run_id,fitness\n0,1.0\n")
+        (root / "reference" / "multiple_runs_summary.json").write_bytes(b"{}")
+        return root
+
+    @staticmethod
+    def run_main(module, argv):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            return module.main(argv)
+
+    def test_manifest_covers_three_subtrees_and_names_the_seven_exclusions_with_reasons(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self.make_bundle(Path(tmp) / "bundle")
+            manifest = self.bm.build(bundle)
+            self.assertEqual(
+                manifest["coverage"]["included_subtrees"], ["code/", "data/", "reference/"]
+            )
+            excluded = {
+                entry["path"]: entry["reason"] for entry in manifest["coverage"]["excluded"]
+            }
+            self.assertEqual(set(excluded), self.EXCLUDED_PATHS)
+            for path, reason in excluded.items():
+                with self.subTest(excluded=path):
+                    self.assertTrue(reason.strip(), "every exclusion needs a reason")
+            for entry in manifest["files"]:
+                with self.subTest(path=entry["path"]):
+                    for field in self.REQUIRED_FIELDS:
+                        self.assertIn(field, entry)
+            by_path = {entry["path"]: entry for entry in manifest["files"]}
+            data = (bundle / "code" / "ga.py").read_bytes()
+            self.assertEqual(by_path["code/ga.py"]["sha256"], hashlib.sha256(data).hexdigest())
+            self.assertEqual(by_path["code/ga.py"]["bytes"], len(data))
+            self.assertEqual(
+                by_path["code/ga.py"]["source_path"],
+                "baselines/v0-legacy/code/ga.py#canonical-transform",
+            )
+            self.assertEqual(
+                by_path["reference/metrics_stability_caio.csv"]["source_path"],
+                "generated:tools/generate_reference.py#pass-a",
+            )
+            # the manifest refuses overwrite
+            self.assertEqual(self.run_main(self.bm, ["--bundle", str(bundle)]), 0)
+            self.assertEqual(self.run_main(self.bm, ["--bundle", str(bundle)]), 3)
+
+    def test_missing_modified_and_unexpected_files_are_reported_by_path_and_kind(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self.make_bundle(Path(tmp) / "bundle")
+            self.assertEqual(self.run_main(self.bm, ["--bundle", str(bundle)]), 0)
+            clean = self.vm.verify_bundle(bundle)
+            self.assertEqual(clean["status"], "VERIFIED")
+            self.assertEqual(clean["findings"], [])
+            (bundle / "data" / "processed" / "eligibility_filters.parquet").unlink()
+            with open(bundle / "code" / "profiles.py", "ab") as handle:
+                handle.write(b"# drift\n")
+            pycache = bundle / "code" / "__pycache__"
+            pycache.mkdir()
+            (pycache / "ga.cpython-314.pyc").write_bytes(b"\x00")
+            (bundle / "reference" / "extra.json").write_bytes(b"{}")
+            report = self.vm.verify_bundle(bundle)
+            self.assertEqual(report["status"], "DRIFT")
+            kinds = {(finding["path"], finding["kind"]) for finding in report["findings"]}
+            self.assertEqual(
+                kinds,
+                {
+                    ("data/processed/eligibility_filters.parquet", "missing"),
+                    ("code/profiles.py", "modified"),
+                    ("code/__pycache__/ga.cpython-314.pyc", "unexpected"),
+                    ("reference/extra.json", "unexpected"),
+                },
+            )
+
+    def test_verified_bundle_exits_zero_and_broken_manifest_exits_three(self):
+        self.assertEqual(self.vm.DEFAULT_BUNDLE, "baselines/v0-corrected")
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self.make_bundle(Path(tmp) / "bundle")
+            self.assertEqual(self.run_main(self.bm, ["--bundle", str(bundle)]), 0)
+            self.assertEqual(self.run_main(self.vm, ["--bundle", str(bundle)]), 0)
+            (bundle / "code" / "profiles.py").write_bytes(b"# drifted\n")
+            self.assertEqual(self.run_main(self.vm, ["--bundle", str(bundle)]), 1)
+            (bundle / "baseline.json").write_text('{"schema_version": 1,', encoding="utf-8")
+            self.assertEqual(self.run_main(self.vm, ["--bundle", str(bundle)]), 3)
+
+    def test_excluded_paths_appearing_later_are_not_unexpected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle = self.make_bundle(Path(tmp) / "bundle")
+            self.assertEqual(self.run_main(self.bm, ["--bundle", str(bundle)]), 0)
+            for rel in ("README.md", "protocol.json", "status.json", "environment.txt",
+                        "requirements.txt"):
+                (bundle / rel).write_text("authored\n", encoding="utf-8")
+            tools = bundle / "tools"
+            tools.mkdir()
+            (tools / "compare_replay.py").write_text("# authored\n", encoding="utf-8")
+            report = self.vm.verify_bundle(bundle)
+            self.assertEqual(report["status"], "VERIFIED")
+            self.assertEqual(report["findings"], [])
+            unexpected = [f for f in report["findings"] if f["kind"] == "unexpected"]
+            self.assertEqual(unexpected, [])
 
 
 if __name__ == "__main__":
