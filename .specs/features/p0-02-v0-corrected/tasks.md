@@ -164,9 +164,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] `py/ga.py` equals `old->new` applied to `git show 181453f:py/ga.py` byte-for-byte (0-byte delta), so strict `>`, RNG call order, roulette, crossover, mutation and seeding stay untouched
-- [ ] Tests (3) green - names below; a one-byte mutation of the worktree file fails the equality leg
-- [ ] Quick gate green: `python3 -m unittest discover -s tests -p 'test_v0_*.py'` (52 P0-01 + 3 new)
+- [x] `py/ga.py` equals `old->new` applied to `git show 181453f:py/ga.py` byte-for-byte (0-byte delta), so strict `>`, RNG call order, roulette, crossover, mutation and seeding stay untouched
+- [x] Tests (3) green - names below; a one-byte mutation of the worktree file fails the equality leg
+- [x] Quick gate green: `python3 -m unittest discover -s tests -p 'test_v0_*.py'` (52 P0-01 + 3 new)
 
 **Tests**: unit (stdlib; derived from VC-03's acceptance criteria, `tests/test_v0_corrected_bundle.py`):
 
