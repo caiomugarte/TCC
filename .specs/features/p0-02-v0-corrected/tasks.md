@@ -751,9 +751,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Tests (3) green; both gates exit 0 after the full suite with zero unexpected files in either bundle
-- [ ] Completion gates green: Quick + Full + Build rows of the Gate Check Commands table (52 P0-01 unchanged; ~70 new tests total)
-- [ ] `outputs/` byte-identity holds; `baselines/v0-legacy/` covered bytes untouched
+- [x] Tests (3) green; both gates exit 0 after the full suite with zero unexpected files in either bundle
+- [x] Completion gates green: Quick + Full + Build rows of the Gate Check Commands table (52 P0-01 unchanged; ~70 new tests total)
+- [x] `outputs/` byte-identity holds; `baselines/v0-legacy/` covered bytes untouched
 
 **Tests**: e2e (derived from VC-23/VC-28 criteria, `tests/test_v0_zz_manifest_gates.py`):
 
