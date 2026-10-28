@@ -13,6 +13,7 @@ from fetch_status_invest_fii import SOURCE_COLUMNS  # noqa: E402
 from fii_selection import (  # noqa: E402
     FII_PROFILE_WEIGHTS,
     FiiSelectionError,
+    apply_fii_eligibility,
     build_fii_scores,
     load_fii_data,
     preprocess_fii,
@@ -157,6 +158,95 @@ class FiiSelectionTests(unittest.TestCase):
             _fixture_frame().drop(columns=["SETOR"]).to_csv(path, index=False)
             with self.assertRaisesRegex(FiiSelectionError, "must contain SETOR"):
                 load_fii_data(path)
+
+
+# Provenance: the rows below are the normative eligibility matrix frozen by
+# .specs/features/fii-universe-feasibility/spec.md (Assumption 2) and
+# docs/adr/0002-fii-universe-feasibility-policy.md, measured on the committed
+# snapshot data/raw/status_invest_fii.csv (588 FIIs) with the production
+# pipeline run_fii_selection uses (load_fii_data -> preprocess_fii ->
+# build_fii_scores, py/fii_selection.py:566-572). "eligible" counts the
+# post-eligibility rows; "ranked" counts the post-scoring rows the GA can
+# actually pick from (scoring drops rows with unusable fundamentals).
+NORMATIVE_MATRIX = (
+    # (size_min, liq_min, eligible, ranked)
+    (5.0e9, 2.0e6, 7, 7),
+    (3.0e9, 2.0e6, 13, 12),
+    (2.0e9, 2.0e6, 28, 26),
+    (1.0e9, 2.0e6, 50, 47),
+    (3.4e9, 1.4e6, 10, 9),
+    (1.0e9, 5.0e5, 61, 57),
+    (2.0e8, 5.0e4, 162, 137),
+)
+
+
+def _production_counts(filters):
+    raw = load_fii_data()
+    clean = preprocess_fii(raw, eligibility_filters=filters)
+    ranked = build_fii_scores(
+        clean, None, factor_weights=FII_PROFILE_WEIGHTS["conservador"]
+    )
+    return len(clean), len(ranked)
+
+
+class FiiNormativeMatrixTests(unittest.TestCase):
+    def _assert_counts(self, size_min, liq_min, eligible, ranked):
+        self.assertEqual(
+            _production_counts({"size_min": size_min, "liq_min": liq_min}),
+            (eligible, ranked),
+        )
+
+    def test_matrix_row_5e9_2e6(self):
+        self._assert_counts(5.0e9, 2.0e6, 7, 7)
+
+    def test_matrix_row_3e9_2e6(self):
+        self._assert_counts(3.0e9, 2.0e6, 13, 12)
+
+    def test_matrix_row_2e9_2e6(self):
+        self._assert_counts(2.0e9, 2.0e6, 28, 26)
+
+    def test_matrix_row_1e9_2e6(self):
+        self._assert_counts(1.0e9, 2.0e6, 50, 47)
+
+    def test_matrix_row_34e9_14e6(self):
+        self._assert_counts(3.4e9, 1.4e6, 10, 9)
+
+    def test_matrix_row_1e9_5e5_moderado_anchor(self):
+        self._assert_counts(1.0e9, 5.0e5, 61, 57)
+
+    def test_matrix_row_2e8_5e4_arrojado_anchor(self):
+        self._assert_counts(2.0e8, 5.0e4, 162, 137)
+
+    def test_eligibility_only_counts_match_preprocess_pipeline(self):
+        raw = load_fii_data()
+        for size_min, liq_min, eligible, _ranked in NORMATIVE_MATRIX:
+            with self.subTest(size_min=size_min, liq_min=liq_min):
+                filters = {"size_min": size_min, "liq_min": liq_min}
+                only_eligibility = apply_fii_eligibility(raw, filters=filters)
+                preprocessed = preprocess_fii(raw, eligibility_filters=filters)
+                self.assertEqual(len(only_eligibility), len(preprocessed))
+                self.assertEqual(len(only_eligibility), eligible)
+
+    def test_production_entry_point_reports_ranked_universe(self):
+        result = run_fii_selection(
+            selection_config={
+                "factor_weights": dict(FII_PROFILE_WEIGHTS["conservador"]),
+                "liquidity_and_size_filters": {
+                    "size_min": 3_000_000_000,
+                    "liq_min": 2_000_000,
+                },
+                "n_assets": 10,
+                "lambda": 0.5,
+                "system_ga_config": {},
+            },
+            n_runs=1,
+            ga_config={"generations": 2, "pop_size": 8},
+        )
+
+        self.assertEqual(result["n_candidates"], 12)
+        self.assertIsNone(result["output_path"])
+        self.assertIsNone(result["processed_path"])
+        self.assertIsNone(result["workspace"])
 
 
 if __name__ == "__main__":

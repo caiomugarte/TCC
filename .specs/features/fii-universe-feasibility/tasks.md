@@ -170,11 +170,11 @@ committed CSV; helpers from `tests/test_fii_selection.py` imports.
 
 **Done when**:
 
-- [ ] Matrix test asserts every count in the table above (both series) and fails loudly if the snapshot drifts.
-- [ ] The counts come from the production pipeline (`load_fii_data` → `preprocess_fii` → `build_fii_scores`); where the test also computes the `apply_fii_eligibility`-only counts it asserts equality with the `preprocess_fii` counts rather than trusting either path alone.
-- [ ] Production entry-point pin: `run_fii_selection(...)` for the 3e9/2e6 row reports `n_candidates == 12` (the ranked count), with `n_runs=1`, reduced GA budget, and no artifacts written.
-- [ ] Gate check passes: `/tmp/opencode/tcc-venv/bin/python3 -m unittest tests.test_fii_selection -v`
-- [ ] Test count: ≥ 8 new tests pass (one per matrix row plus the pipeline-equality and `n_candidates` pins).
+- [x] Matrix test asserts every count in the table above (both series) and fails loudly if the snapshot drifts.
+- [x] The counts come from the production pipeline (`load_fii_data` → `preprocess_fii` → `build_fii_scores`); where the test also computes the `apply_fii_eligibility`-only counts it asserts equality with the `preprocess_fii` counts rather than trusting either path alone.
+- [x] Production entry-point pin: `run_fii_selection(...)` for the 3e9/2e6 row reports `n_candidates == 12` (the ranked count), with `n_runs=1`, reduced GA budget, and no artifacts written.
+- [x] Gate check passes: `/tmp/opencode/tcc-venv/bin/python3 -m unittest tests.test_fii_selection -v`
+- [x] Test count: ≥ 8 new tests pass (one per matrix row plus the pipeline-equality and `n_candidates` pins).
 
 **Tests**: unit
 **Gate**: quick
