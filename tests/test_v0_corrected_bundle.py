@@ -126,5 +126,45 @@ class CorrectedCodeCopyTests(unittest.TestCase):
         )
 
 
+class FrozenCopyTests(unittest.TestCase):
+    """VC-04: every other copy is byte-identical to v0-legacy, sha256-verified."""
+
+    @staticmethod
+    def _manifest_entries():
+        manifest = json.loads((LEGACY / "baseline.json").read_text(encoding="utf-8"))
+        return {entry["path"]: entry for entry in manifest["files"]}
+
+    def test_profiles_and_ga_multiple_runs_are_byte_identical_to_the_legacy_copies(self):
+        for rel in ("code/profiles.py", "code/ga_multiple_runs.py"):
+            with self.subTest(path=rel):
+                legacy = (LEGACY / rel).read_bytes()
+                corrected = (CORRECTED / rel).read_bytes()
+                self.assertEqual(corrected, legacy)
+
+    def test_every_data_processed_file_matches_the_v0_legacy_manifest_sha256(self):
+        entries = self._manifest_entries()
+        data_paths = sorted(p for p in entries if p.startswith("data/processed/"))
+        self.assertEqual(len(data_paths), 5)
+        for rel in data_paths:
+            with self.subTest(path=rel):
+                digest = hashlib.sha256((CORRECTED / rel).read_bytes()).hexdigest()
+                self.assertEqual(digest, entries[rel]["sha256"])
+                legacy_digest = hashlib.sha256((LEGACY / rel).read_bytes()).hexdigest()
+                self.assertEqual(legacy_digest, entries[rel]["sha256"])
+
+    def test_every_corrected_copy_has_zero_byte_delta_against_its_counterpart(self):
+        entries = self._manifest_entries()
+        copies = ["code/profiles.py", "code/ga_multiple_runs.py"] + sorted(
+            p for p in entries if p.startswith("data/processed/")
+        )
+        self.assertEqual(len(copies), 7)
+        for rel in copies:
+            with self.subTest(path=rel):
+                legacy = (LEGACY / rel).read_bytes()
+                corrected = (CORRECTED / rel).read_bytes()
+                self.assertEqual(len(corrected) - len(legacy), 0)  # 0-byte delta
+                self.assertEqual(corrected, legacy)
+
+
 if __name__ == "__main__":
     unittest.main()

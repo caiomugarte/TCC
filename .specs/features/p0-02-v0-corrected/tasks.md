@@ -225,9 +225,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] All seven copies are byte-identical to their `v0-legacy` counterparts and their sha256 match the `v0-legacy/baseline.json` entries
-- [ ] Tests (3) green; quick gate green (52 P0-01 + 9 new)
-- [ ] Nothing is written under `baselines/v0-legacy/` (frozen constraint)
+- [x] All seven copies are byte-identical to their `v0-legacy` counterparts and their sha256 match the `v0-legacy/baseline.json` entries
+- [x] Tests (3) green; quick gate green (52 P0-01 + 9 new)
+- [x] Nothing is written under `baselines/v0-legacy/` (frozen constraint)
 
 **Tests**: unit (derived from VC-04, `tests/test_v0_corrected_bundle.py`):
 
