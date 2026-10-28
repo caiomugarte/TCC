@@ -561,11 +561,11 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Every strict `fitness` locator in `baselines/v0-legacy/reference/**` (5 of 9 files) and the pinned `outputs/` tree (15 of 160 tracked files) appears exactly once per recorded value; nested/aggregate `fitness` values enumerated by JSON structure
-- [ ] Every digest equals the git-blob computation at `181453f`; the working-tree `outputs/` bytes still match (AD-007 enforced as test); legacy-reference digests cross-check against `v0-legacy/baseline.json`
-- [ ] Every verdict recomputes from its recorded evidence via `verdict_for`; the marking test and the generator cannot drift (same code path)
-- [ ] `python3 baselines/v0-legacy/tools/verify_manifest.py` reports `VERIFIED 17` and the 52 P0-01 tests pass unmodified
-- [ ] Tests (11 total in the module: 6 from T6 + 5 new) green; quick gate green
+- [x] Every strict `fitness` locator in `baselines/v0-legacy/reference/**` (5 of 9 files) and the pinned `outputs/` tree (15 of 160 tracked files) appears exactly once per recorded value; nested/aggregate `fitness` values enumerated by JSON structure
+- [x] Every digest equals the git-blob computation at `181453f`; the working-tree `outputs/` bytes still match (AD-007 enforced as test); legacy-reference digests cross-check against `v0-legacy/baseline.json`
+- [x] Every verdict recomputes from its recorded evidence via `verdict_for`; the marking test and the generator cannot drift (same code path)
+- [x] `python3 baselines/v0-legacy/tools/verify_manifest.py` reports `VERIFIED 17` and the 52 P0-01 tests pass unmodified
+- [x] Tests (11 total in the module: 6 from T6 + 5 new) green; quick gate green
 
 **Tests**: unit (derived from VC-12/VC-13/VC-14/VC-15/VC-24 criteria, `tests/test_v0_corrected_status.py`):
 
