@@ -344,11 +344,11 @@ truthy) before the endpoint assertions.
 
 **Done when**:
 
-- [ ] The failed run is produced through the executor/adapter path: a stub `fii_engine` raises `FiiUniverseInfeasibleError`, and the stored `failure_code == "infeasible_universe"` is asserted as an exact match before any endpoint assertion (the test never calls `repository.mark_failed` directly).
-- [ ] Tests cover completed → failed sequence for Basic: through `GET /v1/recommendations` the failed run exposes `failure_code="infeasible_universe"`, `failure_message` and empty `classes`/`stocks`/`fiis`; `GET /v1/recommendations/latest-completed` continues to return the previous completed run with its non-empty payload and `failure_code=None` (a failed run can never be returned there: `api/app/repositories/recommendations.py:147-159`).
-- [ ] Sanitisation assertions from `ERR-02` hold at route level.
-- [ ] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
-- [ ] Test count: existing tests plus ≥ 3 new tests pass.
+- [x] The failed run is produced through the executor/adapter path: a stub `fii_engine` raises `FiiUniverseInfeasibleError`, and the stored `failure_code == "infeasible_universe"` is asserted as an exact match before any endpoint assertion (the test never calls `repository.mark_failed` directly).
+- [x] Tests cover completed → failed sequence for Basic: through `GET /v1/recommendations` the failed run exposes `failure_code="infeasible_universe"`, `failure_message` and empty `classes`/`stocks`/`fiis`; `GET /v1/recommendations/latest-completed` continues to return the previous completed run with its non-empty payload and `failure_code=None` (a failed run can never be returned there: `api/app/repositories/recommendations.py:147-159`).
+- [x] Sanitisation assertions from `ERR-02` hold at route level.
+- [x] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
+- [x] Test count: existing tests plus ≥ 3 new tests pass.
 
 **Tests**: integration
 **Gate**: full

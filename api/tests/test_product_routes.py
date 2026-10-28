@@ -1,10 +1,16 @@
+import hashlib
+import tempfile
 import unittest
+from functools import partial
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi import HTTPException
 from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session
 
+from app.adapters.premium_optimization import run_premium_optimization
 from app.auth.dependencies import ClerkIdentity, get_current_account
 from app.db.base import Base
 from app.db.models import Account, Entitlement, PortfolioSnapshot, ProfileRecord, RecommendationRun
@@ -23,8 +29,12 @@ from app.schemas.portfolio import PortfolioInput
 from app.schemas.profile import ProfileSubmission
 from app.schemas.recommendation import RecommendationRequest
 from app.repositories.recommendations import RecommendationRepository
+from app.services.premium_executor import PremiumExecutor
+from app.services.premium_policy import resolve_recommendation_policy
 from app.services.premium_recommendation import PremiumRecommendationError
 from app.services.profile import compute_profile
+from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from fii_selection import FiiUniverseInfeasibleError
 
 
 def valid_answers() -> dict[str, str | list[str]]:
@@ -45,6 +55,72 @@ def valid_answers() -> dict[str, str | list[str]]:
         "formacao": "autodidata",
         "restricoes": ["nenhuma"],
     }
+
+
+# Frozen expectations for the Basic closed-failure path (spec AC P3.1 / ERR-02):
+# the stub FII engine raises the typed 3e9/2e6 shortage and the executor must
+# persist the frozen template rendering — raw exception text never reaches
+# storage. Counts mirror docs/adr/0002-fii-universe-feasibility-policy.md
+# (13 eligible / 12 ranked vs 13 required at the pre-calibration anchor).
+FROZEN_SHORTAGE_MESSAGE = (
+    "Universo FII insuficiente: 12 ativos utilizáveis (13 elegíveis) "
+    "para 13 exigidos; limiares size_min=3000000000, liq_min=2000000; "
+    "perfil conservador."
+)
+
+COMPLETED_BASIC_RESULT = {
+    "classes": [
+        {
+            "key": "brazilian_stocks",
+            "label": "Ações brasileiras",
+            "target_weight": 0.4,
+            "target_amount_brl": 40_000,
+        },
+        {
+            "key": "fiis",
+            "label": "FIIs",
+            "target_weight": 0.2,
+            "target_amount_brl": 20_000,
+        },
+    ],
+    "assumptions": ["fixture"],
+    "risks": ["fixture risk"],
+    "stocks": [
+        {
+            "ticker": "AAA3",
+            "sleeve_weight": 0.5,
+            "portfolio_weight": 0.2,
+            "target_amount_brl": 20_000,
+            "reasons": ["fixture"],
+        }
+    ],
+    "fiis": [
+        {
+            "ticker": "AAA11",
+            "sleeve_weight": 1.0,
+            "portfolio_weight": 0.2,
+            "target_amount_brl": 20_000,
+            "reasons": ["fixture"],
+        }
+    ],
+    "provenance": {"selector_sources": {"stocks": {}, "fiis": {}}},
+}
+
+
+def _status_invest_inputs_for(workspace):
+    source_root = Path(workspace) / "status-invest"
+    source_root.mkdir(parents=True, exist_ok=True)
+    snapshots = {}
+    for role, ticker in (("stocks", "AAA3"), ("fiis", "AAA11")):
+        path = source_root / f"{role}.csv"
+        path.write_text(f"TICKER\n{ticker}\n", encoding="utf-8")
+        snapshots[role] = SourceSnapshot(
+            path=path.resolve(),
+            provider="statusinvest",
+            retrieved_at="2026-07-21T00:00:00Z",
+            sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+        )
+    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
 class ProductRouteTests(unittest.TestCase):
@@ -362,6 +438,143 @@ class ProductRouteTests(unittest.TestCase):
         failed = read_recommendation(run.id, self.account, self.session)
         self.assertEqual(failed.status, "failed")
         self.assertIsNone(failed.provenance)
+
+    def induce_infeasible_universe_failure(self, profile):
+        """Create a queued Basic run and fail it through the executor/adapter path.
+
+        The stub ``fii_engine`` raises the typed 3e9/2e6 shortage; adapter
+        classification (``infeasible_universe``) and executor rendering are the
+        seams under test, so ``repository.mark_failed`` is never called here.
+        """
+        policy = resolve_recommendation_policy(profile, plan="basic").to_dict()
+        run = RecommendationRepository(self.session).create_queued(
+            account_id=self.account.id,
+            profile_id=profile.id,
+            policy=policy,
+            provenance={
+                "manifest_path": "/private/snapshots/manifest.json",
+                "manifest": {"sources": {"fiis": {"path": "/private/fiis.csv"}}},
+            },
+            plan="basic",
+            snapshot_id="fixture-v1",
+            snapshot_cutoff="2026-07-21",
+            model_version="basic-v1",
+        )
+        self.session.commit()
+
+        def stub_fii_engine(**_kwargs):
+            raise FiiUniverseInfeasibleError(
+                "conservador", 13, 12, 13, 3_000_000_000.0, 2_000_000.0
+            )
+
+        optimization_runner = partial(
+            run_premium_optimization,
+            snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+            allocation_engine=lambda *_args, **_kwargs: {
+                "current_target": {
+                    "selected": {
+                        "profile_winner": {
+                            "weights": {
+                                "brazilian_stocks": 0.4,
+                                "fiis": 0.2,
+                                "international_equity": 0.1,
+                                "fixed_income": 0.2,
+                                "crypto": 0.1,
+                            }
+                        }
+                    }
+                }
+            },
+            stock_engine=lambda **_kwargs: {
+                "selected_tickers": ["AAA3"],
+                "sleeve_weights": {"AAA3": 1.0},
+            },
+            fii_engine=stub_fii_engine,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            executor = PremiumExecutor(
+                session_factory=lambda: Session(self.engine),
+                manifest_loader=lambda _provenance: {"fixture": True},
+                status_invest_inputs_loader=_status_invest_inputs_for,
+                optimization_runner=optimization_runner,
+                workspace_root=Path(directory) / "workspaces",
+            )
+            try:
+                executor.execute_run(run.id)
+            finally:
+                executor.shutdown()
+        self.session.expire_all()
+        return run
+
+    def test_basic_infeasible_universe_failure_is_terminal_and_closed_in_the_read_path(self):
+        profile = self.save_valid_profile()
+        run = self.induce_infeasible_universe_failure(profile)
+
+        stored = self.session.get(RecommendationRun, run.id)
+        self.assertEqual(stored.failure_code, "infeasible_universe")
+        self.assertEqual(stored.status, "failed")
+        self.assertIsNone(stored.result_json)
+
+        latest = read_latest_recommendation(self.account, self.session)
+
+        self.assertEqual(latest.id, run.id)
+        self.assertEqual(latest.status, "failed")
+        self.assertEqual(latest.failure_code, "infeasible_universe")
+        self.assertEqual(latest.failure_message, FROZEN_SHORTAGE_MESSAGE)
+        self.assertEqual(latest.classes, [])
+        self.assertEqual(latest.stocks, [])
+        self.assertEqual(latest.fiis, [])
+        self.assertIsNone(latest.provenance)
+
+    def test_failed_basic_run_keeps_the_published_batch_byte_identical(self):
+        profile = self.save_valid_profile()
+        completed = self.save_completed_run(profile, plan="basic", result=COMPLETED_BASIC_RESULT)
+        before = read_latest_completed_recommendation(self.account, self.session)
+        before_payload = before.model_dump_json()
+
+        run = self.induce_infeasible_universe_failure(profile)
+
+        stored = self.session.get(RecommendationRun, run.id)
+        self.assertEqual(stored.failure_code, "infeasible_universe")
+
+        after = read_latest_completed_recommendation(self.account, self.session)
+        self.assertEqual(after.model_dump_json(), before_payload)
+        self.assertEqual(after.id, completed.id)
+        self.assertEqual(after.status, "completed")
+        self.assertIsNone(after.failure_code)
+        self.assertTrue(after.classes)
+        self.assertTrue(after.stocks)
+        self.assertTrue(after.fiis)
+
+        latest = read_latest_recommendation(self.account, self.session)
+        self.assertEqual(latest.id, run.id)
+        self.assertEqual(latest.status, "failed")
+        self.assertEqual(latest.failure_code, "infeasible_universe")
+        self.assertEqual(latest.classes, [])
+
+    def test_new_basic_failure_leaves_prior_completed_runs_unchanged(self):
+        profile = self.save_valid_profile()
+        completed = self.save_completed_run(profile, plan="basic", result=COMPLETED_BASIC_RESULT)
+        before = read_recommendation(completed.id, self.account, self.session).model_dump_json()
+
+        run = self.induce_infeasible_universe_failure(profile)
+
+        stored = self.session.get(RecommendationRun, run.id)
+        self.assertEqual(stored.failure_code, "infeasible_universe")
+
+        after = read_recommendation(completed.id, self.account, self.session)
+        self.assertEqual(after.model_dump_json(), before)
+        self.assertEqual(after.status, "completed")
+
+        failed = read_recommendation(run.id, self.account, self.session)
+        self.assertEqual(failed.failure_code, "infeasible_universe")
+        self.assertEqual(failed.failure_message, FROZEN_SHORTAGE_MESSAGE)
+        self.assertNotIn("/", failed.failure_message)
+        self.assertLessEqual(len(failed.failure_message), 512)
+        self.assertLessEqual(len(failed.failure_code), 64)
+        self.assertEqual(failed.classes, [])
+        self.assertEqual(failed.stocks, [])
+        self.assertEqual(failed.fiis, [])
 
     def test_latest_completed_skips_pending_and_follows_current_profile_and_plan(self):
         old_profile = self.save_valid_profile()
