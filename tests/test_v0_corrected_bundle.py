@@ -1,4 +1,4 @@
-"""v0-corrected (P0-02) bundle proofs (spec.md VC-02..VC-05, tasks T1-T5).
+"""v0-corrected (P0-02) bundle proofs (spec.md VC-02..VC-05, VC-01/VC-09/VC-29, tasks T1-T7).
 
 The tests derive from the spec's acceptance criteria, not from the implementation:
 
@@ -11,6 +11,9 @@ The tests derive from the spec's acceptance criteria, not from the implementatio
   matches `baselines/v0-legacy/baseline.json`.
 - VC-05: `protocol.json` is deeply equal to the v0-legacy protocol except `baseline_id` and
   `derived_from`; the AST-extracted constants are equal with the four frozen configs only.
+- VC-01/VC-09/VC-29 (generation machinery): 30 run_ids x 4 profiles completeness, the
+  double-pass byte-digest compare, the generation proof schema, and the per-row driver tie
+  that rejects a row the driver did not produce.
 
 Standard library only: bytes are hashed and compared, constants are AST-extracted, never
 imported. Nothing here writes under either bundle.
@@ -18,6 +21,7 @@ imported. Nothing here writes under either bundle.
 
 import ast
 import contextlib
+import csv
 import hashlib
 import importlib.util
 import io
@@ -413,6 +417,167 @@ class ManifestToolingTests(unittest.TestCase):
             self.assertEqual(report["findings"], [])
             unexpected = [f for f in report["findings"] if f["kind"] == "unexpected"]
             self.assertEqual(unexpected, [])
+
+
+class GenerationPipelineTests(unittest.TestCase):
+    """VC-01/VC-09/VC-29 generation machinery: completeness, determinism, proof, driver tie.
+
+    Pure functions over synthetic `TemporaryDirectory()` outputs - the real generation
+    is executed at T8 under tcc-venv and pinned by its proof.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        sys.dont_write_bytecode = True  # before any bundle import (AD-013)
+        cls._scratch = tempfile.TemporaryDirectory()
+        cls._saved_cwd = os.getcwd()
+        os.chdir(cls._scratch.name)  # bundle imports run with cwd in a scratch root
+        cls.gr = load_bundle_tool("generate_reference")
+
+    @classmethod
+    def tearDownClass(cls):
+        os.chdir(cls._saved_cwd)
+        cls._scratch.cleanup()
+
+    @staticmethod
+    def synthetic_row(profile, run_id):
+        """One recorded row exactly as the frozen writer serializes it."""
+        return {
+            "run_id": run_id,
+            "seed": 42 + run_id,
+            "tickers": [f"{profile[:2].upper()}{i:02d}3" for i in range(run_id % 5, run_id % 5 + 10)],
+            "fitness": 4.0 + run_id / 100.0,
+            "hhi": 0.10 + (run_id % 7) / 100.0,
+        }
+
+    def make_outputs(self, root):
+        """A synthetic outputs/ set: 9 files, 30 run_ids x 4 profiles, VC-09-consistent."""
+        root = Path(root)
+        root.mkdir(parents=True, exist_ok=True)
+        summary = {}
+        for profile in self.gr.PROFILES:
+            rows = [self.synthetic_row(profile, run_id) for run_id in range(30)]
+            with open(root / f"metrics_stability_{profile}.csv", "w", newline="", encoding="utf-8") as handle:
+                writer = csv.writer(handle)
+                writer.writerow(["run_id", "seed", "tickers", "fitness", "hhi"])
+                for row in rows:
+                    writer.writerow([row["run_id"], row["seed"], repr(row["tickers"]),
+                                     row["fitness"], row["hhi"]])
+            (root / f"carteira_{profile}_consensus.json").write_text("[]\n", encoding="utf-8")
+            summary[profile] = {"n_runs": len(rows), "all_runs": rows}
+        (root / "multiple_runs_summary.json").write_text(
+            json.dumps(summary), encoding="utf-8"
+        )
+        return root
+
+    def rewrite_csv(self, root, profile, rows):
+        with open(Path(root) / f"metrics_stability_{profile}.csv", "w", newline="", encoding="utf-8") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(["run_id", "seed", "tickers", "fitness", "hhi"])
+            for row in rows:
+                writer.writerow([row["run_id"], row["seed"], repr(row["tickers"]),
+                                 row["fitness"], row["hhi"]])
+
+    def test_assert_complete_rejects_a_missing_run_id_or_profile(self):
+        gr = self.gr
+        with tempfile.TemporaryDirectory() as tmp:
+            outputs = self.make_outputs(Path(tmp) / "outputs")
+            self.assertEqual(gr.assert_complete(outputs), [])
+
+            rows = [r for r in gr.read_metrics_rows(outputs, "caio") if r["run_id"] != 7]
+            self.rewrite_csv(outputs, "caio", rows)
+            problems = gr.assert_complete(outputs)
+            self.assertTrue(any("caio" in p and "missing run_id 7" in p for p in problems))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outputs = self.make_outputs(Path(tmp) / "outputs")
+            (outputs / "metrics_stability_moderado.csv").unlink()
+            problems = gr.assert_complete(outputs)
+            self.assertTrue(any("missing output file: metrics_stability_moderado.csv" in p
+                                for p in problems))
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outputs = self.make_outputs(Path(tmp) / "outputs")
+            rows = gr.read_metrics_rows(outputs, "conservador")
+            rows[3]["seed"] = 99  # the seed rule is seed_base + run_id
+            self.rewrite_csv(outputs, "conservador", rows)
+            problems = gr.assert_complete(outputs)
+            self.assertTrue(any("seed" in p and "run_id 3" in p for p in problems))
+
+    def test_compare_passes_catches_a_single_byte_digest_difference(self):
+        gr = self.gr
+        pass_a = {"metrics_stability_caio.csv": "aa", "multiple_runs_summary.json": "bb"}
+        pass_b = {"metrics_stability_caio.csv": "aa", "multiple_runs_summary.json": "bb"}
+        self.assertEqual(gr.compare_passes(pass_a, pass_b), [])
+        pass_b["metrics_stability_caio.csv"] = "cc"  # one file, one byte
+        problems = gr.compare_passes(pass_a, pass_b)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("metrics_stability_caio.csv", problems[0])
+        self.assertTrue(any(p.startswith("digest differs") for p in problems))
+        self.assertTrue(gr.compare_passes(pass_a, {"multiple_runs_summary.json": "bb"}))
+
+    def test_emit_proof_records_the_schema_and_120_driver_rows(self):
+        gr = self.gr
+        driver_rows = [
+            {
+                "profile": profile,
+                "run_id": run_id,
+                "seed": 42 + run_id,
+                "tickers": ["AAA3", "BBB3"],
+                "fitness": 6.2445628,
+                "hhi": 0.16,
+            }
+            for profile in gr.PROFILES
+            for run_id in range(30)
+        ]
+        pass_a = {"metrics_stability_caio.csv": "aa"}
+        pass_b = {"metrics_stability_caio.csv": "aa"}
+        proof = gr.emit_proof(pass_a, pass_b, driver_rows)
+        self.assertEqual(
+            set(proof),
+            {"schema_version", "env", "passes", "deterministic", "driver_rows"},
+        )
+        self.assertEqual(proof["schema_version"], 1)
+        self.assertEqual(set(proof["env"]), {"python_VV", "numpy", "pandas"})
+        self.assertEqual(set(proof["passes"]), {"a", "b"})
+        self.assertIs(proof["deterministic"], True)
+        self.assertEqual(len(proof["driver_rows"]), 120)
+        for row in proof["driver_rows"]:
+            self.assertEqual(set(row), {"profile", "run_id", "seed", "tickers", "fitness", "hhi"})
+        self.assertEqual(
+            {(r["profile"], r["run_id"]) for r in proof["driver_rows"]},
+            {(p, run_id) for p in gr.PROFILES for run_id in range(30)},
+        )
+        diverging = gr.emit_proof(pass_a, {"metrics_stability_caio.csv": "zz"}, driver_rows)
+        self.assertIs(diverging["deterministic"], False)
+
+    def test_tie_to_driver_flags_a_row_the_stub_driver_did_not_produce(self):
+        gr = self.gr
+        with tempfile.TemporaryDirectory() as tmp:
+            outputs = self.make_outputs(Path(tmp) / "outputs")
+
+            def faithful(profile, run_id):
+                return self.synthetic_row(profile, run_id)
+
+            problems, driver_rows = gr.tie_to_driver(
+                outputs, CORRECTED, Path(tmp) / "scratch", runner=faithful, max_workers=1
+            )
+            self.assertEqual(problems, [])
+            self.assertEqual(len(driver_rows), 120)
+
+            def dropping(profile, run_id):
+                if (profile, run_id) == ("caio", 7):
+                    return None  # the row the stub driver did not produce
+                return self.synthetic_row(profile, run_id)
+
+            problems, driver_rows = gr.tie_to_driver(
+                outputs, CORRECTED, Path(tmp) / "scratch", runner=dropping, max_workers=1
+            )
+            self.assertTrue(
+                any("caio run_id 7" in p and "driver produced no row" in p for p in problems)
+            )
+            self.assertEqual(len(problems), 1)
+            self.assertEqual(len(driver_rows), 119)
 
 
 if __name__ == "__main__":

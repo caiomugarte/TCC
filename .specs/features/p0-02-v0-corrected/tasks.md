@@ -357,10 +357,10 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] `generate_reference.py` refuses to commit on nondeterminism or tie divergence (exit 1) and reports unusable input with exit 3
-- [ ] Completeness: all 30 run_ids x 4 profiles asserted (the frozen writer swallows per-run exceptions; completeness is checked, not assumed)
-- [ ] The generator's tie defends the forged reference: a row the driver did not produce fails
-- [ ] Tests (4) green (pure functions over synthetic tempdirs, stdlib); Full gate green under tcc-venv: `/tmp/opencode/tcc-venv/bin/python -m unittest discover -s tests -p 'test_v0_*.py'`
+- [x] `generate_reference.py` refuses to commit on nondeterminism or tie divergence (exit 1) and reports unusable input with exit 3
+- [x] Completeness: all 30 run_ids x 4 profiles asserted (the frozen writer swallows per-run exceptions; completeness is checked, not assumed)
+- [x] The generator's tie defends the forged reference: a row the driver did not produce fails
+- [x] Tests (4) green (pure functions over synthetic tempdirs, stdlib); Full gate green under tcc-venv: `/tmp/opencode/tcc-venv/bin/python -m unittest discover -s tests -p 'test_v0_*.py'`
 
 **Tests**: unit (derived from VC-01/VC-09/VC-29 criteria, `tests/test_v0_corrected_bundle.py`):
 
