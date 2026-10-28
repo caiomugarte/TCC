@@ -526,9 +526,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] For every enumerated generation/seed the recorded (fitness, chromosome) is a member of that generation's evaluated pairs; the winner is the evaluated individual at the argmax index of its own generation
-- [ ] The legacy module shows >= 1 violated generation, recorded as the expected defect signature
-- [ ] Tests (5) green under tcc-venv (SKIP with explicit reason on system python3); Full gate green
+- [x] For every enumerated generation/seed the recorded (fitness, chromosome) is a member of that generation's evaluated pairs; the winner is the evaluated individual at the argmax index of its own generation
+- [x] The legacy module shows >= 1 violated generation, recorded as the expected defect signature
+- [x] Tests (5) green under tcc-venv (SKIP with explicit reason on system python3); Full gate green
 
 **Tests**: unit (derived from VC-06/VC-07/VC-08 criteria, `tests/test_v0_corrected_property.py`):
 
@@ -752,7 +752,7 @@ T8 -> T19
 **Done when**:
 
 - [ ] Tests (3) green; both gates exit 0 after the full suite with zero unexpected files in either bundle
-- [ ] Completion gates green: Quick + Full + Build rows of the Gate Check Commands table (52 P0-01 unchanged; ~69 new tests total)
+- [ ] Completion gates green: Quick + Full + Build rows of the Gate Check Commands table (52 P0-01 unchanged; ~70 new tests total)
 - [ ] `outputs/` byte-identity holds; `baselines/v0-legacy/` covered bytes untouched
 
 **Tests**: e2e (derived from VC-23/VC-28 criteria, `tests/test_v0_zz_manifest_gates.py`):
