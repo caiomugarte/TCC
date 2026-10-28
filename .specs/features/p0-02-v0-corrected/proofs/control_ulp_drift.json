@@ -1,0 +1,118 @@
+{
+  "schema_version": 1,
+  "description": "VC-25 control-profile rows whose fitness is not bit-identical to the archive but within 4 ULP (AD-016). A control row beyond 4 ULP fails the gate outright and is never recorded here.",
+  "comparison": {
+    "archived": "baselines/v0-legacy/reference/metrics_stability_<profile>.csv column fitness",
+    "corrected": "baselines/v0-corrected/reference/metrics_stability_<profile>.csv column fitness",
+    "matched_on": [
+      "run_id",
+      "seed"
+    ],
+    "ulp_definition": "float64 packed bits mapped to sign-flipped ordered integers; distance = absolute difference",
+    "tolerance_ulp": 4
+  },
+  "summary": {
+    "control_rows": 90,
+    "bit_identical": 78,
+    "recorded_drift_rows": 12,
+    "max_ulp_distance": 2
+  },
+  "entries": [
+    {
+      "profile": "conservador",
+      "run_id": 24,
+      "seed": 66,
+      "archived_fitness": 4.97267939053146,
+      "corrected_fitness": 4.972679390531459,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "moderado",
+      "run_id": 2,
+      "seed": 44,
+      "archived_fitness": 4.292506089659459,
+      "corrected_fitness": 4.29250608965946,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "moderado",
+      "run_id": 3,
+      "seed": 45,
+      "archived_fitness": 4.098210432643082,
+      "corrected_fitness": 4.098210432643084,
+      "ulp_distance": 2
+    },
+    {
+      "profile": "moderado",
+      "run_id": 13,
+      "seed": 55,
+      "archived_fitness": 4.3314356184639955,
+      "corrected_fitness": 4.331435618463996,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "moderado",
+      "run_id": 18,
+      "seed": 60,
+      "archived_fitness": 4.2793118191845005,
+      "corrected_fitness": 4.279311819184501,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "moderado",
+      "run_id": 26,
+      "seed": 68,
+      "archived_fitness": 4.064168573853061,
+      "corrected_fitness": 4.0641685738530615,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "moderado",
+      "run_id": 29,
+      "seed": 71,
+      "archived_fitness": 4.270142758668851,
+      "corrected_fitness": 4.270142758668852,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "arrojado",
+      "run_id": 18,
+      "seed": 60,
+      "archived_fitness": 5.482287463539001,
+      "corrected_fitness": 5.482287463539002,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "arrojado",
+      "run_id": 21,
+      "seed": 63,
+      "archived_fitness": 4.831944078616521,
+      "corrected_fitness": 4.83194407861652,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "arrojado",
+      "run_id": 24,
+      "seed": 66,
+      "archived_fitness": 5.252388036122402,
+      "corrected_fitness": 5.252388036122403,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "arrojado",
+      "run_id": 28,
+      "seed": 70,
+      "archived_fitness": 5.173192976566386,
+      "corrected_fitness": 5.173192976566387,
+      "ulp_distance": 1
+    },
+    {
+      "profile": "arrojado",
+      "run_id": 29,
+      "seed": 71,
+      "archived_fitness": 4.97875987987072,
+      "corrected_fitness": 4.978759879870721,
+      "ulp_distance": 1
+    }
+  ]
+}
