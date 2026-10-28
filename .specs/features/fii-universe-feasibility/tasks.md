@@ -468,10 +468,10 @@ explicit mode and its `ga_config` override (`py/fii_selection.py:543-544`).
 
 **Done when**:
 
-- [ ] Restricted run (conservador + `limitar_concentracao`): completes; `hhi_max == 0.25` present in `liquidity_and_size_filters` and reaching the GA settings; consensus HHI ≤ 0.25 (measured 0.2400 for 4/4 seeds with the production budget).
-- [ ] Unrestricted run (restriction absent, same pinned seed and budget): nested filters carry no `hhi_max`; the run completes; consensus HHI > 0.25 — the measured direction (0.2800) is asserted with the pinned seed, not the exact production value.
-- [ ] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
-- [ ] Test count: ≥ 2 new tests pass.
+- [x] Restricted run (conservador + `limitar_concentracao`): completes; `hhi_max == 0.25` present in `liquidity_and_size_filters` and reaching the GA settings; consensus HHI ≤ 0.25 (measured 0.2400 for 4/4 seeds with the production budget).
+- [x] Unrestricted run (restriction absent, same pinned seed and budget): nested filters carry no `hhi_max`; the run completes; consensus HHI > 0.25 — the measured direction (0.2800) is asserted with the pinned seed, not the exact production value.
+- [x] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
+- [x] Test count: ≥ 2 new tests pass.
 
 **Tests**: integration
 **Gate**: full

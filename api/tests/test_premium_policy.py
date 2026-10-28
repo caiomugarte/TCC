@@ -3,6 +3,7 @@ import unittest
 from collections import Counter
 from decimal import Decimal
 from pathlib import Path
+from unittest import mock
 
 from app.db.models import ProfileRecord
 from app.services.premium_policy import (
@@ -18,10 +19,12 @@ from app.services.premium_policy import (
     resolve_recommendation_policy,
 )
 from fii_selection import (
+    GeneticAlgorithm,
     apply_fii_eligibility,
     build_fii_scores,
     load_fii_data,
     preprocess_fii,
+    run_fii_selection,
 )
 
 
@@ -438,6 +441,86 @@ class PremiumInterpolationBandTests(unittest.TestCase):
         self._assert_segment_feasible(
             "moderado->arrojado", lambda fraction: 0.5 + 0.5 * fraction
         )
+
+
+class _RecordingGeneticAlgorithm(GeneticAlgorithm):
+    """Captures the GA constructor's ``hhi_max`` to prove the nested-filters
+    wiring reaches the GA settings (``optimize_fii_portfolio`` seam)."""
+
+    constructed_with: list = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        type(self).constructed_with.append(kwargs.get("hhi_max"))
+
+
+class ConservadorAnchorExecutabilityTests(unittest.TestCase):
+    """POL-03 anchor half: ADR-0002's central claim made executable — the
+    conservador anchor runs under ``limitar_concentracao`` and the only wiring
+    difference is the nested ``hhi_max``."""
+
+    PINNED_SEED = 42
+    GA_BUDGET = {"generations": 30, "pop_size": 20}
+
+    def _anchor_fiis_policy(self, restrictions):
+        # Conservador anchor through the real resolution path: selector score
+        # 0.0 -> _selector_policy/_interpolate at f=0 (premium_policy.py:199-243).
+        resolved = resolve_premium_policy(
+            profile(
+                score=0.0,
+                raw_score=0.0,
+                generic_profile="conservador",
+                restrictions=restrictions,
+                knowledge=0.0,
+            )
+        )
+        return resolved.fiis
+
+    def _run_real_selector(self, selector_policy):
+        config = {
+            "selection_preset": "conservador",
+            "factor_weights": dict(selector_policy.factor_weights),
+            "liquidity_and_size_filters": dict(
+                selector_policy.liquidity_and_size_filters
+            ),
+            "n_assets": selector_policy.n_assets,
+            "lambda_hhi": selector_policy.lambda_hhi,
+            "system_ga_config": dict(selector_policy.system_ga_config),
+        }
+        _RecordingGeneticAlgorithm.constructed_with = []
+        with mock.patch("fii_selection.GeneticAlgorithm", _RecordingGeneticAlgorithm):
+            result = run_fii_selection(
+                selection_config=config,
+                n_runs=1,
+                ga_config=dict(self.GA_BUDGET),
+                random_seed=self.PINNED_SEED,
+            )
+        return result
+
+    def test_conservador_anchor_executes_with_the_hhi_cap_reaching_the_ga(self) -> None:
+        restricted = self._anchor_fiis_policy(["limitar_concentracao"])
+        self.assertEqual(restricted.liquidity_and_size_filters["hhi_max"], 0.25)
+
+        result = self._run_real_selector(restricted)
+
+        self.assertEqual(_RecordingGeneticAlgorithm.constructed_with, [0.25])
+        self.assertLessEqual(result["hhi"], 0.25 + 1e-12)
+        self.assertEqual(result["n_selected"], restricted.n_assets)
+
+    def test_unrestricted_anchor_differs_only_by_hhi_max_and_runs_above_the_cap(self) -> None:
+        restricted = self._anchor_fiis_policy(["limitar_concentracao"])
+        unrestricted = self._anchor_fiis_policy(["nenhuma"])
+
+        restricted_filters = dict(restricted.liquidity_and_size_filters)
+        unrestricted_filters = dict(unrestricted.liquidity_and_size_filters)
+        self.assertEqual(restricted_filters.pop("hhi_max"), 0.25)
+        self.assertNotIn("hhi_max", unrestricted_filters)
+        self.assertEqual(restricted_filters, unrestricted_filters)
+
+        result = self._run_real_selector(unrestricted)
+
+        self.assertEqual(_RecordingGeneticAlgorithm.constructed_with, [None])
+        self.assertGreater(result["hhi"], 0.25)
 
 
 if __name__ == "__main__":
