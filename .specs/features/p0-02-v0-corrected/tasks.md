@@ -409,7 +409,7 @@ T8 -> T19
 ### T9: Record the VC-25 early verdict and the divergence table
 
 **What**: Compare the committed reference to the archive per (run_id, seed): the three control profiles must be bit-identical (`struct.pack('>d')`) **or within 4 ULP** (AD-016, human ruling after the batch-B blocking finding) with every non-identical row recorded in `proofs/control_ulp_drift.json`; a control row beyond 4 ULP reports a **blocking finding for a human** (never a table entry); caio divergences are recorded with (archived, corrected) values in `proofs/reference_divergences.json` (caio rows only).
-**Where**: `.specs/features/p0-02-v0-corrected/proofs/reference_divergences.json` and `.specs/features/p0-02-v0-corrected/proofs/control_ulp_drift.json`
+**Where**: `.specs/features/p0-02-v0-corrected/proofs/`
 **Depends on**: T8
 **Files touched**: `.specs/features/p0-02-v0-corrected/proofs/reference_divergences.json`, `.specs/features/p0-02-v0-corrected/proofs/control_ulp_drift.json`, `tests/test_v0_corrected_bundle.py`
 **Reuses**: `_verdict.float_bitwise_equal` + a ULP-distance helper; the generated reference; the archive CSVs read-only
