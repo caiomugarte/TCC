@@ -258,11 +258,11 @@ short-circuit in `premium_executor._failure_code`
 
 **Done when**:
 
-- [ ] A shortage raised by the FII engine surfaces as `PremiumOptimizationError` with `code == "infeasible_universe"` and the structured fields intact.
-- [ ] Non-shortage `FiiSelectionError`s keep today's classification; the HHI breach text path is unchanged.
-- [ ] Unit tests in `api/tests/test_premium_optimization.py` cover both branches with a stub `fii_engine`.
-- [ ] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
-- [ ] Test count: existing tests plus ≥ 3 new tests pass.
+- [x] A shortage raised by the FII engine surfaces as `PremiumOptimizationError` with `code == "infeasible_universe"` and the structured fields intact.
+- [x] Non-shortage `FiiSelectionError`s keep today's classification; the HHI breach text path is unchanged.
+- [x] Unit tests in `api/tests/test_premium_optimization.py` cover both branches with a stub `fii_engine`.
+- [x] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
+- [x] Test count: existing tests plus ≥ 3 new tests pass.
 
 **Tests**: unit
 **Gate**: full

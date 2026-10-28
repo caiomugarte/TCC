@@ -4,6 +4,7 @@ from dataclasses import asdict, is_dataclass
 import math
 from pathlib import Path
 import sys
+from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
 from app.services.status_invest_inputs import StatusInvestInputs
@@ -15,6 +16,7 @@ if str(PY_ROOT) not in sys.path:
     sys.path.insert(0, str(PY_ROOT))
 
 from allocation_config import ASSET_CLASSES  # noqa: E402
+from fii_selection import FiiUniverseInfeasibleError  # noqa: E402
 
 
 def _default_snapshot_loader(manifest: object) -> object:
@@ -83,9 +85,17 @@ CLASS_LABELS = {
 class PremiumOptimizationError(ValueError):
     """Raised when a Premium engine cannot produce a complete result."""
 
-    def __init__(self, message: str, code: str = "engine_error") -> None:
+    def __init__(
+        self,
+        message: str,
+        code: str = "engine_error",
+        details: Mapping[str, object] | None = None,
+    ) -> None:
         super().__init__(message)
         self.code = code
+        self.details = (
+            MappingProxyType(dict(details)) if details is not None else None
+        )
 
 
 def _json_value(value: Any) -> Any:
@@ -536,6 +546,19 @@ def run_premium_optimization(
             )
         except PremiumOptimizationError:
             raise
+        except FiiUniverseInfeasibleError as exc:
+            raise PremiumOptimizationError(
+                str(exc),
+                "infeasible_universe",
+                {
+                    "profile": exc.profile,
+                    "eligible_count": exc.eligible_count,
+                    "universe_count": exc.universe_count,
+                    "required_count": exc.required_count,
+                    "size_min": exc.size_min,
+                    "liq_min": exc.liq_min,
+                },
+            ) from exc
         except Exception as exc:
             code = (
                 "infeasible_constraints"
