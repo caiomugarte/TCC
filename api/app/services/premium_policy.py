@@ -9,8 +9,8 @@ from typing import Any, Mapping, Sequence
 from app.db.models import ProfileRecord
 
 
-POLICY_VERSION = "premium-policy-v1"
-BASIC_POLICY_VERSION = "basic-policy-v1"
+POLICY_VERSION = "premium-policy-v2"
+BASIC_POLICY_VERSION = "basic-policy-v2"
 RULES_VERSION = POLICY_VERSION
 PROFILE_SCHEMA_VERSION = 1
 
@@ -70,7 +70,7 @@ FII_RULES = {
     "conservador": {
         "n_assets": 10,
         "factor_weights": {"liquidity": 0.30, "size_cash": 0.25, "value": 0.15, "growth": 0.10, "dividend": 0.20},
-        "filters": {"size_min": 5_000_000_000, "liq_min": 2_000_000},
+        "filters": {"size_min": 3_000_000_000, "liq_min": 2_000_000},
         "lambda_hhi": 0.50,
     },
     "moderado": {

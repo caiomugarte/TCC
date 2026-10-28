@@ -4,6 +4,9 @@ from decimal import Decimal
 from app.db.models import ProfileRecord
 from app.services.premium_policy import (
     BASIC_POLICY_VERSION,
+    FII_RULES,
+    POLICY_VERSION,
+    STOCK_RULES,
     SYSTEM_GA_CONFIG,
     PremiumPolicyError,
     resolve_basic_policy,
@@ -199,6 +202,57 @@ class PremiumPolicyTests(unittest.TestCase):
             resolve_recommendation_policy(profile(), plan="premium", **kwargs).to_json(),
             resolve_premium_policy(profile(), **kwargs).to_json(),
         )
+
+    def test_conservador_fii_rules_pin_the_adr_0002_calibration(self) -> None:
+        self.assertEqual(
+            FII_RULES["conservador"]["filters"],
+            {"size_min": 3_000_000_000, "liq_min": 2_000_000},
+        )
+        self.assertEqual(
+            {band: rules["n_assets"] for band, rules in FII_RULES.items()},
+            {"conservador": 10, "moderado": 12, "arrojado": 15},
+        )
+        self.assertEqual(
+            FII_RULES["moderado"]["filters"],
+            {"size_min": 1_000_000_000, "liq_min": 500_000},
+        )
+        self.assertEqual(
+            FII_RULES["arrojado"]["filters"],
+            {"size_min": 200_000_000, "liq_min": 50_000},
+        )
+
+    def test_stock_rules_are_untouched_by_the_fii_calibration(self) -> None:
+        self.assertEqual(
+            STOCK_RULES["conservador"]["filters"],
+            {"cap_min": 5_000_000_000, "liq_min": 2_000_000},
+        )
+        self.assertEqual(
+            STOCK_RULES["moderado"]["filters"],
+            {"cap_min": 1_000_000_000, "liq_min": 500_000},
+        )
+        self.assertEqual(
+            STOCK_RULES["arrojado"]["filters"],
+            {"cap_min": 200_000_000, "liq_min": 50_000},
+        )
+        self.assertEqual(
+            {band: rules["n_assets"] for band, rules in STOCK_RULES.items()},
+            {"conservador": 10, "moderado": 12, "arrojado": 15},
+        )
+
+    def test_policy_versions_are_bumped_and_reject_the_v1_strings(self) -> None:
+        self.assertEqual(POLICY_VERSION, "premium-policy-v2")
+        self.assertEqual(BASIC_POLICY_VERSION, "basic-policy-v2")
+        with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
+            resolve_premium_policy(profile(), rules_version="premium-policy-v1")
+        with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
+            resolve_basic_policy(profile(), rules_version="basic-policy-v1")
+
+    def test_persisted_provenance_reports_the_bumped_policy_versions(self) -> None:
+        premium = resolve_premium_policy(profile())
+        basic = resolve_recommendation_policy(profile(), plan="basic")
+
+        self.assertEqual(premium.provenance.policy_version, "premium-policy-v2")
+        self.assertEqual(basic.provenance.policy_version, "basic-policy-v2")
 
 
 if __name__ == "__main__":

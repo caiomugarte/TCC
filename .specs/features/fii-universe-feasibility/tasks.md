@@ -125,12 +125,12 @@ ADR-declared ones.
 
 **Done when**:
 
-- [ ] `FII_RULES["conservador"]["filters"] == {"size_min": 3_000_000_000, "liq_min": 2_000_000}` and `n_assets == 10`; moderado/arrojado and `STOCK_RULES` untouched.
-- [ ] `POLICY_VERSION == "premium-policy-v2"` and `BASIC_POLICY_VERSION == "basic-policy-v2"`; `resolve_premium_policy`/`resolve_basic_policy` reject the old version strings.
-- [ ] Pin tests in `api/tests/test_premium_policy.py` assert the exact values above and the persisted `policy_version`, so any value change breaks a test until the pin is updated with it.
-- [ ] Post-approval bookkeeping (ADR-0002 decision = option (a) + version bump): record it in `.specs/project/STATE.md` Confirmed decisions as AD-0002. Execute runs only after the human checkpoint approves the ADR, so this checkbox can never self-approve it; until then `.specs/project/STATE.md` stays deliberately untouched.
-- [ ] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
-- [ ] Test count: existing `api/tests/test_premium_policy.py` tests plus ≥ 3 new pin tests pass (no silent deletions).
+- [x] `FII_RULES["conservador"]["filters"] == {"size_min": 3_000_000_000, "liq_min": 2_000_000}` and `n_assets == 10`; moderado/arrojado and `STOCK_RULES` untouched.
+- [x] `POLICY_VERSION == "premium-policy-v2"` and `BASIC_POLICY_VERSION == "basic-policy-v2"`; `resolve_premium_policy`/`resolve_basic_policy` reject the old version strings.
+- [x] Pin tests in `api/tests/test_premium_policy.py` assert the exact values above and the persisted `policy_version`, so any value change breaks a test until the pin is updated with it.
+- [x] Post-approval bookkeeping (ADR-0002 decision = option (a) + version bump): record it in `.specs/project/STATE.md` Confirmed decisions as AD-0002. Execute runs only after the human checkpoint approves the ADR, so this checkbox can never self-approve it; until then `.specs/project/STATE.md` stays deliberately untouched.
+- [x] Gate check passes: `PYTHONPATH=api:py /tmp/opencode/tcc-venv/bin/python3 -m unittest discover -s api/tests -q`
+- [x] Test count: existing `api/tests/test_premium_policy.py` tests plus ≥ 3 new pin tests pass (no silent deletions).
 
 **Tests**: unit
 **Gate**: full
