@@ -459,9 +459,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] `fitness_of`/`hhi_of`/`score_fields_of`/`evidence_for_row` implement the frozen semantics exactly (skipna sum; NaN-SCORE rows distinguishable from `n*mean`)
-- [ ] Imports set `sys.dont_write_bytecode = True` and run under a scratch cwd; nothing is written under `code/`, `data/`, `reference/`
-- [ ] Tests (4) green under tcc-venv (SKIP with explicit reason on system python3)
+- [x] `fitness_of`/`hhi_of`/`score_fields_of`/`evidence_for_row` implement the frozen semantics exactly (skipna sum; NaN-SCORE rows distinguishable from `n*mean`)
+- [x] Imports set `sys.dont_write_bytecode = True` and run under a scratch cwd; nothing is written under `code/`, `data/`, `reference/`
+- [x] Tests (4) green under tcc-venv (SKIP with explicit reason on system python3)
 
 **Tests**: unit (derived from VC-11 criteria, `tests/test_v0_corrected_artifacts.py`):
 
