@@ -1,4 +1,4 @@
-"""v0-corrected (P0-02) bundle proofs (spec.md VC-02..VC-05, VC-01/VC-09/VC-29, tasks T1-T7).
+"""v0-corrected (P0-02) bundle proofs (spec.md VC-02..VC-05, VC-01/VC-09/VC-29, tasks T1-T8).
 
 The tests derive from the spec's acceptance criteria, not from the implementation:
 
@@ -578,6 +578,102 @@ class GenerationPipelineTests(unittest.TestCase):
             )
             self.assertEqual(len(problems), 1)
             self.assertEqual(len(driver_rows), 119)
+
+
+PROOFS = REPO / ".specs" / "features" / "p0-02-v0-corrected" / "proofs"
+GENERATION_PROOF = PROOFS / "generation_proof.json"
+CORRECTED_REFERENCE = CORRECTED / "reference"
+
+
+def reference_rows(profile):
+    """Committed reference rows of one profile, keyed cells parsed - the test's own read."""
+    path = CORRECTED_REFERENCE / f"metrics_stability_{profile}.csv"
+    rows = {}
+    with open(path, newline="", encoding="utf-8") as handle:
+        for row in csv.DictReader(handle, strict=True):
+            rows[int(row["run_id"])] = {
+                "run_id": int(row["run_id"]),
+                "seed": int(row["seed"]),
+                "tickers": list(ast.literal_eval(row["tickers"])),
+                "fitness": float(row["fitness"]),
+                "hhi": float(row["hhi"]),
+            }
+    return rows
+
+
+class GenerationEvidenceTests(unittest.TestCase):
+    """VC-01/VC-29: the committed reference is provably the corrected driver's output.
+
+    Fast legs over the committed artifacts: reference <-> proofs/generation_proof.json
+    coherence for every driver row, the double-pass digests vs the committed bytes, and
+    the manifest pin. The execution that produced them ran at build time (T8).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        sys.dont_write_bytecode = True  # before any bundle import (AD-013)
+        cls._scratch = tempfile.TemporaryDirectory()
+        cls._saved_cwd = os.getcwd()
+        os.chdir(cls._scratch.name)  # bundle imports run with cwd in a scratch root
+        cls.vd = load_bundle_tool("_verdict")
+        cls.vm = load_bundle_tool("verify_manifest")
+        cls.proof = json.loads(GENERATION_PROOF.read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        os.chdir(cls._saved_cwd)
+        cls._scratch.cleanup()
+
+    def test_generation_proof_ties_every_reference_row_to_the_driver_for_120_rows(self):
+        recorded = {}
+        for profile in ("conservador", "moderado", "arrojado", "caio"):
+            for run_id, row in reference_rows(profile).items():
+                recorded[(profile, run_id)] = row
+        driver = {
+            (row["profile"], row["run_id"]): row for row in self.proof["driver_rows"]
+        }
+        self.assertEqual(len(self.proof["driver_rows"]), 120)
+        self.assertEqual(set(driver), set(recorded))
+        for key in sorted(recorded):
+            with self.subTest(row=key):
+                self.assertEqual(self.vd.tie_row(recorded[key], driver[key]), [])
+
+    def test_generation_proof_passes_digests_match_the_committed_reference_bytes(self):
+        proof = self.proof
+        self.assertIs(proof["deterministic"], True)
+        self.assertEqual(set(proof["passes"]), {"a", "b"})
+        pass_a, pass_b = proof["passes"]["a"], proof["passes"]["b"]
+        self.assertEqual(pass_a, pass_b, "the two passes must be byte-identical")
+        committed = sorted(p.name for p in CORRECTED_REFERENCE.iterdir() if p.is_file())
+        self.assertEqual(sorted(pass_a), committed)
+        for name, digest in sorted(pass_a.items()):
+            with self.subTest(file=name):
+                data = (CORRECTED_REFERENCE / name).read_bytes()
+                self.assertEqual(hashlib.sha256(data).hexdigest(), digest)
+
+    def test_baseline_manifest_pins_the_generated_reference(self):
+        manifest = json.loads((CORRECTED / "baseline.json").read_text(encoding="utf-8"))
+        by_path = {entry["path"]: entry for entry in manifest["files"]}
+        reference_files = sorted(
+            f"reference/{p.name}" for p in CORRECTED_REFERENCE.iterdir() if p.is_file()
+        )
+        self.assertEqual(len(reference_files), 9)
+        for rel in reference_files:
+            with self.subTest(path=rel):
+                entry = by_path[rel]
+                self.assertEqual(
+                    entry["source_path"], "generated:tools/generate_reference.py#pass-a"
+                )
+                data = (CORRECTED / rel).read_bytes()
+                self.assertEqual(entry["sha256"], hashlib.sha256(data).hexdigest())
+                self.assertEqual(entry["bytes"], len(data))
+        self.assertEqual(
+            by_path["code/ga.py"]["source_path"],
+            "baselines/v0-legacy/code/ga.py#canonical-transform",
+        )
+        report = self.vm.verify_bundle(CORRECTED)
+        self.assertEqual(report["status"], "VERIFIED")
+        self.assertEqual(report["findings"], [])
 
 
 if __name__ == "__main__":

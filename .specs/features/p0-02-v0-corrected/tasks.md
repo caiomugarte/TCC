@@ -390,10 +390,10 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Generator exit 0: both passes byte-identical (sha256 per file), 30 run_ids x 4 profiles complete, 120/120 driver-tie rows pass (tickers set, `fitness`, `hhi`)
-- [ ] `reference/` holds pass A bytes verbatim - never hand-edited; `baseline.json` pins them with `source_path: generated:tools/generate_reference.py#pass-a`
-- [ ] Tests (3) green: the fast reference <-> `generation_proof.json` tie for all 120 rows
-- [ ] Build gate green: `python3 baselines/v0-legacy/tools/verify_manifest.py && python3 baselines/v0-corrected/tools/verify_manifest.py`
+- [x] Generator exit 0: both passes byte-identical (sha256 per file), 30 run_ids x 4 profiles complete, 120/120 driver-tie rows pass (tickers set, `fitness`, `hhi`)
+- [x] `reference/` holds pass A bytes verbatim - never hand-edited; `baseline.json` pins them with `source_path: generated:tools/generate_reference.py#pass-a`
+- [x] Tests (3) green: the fast reference <-> `generation_proof.json` tie for all 120 rows
+- [x] Build gate green: `python3 baselines/v0-legacy/tools/verify_manifest.py && python3 baselines/v0-corrected/tools/verify_manifest.py`
 
 **Tests**: unit (derived from VC-01/VC-29 criteria, `tests/test_v0_corrected_bundle.py`):
 
