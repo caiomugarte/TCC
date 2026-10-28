@@ -1,0 +1,37 @@
+v0-corrected declared environment (VC-19; design D-g)
+=====================================================
+
+This is the environment the corrected reference and the committed proofs were
+generated and verified in. It is declared durably because it is not durable - see
+the caveat at the bottom.
+
+Interpreter stamp - `python -VV` output of the generating interpreter
+(/tmp/opencode/tcc-venv/bin/python):
+
+    Python 3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]
+
+Library versions the frozen code and the recomputation import:
+
+    numpy 2.5.4
+    pandas 3.1.0
+
+Working install command (requirements.txt pins the two libraries above):
+
+    python3 -m venv <dir> && <dir>/bin/pip install -r requirements.txt
+
+Full `pip freeze` output of the generating venv:
+
+    numpy==2.5.4
+    pandas==3.1.0
+    python-dateutil==3.0.0
+    six==1.17.0
+    tzdata==2026.6
+
+Caveat (D-g): the committed proofs are
+reproducible only while those wheels remain obtainable.
+If they leave PyPI, or the exact CPython 3.14.4 build and the BLAS/CPU float
+behavior these wheels happened to have are gone, re-running the drivers can drift
+from the committed proofs. The venv itself (/tmp/opencode/tcc-venv) is ephemeral and is not committed:
+this file is a recipe, not a guarantee. The evidence of record is the committed
+proofs, and the methodological note (README.md) makes no reproducibility claim
+beyond them.

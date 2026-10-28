@@ -596,9 +596,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] `environment.txt` contains the interpreter stamp, numpy/pandas versions, `pip freeze`, `python3 -m venv <dir> && <dir>/bin/pip install -r requirements.txt`, and the caveat that proofs reproduce only while those wheels remain obtainable
-- [ ] The venv itself is NOT committed; the note-level "not reproducible later" claim is T16's
-- [ ] Tests (2) green; quick gate green
+- [x] `environment.txt` contains the interpreter stamp, numpy/pandas versions, `pip freeze`, `python3 -m venv <dir> && <dir>/bin/pip install -r requirements.txt`, and the caveat that proofs reproduce only while those wheels remain obtainable
+- [x] The venv itself is NOT committed; the note-level "not reproducible later" claim is T16's
+- [x] Tests (2) green; quick gate green
 
 **Tests**: unit (derived from VC-19 criteria, `tests/test_v0_corrected_status.py`):
 

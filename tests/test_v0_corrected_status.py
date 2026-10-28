@@ -52,6 +52,7 @@ PINNED_BASE = "181453f986cce7941addf9092e38c6e005e18844"  # spec.md "Pinned Base
 LEGACY_REFERENCE_PREFIX = "baselines/v0-legacy/reference/"
 OUTPUTS_PREFIX = "outputs/"
 STATUS_PATH = "baselines/v0-corrected/status.json"
+PROOFS = REPO / ".specs" / "features" / "p0-02-v0-corrected" / "proofs"
 
 
 def load_bundle_tool(name):
@@ -536,6 +537,51 @@ class StatusMapMarkingTests(unittest.TestCase):
         )
         self.assertEqual(suite.returncode, 0, suite.stdout + suite.stderr)
         self.assertIn("Ran 52 tests", suite.stderr)
+
+
+class EnvironmentPinTests(unittest.TestCase):
+    """The declared generating environment (spec.md VC-19; tasks T14).
+
+    The checks are static on purpose (D-g): the generating venv is ephemeral, so the
+    test must hold after it is gone. The "full `pip freeze`" claim is verified at
+    emission time; here the freeze section is checked for shape and for carrying
+    every install pin. "Full" cannot be re-derived once the venv is gone - that limit
+    is exactly what the caveat states and what VC-18 bounds the note to.
+    """
+
+    def test_environment_declares_python_numpy_pandas_freeze_and_install_command(self):
+        env = (CORRECTED / "environment.txt").read_text(encoding="utf-8")
+        req = (CORRECTED / "requirements.txt").read_text(encoding="utf-8")
+        proof = json.loads((PROOFS / "generation_proof.json").read_text(encoding="utf-8"))["env"]
+
+        # the interpreter stamp is the generating interpreter's `python -VV` output
+        self.assertIn(proof["python_VV"], env)
+        self.assertIn("python -VV", env)
+        # numpy and pandas versions, pinned to what generated the reference
+        self.assertIn(f"numpy=={proof['numpy']}", env)
+        self.assertIn(f"pandas=={proof['pandas']}", env)
+        self.assertIn(f"numpy=={proof['numpy']}", req)
+        self.assertIn(f"pandas=={proof['pandas']}", req)
+        # a full pip freeze section carrying every install pin
+        self.assertIn("pip freeze", env)
+        pins = [line.strip() for line in req.splitlines() if line.strip()]
+        self.assertGreaterEqual(len(pins), 2)
+        for pin in pins:
+            self.assertIn(pin, env)
+        # the working install command
+        self.assertIn(
+            "python3 -m venv <dir> && <dir>/bin/pip install -r requirements.txt", env
+        )
+
+    def test_environment_carries_the_wheels_obtainability_caveat(self):
+        env = (CORRECTED / "environment.txt").read_text(encoding="utf-8")
+        # VC-19: the proofs reproduce only while the pinned wheels remain obtainable
+        self.assertIn("reproducible only while those wheels remain obtainable", env)
+        # D-g: the venv itself is ephemeral and is NOT committed
+        self.assertIn("is ephemeral and is not committed", env)
+        self.assertFalse(any((REPO / "baselines").rglob("pyvenv.cfg")))
+        self.assertFalse((REPO / "baselines" / "tcc-venv").exists())
+        self.assertFalse((CORRECTED / "venv").exists())
 
 
 if __name__ == "__main__":
