@@ -217,13 +217,13 @@ deliberately not refactored), fixture style of `tests/test_fii_selection.py`.
 
 **Done when**:
 
-- [ ] Shortage in explicit mode raises before any GA execution and before any file write; `n_assets` is never reduced anywhere.
-- [ ] The raised error carries all six structured fields and its exception text contains no file paths; `pickle.loads(pickle.dumps(err))` reconstructs the same type with all six fields intact.
-- [ ] Synthetic-fixture unit tests cover: shortage raises; exact boundary (ranked == n_assets) proceeds; and the failing variant where the eligible set satisfies `n_assets` but scoring shrinks the universe — eligible 13 / ranked 12 / `n_assets` 13 raises and reports `12 ativos utilizáveis (13 elegíveis) para 13 exigidos` (both counts in the diagnostic).
-- [ ] Per-row behavior over the normative matrix (rows pinned by T2): ranked ≥ `n_assets` passes the precondition; ranked < `n_assets` raises `FiiUniverseInfeasibleError` carrying both counts.
-- [ ] Named-profile calls are testably unaffected: a named-profile shortage raises the exact legacy `FiiSelectionError("FII universe has {N} assets; {M} required")` (type and message byte-identical), never `FiiUniverseInfeasibleError`, and writes no artifacts.
-- [ ] Gate check passes: `/tmp/opencode/tcc-venv/bin/python3 -m unittest tests.test_fii_selection -v`
-- [ ] Test count: existing 7 tests plus ≥ 6 new tests pass (no silent deletions).
+- [x] Shortage in explicit mode raises before any GA execution and before any file write; `n_assets` is never reduced anywhere.
+- [x] The raised error carries all six structured fields and its exception text contains no file paths; `pickle.loads(pickle.dumps(err))` reconstructs the same type with all six fields intact.
+- [x] Synthetic-fixture unit tests cover: shortage raises; exact boundary (ranked == n_assets) proceeds; and the failing variant where the eligible set satisfies `n_assets` but scoring shrinks the universe — eligible 13 / ranked 12 / `n_assets` 13 raises and reports `12 ativos utilizáveis (13 elegíveis) para 13 exigidos` (both counts in the diagnostic).
+- [x] Per-row behavior over the normative matrix (rows pinned by T2): ranked ≥ `n_assets` passes the precondition; ranked < `n_assets` raises `FiiUniverseInfeasibleError` carrying both counts.
+- [x] Named-profile calls are testably unaffected: a named-profile shortage raises the exact legacy `FiiSelectionError("FII universe has {N} assets; {M} required")` (type and message byte-identical), never `FiiUniverseInfeasibleError`, and writes no artifacts.
+- [x] Gate check passes: `/tmp/opencode/tcc-venv/bin/python3 -m unittest tests.test_fii_selection -v`
+- [x] Test count: existing 7 tests plus ≥ 6 new tests pass (no silent deletions).
 
 **Tests**: unit
 **Gate**: quick

@@ -117,6 +117,67 @@ class FiiSelectionError(ValueError):
     """Raised when FII input cannot be selected safely."""
 
 
+class FiiUniverseInfeasibleError(FiiSelectionError):
+    """Raised when the scored FII universe cannot satisfy ``n_assets``.
+
+    The six shortage facts travel via ``self.args`` and ``__reduce__`` so the
+    error survives ``pickle`` across the ``mp.Pool`` worker boundary used by
+    ``run_fii_selection(parallel=True)``.  Fields are frozen (read-only
+    properties) and the text carries counts only, never file paths.
+    """
+
+    def __init__(
+        self,
+        profile: str,
+        eligible_count: int,
+        universe_count: int,
+        required_count: int,
+        size_min: float,
+        liq_min: float,
+    ) -> None:
+        super().__init__(
+            str(profile),
+            int(eligible_count),
+            int(universe_count),
+            int(required_count),
+            float(size_min),
+            float(liq_min),
+        )
+
+    def __reduce__(self):
+        return (type(self), self.args)
+
+    def __str__(self) -> str:
+        return (
+            f"{self.universe_count} ativos utilizáveis "
+            f"({self.eligible_count} elegíveis) para {self.required_count} exigidos"
+        )
+
+    @property
+    def profile(self) -> str:
+        return self.args[0]
+
+    @property
+    def eligible_count(self) -> int:
+        return self.args[1]
+
+    @property
+    def universe_count(self) -> int:
+        return self.args[2]
+
+    @property
+    def required_count(self) -> int:
+        return self.args[3]
+
+    @property
+    def size_min(self) -> float:
+        return self.args[4]
+
+    @property
+    def liq_min(self) -> float:
+        return self.args[5]
+
+
 FII_FILTER_ALIASES = {
     "liquidity_min": ("liquidity_min", "liq_min", "min_liquidity"),
     "patrimony_min": (
@@ -147,6 +208,33 @@ def _normalise_fii_filters(
             )
         result[target] = value
     return result
+
+
+def _require_feasible_universe(
+    eligible_count: int,
+    ranked: Sequence[object],
+    n_assets: int,
+    filters: Optional[Mapping[str, object]],
+    profile_label: str,
+) -> None:
+    """Fail fast when the scored universe cannot satisfy ``n_assets``.
+
+    Only the explicit/premium branch of ``run_fii_selection`` calls this; the
+    named-profile offline path keeps the legacy shortage check in
+    ``optimize_fii_portfolio`` untouched.
+    """
+
+    if len(ranked) >= n_assets:
+        return
+    normalised = _normalise_fii_filters(filters)
+    raise FiiUniverseInfeasibleError(
+        profile_label,
+        eligible_count,
+        len(ranked),
+        n_assets,
+        normalised.get("patrimony_min", 0.0),
+        normalised.get("liquidity_min", 0.0),
+    )
 
 
 def _canonical_column(column: str) -> str:
@@ -571,6 +659,14 @@ def run_fii_selection(
         factor_weights=factor_weights,
     )
     n_assets = int(settings["n_assets"])
+    if explicit_mode:
+        _require_feasible_universe(
+            len(clean),
+            ranked,
+            n_assets,
+            filters,
+            str(resolved_config.get("selection_preset", "explicit")),
+        )
 
     execution_results = []
     portfolios = []

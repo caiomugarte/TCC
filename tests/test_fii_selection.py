@@ -1,4 +1,5 @@
 from pathlib import Path
+import pickle
 import sys
 import tempfile
 import unittest
@@ -13,6 +14,8 @@ from fetch_status_invest_fii import SOURCE_COLUMNS  # noqa: E402
 from fii_selection import (  # noqa: E402
     FII_PROFILE_WEIGHTS,
     FiiSelectionError,
+    FiiUniverseInfeasibleError,
+    _require_feasible_universe,
     apply_fii_eligibility,
     build_fii_scores,
     load_fii_data,
@@ -247,6 +250,160 @@ class FiiNormativeMatrixTests(unittest.TestCase):
         self.assertIsNone(result["output_path"])
         self.assertIsNone(result["processed_path"])
         self.assertIsNone(result["workspace"])
+
+
+def _explicit_config(filters, n_assets):
+    return {
+        "factor_weights": dict(FII_PROFILE_WEIGHTS["conservador"]),
+        "liquidity_and_size_filters": filters,
+        "n_assets": n_assets,
+        "lambda": 0.5,
+        "system_ga_config": {"generations": 2, "pop_size": 4},
+    }
+
+
+class FiiUniverseFeasibilityTests(unittest.TestCase):
+    def test_explicit_shortage_fails_before_execution_and_writes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            input_path = directory / "fii.csv"
+            _fixture_frame().to_csv(input_path, index=False)
+            workspace = directory / "workspaces"
+
+            with self.assertRaises(FiiUniverseInfeasibleError) as error:
+                run_fii_selection(
+                    input_path=input_path,
+                    selection_config=_explicit_config({}, 7),
+                    n_runs=1,
+                    workspace=workspace,
+                    output_path=directory / "portfolio.json",
+                    processed_path=directory / "clean.csv",
+                )
+
+            failure = error.exception
+            self.assertEqual(failure.profile, "explicit")
+            self.assertEqual(failure.eligible_count, 6)
+            self.assertEqual(failure.universe_count, 6)
+            self.assertEqual(failure.required_count, 7)
+            self.assertFalse(workspace.exists())
+            self.assertFalse((directory / "portfolio.json").exists())
+            self.assertFalse((directory / "clean.csv").exists())
+
+    def test_explicit_boundary_ranked_equal_to_n_assets_proceeds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = Path(directory) / "fii.csv"
+            _fixture_frame().to_csv(input_path, index=False)
+
+            result = run_fii_selection(
+                input_path=input_path,
+                selection_config=_explicit_config({}, 6),
+                n_runs=1,
+            )
+
+            self.assertEqual(result["n_candidates"], 6)
+            self.assertEqual(result["n_selected"], 6)
+            self.assertIsNone(result["output_path"])
+            self.assertIsNone(result["processed_path"])
+
+    def test_scoring_shrunk_universe_reports_both_counts(self):
+        config = _explicit_config(
+            {"size_min": 3_000_000_000, "liq_min": 2_000_000}, 13
+        )
+        config["selection_preset"] = "conservador"
+
+        with self.assertRaises(FiiUniverseInfeasibleError) as error:
+            run_fii_selection(selection_config=config, n_runs=1)
+
+        failure = error.exception
+        self.assertEqual(failure.profile, "conservador")
+        self.assertEqual(failure.eligible_count, 13)
+        self.assertEqual(failure.universe_count, 12)
+        self.assertEqual(failure.required_count, 13)
+        self.assertEqual(failure.size_min, 3_000_000_000)
+        self.assertEqual(failure.liq_min, 2_000_000)
+        self.assertEqual(
+            str(failure), "12 ativos utilizáveis (13 elegíveis) para 13 exigidos"
+        )
+
+    def test_precondition_behaviour_matches_normative_matrix(self):
+        raw = load_fii_data()
+        for size_min, liq_min, eligible, ranked_count in NORMATIVE_MATRIX:
+            filters = {"size_min": size_min, "liq_min": liq_min}
+            with self.subTest(size_min=size_min, liq_min=liq_min):
+                clean = preprocess_fii(raw, eligibility_filters=filters)
+                ranked = build_fii_scores(
+                    clean, None, factor_weights=FII_PROFILE_WEIGHTS["conservador"]
+                )
+                self.assertEqual(
+                    (len(clean), len(ranked)), (eligible, ranked_count)
+                )
+                _require_feasible_universe(
+                    len(clean), ranked, ranked_count, filters, "explicit"
+                )
+                with self.assertRaises(FiiUniverseInfeasibleError) as error:
+                    _require_feasible_universe(
+                        len(clean), ranked, ranked_count + 1, filters, "explicit"
+                    )
+                failure = error.exception
+                self.assertEqual(failure.eligible_count, eligible)
+                self.assertEqual(failure.universe_count, ranked_count)
+                self.assertEqual(failure.required_count, ranked_count + 1)
+                self.assertEqual(failure.size_min, size_min)
+                self.assertEqual(failure.liq_min, liq_min)
+
+    def test_named_profile_shortage_keeps_legacy_error_unchanged(self):
+        with tempfile.TemporaryDirectory() as directory:
+            directory = Path(directory)
+            input_path = directory / "fii.csv"
+            _fixture_frame().to_csv(input_path, index=False)
+
+            with self.assertRaises(FiiSelectionError) as error:
+                run_fii_selection(
+                    "caio",
+                    input_path=input_path,
+                    output_path=directory / "portfolio.json",
+                    processed_path=directory / "clean.csv",
+                    n_runs=1,
+                    ga_config={
+                        "n_assets": 7,
+                        "lambda": 0.5,
+                        "generations": 2,
+                        "pop_size": 4,
+                    },
+                )
+
+            failure = error.exception
+            self.assertIs(type(failure), FiiSelectionError)
+            self.assertEqual(str(failure), "FII universe has 6 assets; 7 required")
+            self.assertFalse((directory / "portfolio.json").exists())
+            self.assertFalse((directory / "clean.csv").exists())
+
+    def test_structured_error_round_trips_through_pickle(self):
+        failure = FiiUniverseInfeasibleError(
+            "conservador", 13, 12, 13, 3_000_000_000.0, 2_000_000.0
+        )
+
+        restored = pickle.loads(pickle.dumps(failure))
+
+        self.assertIs(type(restored), FiiUniverseInfeasibleError)
+        self.assertIsInstance(restored, FiiSelectionError)
+        self.assertEqual(restored.profile, "conservador")
+        self.assertEqual(restored.eligible_count, 13)
+        self.assertEqual(restored.universe_count, 12)
+        self.assertEqual(restored.required_count, 13)
+        self.assertEqual(restored.size_min, 3_000_000_000.0)
+        self.assertEqual(restored.liq_min, 2_000_000.0)
+
+    def test_structured_error_fields_are_frozen_and_path_free(self):
+        failure = FiiUniverseInfeasibleError("explicit", 6, 6, 7, 0.0, 0.0)
+
+        with self.assertRaises(AttributeError):
+            failure.profile = "other"
+        self.assertEqual(failure.profile, "explicit")
+        self.assertNotIn("/", str(failure))
+        self.assertEqual(
+            str(failure), "6 ativos utilizáveis (6 elegíveis) para 7 exigidos"
+        )
 
 
 if __name__ == "__main__":
