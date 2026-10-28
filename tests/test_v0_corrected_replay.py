@@ -12,9 +12,15 @@ The tests derive from the spec's acceptance criteria, not from the implementatio
   mode exits 2 before any driver spawns.
 - VC-27: a fixture that injects one expectation-row violation proves the checker's
   failure branch executes (non-zero exit, `unexpected divergence` named).
+- T18 / design D-a proof-as-record: an existing record must match exactly and is never
+  overwritten; a later spot re-run's output equals the committed rows it executed,
+  committed rows it did not execute being left alone (the synthetic legs replay
+  recorded rows through `main`; the opt-in e2e leg executes one real driver pair and
+  is skipped with an explicit reason unless `TCC_V0_CORRECTED_REPLAY=1` - VC-22).
 
 Standard library only, synthetic in-memory/tempdir proofs - no driver ever executes
-here. Nothing is written under either bundle.
+here except in the opt-in e2e leg under `TCC_V0_CORRECTED_REPLAY=1`. Nothing is
+written under either bundle.
 """
 
 import contextlib
@@ -29,6 +35,7 @@ import unittest
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
+LEGACY = REPO / "baselines" / "v0-legacy"
 CORRECTED = REPO / "baselines" / "v0-corrected"
 PROOF_PATH = (
     REPO / ".specs" / "features" / "p0-02-v0-corrected" / "proofs" / "replay_20seeds.json"
@@ -341,6 +348,153 @@ class CommittedProofTests(unittest.TestCase):
         self.assertEqual(len(proof["runs"]), 80)
         problems = cr.check_proof_vs_reference(proof, CORRECTED / "reference")
         self.assertEqual(problems, [])
+
+
+class ProofAsRecordTests(unittest.TestCase):
+    """T18 / design D-a: the proof-as-record contract and the spot re-run demonstration.
+
+    T18's Done-when: "A later spot re-run's output equals the committed rows
+    (proof-as-record contract)". The checker's contract (compare_replay.py main): the
+    first run records itself; an existing record must match exactly, is never
+    overwritten, and a spot re-run compares only the rows it executed - committed
+    rows it did not execute are left alone.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        sys.dont_write_bytecode = True  # before any bundle import (AD-013)
+        cls._scratch = tempfile.TemporaryDirectory()
+        cls._saved_cwd = os.getcwd()
+        os.chdir(cls._scratch.name)  # bundle imports run with cwd in a scratch root
+        cls.cr = load_replay_tool()
+        cls.proof = json.loads(PROOF_PATH.read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        os.chdir(cls._saved_cwd)
+        cls._scratch.cleanup()
+
+    @staticmethod
+    def run_main(module, argv):
+        out, err = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = module.main(argv)
+        return code, out.getvalue(), err.getvalue()
+
+    @staticmethod
+    def copy_rows(rows):
+        return json.loads(json.dumps(rows))
+
+    @staticmethod
+    def fake_replay(rows):
+        """execute_replay stand-in returning recorded rows - no driver ever spawns."""
+
+        def fake(legacy_root, corrected_root, workers=None, progress=None):
+            return json.loads(json.dumps(rows))
+
+        return fake
+
+    def test_proof_as_record_matches_exactly_and_never_overwrites_the_record(self):
+        cr = self.cr
+        rows = self.copy_rows(self.proof["runs"])
+        drifted = self.copy_rows(rows)
+        drifted[0]["legacy"]["hhi"] = 0.999  # only the record check can see this
+        original = cr.execute_replay
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                record = Path(tmp) / "replay_20seeds.json"
+                record.write_bytes(PROOF_PATH.read_bytes())
+                committed_bytes = record.read_bytes()
+
+                # an existing record must match exactly: a re-run of the same rows
+                # passes, and the record is never overwritten
+                cr.execute_replay = self.fake_replay(rows)
+                with _EnvFlag("1"):
+                    code, out, err = self.run_main(cr, ["--proof", str(record)])
+                self.assertEqual(code, 0, err)
+                self.assertIn('"status": "HELD"', out)
+                self.assertIn('"record"', out)  # the compared record is reported
+                self.assertEqual(record.read_bytes(), committed_bytes)
+
+                # one drifted row is a fatal `record mismatch` - never folded into
+                # "expected" - and the record is still never overwritten
+                cr.execute_replay = self.fake_replay(drifted)
+                with _EnvFlag("1"):
+                    code, out, err = self.run_main(cr, ["--proof", str(record)])
+                self.assertEqual(code, 1, err)
+                self.assertIn("record mismatch", err)
+                self.assertIn("conservador run_id 0", err)
+                self.assertIn("differs from the committed row", err)
+                self.assertNotIn("unexpected divergence", err)  # isolated finding
+                self.assertEqual(record.read_bytes(), committed_bytes)
+
+                # the first run records itself - exactly once; every later run
+                # compares against it and never overwrites it
+                fresh = Path(tmp) / "fresh.json"
+                cr.execute_replay = self.fake_replay(rows)
+                with _EnvFlag("1"):
+                    code, out, err = self.run_main(cr, ["--proof", str(fresh)])
+                self.assertEqual(code, 0, err)
+                self.assertTrue(fresh.is_file())
+                self.assertNotIn('"record"', out)  # no record existed to compare
+                recorded_bytes = fresh.read_bytes()
+                cr.execute_replay = self.fake_replay(drifted)
+                with _EnvFlag("1"):
+                    code, out, err = self.run_main(cr, ["--proof", str(fresh)])
+                self.assertEqual(code, 1, err)
+                self.assertIn("record mismatch", err)
+                self.assertEqual(fresh.read_bytes(), recorded_bytes)
+        finally:
+            cr.execute_replay = original
+
+    def test_spot_rerun_output_equals_the_committed_rows_it_executed(self):
+        cr = self.cr
+        spot = [run for run in self.proof["runs"] if run["run_id"] == 0]
+        self.assertEqual(len(spot), 4)  # a spot re-run of run_id 0 across 4 profiles
+        self.assertEqual(
+            cr.check_proof_vs_committed({"runs": self.copy_rows(spot)}, PROOF_PATH), []
+        )
+
+        # committed rows the spot re-run did not execute are left alone: only the
+        # drifted executed row is a finding
+        drifted = self.copy_rows(spot)
+        drifted[2]["legacy"]["hhi"] = 0.999
+        problems = cr.check_proof_vs_committed({"runs": drifted}, PROOF_PATH)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("record mismatch", problems[0])
+        self.assertIn("arrojado run_id 0", problems[0])
+        self.assertIn("differs from the committed row", problems[0])
+
+        # a row the record does not know is a finding, and so is a missing record
+        unknown = self.copy_rows(spot[:1])
+        unknown[0]["run_id"] = 25
+        unknown[0]["seed"] = 67
+        problems = cr.check_proof_vs_committed({"runs": unknown}, PROOF_PATH)
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("no committed row to compare against", problems[0])
+
+        problems = cr.check_proof_vs_committed(
+            {"runs": []}, str(PROOF_PATH) + ".missing"
+        )
+        self.assertEqual(len(problems), 1, problems)
+        self.assertIn("cannot read the committed proof", problems[0])
+
+    @unittest.skipUnless(
+        os.environ.get("TCC_V0_CORRECTED_REPLAY") == "1",
+        "opt-in e2e (VC-22): set TCC_V0_CORRECTED_REPLAY=1 to execute the live spot re-run",
+    )
+    def test_live_spot_rerun_output_equals_the_committed_record_row(self):
+        """Opt-in e2e (T18's spot re-run demonstration, VC-22): one real pair, live.
+
+        Executes both drivers for (conservador, run_id 0) in scratch roots under the
+        declared environment and ties the returned row to the committed record.
+        """
+        cr = self.cr
+        env = cr.capture_env()
+        if env["numpy"] is None or env["pandas"] is None:
+            self.skipTest(f"numpy/pandas unavailable in this interpreter: {env}")
+        row = cr.run_pair("conservador", 0, LEGACY, CORRECTED)
+        self.assertEqual(cr.check_proof_vs_committed({"runs": [row]}, PROOF_PATH), [])
 
 
 class _EnvFlag:
