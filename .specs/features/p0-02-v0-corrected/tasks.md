@@ -626,9 +626,9 @@ T8 -> T19
 
 **Done when**:
 
-- [ ] Banner names the P0-02 capture defect and points at `baselines/v0-corrected/status.json`; no covered v0-legacy byte moves
-- [ ] The 52 P0-01 tests still pass unmodified (README content is asserted only in the new test)
-- [ ] Tests (2) green; quick gate green
+- [x] Banner names the P0-02 capture defect and points at `baselines/v0-corrected/status.json`; no covered v0-legacy byte moves
+- [x] The 52 P0-01 tests still pass unmodified (README content is asserted only in the new test)
+- [x] Tests (2) green; quick gate green
 
 **Tests**: unit (derived from VC-16 criteria, `tests/test_v0_corrected_status.py`):
 

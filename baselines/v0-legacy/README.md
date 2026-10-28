@@ -66,6 +66,15 @@ written under `reference/`; `golden_output_written` is always false.
 
 ## Two numbers that do not agree, on purpose
 
+> **INVALID (P0-02).** The archived `fitness` values are invalid under the P0-02 capture defect.
+> The record block (`ga.py:115,129,132-135`) pairs a generation's best fitness with the
+> population it did not come from, so an archived `fitness` cell is never the fitness of the
+> portfolio this bundle returns. `baselines/v0-corrected/status.json` is the verdict map:
+> one entry per recorded value, with its evidence and its verdict. The corrected reference and
+> the methodological note live under `baselines/v0-corrected/`. The map also names the values
+> this defect does NOT explain: `score_provenance_inconsistent` and `not_verifiable_at_head`
+> rows carry their own reason and do not borrow the defect's name.
+
 The replay reports `reported_fitness` (the archived `fitness` cell for that run) beside
 `recomputed_fitness` (the archived `ga.fitness` applied to the chromosome the run returned).
 They disagree because `ga.py:132-134` pairs the new population with the previous generation's

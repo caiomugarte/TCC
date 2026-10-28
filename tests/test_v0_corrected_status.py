@@ -584,5 +584,50 @@ class EnvironmentPinTests(unittest.TestCase):
         self.assertFalse((CORRECTED / "venv").exists())
 
 
+class LegacyReadmeBannerTests(unittest.TestCase):
+    """The INVALID banner on the frozen archive (spec.md VC-16; tasks T15).
+
+    The banner is the only permitted v0-legacy edit: `README.md` is manifest-excluded
+    (AD-008), so no covered byte may move and no file may be added under
+    `baselines/v0-legacy/`.
+    """
+
+    def test_legacy_readme_banner_names_the_defect_and_the_status_map(self):
+        readme = (REPO / "baselines" / "v0-legacy" / "README.md").read_text(encoding="utf-8")
+        heading = "## Two numbers that do not agree, on purpose"
+        self.assertIn(heading, readme)
+        area = readme.split(heading, 1)[1].split("\n## ", 1)[0]
+        self.assertIn(
+            "The archived `fitness` values are invalid under the P0-02 capture defect",
+            area,
+        )
+        self.assertIn("`baselines/v0-corrected/status.json` is the verdict map", area)
+        self.assertIn("under `baselines/v0-corrected/`", area)
+
+    def test_banner_edit_leaves_every_covered_v0_legacy_byte_untouched(self):
+        bundle = REPO / "baselines" / "v0-legacy"
+        manifest = json.loads((bundle / "baseline.json").read_text(encoding="utf-8"))
+        files = manifest["files"]
+        self.assertEqual(len(files), 17)
+        self.assertEqual(sum(entry["bytes"] for entry in files), 632981)
+        # README.md is manifest-excluded - the banner lives only there
+        excluded = {entry["path"] for entry in manifest["coverage"]["excluded"]}
+        self.assertIn("README.md", excluded)
+        for entry in files:
+            data = (bundle / entry["path"]).read_bytes()
+            self.assertEqual(len(data), entry["bytes"], entry["path"])
+            self.assertEqual(hashlib.sha256(data).hexdigest(), entry["sha256"], entry["path"])
+        # no file may be added under baselines/v0-legacy/ either
+        on_disk = sorted(
+            path.relative_to(bundle).as_posix() for path in bundle.rglob("*") if path.is_file()
+        )
+        expected = sorted([entry["path"] for entry in files] + [
+            "baseline.json", "protocol.json", "README.md",
+            "tools/build_manifest.py", "tools/verify_manifest.py", "tools/replay.py",
+            "tools/_legacy_driver.py",
+        ])
+        self.assertEqual(on_disk, expected)
+
+
 if __name__ == "__main__":
     unittest.main()
