@@ -7,13 +7,14 @@ import sys
 from types import MappingProxyType
 from typing import Any, Callable, Mapping
 
-from app.services.status_invest_inputs import StatusInvestInputs
-
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PY_ROOT = PROJECT_ROOT / "py"
 if str(PY_ROOT) not in sys.path:
     sys.path.insert(0, str(PY_ROOT))
+
+# Import after the sys.path mutation: status_invest_inputs imports modules
+# that live in py/ (snapshot_manifest), which must already be importable.
+from app.services.status_invest_inputs import StatusInvestInputs  # noqa: E402
 
 from allocation_config import ASSET_CLASSES  # noqa: E402
 from fii_selection import FiiUniverseInfeasibleError  # noqa: E402
