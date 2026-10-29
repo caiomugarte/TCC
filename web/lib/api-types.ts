@@ -18,11 +18,11 @@ export type Account = {
 
 export type ProfileInput = {
   answers: Record<string, string | string[]>;
-  investableCapitalBrl: number;
   consented: boolean;
 };
 
 export type Profile = ProfileInput & {
+  investableCapitalBrl: number;
   id: string;
   accountId: string;
   version: number;

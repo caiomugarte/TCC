@@ -15,10 +15,6 @@ import {
 } from "@/lib/api-client";
 import type { Plan, Recommendation, RecommendationStatus } from "@/lib/api-types";
 
-const currency = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-});
 const percentage = new Intl.NumberFormat("pt-BR", {
   style: "percent",
   maximumFractionDigits: 1,
@@ -204,7 +200,6 @@ export function RecommendationView() {
               <article className="allocation-card" key={item.key}>
                 <p>{item.label}</p>
                 <strong>{percentage.format(item.targetWeight)}</strong>
-                <span>{currency.format(item.targetAmountBrl)}</span>
               </article>
             ))}
           </div>
@@ -222,7 +217,7 @@ export function RecommendationView() {
               <h3>Ações brasileiras</h3>
               <ul>
                 {completed.stocks.map((item) => (
-                  <li key={item.ticker}>{item.ticker}: {percentage.format(item.portfolioWeight)} ({currency.format(item.targetAmountBrl)})</li>
+                  <li key={item.ticker}>{item.ticker}: {percentage.format(item.portfolioWeight)}</li>
                 ))}
               </ul>
             </div>
@@ -230,7 +225,7 @@ export function RecommendationView() {
               <h3>FIIs</h3>
               <ul>
                 {completed.fiis.map((item) => (
-                  <li key={item.ticker}>{item.ticker}: {percentage.format(item.portfolioWeight)} ({currency.format(item.targetAmountBrl)})</li>
+                  <li key={item.ticker}>{item.ticker}: {percentage.format(item.portfolioWeight)}</li>
                 ))}
               </ul>
             </div>
@@ -261,7 +256,7 @@ export function RecommendationView() {
         </button>
         {error && <button className="button secondary" type="button" onClick={() => void loadRecommendation()}>Consultar novamente</button>}
         <Link className="button secondary" href="/app/portfolio">Informar minha carteira</Link>
-        <Link className="button secondary" href="/app/onboarding">Revisar perfil</Link>
+        <Link className="button secondary" href="/app/onboarding?edit=1">Revisar perfil</Link>
       </div>
     </section>
   );

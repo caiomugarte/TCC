@@ -173,9 +173,14 @@ RESTRICTION_OPTIONS = frozenset(
 REQUIRED_QUESTIONS = frozenset((*QUESTION_OPTIONS, "restricoes"))
 
 
+# Nominal base used to express target weights as BRL amounts while the
+# questionnaire no longer asks for investable capital.
+NOMINAL_CAPITAL_BRL = 10_000.0
+
+
 class ProfileSubmission(ProfileSchema):
     answers: dict[str, AnswerValue]
-    investable_capital_brl: Annotated[float, Field(gt=0)]
+    investable_capital_brl: Annotated[float, Field(gt=0)] = NOMINAL_CAPITAL_BRL
     consented: bool
 
     @field_validator("investable_capital_brl")

@@ -216,7 +216,6 @@ export function OnboardingQuestionnaire() {
   const { getToken } = useAuth();
   const router = useRouter();
   const [answers, setAnswers] = useState<Answers>({ restricoes: [] });
-  const [capital, setCapital] = useState("");
   const [consented, setConsented] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [formError, setFormError] = useState<string | null>(null);
@@ -231,7 +230,6 @@ export function OnboardingQuestionnaire() {
         const profile = await getProfile(await getToken());
         if (!active || !profile) return;
         setAnswers(profile.answers);
-        setCapital(String(profile.investableCapitalBrl));
         setConsented(true);
       } catch (error) {
         if (active) {
@@ -275,9 +273,6 @@ export function OnboardingQuestionnaire() {
         : typeof answer !== "string" || answer.length === 0;
       if (missing) errors[question.key] = "Selecione uma opção.";
     }
-    if (!capital || Number(capital) <= 0 || !Number.isFinite(Number(capital))) {
-      errors.investableCapitalBrl = "Informe um capital positivo.";
-    }
     if (!consented) errors.consented = "Confirme o uso acadêmico do resultado.";
     return errors;
   }
@@ -296,7 +291,6 @@ export function OnboardingQuestionnaire() {
     try {
       await saveProfile({
         answers,
-        investableCapitalBrl: Number(capital),
         consented,
       }, await getToken());
       router.push("/app/recommendation");
@@ -364,26 +358,6 @@ export function OnboardingQuestionnaire() {
           </section>
         );
       })}
-
-      <section className="card">
-        <label htmlFor="investableCapitalBrl">
-          Capital investível desta parcela (BRL)
-          <input
-            id="investableCapitalBrl"
-            name="investableCapitalBrl"
-            type="number"
-            min="0.01"
-            step="0.01"
-            inputMode="decimal"
-            value={capital}
-            onChange={(event) => setCapital(event.target.value)}
-            aria-invalid={Boolean(fieldErrors.investableCapitalBrl)}
-            aria-describedby="capital-help capital-error"
-          />
-        </label>
-        <p id="capital-help" className="field-hint">Use apenas o valor que será considerado nesta carteira, não o patrimônio total.</p>
-        {fieldErrors.investableCapitalBrl ? <p id="capital-error" className="field-error">{fieldErrors.investableCapitalBrl}</p> : null}
-      </section>
 
       <label className="consent option" htmlFor="consent">
         <input
