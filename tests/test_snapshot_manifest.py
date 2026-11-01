@@ -339,6 +339,23 @@ class SeriesIdentityRuleTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
+            payload = _declare_files(root, build_manifest_fixture(root), fiis="./ifix.csv")
+            self.assertEqual(
+                SnapshotManifest.from_dict(payload, base_dir=root)
+                .source_for("fiis")
+                .resolved_path(),
+                root / "allocation" / "ifix.csv",
+            )
+
+            with self.assertRaises(SnapshotManifestError) as caught:
+                validate_manifest(_manifest_file(root, payload))
+
+            message = str(caught.exception)
+            self.assertIn("source fiis must be ifix.csv", message)
+            self.assertIn("./ifix.csv", message)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
             payload = _declare_files(root, build_manifest_fixture(root), fiis="ifix.csv")
             validated = validate_manifest(_manifest_file(root, payload))
             self.assertEqual(validated.manifest_id, "fixture-manifest")

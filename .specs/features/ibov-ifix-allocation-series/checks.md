@@ -23,7 +23,7 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 **C3** - `validate_manifest` returns the manifest for `metadata.files` naming `ibovespa.csv`/`ifix.csv` explicitly and for a manifest with no `metadata.files` and both files present (AC 2)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_series_identity_rule_accepts_index_files`
 
-**C4** - With the allocation directory hash matching, `validate_manifest` raises `SnapshotManifestError` for `metadata.files.fiis == "../snap-old/ifix.csv"` (file present outside the directory; message contains `fiis`, `ifix.csv` and `../snap-old/ifix.csv`), for `metadata.files.brazilian_stocks == "sub/ibovespa.csv"`, and for an `ifix.csv` inside the directory that is a symlink to a file outside it; `metadata.files.fiis == "ifix.csv"` with the file inside is accepted (AC 3)
+**C4** - With the allocation directory hash matching, `validate_manifest` raises `SnapshotManifestError` for `metadata.files.fiis == "../snap-old/ifix.csv"` (file present outside the directory; message contains `fiis`, `ifix.csv` and `../snap-old/ifix.csv`), for `metadata.files.brazilian_stocks == "sub/ibovespa.csv"`, and for an `ifix.csv` inside the directory that is a symlink to a file outside it, and for `metadata.files.fiis == "./ifix.csv"` (resolves to `<allocation>/ifix.csv`, hash matching; message contains `./ifix.csv`); `metadata.files.fiis == "ifix.csv"` with the file inside is accepted (AC 3)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_derived_index_series_must_live_in_allocation_dir`
 
 **C5** - `snapshot_registry.py validate` on a manifest naming `caio_fiis.csv` exits 4 in `draft` (state stays `draft`) and in `published` with `--check`, prints the C2 message on stderr, and leaves the file byte-identical; `published` without `--check` exits 5 (AC 4)
@@ -104,7 +104,7 @@ Proof: `! grep -n -e 'never reads IFIX' py/allocation_data.py && ! grep -n -e 'm
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
 | series identity rule, AC 2 (5 examples) | `metadata.files.fiis=caio_fiis.csv` C2 · `metadata.files.brazilian_stocks=caio_stocks.csv` C2 · explicit `sources.fiis` -> `caio_fiis.csv` C2 · explicit index names accepted C3 · defaults accepted C3 | - |
-| derived series containment, AC 3 (4 examples) | `../snap-old/ifix.csv` C4 · `sub/ibovespa.csv` C4 · symlink escaping the directory C4 · `ifix.csv` inside accepted C4 | - |
+| derived series containment, AC 3 (5 examples) | `../snap-old/ifix.csv` C4 · `sub/ibovespa.csv` C4 · symlink escaping the directory C4 · `./ifix.csv` not declared character for character C4 · `ifix.csv` inside accepted C4 | - |
 | `validate` on a rejected manifest, AC 4 (3 states) | `draft` -> 4 C5 · `published --check` -> 4 C5 · `published` -> 5 C5 | - |
 | missing index file, AC 5, 2 files x 2 surfaces (4) | `ifix.csv` validate C6 · `ifix.csv` loader C6 · `ibovespa.csv` validate C6 · `ibovespa.csv` loader C6 | - |
 | changed bytes, AC 6 (2 files) | `ibovespa.csv` C7 · `ifix.csv` C7 | - |
