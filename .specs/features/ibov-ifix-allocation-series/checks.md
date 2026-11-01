@@ -29,7 +29,7 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 **C5** - `snapshot_registry.py validate` on a manifest naming `caio_fiis.csv` exits 4 in `draft` (state stays `draft`) and in `published` with `--check`, prints the C2 message on stderr, and leaves the file byte-identical; `published` without `--check` exits 5 (AC 4)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_registry -k test_validate_rejects_caio_series_manifest`
 
-**C6** - With `ifix.csv` deleted and `caio_fiis.csv` present, and separately with `ibovespa.csv` deleted and `caio_stocks.csv` present, `validate` exits 4 and `load_premium_snapshot_bundle` raises `SnapshotError` (AC 5)
+**C6** - With `ifix.csv` deleted and `caio_fiis.csv` present, and separately with `ibovespa.csv` deleted and `caio_stocks.csv` present, each with the allocation hash recomputed after the deletion so it matches, `validate` exits 4 with stderr containing `source fiis not found` / `source brazilian_stocks not found` and `load_premium_snapshot_bundle` raises `SnapshotError` with the same text (AC 5)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_registry -k test_validate_missing_index_file_exits_4`
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_allocation_data -k test_missing_premium_index_input_raises_without_substitution`
 

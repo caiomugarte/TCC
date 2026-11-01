@@ -1551,7 +1551,11 @@ class IndexSeriesValidateTests(unittest.TestCase):
             self.assertEqual(target.read_bytes(), published)
 
     def test_validate_missing_index_file_exits_4(self):
-        for missing, basket in (("ifix.csv", "caio_fiis.csv"), ("ibovespa.csv", "caio_stocks.csv")):
+        cases = (
+            ("ifix.csv", "caio_fiis.csv", "fiis"),
+            ("ibovespa.csv", "caio_stocks.csv", "brazilian_stocks"),
+        )
+        for missing, basket, asset_class in cases:
             with self.subTest(missing=missing), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 code, _, err = run_build(root)
@@ -1559,10 +1563,19 @@ class IndexSeriesValidateTests(unittest.TestCase):
                 snapshot_dir = root / "data" / "snapshot-2020"
                 (snapshot_dir / missing).unlink()
                 self.assertTrue((snapshot_dir / basket).is_file())
+                # Re-hash so the index file was already absent when the hash was
+                # taken: only a missing-source check, not a hash mismatch, can fail.
+                manifest_path = root / "snap-2020-01.json"
+                raw = load_raw(manifest_path)
+                for allocation in (raw["allocation_source"], raw["sources"]["allocation"]):
+                    allocation["sha256"] = sha256_path(snapshot_dir)
+                raw["manifest_sha256"] = manifest_canonical_sha256(raw)
+                dump_raw(manifest_path, raw)
 
                 code, _, err = run_validate(root)
 
                 self.assertEqual(code, 4)
+                self.assertIn(f"source {asset_class} not found", err)
 
     def test_validate_detects_changed_index_bytes(self):
         for filename in ("ibovespa.csv", "ifix.csv"):

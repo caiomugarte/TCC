@@ -59,20 +59,26 @@ class PremiumAllocationDataTests(unittest.TestCase):
 
     def test_missing_premium_index_input_raises_without_substitution(self):
         cases = (
-            ("ifix.csv", "caio_fiis.csv"),
-            ("ibovespa.csv", "caio_stocks.csv"),
+            ("ifix.csv", "caio_fiis.csv", "fiis"),
+            ("ibovespa.csv", "caio_stocks.csv", "brazilian_stocks"),
         )
-        for missing, basket in cases:
+        for missing, basket, asset_class in cases:
             with self.subTest(missing=missing), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 payload = build_manifest_fixture(root)
+                allocation = root / "allocation"
+                (allocation / missing).unlink()
+                self.assertTrue((allocation / basket).is_file())
+                # Hash taken after the deletion: the hash matches, so the loader
+                # can only fail on the missing index, not substitute the basket.
+                payload["allocation_source"]["sha256"] = sha256_path(allocation)
                 manifest_path = root / "manifest.json"
                 manifest_path.write_text(json.dumps(payload), encoding="utf-8")
-                (root / "allocation" / missing).unlink()
-                self.assertTrue((root / "allocation" / basket).is_file())
 
-                with self.assertRaises(SnapshotError):
+                with self.assertRaises(SnapshotError) as caught:
                     load_premium_snapshot_bundle(SnapshotManifest.load(manifest_path))
+
+                self.assertIn(f"source {asset_class} not found", str(caught.exception))
 
     def test_premium_returns_follow_index_and_class_formulas(self):
         with tempfile.TemporaryDirectory() as directory:
