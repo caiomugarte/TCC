@@ -2,7 +2,7 @@
 
 **Verdict**: FAIL
 **Mutations**: 3 - probed C4, C2, C11 (round 1, all killed at 669e841); round 2 added 8 more over the touched production code, 1 not killed
-**Proofs**: `proofs.md` at 669e841 (round 2, re-run by the Verifier: 28 pass, 0 fail; mutations 3 killed, 0 not)
+**Proofs**: `proofs.md` at 73a045f (round 2, run by the Verifier after adding M8: 28 pass, 0 fail; mutations 3 killed, 1 not - V-3). The same run at 669e841 without M8 gave 28 pass, 3 killed
 **Verifier**: independent sub-agent (author != verifier) - round 1 at 52ee519, round 2 (re-verification after fixes) at 669e841
 
 ## Findings
