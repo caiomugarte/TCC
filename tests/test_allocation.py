@@ -1,3 +1,5 @@
+import contextlib
+import io
 import sys
 import unittest
 from datetime import date, timedelta
@@ -49,6 +51,7 @@ from fetch_allocation_snapshot import (  # noqa: E402
     _is_permanent_ticker_failure,
     build_parser as build_snapshot_parser,
     fetch_snapshot,
+    main as fetch_snapshot_main,
 )
 from pipelines.asset_allocation import (  # noqa: E402
     evaluate_crypto_weight_scenarios,
@@ -84,13 +87,13 @@ class AllocationCoreTests(unittest.TestCase):
                 with self.assertRaises(SnapshotError):
                     load_portfolio_tickers(path, "FII")
 
-    def test_snapshot_parser_exposes_fii_portfolio_and_optional_ifix(self):
-        snapshot_args = build_snapshot_parser().parse_args(["--skip-ifix"])
+    def test_snapshot_parser_exposes_fii_portfolio(self):
+        snapshot_args = build_snapshot_parser().parse_args([])
         self.assertEqual(
             snapshot_args.fii_portfolio.name,
             "carteira_fii_caio_consensus.json",
         )
-        self.assertTrue(snapshot_args.skip_ifix)
+        self.assertFalse(hasattr(snapshot_args, "skip_ifix"))
 
         allocation_args = build_allocation_parser().parse_args([])
         self.assertEqual(
@@ -152,7 +155,7 @@ class AllocationCoreTests(unittest.TestCase):
                 metadata["sources"]["caio_stocks"]["symbols"], ["AAA.SA"]
             )
 
-    def test_snapshot_fetch_writes_selected_fii_levels_without_ifix(self):
+    def test_snapshot_fetch_writes_selected_fii_levels(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)
             stock_path = directory / "stocks.json"
@@ -169,7 +172,9 @@ class AllocationCoreTests(unittest.TestCase):
                 return levels
 
             with patch("fetch_allocation_snapshot.fetch_yahoo_levels", side_effect=fake_yahoo):
-                with patch("fetch_allocation_snapshot.fetch_ifix_levels") as ifix:
+                with patch(
+                    "fetch_allocation_snapshot.fetch_ifix_levels", return_value=levels
+                ) as ifix:
                     with patch(
                         "fetch_allocation_snapshot.fetch_bcb_cdi_levels",
                         return_value=levels,
@@ -184,7 +189,6 @@ class AllocationCoreTests(unittest.TestCase):
                                 date(2020, 1, 1),
                                 date(2020, 1, 2),
                                 fii_portfolio_path=fii_path,
-                                include_ifix=False,
                             )
 
             snapshot = directory / "snapshot"
@@ -197,8 +201,8 @@ class AllocationCoreTests(unittest.TestCase):
                 metadata["sources"]["caio_fiis"]["symbols"], ["FII1.SA", "FII2.SA"]
             )
             self.assertTrue((snapshot / "caio_fiis.csv").exists())
-            self.assertFalse((snapshot / "ifix.csv").exists())
-            ifix.assert_not_called()
+            self.assertTrue((snapshot / "ifix.csv").exists())
+            ifix.assert_called_once()
 
     def test_snapshot_fetch_skips_permanent_fii_failure_and_records_reason(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
@@ -271,7 +275,6 @@ class AllocationCoreTests(unittest.TestCase):
                         date(2020, 1, 1),
                         date(2020, 1, 2),
                         fii_portfolio_path=fii_path,
-                        include_ifix=False,
                     )
             self.assertFalse((directory / "snapshot").exists())
 
@@ -291,9 +294,137 @@ class AllocationCoreTests(unittest.TestCase):
                         date(2020, 1, 1),
                         date(2020, 1, 2),
                         fii_portfolio_path=fii_path,
-                        include_ifix=False,
                     )
             yahoo.assert_not_called()
+
+    def _patched_providers(self, levels, ifix_side_effect=None):
+        stack = contextlib.ExitStack()
+        mocks = {
+            "yahoo": stack.enter_context(
+                patch("fetch_allocation_snapshot.fetch_yahoo_levels", return_value=levels)
+            ),
+            "ifix": stack.enter_context(
+                patch(
+                    "fetch_allocation_snapshot.fetch_ifix_levels",
+                    return_value=levels,
+                    side_effect=ifix_side_effect,
+                )
+            ),
+            "cdi": stack.enter_context(
+                patch("fetch_allocation_snapshot.fetch_bcb_cdi_levels", return_value=levels)
+            ),
+            "ptax": stack.enter_context(
+                patch("fetch_allocation_snapshot.fetch_ptax_levels", return_value=levels)
+            ),
+        }
+        return stack, mocks
+
+    def _write_portfolios(self, directory):
+        stock_path = directory / "stocks.json"
+        stock_path.write_text(json.dumps([{"TICKER": "AAA"}]), encoding="utf-8")
+        fii_path = directory / "fiis.json"
+        fii_path.write_text(json.dumps([{"TICKER": "FII1"}]), encoding="utf-8")
+        return stock_path, fii_path
+
+    def test_snapshot_fetch_always_writes_ifix_and_ibovespa(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            stock_path, _ = self._write_portfolios(directory)
+            levels = {date(2020, 1, 1): 100.0, date(2020, 1, 2): 101.0}
+            stack, mocks = self._patched_providers(levels)
+            with stack:
+                fetch_snapshot(
+                    directory / "snapshot",
+                    stock_path,
+                    date(2020, 1, 1),
+                    date(2020, 1, 2),
+                )
+
+            snapshot = directory / "snapshot"
+            for filename in ("ifix.csv", "ibovespa.csv"):
+                with self.subTest(filename=filename):
+                    lines = (snapshot / filename).read_text(encoding="utf-8").splitlines()
+                    self.assertEqual(lines[0], "date,value")
+            mocks["ifix"].assert_called_once()
+
+    def test_snapshot_cli_rejects_removed_ifix_flags(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            stock_path, fii_path = self._write_portfolios(directory)
+            levels = {date(2020, 1, 1): 100.0, date(2020, 1, 2): 101.0}
+            for flag in ("--skip-ifix", "--no-ifix"):
+                with self.subTest(flag=flag):
+                    stack, mocks = self._patched_providers(levels)
+                    with stack, contextlib.redirect_stderr(io.StringIO()):
+                        with self.assertRaises(SystemExit) as caught:
+                            fetch_snapshot_main([
+                                "--snapshot-dir", str(directory / "snapshot"),
+                                "--portfolio", str(stock_path),
+                                "--fii-portfolio", str(fii_path),
+                                flag,
+                            ])
+                    self.assertEqual(caught.exception.code, 2)
+                    for mock in mocks.values():
+                        mock.assert_not_called()
+                    self.assertFalse((directory / "snapshot").exists())
+
+            with self.assertRaises(TypeError):
+                fetch_snapshot(
+                    directory / "snapshot",
+                    stock_path,
+                    date(2020, 1, 1),
+                    date(2020, 1, 2),
+                    include_ifix=False,
+                )
+
+    def test_snapshot_cli_ifix_failure_exits_2_without_files(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            stock_path, fii_path = self._write_portfolios(directory)
+            levels = {date(2020, 1, 1): 100.0, date(2020, 1, 2): 101.0}
+            stack, mocks = self._patched_providers(
+                levels, ifix_side_effect=SnapshotFetchError("B3 IFIX unavailable")
+            )
+            with stack, contextlib.redirect_stderr(io.StringIO()):
+                code = fetch_snapshot_main([
+                    "--snapshot-dir", str(directory / "snapshot"),
+                    "--portfolio", str(stock_path),
+                    "--fii-portfolio", str(fii_path),
+                    "--start-date", "2020-01-01",
+                    "--end-date", "2020-01-02",
+                ])
+
+            self.assertEqual(code, 2)
+            mocks["ifix"].assert_called_once()
+            self.assertFalse((directory / "snapshot").exists())
+
+    def test_snapshot_fetch_metadata_describes_index_series(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            stock_path, fii_path = self._write_portfolios(directory)
+            levels = {date(2020, 1, 1): 100.0, date(2020, 1, 2): 101.0}
+            stack, _ = self._patched_providers(levels)
+            with stack:
+                fetch_snapshot(
+                    directory / "snapshot",
+                    stock_path,
+                    date(2020, 1, 1),
+                    date(2020, 1, 2),
+                    fii_portfolio_path=fii_path,
+                )
+
+            metadata = json.loads(
+                (directory / "snapshot" / "metadata.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(
+                metadata["sources"]["ibovespa"]["role"], "allocation:brazilian_stocks"
+            )
+            self.assertEqual(
+                metadata["sources"]["ibovespa"]["treatment"],
+                "total return index (B3 methodology); dividends included",
+            )
+            self.assertEqual(metadata["sources"]["ifix"]["role"], "allocation:fiis")
+            self.assertNotIn("does not include dividends", metadata["notes"])
 
     def test_allocation_profile_interpolates_between_three_anchors(self):
         anchors = {
