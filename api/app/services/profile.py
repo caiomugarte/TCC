@@ -25,6 +25,13 @@ RESTRICTION_ORDER = (
     "evitar_illiquidez",
 )
 
+CONSERVATIVE_SCORE_THRESHOLD = 0.25
+# Mirrored in web/lib/api-types.ts (CRYPTO_SUGGESTION_WARNING); keep both texts identical.
+CRYPTO_SUGGESTION_WARNING = (
+    "Seu perfil é conservador: sugerimos marcar a restrição 'Evitar criptoativos'. "
+    "A decisão é sua."
+)
+
 
 def _rounded(value: float) -> float:
     return round(value, 4)
@@ -107,6 +114,8 @@ def compute_profile(submission: ProfileSubmission) -> ComputedProfile:
         )
 
     rounded_score = _rounded(score)
+    if rounded_score < CONSERVATIVE_SCORE_THRESHOLD and "evitar_cripto" not in restrictions:
+        warnings.append(CRYPTO_SUGGESTION_WARNING)
     return ComputedProfile(
         answers=answers,
         investable_capital_brl=submission.investable_capital_brl,

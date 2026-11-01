@@ -1,9 +1,13 @@
 import unittest
+from datetime import datetime, timezone
+from decimal import Decimal
 
 from pydantic import ValidationError
 
+from app.db.models import ProfileRecord
+from app.routers.profile import _response
 from app.schemas.profile import ProfileSubmission
-from app.services.profile import compute_profile
+from app.services.profile import CRYPTO_SUGGESTION_WARNING, compute_profile
 
 
 def valid_answers() -> dict[str, str | list[str]]:
@@ -24,6 +28,14 @@ def valid_answers() -> dict[str, str | list[str]]:
         "formacao": "autodidata",
         "restricoes": ["nenhuma"],
     }
+
+
+def conservative_answers() -> dict[str, str | list[str]]:
+    answers = valid_answers()
+    answers["objetivo"] = "preservacao"
+    answers["reacao"] = "vender_tudo"
+    answers["perda"] = "ate_5"
+    return answers
 
 
 class ProfileServiceTests(unittest.TestCase):
@@ -68,6 +80,58 @@ class ProfileServiceTests(unittest.TestCase):
         profile = compute_profile(self.make_submission(answers))
 
         self.assertTrue(any("restrições registradas" in warning for warning in profile.warnings))
+
+    def test_conservative_profile_without_crypto_restriction_suggests_it(self):
+        profile = compute_profile(self.make_submission(conservative_answers()))
+
+        self.assertLess(profile.score, 0.25)
+        self.assertIn(CRYPTO_SUGGESTION_WARNING, profile.warnings)
+
+    def test_conservative_profile_with_crypto_restriction_has_no_suggestion(self):
+        answers = conservative_answers()
+        answers["restricoes"] = ["evitar_cripto"]
+
+        profile = compute_profile(self.make_submission(answers))
+
+        self.assertLess(profile.score, 0.25)
+        self.assertNotIn(CRYPTO_SUGGESTION_WARNING, profile.warnings)
+
+    def test_non_conservative_profile_has_no_crypto_suggestion(self):
+        profile = compute_profile(self.make_submission())
+
+        self.assertGreaterEqual(profile.score, 0.25)
+        self.assertNotIn(CRYPTO_SUGGESTION_WARNING, profile.warnings)
+
+
+class ProfileResponseTests(unittest.TestCase):
+    def make_record(self, warnings_json) -> ProfileRecord:
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        return ProfileRecord(
+            id="profile-1",
+            account_id="account-1",
+            version=1,
+            answers=valid_answers(),
+            dimensions={"apetite": 0.1, "capacidade": 0.5, "liquidez": 0.8, "conhecimento": 0.4},
+            suitability_score=Decimal("0.1"),
+            warnings_json=warnings_json,
+            generic_profile="conservador",
+            investable_capital_brl=Decimal("10000"),
+            consented_at=now,
+            created_at=now,
+        )
+
+    def test_response_exposes_profile_warnings(self):
+        response = _response(self.make_record([CRYPTO_SUGGESTION_WARNING]))
+
+        self.assertEqual(response.warnings, [CRYPTO_SUGGESTION_WARNING])
+        self.assertEqual(
+            response.model_dump(by_alias=True)["warnings"], [CRYPTO_SUGGESTION_WARNING]
+        )
+
+    def test_response_defaults_missing_warnings_to_empty_list(self):
+        response = _response(self.make_record(None))
+
+        self.assertEqual(response.warnings, [])
 
 
 if __name__ == "__main__":
