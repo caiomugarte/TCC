@@ -1,6 +1,8 @@
+import re
 import unittest
 from datetime import datetime, timezone
 from decimal import Decimal
+from pathlib import Path
 
 from pydantic import ValidationError
 
@@ -132,6 +134,18 @@ class ProfileResponseTests(unittest.TestCase):
         response = _response(self.make_record(None))
 
         self.assertEqual(response.warnings, [])
+
+
+class WebMirrorTests(unittest.TestCase):
+    def test_web_crypto_suggestion_warning_matches_api(self) -> None:
+        api_types = Path(__file__).resolve().parents[2] / "web" / "lib" / "api-types.ts"
+        match = re.search(
+            r'export const CRYPTO_SUGGESTION_WARNING =\s*"((?:[^"\\]|\\.)*)";',
+            api_types.read_text(encoding="utf-8"),
+        )
+        self.assertIsNotNone(match, f"CRYPTO_SUGGESTION_WARNING not found in {api_types}")
+        assert match is not None
+        self.assertEqual(match.group(1), CRYPTO_SUGGESTION_WARNING)
 
 
 if __name__ == "__main__":
