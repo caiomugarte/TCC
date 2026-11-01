@@ -1,8 +1,8 @@
 # ibov-ifix-allocation-series proofs
 
-**HEAD**: 73a045f
+**HEAD**: 6c4835b
 **Tree**: clean
-**Result**: 28 pass, 0 fail; mutations 3 killed, 1 not
+**Result**: 28 pass, 0 fail; mutations 4 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -42,4 +42,4 @@
 | C4: derived series no longer has to be declared character for character (drop declared == expected) | `py/snapshot_manifest.py:491` | yes |
 | C2: explicit per-class source skips the identity rule (valid = True) | `py/snapshot_manifest.py:499` | yes |
 | C11: build common_dates reads IBOV in place of IFIX for fiis | `py/snapshot_registry.py:250` | yes |
-| C2: explicit per-class source accepts any name ending in the index file name (== -> endswith) | `py/snapshot_manifest.py:499` | no |
+| C2: explicit per-class source accepts any name ending in the index file name (== -> endswith) | `py/snapshot_manifest.py:499` | yes |
