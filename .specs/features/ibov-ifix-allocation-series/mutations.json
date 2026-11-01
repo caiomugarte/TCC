@@ -1,0 +1,23 @@
+[
+ {
+  "file": "py/snapshot_manifest.py",
+  "old": "                declared == expected\n                and resolved.name == expected\n",
+  "new": "                resolved.name == expected\n",
+  "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_derived_index_series_must_live_in_allocation_dir",
+  "label": "C4: derived series no longer has to be declared character for character (drop declared == expected)"
+ },
+ {
+  "file": "py/snapshot_manifest.py",
+  "old": "            valid = resolved.name == expected\n",
+  "new": "            valid = True\n",
+  "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_series_identity_rule_rejects_non_index_files",
+  "label": "C2: explicit per-class source skips the identity rule (valid = True)"
+ },
+ {
+  "file": "py/snapshot_registry.py",
+  "old": "        \"fiis\": single(\"fiis\"),\n",
+  "new": "        \"fiis\": single(\"brazilian_stocks\"),\n",
+  "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_registry -k test_build_common_dates_follow_index_history",
+  "label": "C11: build common_dates reads IBOV in place of IFIX for fiis"
+ }
+]
