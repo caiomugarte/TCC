@@ -10,9 +10,11 @@ import {
   getLatestCompletedRecommendation,
   getLatestRecommendation,
   getMe,
+  getProfile,
   getRecommendation,
   startPremiumRecommendation,
 } from "@/lib/api-client";
+import { CRYPTO_SUGGESTION_WARNING } from "@/lib/api-types";
 import type { Plan, Recommendation, RecommendationStatus } from "@/lib/api-types";
 
 const percentage = new Intl.NumberFormat("pt-BR", {
@@ -50,6 +52,7 @@ export function RecommendationView() {
   const [currentRun, setCurrentRun] = useState<Recommendation | null>(null);
   const [latestCompleted, setLatestCompleted] = useState<Recommendation | null>(null);
   const [plan, setPlan] = useState<Plan>("basic");
+  const [cryptoSuggestion, setCryptoSuggestion] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [starting, setStarting] = useState(false);
@@ -86,13 +89,17 @@ export function RecommendationView() {
     setError(null);
     try {
       const token = await getToken();
-      const [account, current, completed] = await Promise.all([
+      const [account, current, completed, profile] = await Promise.all([
         getMe(token),
         getLatestRecommendation(token),
         getLatestCompletedRecommendation(token),
+        getProfile(token),
       ]);
       if (!active()) return;
       setPlan(account.plan);
+      setCryptoSuggestion(
+        profile?.warnings.find((warning) => warning === CRYPTO_SUGGESTION_WARNING) ?? null,
+      );
       setCurrentRun(current);
       setLatestCompleted(
         completed ?? (current?.status === "completed" ? current : null),
@@ -161,6 +168,13 @@ export function RecommendationView() {
         <h1 id="recommendation-title">Sua recomendação de investimentos</h1>
         <p>Consulte seu resultado mais recente ou solicite uma nova execução. Não é uma ordem de compra.</p>
       </div>
+
+      {cryptoSuggestion && (
+        <div className="notice">
+          {cryptoSuggestion}{" "}
+          <Link href="/app/onboarding?edit=1">Revisar perfil</Link>
+        </div>
+      )}
 
       {loading && <p aria-live="polite">Carregando recomendações salvas…</p>}
       {error && <p role="alert">{error}</p>}

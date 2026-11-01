@@ -21,6 +21,10 @@ export type ProfileInput = {
   consented: boolean;
 };
 
+// Same text as CRYPTO_SUGGESTION_WARNING in api/app/services/profile.py; keep both identical.
+export const CRYPTO_SUGGESTION_WARNING =
+  "Seu perfil é conservador: sugerimos marcar a restrição 'Evitar criptoativos'. A decisão é sua.";
+
 export type Profile = ProfileInput & {
   investableCapitalBrl: number;
   id: string;
@@ -29,6 +33,7 @@ export type Profile = ProfileInput & {
   dimensions: Record<string, number>;
   suitabilityScore: number;
   genericProfile: GenericProfile;
+  warnings: string[];
   consentedAt: string;
   createdAt: string;
 };
