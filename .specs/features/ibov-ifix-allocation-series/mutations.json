@@ -26,5 +26,26 @@
   "new": "            valid = resolved.name.endswith(expected)\n",
   "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_series_identity_rule_rejects_non_index_files",
   "label": "C2: explicit per-class source accepts any name ending in the index file name (== -> endswith)"
+ },
+ {
+  "file": "py/snapshot_manifest.py",
+  "old": "                and resolved.name == expected\n",
+  "new": "",
+  "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_derived_index_series_must_live_in_allocation_dir",
+  "label": "C4: derived series no longer checks the resolved file name (drop resolved.name == expected)"
+ },
+ {
+  "file": "py/snapshot_manifest.py",
+  "old": "                and resolved.parent == allocation_dir\n",
+  "new": "                and resolved.parent.name == allocation_dir.name\n",
+  "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_derived_index_series_must_live_in_allocation_dir",
+  "label": "C4: derived series containment compares directory names, not directories"
+ },
+ {
+  "file": "py/snapshot_manifest.py",
+  "old": "            valid = resolved.name == expected\n",
+  "new": "            valid = resolved.name.lower() == expected\n",
+  "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_series_identity_rule_rejects_non_index_files",
+  "label": "C2: explicit per-class source compares the file name case-insensitively"
  }
 ]
