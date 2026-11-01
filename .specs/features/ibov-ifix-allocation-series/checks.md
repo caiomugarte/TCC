@@ -17,7 +17,7 @@ proof; each proof runs from the worktree root and selects its tests with `unitte
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_allocation_files_name_ibov_and_ifix`
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_selector_role_does_not_resolve_to_stock_class_benchmark`
 
-**C2** - `validate_manifest` raises `SnapshotManifestError` for each of 3 manifests whose hashes all match: `metadata.files.fiis == "caio_fiis.csv"` (message contains `fiis`, `ifix.csv` and `caio_fiis.csv`), `metadata.files.brazilian_stocks == "caio_stocks.csv"` (message contains `brazilian_stocks`, `ibovespa.csv` and `caio_stocks.csv`), and an explicit `sources.fiis` pointing at `<dir>/caio_fiis.csv` (AC 2)
+**C2** - `validate_manifest` raises `SnapshotManifestError` for each of 4 manifests whose hashes all match: `metadata.files.fiis == "caio_fiis.csv"` (message contains `fiis`, `ifix.csv` and `caio_fiis.csv`), `metadata.files.brazilian_stocks == "caio_stocks.csv"` (message contains `brazilian_stocks`, `ibovespa.csv` and `caio_stocks.csv`), an explicit `sources.fiis` pointing at `<dir>/caio_fiis.csv`, and an explicit `sources.fiis` pointing at `allocation/caio_ifix.csv` (a copy of `ifix.csv`, name ending in the index file name; message contains `source fiis must be ifix.csv; manifest declares allocation/caio_ifix.csv`) (AC 2)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_series_identity_rule_rejects_non_index_files`
 
 **C3** - `validate_manifest` returns the manifest for `metadata.files` naming `ibovespa.csv`/`ifix.csv` explicitly and for a manifest with no `metadata.files` and both files present (AC 2)
@@ -103,7 +103,7 @@ Proof: `! grep -n -e 'never reads IFIX' py/allocation_data.py && ! grep -n -e 'm
 
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
-| series identity rule, AC 2 (5 examples) | `metadata.files.fiis=caio_fiis.csv` C2 · `metadata.files.brazilian_stocks=caio_stocks.csv` C2 · explicit `sources.fiis` -> `caio_fiis.csv` C2 · explicit index names accepted C3 · defaults accepted C3 | - |
+| series identity rule, AC 2 (6 examples) | `metadata.files.fiis=caio_fiis.csv` C2 · `metadata.files.brazilian_stocks=caio_stocks.csv` C2 · explicit `sources.fiis` -> `caio_fiis.csv` C2 · explicit `sources.fiis` -> `allocation/caio_ifix.csv` C2 · explicit index names accepted C3 · defaults accepted C3 | - |
 | derived series containment, AC 3 (5 examples) | `../snap-old/ifix.csv` C4 · `sub/ibovespa.csv` C4 · symlink escaping the directory C4 · `./ifix.csv` not declared character for character C4 · `ifix.csv` inside accepted C4 | - |
 | `validate` on a rejected manifest, AC 4 (3 states) | `draft` -> 4 C5 · `published --check` -> 4 C5 · `published` -> 5 C5 | - |
 | missing index file, AC 5, 2 files x 2 surfaces (4) | `ifix.csv` validate C6 · `ifix.csv` loader C6 · `ibovespa.csv` validate C6 · `ibovespa.csv` loader C6 | - |

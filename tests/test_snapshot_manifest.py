@@ -249,24 +249,32 @@ class SeriesIdentityRuleTests(unittest.TestCase):
                     message,
                 )
 
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            payload = build_manifest_fixture(root)
-            payload["sources"] = {
-                "fiis": {
-                    "path": "allocation/caio_fiis.csv",
-                    "sha256": sha256_path(root / "allocation" / "caio_fiis.csv"),
-                    "provider": "fixture-explicit-fiis",
+        for name in ("caio_fiis.csv", "caio_ifix.csv"):
+            with self.subTest(explicit=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                payload = build_manifest_fixture(root)
+                explicit = root / "allocation" / name
+                if not explicit.exists():
+                    explicit.write_bytes((root / "allocation" / "ifix.csv").read_bytes())
+                    payload["allocation_source"]["sha256"] = sha256_path(
+                        root / "allocation"
+                    )
+                payload["sources"] = {
+                    "fiis": {
+                        "path": f"allocation/{name}",
+                        "sha256": sha256_path(explicit),
+                        "provider": "fixture-explicit-fiis",
+                    }
                 }
-            }
-            path = _manifest_file(root, payload)
+                path = _manifest_file(root, payload)
 
-            with self.assertRaises(SnapshotManifestError) as caught:
-                validate_manifest(path)
+                with self.assertRaises(SnapshotManifestError) as caught:
+                    validate_manifest(path)
 
-            message = str(caught.exception)
-            self.assertIn("source fiis must be ifix.csv", message)
-            self.assertIn("caio_fiis.csv", message)
+                self.assertIn(
+                    f"source fiis must be ifix.csv; manifest declares allocation/{name}",
+                    str(caught.exception),
+                )
 
     def test_series_identity_rule_accepts_index_files(self):
         with tempfile.TemporaryDirectory() as directory:
