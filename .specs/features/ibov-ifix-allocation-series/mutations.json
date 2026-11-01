@@ -30,7 +30,7 @@
  {
   "file": "py/snapshot_manifest.py",
   "old": "                and resolved.name == expected\n",
-  "new": "",
+  "new": "                and True\n",
   "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_snapshot_manifest -k test_derived_index_series_must_live_in_allocation_dir",
   "label": "C4: derived series no longer checks the resolved file name (drop resolved.name == expected)"
  },
