@@ -1,8 +1,8 @@
 # ibov-ifix-allocation-series proofs
 
-**HEAD**: 065bdda
+**HEAD**: 8ebed48
 **Tree**: clean
-**Result**: 28 pass, 0 fail; mutations 0 killed, 0 not
+**Result**: 28 pass, 0 fail; mutations 3 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -34,3 +34,11 @@
 | C22 | `grep -q -e 'data/snapshot-2020/ibovespa.csv' docs/snapshot_registry.md && grep -q -e 'data/snapshot-2020/ifix.` | count unknown | - | pass |
 | C23 | `! grep -n -e 'caio_fiis.csv. is required' -e 'are never mapped' -e 'resolves to .caio_fiis.csv.' -e 'no IFIX s` | count unknown | - | pass |
 | C24 | `! grep -n -e 'never reads IFIX' py/allocation_data.py && ! grep -n -e 'multi-ticker sleeves rebuilt' py/snapsh` | count unknown | - | pass |
+
+## Mutations
+
+| Mutation | Location | Killed |
+| --- | --- | --- |
+| C4: derived series no longer has to be declared character for character (drop declared == expected) | `py/snapshot_manifest.py:491` | yes |
+| C2: explicit per-class source skips the identity rule (valid = True) | `py/snapshot_manifest.py:499` | yes |
+| C11: build common_dates reads IBOV in place of IFIX for fiis | `py/snapshot_registry.py:250` | yes |
