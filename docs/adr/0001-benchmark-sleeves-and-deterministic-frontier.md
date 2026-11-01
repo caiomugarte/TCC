@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. As partes de alocação entre classes foram substituídas pela [ADR 0003](0003-equal-weight-risky-classes-with-fixed-income.md).
 
 ## Context
 

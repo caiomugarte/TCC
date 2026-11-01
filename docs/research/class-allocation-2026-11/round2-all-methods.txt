@@ -1,0 +1,64 @@
+== CARTEIRAS POR PERFIL (dados até 2026-10) | métricas no histórico de 10a ==
+
+score 0.00 (vol≤10.0% dd≤15.0%)
+  hoje          BR=5% FII=20% INT=15% RF=60% BTC=0%        | 10a: ret 11.2% vol  4.2% dd -11.8%
+  janelas       BR=4% FII=14% INT=8% RF=74% BTC=0%         | 10a: ret 10.8% vol  2.8% dd  -8.0%
+  1/N+RF        BR=7% FII=7% INT=7% RF=71% BTC=7%          | 10a: ret 19.5% vol  9.7% dd -14.8%
+  boot+grid     BR=4% FII=20% INT=10% RF=65% BTC=0%        | 10a: ret 10.7% vol  3.4% dd -10.3%
+  sk MaxDD      BR=16% FII=0% INT=41% RF=35% BTC=9%        | 10a: ret 25.8% vol 15.6% dd -19.2%
+  sk CDaR       BR=16% FII=0% INT=41% RF=35% BTC=9%        | 10a: ret 25.8% vol 15.6% dd -19.2%
+  sk CDaR+boot  BR=11% FII=15% INT=16% RF=49% BTC=9%       | 10a: ret 22.8% vol 12.8% dd -18.4%
+
+score 0.25 (vol≤12.5% dd≤20.0%)
+  hoje          BR=10% FII=15% INT=25% RF=50% BTC=0%       | 10a: ret 12.8% vol  6.5% dd -15.1%
+  janelas       BR=5% FII=16% INT=21% RF=56% BTC=3%        | 10a: ret 15.7% vol  6.8% dd -12.7%
+  1/N+RF        BR=10% FII=10% INT=10% RF=62% BTC=10%      | 10a: ret 22.2% vol 12.3% dd -18.2%
+  boot+grid     BR=9% FII=19% INT=20% RF=50% BTC=2%        | 10a: ret 15.1% vol  6.9% dd -15.1%
+  sk MaxDD      BR=20% FII=0% INT=51% RF=18% BTC=11%       | 10a: ret 29.3% vol 19.0% dd -23.5%
+  sk CDaR       BR=20% FII=0% INT=51% RF=18% BTC=11%       | 10a: ret 29.3% vol 19.0% dd -23.5%
+  sk CDaR+boot  BR=14% FII=13% INT=20% RF=41% BTC=12%      | 10a: ret 25.8% vol 15.5% dd -21.5%
+
+score 0.50 (vol≤15.0% dd≤25.0%)
+  hoje          BR=15% FII=15% INT=20% RF=45% BTC=5%       | 10a: ret 18.5% vol  9.7% dd -17.4%
+  janelas       BR=8% FII=8% INT=26% RF=52% BTC=5%         | 10a: ret 19.0% vol  9.4% dd -13.8%
+  1/N+RF        BR=12% FII=12% INT=12% RF=52% BTC=12%      | 10a: ret 25.1% vol 15.0% dd -21.5%
+  boot+grid     BR=14% FII=14% INT=27% RF=41% BTC=5%       | 10a: ret 19.0% vol 10.1% dd -18.1%
+  sk MaxDD      BR=23% FII=0% INT=61% RF=2% BTC=13%        | 10a: ret 32.4% vol 22.4% dd -27.7%
+  sk CDaR       BR=23% FII=0% INT=61% RF=2% BTC=13%        | 10a: ret 32.4% vol 22.4% dd -27.7%
+  sk CDaR+boot  BR=16% FII=11% INT=24% RF=34% BTC=14%      | 10a: ret 28.8% vol 18.1% dd -24.3%
+
+score 0.58 (vol≤15.8% dd≤26.6%)
+  hoje          BR=15% FII=10% INT=25% RF=45% BTC=5%       | 10a: ret 19.3% vol 10.2% dd -17.2%
+  janelas       BR=9% FII=5% INT=29% RF=52% BTC=5%         | 10a: ret 19.8% vol 10.1% dd -14.1%
+  1/N+RF        BR=13% FII=13% INT=13% RF=49% BTC=13%      | 10a: ret 25.9% vol 15.8% dd -22.5%
+  boot+grid     BR=16% FII=13% INT=29% RF=37% BTC=6%       | 10a: ret 20.3% vol 11.3% dd -19.2%
+  sk MaxDD      BR=22% FII=0% INT=63% RF=0% BTC=15%        | 10a: ret 34.0% vol 23.6% dd -29.4%
+  sk CDaR       BR=22% FII=0% INT=63% RF=0% BTC=15%        | 10a: ret 34.0% vol 23.6% dd -29.4%
+  sk CDaR+boot  BR=17% FII=10% INT=25% RF=32% BTC=15%      | 10a: ret 29.7% vol 18.9% dd -25.1%
+
+score 0.75 (vol≤17.5% dd≤30.0%)
+  hoje          BR=20% FII=0% INT=35% RF=35% BTC=10%       | 10a: ret 26.3% vol 16.0% dd -20.1%
+  janelas       BR=13% FII=2% INT=31% RF=45% BTC=9%        | 10a: ret 24.2% vol 13.8% dd -17.8%
+  1/N+RF        BR=14% FII=14% INT=14% RF=43% BTC=14%      | 10a: ret 27.6% vol 17.3% dd -24.2%
+  boot+grid     BR=19% FII=10% INT=35% RF=28% BTC=8%       | 10a: ret 23.6% vol 14.2% dd -21.7%
+  sk MaxDD      BR=15% FII=0% INT=66% RF=0% BTC=19%        | 10a: ret 37.4% vol 26.2% dd -32.7%
+  sk CDaR       BR=15% FII=0% INT=66% RF=0% BTC=19%        | 10a: ret 37.4% vol 26.2% dd -32.7%
+  sk CDaR+boot  BR=19% FII=9% INT=27% RF=28% BTC=17%       | 10a: ret 31.6% vol 20.6% dd -26.8%
+
+score 1.00 (vol≤20.0% dd≤35.0%)
+  hoje          BR=10% FII=0% INT=60% RF=10% BTC=20%       | 10a: ret 37.8% vol 25.9% dd -31.4%
+  janelas       BR=13% FII=4% INT=38% RF=33% BTC=12%       | 10a: ret 28.5% vol 17.6% dd -22.8%
+  1/N+RF        BR=17% FII=17% INT=17% RF=32% BTC=17%      | 10a: ret 30.4% vol 20.0% dd -27.0%
+  boot+grid     BR=20% FII=8% INT=43% RF=19% BTC=10%       | 10a: ret 27.3% vol 17.4% dd -24.0%
+  sk MaxDD      BR=6% FII=0% INT=70% RF=0% BTC=24%         | 10a: ret 41.6% vol 29.7% dd -38.0%
+  sk CDaR       BR=6% FII=0% INT=70% RF=0% BTC=24%         | 10a: ret 41.6% vol 29.7% dd -38.0%
+  sk CDaR+boot  BR=21% FII=7% INT=29% RF=23% BTC=19%       | 10a: ret 34.3% vol 23.0% dd -29.2%
+
+== FORA DA AMOSTRA, score 0.58 (decide em 1/nov com o passado, segura 1 ano) ==
+  hoje          ret 15.7% a.a. vol 13.9% dd -28.8% giro médio/ano 28.3%  [RF8% RF35% RF40% RF45% RF35% RF70% RF55%]
+  janelas       ret 16.4% a.a. vol 13.6% dd -28.8% giro médio/ano 10.1%  [RF8% RF24% RF32% RF36% RF38% RF46% RF48%]
+  1/N+RF        ret 17.5% a.a. vol 10.7% dd -18.6% giro médio/ano  2.5%  [RF63% RF61% RF63% RF60% RF57% RF54% RF52%]
+  boot+grid     ret 15.6% a.a. vol 12.7% dd -27.5% giro médio/ano 10.0%  [RF9% RF28% RF28% RF36% RF34% RF36% RF31%]
+  sk MaxDD      ret 21.2% a.a. vol 17.8% dd -28.8% giro médio/ano 22.3%  [RF0% RF39% RF48% RF59% RF77% RF74% RF54%]
+  sk CDaR       ret 21.2% a.a. vol 17.9% dd -28.8% giro médio/ano 22.3%  [RF0% RF39% RF48% RF59% RF77% RF72% RF54%]
+  sk CDaR+boot  ret 20.7% a.a. vol 17.5% dd -28.4% giro médio/ano 11.0%  [RF1% RF23% RF25% RF29% RF31% RF29% RF31%]

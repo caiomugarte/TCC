@@ -40,3 +40,7 @@ Thumbs.db
 # Dados grandes (opcional - descomente se quiser ignorar)
 # data/raw/*.csv
 # data/processed/*.csv
+
+# Research caches
+docs/research/*/grid_cache.pkl
+docs/research/*/compare.json
