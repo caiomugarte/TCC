@@ -27,7 +27,6 @@ from typing import Callable, Mapping, Optional, Sequence
 from allocation_config import ASSET_CLASSES
 from allocation_data import (
     SnapshotError,
-    build_equal_weight_sleeve,
     levels_to_returns,
     multiply_levels,
     read_levels_csv,
@@ -237,7 +236,7 @@ def _single_level_series(levels: Mapping[str, dict], label: str) -> dict:
 
 def premium_level_series(snapshot_dir: Path) -> dict:
     """Build the five class level series exactly as the Premium bundle
-    consumes them: multi-ticker sleeves rebuilt per ticker basket,
+    consumes them: IBOV and IFIX as single series,
     ``international_equity``/``crypto`` multiplied by ``ptax``."""
 
     def single(key: str) -> dict:
@@ -247,12 +246,8 @@ def premium_level_series(snapshot_dir: Path) -> dict:
 
     ptax = single("ptax")
     return {
-        "brazilian_stocks": build_equal_weight_sleeve(
-            read_levels_csv(snapshot_dir / ALLOCATION_FILES["brazilian_stocks"])
-        ),
-        "fiis": build_equal_weight_sleeve(
-            read_levels_csv(snapshot_dir / ALLOCATION_FILES["fiis"])
-        ),
+        "brazilian_stocks": single("brazilian_stocks"),
+        "fiis": single("fiis"),
         "international_equity": multiply_levels(
             single("international_equity"), ptax
         ),

@@ -25,16 +25,22 @@ MANIFEST_FILE_GLOB = "*.json"
 # without a ``state`` field is a legacy artifact and stays loadable.
 MANIFEST_STATES = ("draft", "validated", "published", "retired")
 
-# These names are the local snapshot contract.  A manifest may override them
-# with ``allocation_source.metadata.files`` or one source per class.
+# These names are the local snapshot contract.  ``metadata.files`` or a
+# per-class source can point the other classes elsewhere, but
+# ``brazilian_stocks`` and ``fiis`` must always resolve to the IBOV and IFIX
+# files named here (see ``INDEX_SERIES_CLASSES``).
 ALLOCATION_FILES = {
-    "brazilian_stocks": "caio_stocks.csv",
-    "fiis": "caio_fiis.csv",
+    "brazilian_stocks": "ibovespa.csv",
+    "fiis": "ifix.csv",
     "international_equity": "sp500_total_return_usd.csv",
     "fixed_income": "di.csv",
     "crypto": "btc_usd.csv",
     "ptax": "ptax.csv",
 }
+
+
+# Classes whose series identity is fixed: IBOV for stocks, IFIX for FIIs.
+INDEX_SERIES_CLASSES = ("brazilian_stocks", "fiis")
 
 
 class SnapshotManifestError(ValueError):
@@ -466,6 +472,37 @@ def _validate_dates(manifest: SnapshotManifest) -> None:
                     raise SnapshotManifestError(f"source {key} ends before manifest cutoff")
 
 
+def _validate_index_series(manifest: SnapshotManifest) -> None:
+    """Require IBOV/IFIX files for the stock and FII classes, no override.
+
+    A derived series must also be declared by exactly that name and live
+    directly in the allocation directory, so the directory hash covers it.
+    """
+
+    allocation = manifest.sources.get("allocation")
+    for key in INDEX_SERIES_CLASSES:
+        expected = ALLOCATION_FILES[key]
+        source = manifest.source_for(key)
+        resolved = source.resolved_path()
+        if source.metadata.get("derived_from") == "allocation" and allocation is not None:
+            declared = str(source.metadata.get("filename", expected))
+            allocation_dir = allocation.resolved_path().resolve()
+            valid = (
+                declared == expected
+                and resolved.name == expected
+                and resolved.parent == allocation_dir
+            )
+            if declared == expected and not valid:
+                declared = f"{declared} (resolves to {resolved})"
+        else:
+            declared = source.path
+            valid = resolved.name == expected
+        if not valid:
+            raise SnapshotManifestError(
+                f"source {key} must be {expected}; manifest declares {declared}"
+            )
+
+
 def validate_manifest(
     manifest: SnapshotManifest | Mapping[str, object] | Path,
     *,
@@ -491,6 +528,7 @@ def validate_manifest(
         missing = sorted(set(required_classes) - set(checked.supported_classes))
         raise SnapshotManifestError(f"manifest does not support classes: {missing}")
     _validate_dates(checked)
+    _validate_index_series(checked)
 
     required_source_keys = tuple(required_classes) + ("ptax",)
     for key in required_source_keys:

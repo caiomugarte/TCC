@@ -671,6 +671,47 @@ class AllocationCoreTests(unittest.TestCase):
         })
         self.assertGreater(bundle.rows[-1].returns["international_equity"], 0.0)
 
+    def test_basic_snapshot_loader_needs_no_ibovespa_file(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            (directory / "metadata.json").write_text(
+                json.dumps({
+                    "source": "fixture",
+                    "retrieved_at": "2026-07-21T12:00:00-03:00",
+                    "cutoff_date": "2020-01-03",
+                }),
+                encoding="utf-8",
+            )
+            (directory / "caio_stocks.csv").write_text(
+                "date,AAA\n2020-01-01,100\n2020-01-02,110\n2020-01-03,121\n",
+                encoding="utf-8",
+            )
+            for filename, values in {
+                "ifix.csv": ("50", "55", "44"),
+                "sp500_total_return_usd.csv": ("100", "101", "102"),
+                "di.csv": ("100", "100.1", "100.2"),
+                "btc_usd.csv": ("100", "110", "120"),
+                "ptax.csv": ("5", "5.1", "5.2"),
+            }.items():
+                (directory / filename).write_text(
+                    "date,value\n"
+                    f"2020-01-01,{values[0]}\n"
+                    f"2020-01-02,{values[1]}\n"
+                    f"2020-01-03,{values[2]}\n",
+                    encoding="utf-8",
+                )
+            portfolio_path = directory / "portfolio.json"
+            portfolio_path.write_text(json.dumps([{"TICKER": "AAA"}]), encoding="utf-8")
+            self.assertFalse((directory / "ibovespa.csv").exists())
+
+            bundle = load_snapshot_bundle(directory, portfolio_path)
+
+        self.assertEqual(len(bundle.rows), 3)
+        self.assertAlmostEqual(bundle.rows[1].returns["brazilian_stocks"], 0.10)
+        self.assertAlmostEqual(bundle.rows[2].returns["brazilian_stocks"], 0.10)
+        self.assertAlmostEqual(bundle.rows[1].returns["fiis"], 0.10)
+        self.assertAlmostEqual(bundle.rows[2].returns["fiis"], -0.20)
+
     def test_snapshot_loader_uses_equal_weight_fii_sleeve_without_ifix(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)
