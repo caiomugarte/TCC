@@ -249,21 +249,36 @@ class SeriesIdentityRuleTests(unittest.TestCase):
                     message,
                 )
 
-        for name in ("caio_fiis.csv", "caio_ifix.csv"):
+                with self.assertRaises(SnapshotManifestError) as caught:
+                    validate_manifest(path, verify_hashes=False)
+
+                self.assertIn(
+                    f"source {key} must be {expected}; manifest declares {declared}",
+                    str(caught.exception),
+                )
+
+        explicit_cases = (
+            ("fiis", "ifix.csv", "caio_fiis.csv"),
+            ("fiis", "ifix.csv", "caio_ifix.csv"),
+            ("fiis", "ifix.csv", "ifix.csv.old"),
+            ("fiis", "ifix.csv", "IFIX.csv"),
+            ("brazilian_stocks", "ibovespa.csv", "IBOVESPA.csv"),
+        )
+        for key, expected, name in explicit_cases:
             with self.subTest(explicit=name), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 payload = build_manifest_fixture(root)
                 explicit = root / "allocation" / name
                 if not explicit.exists():
-                    explicit.write_bytes((root / "allocation" / "ifix.csv").read_bytes())
+                    explicit.write_bytes((root / "allocation" / expected).read_bytes())
                     payload["allocation_source"]["sha256"] = sha256_path(
                         root / "allocation"
                     )
                 payload["sources"] = {
-                    "fiis": {
+                    key: {
                         "path": f"allocation/{name}",
                         "sha256": sha256_path(explicit),
-                        "provider": "fixture-explicit-fiis",
+                        "provider": f"fixture-explicit-{key}",
                     }
                 }
                 path = _manifest_file(root, payload)
@@ -272,9 +287,32 @@ class SeriesIdentityRuleTests(unittest.TestCase):
                     validate_manifest(path)
 
                 self.assertIn(
-                    f"source fiis must be ifix.csv; manifest declares allocation/{name}",
+                    f"source {key} must be {expected}; manifest declares allocation/{name}",
                     str(caught.exception),
                 )
+
+        with self.subTest(explicit="explicit/ifix.csv"), tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            basket = root / "allocation" / "caio_fiis.csv"
+            (root / "explicit").mkdir()
+            (root / "explicit" / "ifix.csv").symlink_to(basket)
+            payload["sources"] = {
+                "fiis": {
+                    "path": "explicit/ifix.csv",
+                    "sha256": sha256_path(basket),
+                    "provider": "fixture-explicit-fiis",
+                }
+            }
+            path = _manifest_file(root, payload)
+
+            with self.assertRaises(SnapshotManifestError) as caught:
+                validate_manifest(path)
+
+            self.assertIn(
+                "source fiis must be ifix.csv; manifest declares explicit/ifix.csv",
+                str(caught.exception),
+            )
 
     def test_series_identity_rule_accepts_index_files(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -344,6 +382,57 @@ class SeriesIdentityRuleTests(unittest.TestCase):
                 validate_manifest(_manifest_file(root, payload))
 
             self.assertIn("source fiis must be ifix.csv", str(caught.exception))
+
+        symlink_targets = (
+            "allocation/caio_fiis.csv",
+            "allocation/caio_ifix.csv",
+            "allocation/ifix.csv.old",
+            "allocation/IFIX.csv",
+            "allocation/sub/ifix.csv",
+            "older/allocation/ifix.csv",
+        )
+        for target_name in symlink_targets:
+            with self.subTest(symlink=target_name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                payload = build_manifest_fixture(root)
+                target = root / target_name
+                if not target.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes((root / "allocation" / "caio_fiis.csv").read_bytes())
+                (root / "allocation" / "ifix.csv").unlink()
+                (root / "allocation" / "ifix.csv").symlink_to(target)
+                payload = _declare_files(root, payload)
+
+                with self.assertRaises(SnapshotManifestError) as caught:
+                    validate_manifest(_manifest_file(root, payload))
+
+                self.assertIn(
+                    "source fiis must be ifix.csv; manifest declares ifix.csv "
+                    f"(resolves to {target.resolve()})",
+                    str(caught.exception),
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            (root / "allocation" / "IFIX.csv").symlink_to(root / "allocation" / "ifix.csv")
+            for declared in ("ifix.csv/../ifix.csv", "IFIX.csv"):
+                with self.subTest(declared=declared):
+                    declared_payload = _declare_files(root, payload, fiis=declared)
+                    self.assertEqual(
+                        SnapshotManifest.from_dict(declared_payload, base_dir=root)
+                        .source_for("fiis")
+                        .resolved_path(),
+                        (root / "allocation" / "ifix.csv").resolve(),
+                    )
+
+                    with self.assertRaises(SnapshotManifestError) as caught:
+                        validate_manifest(_manifest_file(root, declared_payload))
+
+                    self.assertIn(
+                        f"source fiis must be ifix.csv; manifest declares {declared}",
+                        str(caught.exception),
+                    )
 
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
