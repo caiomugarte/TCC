@@ -25,7 +25,7 @@ from allocation_profiles import (  # noqa: E402
     build_anchor_profiles,
     interpolate_profile,
 )
-from pipelines.asset_allocation import run_allocation  # noqa: E402
+from pipelines.equal_weight_risky import run_equal_weight_risky  # noqa: E402
 
 
 API_CLASS_KEYS = {
@@ -66,6 +66,7 @@ class BasicRecommendation(TypedDict):
     classes: list[BasicAllocationClass]
     assumptions: list[str]
     risks: list[str]
+    allocation_method: dict[str, object]
 
 
 @dataclass(frozen=True)
@@ -98,17 +99,8 @@ def _snapshot_id(bundle: SnapshotBundle) -> str:
     return f"allocation:{bundle.start_date.isoformat()}:{bundle.end_date.isoformat()}"
 
 
-def _selected_weights(result: Mapping[str, object]) -> Mapping[str, object]:
-    current_target = result.get("current_target")
-    if not isinstance(current_target, Mapping):
-        raise AllocationAdapterError("allocation result has no current target")
-    selected = current_target.get("selected")
-    if not isinstance(selected, Mapping):
-        raise AllocationAdapterError("allocation result has no selected target")
-    profile_winner = selected.get("profile_winner")
-    if not isinstance(profile_winner, Mapping):
-        raise AllocationAdapterError("allocation result has no Basic profile winner")
-    weights = profile_winner.get("weights")
+def _result_weights(result: Mapping[str, object]) -> Mapping[str, object]:
+    weights = result.get("weights")
     if not isinstance(weights, Mapping):
         raise AllocationAdapterError("allocation result has no class weights")
     if set(weights) != set(ASSET_CLASSES):
@@ -166,7 +158,7 @@ def generate_basic_recommendation(
     request: BasicRecommendationInput,
     *,
     load_bundle: SnapshotLoader = load_snapshot_bundle,
-    run_analysis: AllocationRunner = run_allocation,
+    run_analysis: AllocationRunner = run_equal_weight_risky,
 ) -> BasicRecommendation:
     """Run one generic Basic allocation and normalize it for the API layer."""
 
@@ -190,11 +182,13 @@ def generate_basic_recommendation(
     )
     result = run_analysis(
         bundle.rows,
+        allocation_config=allocation_profile.as_dict(),
         metadata=metadata,
-        profile="caio",
-        allocation_profile=allocation_profile,
     )
-    weights = _selected_weights(result)
+    weights = _result_weights(result)
+    provenance = result.get("provenance")
+    if not isinstance(provenance, Mapping):
+        raise AllocationAdapterError("allocation result has no method provenance")
     snapshot_cutoff = str(bundle.metadata.get("cutoff_date") or bundle.end_date)
 
     return {
@@ -213,4 +207,5 @@ def generate_basic_recommendation(
             "Custos, impostos e fluxos de caixa não fazem parte deste cálculo.",
             "A exposição de cada classe pode ter risco e liquidez diferentes.",
         ],
+        "allocation_method": dict(provenance),
     }
