@@ -25,6 +25,7 @@ def _response(record: ProfileRecord) -> ProfileResponse:
         suitability_score=float(record.suitability_score),
         generic_profile=record.generic_profile,
         investable_capital_brl=float(record.investable_capital_brl),
+        warnings=list(record.warnings_json or []),
         consented_at=record.consented_at,
         created_at=record.created_at,
     )

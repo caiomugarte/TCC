@@ -237,5 +237,6 @@ class ProfileResponse(ProfileSchema):
     suitability_score: float
     generic_profile: GenericProfile
     investable_capital_brl: float
+    warnings: list[str]
     consented_at: datetime
     created_at: datetime

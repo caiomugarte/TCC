@@ -212,6 +212,18 @@ function selectedValue(answers: Answers, key: string): string | string[] | undef
   return answers[key];
 }
 
+const BEGINNER_EXPERIENCE = new Set(["nenhuma", "basica"]);
+const BEGINNER_PRODUCTS = new Set(["nenhum", "renda_fixa_fundos"]);
+
+function shouldSuggestAvoidingCrypto(answers: Answers): boolean {
+  const restrictions = answers.restricoes;
+  if (Array.isArray(restrictions) && restrictions.includes("evitar_cripto")) return false;
+  const experience = answers.experiencia;
+  const products = answers.produtos;
+  return (typeof experience === "string" && BEGINNER_EXPERIENCE.has(experience))
+    || (typeof products === "string" && BEGINNER_PRODUCTS.has(products));
+}
+
 export function OnboardingQuestionnaire() {
   const { getToken } = useAuth();
   const router = useRouter();
@@ -329,6 +341,12 @@ export function OnboardingQuestionnaire() {
             <fieldset aria-describedby={`${question.key}-help ${errorId}`}>
               <legend>{questionIndex + 1}. {question.legend}</legend>
               <p id={`${question.key}-help`} className="field-hint">{question.help}</p>
+              {question.key === "restricoes" && shouldSuggestAvoidingCrypto(answers) ? (
+                <p className="notice" role="status">
+                  Como você tem pouca experiência com investimentos de risco, sugerimos
+                  marcar &quot;Evitar criptoativos&quot;. A decisão é sua.
+                </p>
+              ) : null}
               <div className="options">
                 {question.options.map((option, optionIndex) => {
                   const inputId = `${question.key}-${option.value}`;
