@@ -28,6 +28,11 @@
       "provider": "Yahoo Finance chart API",
       "symbol": "BTC-USD"
     },
+    "ibovespa": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "^BVSP",
+      "treatment": "price index; dividends not included"
+    },
     "ifix": {
       "provider": "B3 Index Statistics API",
       "index": "IFIX"

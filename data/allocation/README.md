@@ -5,9 +5,8 @@ in this directory (or pass another directory to the CLI) with these files:
 
 ```text
 metadata.json
-caio_stocks.csv
-caio_fiis.csv
-[ifix.csv]                 # optional benchmark-only data
+ibovespa.csv               # brazilian_stocks class (IBOV)
+ifix.csv                   # fiis class (IFIX)
 sp500_total_return_usd.csv
 di.csv
 btc_usd.csv
@@ -15,10 +14,13 @@ ptax.csv
 ```
 
 Every CSV has a `date` column in ISO format and one or more positive level
-columns. `caio_stocks.csv` must contain one column for every ticker in
-`outputs/carteira_caio_consensus.json`. `caio_fiis.csv` must contain one
-column for every ticker in `outputs/carteira_fii_caio_consensus.json`.
-The other files normally use a single `value` column. The international and
+columns; the allocation inputs normally use a single `value` column.
+The Basic allocation reads `ibovespa.csv` for Brazilian stocks and `ifix.csv`
+for FIIs; both are required and a missing file stops the run without
+substitution. `caio_stocks.csv` and `caio_fiis.csv` (the fixed ticker baskets)
+may still live here for the stock and FII research scripts, but the allocation
+step no longer reads them. `ibovespa.csv` is a price index (Yahoo `^BVSP`)
+and does not include dividends. The international and
 crypto files are native USD levels;
 `ptax.csv` is BRL per USD and is multiplied on exact common dates.
 
@@ -33,14 +35,11 @@ crypto files are native USD levels;
 }
 ```
 
-Missing dates are intersected, never forward-filled. A permanent Yahoo no-data
-response (for example, HTTP 404) is recorded separately for stock and FII
-tickers in `metadata.json`; remaining valid tickers are reweighted equally
-inside their respective sleeves. Transient fetch failures remain fatal. No
-ticker is replaced in the stock optimizer, FII selector, or consensus
-portfolio. IFIX is optional benchmark-only data and never supplies the `fiis`
-class when `caio_fiis.csv` is present. Keep the snapshot with the analysis
-outputs so you can reproduce the result.
+Missing dates are intersected, never forward-filled. When fetching the ticker
+baskets, a permanent Yahoo no-data response (for example, HTTP 404) is
+recorded separately for stock and FII tickers in `metadata.json`. Transient
+fetch failures remain fatal. Keep the snapshot with the analysis outputs so
+you can reproduce the result.
 
 Suggested source documentation for the first snapshot is the [B3 IFIX
 methodology](https://www.b3.com.br/data/files/04/E6/A1/D3/762915107623A41592D828A8/IFIX-Metodologia-en-us.pdf),
@@ -59,9 +58,10 @@ python3 py/fetch_allocation_snapshot.py \
 python3 py/run_allocation.py
 ```
 
-The CLIs default to `outputs/carteira_fii_caio_consensus.json`. Pass
-`--fii-portfolio PATH` to use another fixed FII artifact. Pass `--skip-ifix`
-when you do not need the optional benchmark file.
+The fetch CLI still downloads the fixed ticker baskets for the research
+scripts and defaults to `outputs/carteira_fii_caio_consensus.json`; pass
+`--fii-portfolio PATH` to use another fixed FII artifact. The allocation step
+ignores those baskets.
 
 For a personalized allocation, pass the continuous suitability score. The
 runner interpolates the documented allocation-only anchor policies and records
@@ -79,5 +79,6 @@ python3 py/run_allocation.py \
 The fixed-income file uses the BCB SGS 12 daily CDI factor. A sample was
 cross-checked against the B3 DI FTP annual-rate file using B3's 252-business-day
 convention. The model remains gross and excludes taxes, fees, spreads, and
-cash flows. Allocation candidates currently require a 5% minimum in every
-sleeve.
+cash flows. The Basic API allocation (`equal-weight-risky-v1`, ADR 0003)
+splits the risky share 1/N across stocks, FIIs, international equity, and
+crypto, puts the rest in fixed income, and has no per-class minimum weight.

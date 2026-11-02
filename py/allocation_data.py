@@ -314,17 +314,6 @@ def load_premium_snapshot_bundle(
     )
 
 
-def _metadata_tickers(metadata: Mapping[str, object], key: str) -> set[str]:
-    raw_tickers = metadata.get(key, ())
-    if not isinstance(raw_tickers, (list, tuple, set)):
-        return set()
-    return {
-        str(ticker).strip().upper()
-        for ticker in raw_tickers
-        if str(ticker).strip()
-    }
-
-
 def load_snapshot_bundle(
     snapshot_dir: Path | SnapshotManifest,
     portfolio_path: Optional[Path] = None,
@@ -336,10 +325,17 @@ def load_snapshot_bundle(
 ) -> SnapshotBundle:
     """Load Basic local snapshots or a strict manifest-backed Premium snapshot.
 
-    Basic keeps its historical signature and IFIX fallback.  Supplying a
-    manifest (or ``premium=True``) selects the strict path and requires all
-    manifest-named classes; it never substitutes a fallback series or a fixed
-    artifact.
+    Basic reads the index series named in ``ALLOCATION_FILES`` from
+    ``snapshot_dir``: IBOV (``ibovespa.csv``) for Brazilian stocks and IFIX
+    (``ifix.csv``) for FIIs, plus S&P 500 TR and BTC (converted with PTAX) and
+    DI.  It never reads the fixed ticker baskets or portfolio artifacts, and a
+    missing file raises ``SnapshotError`` without substitution.
+    ``portfolio_path``, ``fii_portfolio_path`` and ``rebalance_years`` are
+    accepted for signature compatibility and ignored on the Basic path.
+
+    Supplying a manifest (or ``premium=True``) selects the strict path and
+    requires all manifest-named classes; it never substitutes a fallback
+    series or a fixed artifact.
     """
 
     if isinstance(snapshot_dir, SnapshotManifest):
@@ -350,70 +346,19 @@ def load_snapshot_bundle(
         if manifest is None:
             raise SnapshotError("Premium loading requires a validated manifest")
         return load_premium_snapshot_bundle(manifest, rebalance_years=rebalance_years)
-    if portfolio_path is None:
-        raise SnapshotError("Basic loading requires a portfolio path")
     snapshot_dir = Path(snapshot_dir)
 
+    def series(key: str) -> LevelSeries:
+        return _single_series(read_levels_csv(snapshot_dir / ALLOCATION_FILES[key]))
+
     metadata = read_metadata(snapshot_dir / "metadata.json")
-    skipped_tickers = _metadata_tickers(metadata, "skipped_tickers")
-    tickers = tuple(
-        ticker
-        for ticker in load_caio_tickers(portfolio_path)
-        if ticker.upper() not in skipped_tickers
-    )
-    if not tickers:
-        raise SnapshotError("all portfolio tickers were skipped")
-    ticker_data = read_levels_csv(snapshot_dir / "caio_stocks.csv")
-    missing_tickers = [ticker for ticker in tickers if ticker not in ticker_data]
-    if missing_tickers:
-        raise SnapshotError(
-            "Caio ticker history is incomplete; no replacements are allowed: "
-            f"{missing_tickers}"
-        )
-    stock_sleeve = build_equal_weight_sleeve(
-        {ticker: ticker_data[ticker] for ticker in tickers},
-        rebalance_years=rebalance_years,
-    )
-
-    if fii_portfolio_path is None:
-        default_fii_path = portfolio_path.parent / "carteira_fii_caio_consensus.json"
-        if default_fii_path.exists() and (snapshot_dir / "caio_fiis.csv").exists():
-            fii_portfolio_path = default_fii_path
-
-    if fii_portfolio_path is None:
-        fiis = _single_series(read_levels_csv(snapshot_dir / "ifix.csv"))
-    else:
-        fii_tickers = tuple(
-            ticker
-            for ticker in load_portfolio_tickers(fii_portfolio_path, "FII")
-            if ticker not in _metadata_tickers(metadata, "fii_skipped_tickers")
-        )
-        if not fii_tickers:
-            raise SnapshotError("all FII portfolio tickers were skipped")
-        fii_data = read_levels_csv(snapshot_dir / "caio_fiis.csv")
-        missing_fii_tickers = [ticker for ticker in fii_tickers if ticker not in fii_data]
-        if missing_fii_tickers:
-            raise SnapshotError(
-                "FII ticker history is incomplete; no replacements are allowed: "
-                f"{missing_fii_tickers}"
-            )
-        fiis = build_equal_weight_sleeve(
-            {ticker: fii_data[ticker] for ticker in fii_tickers},
-            rebalance_years=rebalance_years,
-        )
-    sp500_usd = _single_series(read_levels_csv(snapshot_dir / "sp500_total_return_usd.csv"))
-    fixed_income = _single_series(read_levels_csv(snapshot_dir / "di.csv"))
-    btc_usd = _single_series(read_levels_csv(snapshot_dir / "btc_usd.csv"))
-    ptax = _single_series(read_levels_csv(snapshot_dir / "ptax.csv"))
-    international_brl = multiply_levels(sp500_usd, ptax)
-    crypto_brl = multiply_levels(btc_usd, ptax)
-
+    ptax = series("ptax")
     levels = {
-        ASSET_CLASSES[0]: stock_sleeve,
-        ASSET_CLASSES[1]: fiis,
-        ASSET_CLASSES[2]: international_brl,
-        ASSET_CLASSES[3]: fixed_income,
-        ASSET_CLASSES[4]: crypto_brl,
+        "brazilian_stocks": series("brazilian_stocks"),
+        "fiis": series("fiis"),
+        "international_equity": multiply_levels(series("international_equity"), ptax),
+        "fixed_income": series("fixed_income"),
+        "crypto": multiply_levels(series("crypto"), ptax),
     }
     rows = levels_to_returns(levels, ASSET_CLASSES)
     return SnapshotBundle(
