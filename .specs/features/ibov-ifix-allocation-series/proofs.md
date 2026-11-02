@@ -1,8 +1,8 @@
 # ibov-ifix-allocation-series proofs
 
-**HEAD**: 358db81
+**HEAD**: f7bc7b2
 **Tree**: clean
-**Result**: 28 pass, 0 fail; mutations 4 killed, 3 not
+**Result**: 28 pass, 0 fail; mutations 19 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -43,6 +43,18 @@
 | C2: explicit per-class source skips the identity rule (valid = True) | `py/snapshot_manifest.py:499` | yes |
 | C11: build common_dates reads IBOV in place of IFIX for fiis | `py/snapshot_registry.py:250` | yes |
 | C2: explicit per-class source accepts any name ending in the index file name (== -> endswith) | `py/snapshot_manifest.py:499` | yes |
-| C4: derived series no longer checks the resolved file name (drop resolved.name == expected) | `py/snapshot_manifest.py:492` | no |
-| C4: derived series containment compares directory names, not directories | `py/snapshot_manifest.py:493` | no |
-| C2: explicit per-class source compares the file name case-insensitively | `py/snapshot_manifest.py:499` | no |
+| C4: derived series no longer checks the resolved file name (drop resolved.name == expected) | `py/snapshot_manifest.py:492` | yes |
+| C4: derived series containment compares directory names, not directories | `py/snapshot_manifest.py:493` | yes |
+| C2: explicit per-class source compares the file name case-insensitively | `py/snapshot_manifest.py:499` | yes |
+| C2: series file name read from the unresolved path (resolve() dropped) | `py/snapshot_manifest.py:486` | yes |
+| C4: derived declared name only has to start with the index file name | `py/snapshot_manifest.py:491` | yes |
+| C4: derived declared name compared case-insensitively | `py/snapshot_manifest.py:491` | yes |
+| C4: derived resolved name only has to end with the index file name | `py/snapshot_manifest.py:492` | yes |
+| C4: derived resolved name only has to start with the index file name | `py/snapshot_manifest.py:492` | yes |
+| C4: derived resolved name compared case-insensitively | `py/snapshot_manifest.py:492` | yes |
+| C4: derived series may live in a sub-directory of the allocation dir | `py/snapshot_manifest.py:493` | yes |
+| C4: derived containment by string prefix | `py/snapshot_manifest.py:493` | yes |
+| C4: rejection no longer names the file a symlink resolves to | `py/snapshot_manifest.py:495` | yes |
+| C2: explicit per-class source name only has to start with the index file name | `py/snapshot_manifest.py:499` | yes |
+| C2: explicit per-class source checks the declared name, not the symlink target | `py/snapshot_manifest.py:499` | yes |
+| C2: identity rule skipped when verify_hashes=False | `py/snapshot_manifest.py:531` | yes |
