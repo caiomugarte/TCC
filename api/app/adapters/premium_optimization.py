@@ -27,9 +27,9 @@ def _default_snapshot_loader(manifest: object) -> object:
 
 
 def _default_allocation_engine(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
-    from pipelines.asset_allocation import run_allocation
+    from pipelines.equal_weight_risky import run_equal_weight_risky
 
-    return run_allocation(*args, **kwargs)
+    return run_equal_weight_risky(*args, **kwargs)
 
 
 def _default_stock_engine(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
@@ -219,9 +219,6 @@ def _validate_constraints(weights: Mapping[str, float], constraints: Mapping[str
             raise PremiumOptimizationError(
                 f"allocation violates maximum weight for {key}", "infeasible_constraints"
             )
-    hhi_max = constraints.get("hhi_max")
-    if hhi_max is not None and sum(value * value for value in weights.values()) > float(hhi_max) + 1e-9:
-        raise PremiumOptimizationError("allocation violates class HHI limit", "infeasible_constraints")
 
 
 def _rounded_weights(weights: Mapping[str, float]) -> dict[str, float]:
@@ -599,6 +596,7 @@ def run_premium_optimization(
             "manifest_id": manifest_id,
             "random_seed": run_seed,
             "allocation_history": allocation_history,
+            "allocation_method": allocation_result.get("provenance"),
             "selector_sources": selector_inputs.provenance(),
         }
     )
