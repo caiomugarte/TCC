@@ -1,4 +1,6 @@
+import random
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 import sys
 from types import ModuleType, SimpleNamespace
@@ -13,6 +15,7 @@ from app.adapters.premium_optimization import (
 )
 from app.services.premium_policy import resolve_recommendation_policy
 from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from core.allocation import DailyReturn
 from fii_selection import FiiSelectionError, FiiUniverseInfeasibleError
 
 
@@ -49,8 +52,8 @@ def selector_inputs():
     )
 
 
-def resolved_policy(plan: str):
-    profile = SimpleNamespace(
+def resolved_policy_profile(restrictions=("nenhuma",)):
+    return SimpleNamespace(
         version=3,
         suitability_score=0.8,
         raw_score=0.8,
@@ -61,14 +64,17 @@ def resolved_policy(plan: str):
             "conhecimento": 0.8,
         },
         generic_profile="moderado",
-        restrictions_json=["nenhuma"],
-        answers={"restricoes": ["nenhuma"]},
+        restrictions_json=list(restrictions),
+        answers={"restricoes": list(restrictions)},
         rules_json=[],
         warnings_json=[],
         schema_version=1,
     )
+
+
+def resolved_policy(plan: str, restrictions=("nenhuma",)):
     return resolve_recommendation_policy(
-        profile,
+        resolved_policy_profile(restrictions),
         plan=plan,
         source_snapshot_ids=["history-v1"],
         source_snapshot_hashes={"history-v1": "history-hash"},
@@ -77,22 +83,42 @@ def resolved_policy(plan: str):
     )
 
 
-def allocation_result():
+FIXTURE_WEIGHTS = {
+    "brazilian_stocks": 0.4,
+    "fiis": 0.2,
+    "international_equity": 0.1,
+    "fixed_income": 0.2,
+    "crypto": 0.1,
+}
+
+
+def allocation_result(weights=None):
+    """Result shape of ``pipelines.equal_weight_risky.run_equal_weight_risky``."""
+
     return {
-        "current_target": {
-            "selected": {
-                "profile_winner": {
-                    "weights": {
-                        "brazilian_stocks": 0.4,
-                        "fiis": 0.2,
-                        "international_equity": 0.1,
-                        "fixed_income": 0.2,
-                        "crypto": 0.1,
-                    }
-                }
-            }
-        }
+        "status": "ok",
+        "method": "equal-weight-risky-v1",
+        "weights": dict(FIXTURE_WEIGHTS if weights is None else weights),
+        "metrics": {"annualized_return": 0.12},
+        "provenance": {"method": "equal-weight-risky-v1", "risky_share": 0.8},
     }
+
+
+def synthetic_rows(years=11, seed=3):
+    rng = random.Random(seed)
+    end = date(2026, 10, 28)
+    day = end - timedelta(days=int(years * 365.25))
+    rows = []
+    while day <= end:
+        if day.weekday() < 5:
+            returns = {
+                name: rng.gauss(0.0005, 0.03)
+                for name in ("brazilian_stocks", "fiis", "international_equity", "crypto")
+            }
+            returns["fixed_income"] = 0.0003 + rng.gauss(0.0, 0.0001)
+            rows.append(DailyReturn(day, returns))
+        day += timedelta(days=1)
+    return tuple(rows)
 
 
 def selector_result(tickers):
@@ -154,22 +180,7 @@ class PremiumOptimizationTests(unittest.TestCase):
 
         def allocation(rows, *, metadata, allocation_config, class_constraints):
             calls["allocation"] = (allocation_config, class_constraints)
-            return {
-                "current_target": {
-                    "selected": {
-                        "profile_winner": {
-                            "weights": {
-                                "brazilian_stocks": 0.4,
-                                "fiis": 0.2,
-                                "international_equity": 0.1,
-                                "fixed_income": 0.2,
-                                "crypto": 0.1,
-                            },
-                            "metrics": {"annualized_return": 0.12},
-                        }
-                    }
-                }
-            }
+            return allocation_result()
 
         def stocks(**kwargs):
             calls["stocks"] = kwargs["config"]
@@ -214,40 +225,20 @@ class PremiumOptimizationTests(unittest.TestCase):
                 100_000,
                 selector_inputs=selector_inputs(),
                 snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
-                allocation_engine=lambda *_args, **_kwargs: {
-                    "current_target": {
-                        "selected": {
-                            "profile_winner": {
-                                "weights": {
-                                    "brazilian_stocks": 0.8,
-                                    "fiis": 0.8,
-                                    "international_equity": 0,
-                                    "fixed_income": 0,
-                                    "crypto": 0,
-                                }
-                            }
-                        }
+                allocation_engine=lambda *_args, **_kwargs: allocation_result(
+                    {
+                        "brazilian_stocks": 0.8,
+                        "fiis": 0.8,
+                        "international_equity": 0,
+                        "fixed_income": 0,
+                        "crypto": 0,
                     }
-                },
+                ),
             )
 
     def test_selector_hhi_is_a_hard_constraint(self):
         def allocation(*_args, **_kwargs):
-            return {
-                "current_target": {
-                    "selected": {
-                        "profile_winner": {
-                            "weights": {
-                                "brazilian_stocks": 0.4,
-                                "fiis": 0.2,
-                                "international_equity": 0.1,
-                                "fixed_income": 0.2,
-                                "crypto": 0.1,
-                            }
-                        }
-                    }
-                }
-            }
+            return allocation_result()
 
         with self.assertRaises(PremiumOptimizationError) as error:
             run_premium_optimization(
@@ -381,6 +372,116 @@ class PremiumOptimizationTests(unittest.TestCase):
         self.assertNotIn("manifest_path", provenance)
         self.assertNotIn("workspace", provenance)
         self.assertNotIn("/tmp/", repr(provenance))
+
+    def test_default_allocation_engine_is_equal_weight_risky(self):
+        rows = synthetic_rows()
+        resolved = resolved_policy("premium")
+        # The grid search must not be reached by the default engine.
+        with patch.dict(sys.modules, {"pipelines.asset_allocation": None}):
+            result = run_premium_optimization(
+                resolved,
+                Manifest(),
+                Path("/tmp/prumo-test-run"),
+                100_000,
+                selector_inputs=selector_inputs(),
+                snapshot_loader=lambda _manifest: SimpleNamespace(rows=rows, metadata={}),
+                stock_engine=lambda **_kwargs: selector_result(["AAA3", "BBB3"]),
+                fii_engine=lambda **_kwargs: selector_result(["AAA11", "BBB11"]),
+            )
+
+        weights = {item["key"]: item["target_weight"] for item in result["classes"]}
+        method = result["provenance"]["allocation_method"]
+        share = method["risky_share"]
+        self.assertEqual(method["method"], "equal-weight-risky-v1")
+        self.assertGreater(share, 0.0)
+        for key in ("brazilian_stocks", "fiis", "international", "crypto"):
+            self.assertAlmostEqual(weights[key], share / 4, places=6)
+        self.assertAlmostEqual(weights["fixed_income"], 1 - share, places=6)
+        self.assertEqual(sum(item["target_amount_brl"] for item in result["classes"]), 100_000)
+        self.assertEqual(
+            method["risk"]["volatility_cap"], resolved.allocation.volatility_cap
+        )
+        self.assertEqual(method["risk"]["drawdown_cap"], resolved.allocation.drawdown_cap)
+        self.assertTrue(method["risk"]["within_caps"])
+        self.assertEqual(method["window"]["end_date"], "2026-10-28")
+        self.assertEqual(method["window"]["requested_years"], 10)
+        self.assertEqual(set(method["class_series"]), {
+            "brazilian_stocks", "fiis", "international_equity", "fixed_income", "crypto",
+        })
+
+    def test_default_engine_drops_avoided_classes(self):
+        resolved = resolved_policy(
+            "premium", ("evitar_cripto", "evitar_exterior", "limitar_concentracao")
+        )
+        rows = synthetic_rows()
+        result = run_premium_optimization(
+            resolved,
+            Manifest(),
+            Path("/tmp/prumo-test-run"),
+            100_000,
+            selector_inputs=selector_inputs(),
+            snapshot_loader=lambda _manifest: SimpleNamespace(rows=rows, metadata={}),
+            # Selector HHI stays enforced under "limitar_concentracao".
+            stock_engine=lambda **_kwargs: {
+                **selector_result(["AAA3", "BBB3"]), "metrics": {"hhi": 0.2},
+            },
+            fii_engine=lambda **_kwargs: {
+                **selector_result(["AAA11", "BBB11"]), "metrics": {"hhi": 0.2},
+            },
+        )
+
+        weights = {item["key"]: item["target_weight"] for item in result["classes"]}
+        method = result["provenance"]["allocation_method"]
+        self.assertEqual(weights["crypto"], 0.0)
+        self.assertEqual(weights["international"], 0.0)
+        self.assertAlmostEqual(weights["brazilian_stocks"], weights["fiis"], places=6)
+        self.assertEqual(method["excluded_classes"], ["international_equity", "crypto"])
+
+    def test_class_hhi_does_not_reject_the_allocation(self):
+        concentrated_policy = policy()
+        concentrated_policy["allocation"]["class_constraints"]["hhi_max"] = 0.25
+        weights = {
+            "brazilian_stocks": 0.1,
+            "fiis": 0.1,
+            "international_equity": 0.1,
+            "fixed_income": 0.6,
+            "crypto": 0.1,
+        }
+
+        result = run_premium_optimization(
+            concentrated_policy,
+            Manifest(),
+            Path("/tmp/prumo-test-run"),
+            100_000,
+            selector_inputs=selector_inputs(),
+            snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+            allocation_engine=lambda *_args, **_kwargs: allocation_result(weights),
+            stock_engine=lambda **_kwargs: selector_result(["AAA3"]),
+            fii_engine=lambda **_kwargs: selector_result(["AAA11"]),
+        )
+
+        self.assertEqual(
+            {item["key"]: item["target_weight"] for item in result["classes"]}["fixed_income"],
+            0.6,
+        )
+
+    def test_allocation_method_provenance_is_recorded(self):
+        result = run_premium_optimization(
+            policy(),
+            Manifest(),
+            Path("/tmp/prumo-test-run"),
+            100_000,
+            selector_inputs=selector_inputs(),
+            snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+            allocation_engine=lambda *_args, **_kwargs: allocation_result(),
+            stock_engine=lambda **_kwargs: selector_result(["AAA3"]),
+            fii_engine=lambda **_kwargs: selector_result(["AAA11"]),
+        )
+
+        self.assertEqual(
+            result["provenance"]["allocation_method"],
+            {"method": "equal-weight-risky-v1", "risky_share": 0.8},
+        )
 
     def test_premium_selector_ga_controls_pass_through_unchanged(self):
         policy_value = resolved_policy("premium").to_dict()

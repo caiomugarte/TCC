@@ -135,17 +135,27 @@ class PremiumPolicyTests(unittest.TestCase):
         self.assertTrue(resolved.stocks.liquidity_and_size_filters["enforce_liquidity_and_size"])
         self.assertTrue(resolved.fiis.liquidity_and_size_filters["enforce_liquidity_and_size"])
 
-    def test_concentration_restriction_is_explicit_and_infeasible_intersection_fails(self) -> None:
+    def test_concentration_restriction_applies_only_to_selectors(self) -> None:
         resolved = resolve_premium_policy(profile(restrictions=["limitar_concentracao"]))
 
-        self.assertEqual(resolved.allocation.class_constraints["hhi_max"], 0.25)
+        self.assertIsNone(resolved.allocation.class_constraints["hhi_max"])
         self.assertEqual(resolved.stocks.liquidity_and_size_filters["hhi_max"], 0.25)
+        self.assertEqual(resolved.fiis.liquidity_and_size_filters["hhi_max"], 0.25)
         self.assertGreaterEqual(resolved.stocks.lambda_hhi, 0.25)
+        self.assertGreaterEqual(resolved.fiis.lambda_hhi, 0.25)
 
-        with self.assertRaises(PremiumPolicyError):
-            resolve_premium_policy(
-                profile(restrictions=["limitar_concentracao", "evitar_cripto", "evitar_exterior"])
-            )
+    def test_concentration_with_avoided_classes_is_feasible(self) -> None:
+        resolved = resolve_premium_policy(
+            profile(restrictions=["limitar_concentracao", "evitar_cripto", "evitar_exterior"])
+        )
+
+        constraints = resolved.allocation.class_constraints
+        self.assertIsNone(constraints["hhi_max"])
+        self.assertEqual(
+            constraints["maximum_weights"],
+            {"crypto": 0.0, "international_equity": 0.0},
+        )
+        self.assertEqual(resolved.stocks.liquidity_and_size_filters["hhi_max"], 0.25)
 
     def test_none_cannot_coexist_with_another_restriction(self) -> None:
         with self.assertRaisesRegex(PremiumPolicyError, "cannot coexist"):

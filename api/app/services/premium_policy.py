@@ -16,14 +16,6 @@ PROFILE_SCHEMA_VERSION = 1
 
 STOCK_FACTOR_KEYS = ("liquidez", "rent", "value", "growth", "div")
 FII_FACTOR_KEYS = ("liquidity", "size_cash", "value", "growth", "dividend")
-CLASS_KEYS = (
-    "brazilian_stocks",
-    "fiis",
-    "international_equity",
-    "fixed_income",
-    "crypto",
-)
-
 SYSTEM_GA_CONFIG: dict[str, int | float | bool] = {
     "population": 300,
     "generations": 400,
@@ -290,10 +282,6 @@ def _validate_class_constraints(constraints: Mapping[str, object]) -> None:
     for key, minimum in minimums.items():
         if key in maximums and float(minimum) > float(maximums[key]) + 1e-9:
             raise PremiumPolicyError("class restrictions are infeasible")
-    available = [key for key in CLASS_KEYS if float(maximums.get(key, 1.0)) > 0]
-    hhi_max = constraints["hhi_max"]
-    if hhi_max is not None and available and 1.0 / len(available) > float(hhi_max) + 1e-9:
-        raise PremiumPolicyError("class restrictions are infeasible")
 
 
 def _allocation_policy(score: float, restrictions: set[str]) -> AllocationPolicy:
@@ -329,8 +317,8 @@ def _allocation_policy(score: float, restrictions: set[str]) -> AllocationPolicy
         maximums["crypto"] = 0.0
     if "evitar_exterior" in restrictions:
         maximums["international_equity"] = 0.0
-    if "limitar_concentracao" in restrictions:
-        constraints["hhi_max"] = 0.25
+    # "limitar_concentracao" applies only to the stock/FII selectors: the 1/N
+    # class split is already the most diversified risky split (ADR 0003).
     _validate_class_constraints(constraints)
 
     return AllocationPolicy(
