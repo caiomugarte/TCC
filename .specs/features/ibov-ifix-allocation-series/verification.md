@@ -1,9 +1,9 @@
 # IBOV and IFIX as the stock and FII series of the Premium allocation snapshot - verification
 
-**Verdict**: FAIL
-**Mutations**: 3 - probed C4, C2, C11 (round 1, all killed at 669e841); round 2 added 8 more over the touched production code, 1 not killed (V-3, now killed); round 3 probed the door-1 identity rule with 10 more, 3 not killed (V-4, V-5)
-**Proofs**: `proofs.md` written by `check_proofs.py --mutations` at the round-3 verification commit (28 pass, 0 fail; mutations 4 killed, 3 not - V-4, V-5). At 801b752, before the round-3 mutations were appended: 28 pass, 4 killed (M8 included)
-**Verifier**: independent sub-agent (author != verifier) - round 1 at 52ee519, round 2 (re-verification after fixes) at 669e841, round 3 (re-verification of V-3) at 801b752
+**Verdict**: PASS
+**Mutations**: 3 - probed C4, C2, C11 (round 1, all killed at 669e841); round 2 added 8 more over the touched production code, 1 not killed (V-3, now killed); round 3 probed the door-1 identity rule with 10 more, 3 not killed (V-4, V-5, now killed); round 4 (closure) re-ran all 19 in `mutations.json`: 19 killed, 0 not
+**Proofs**: `proofs.md` written by `check_proofs.py --mutations` at the round-4 closure commit (28 pass, 0 fail; mutations 19 killed, 0 not). At 8d557b2, before the closure commit: the same result
+**Verifier**: independent sub-agent (author != verifier) - round 1 at 52ee519, round 2 (re-verification after fixes) at 669e841, round 3 (re-verification of V-3) at 801b752, round 4 (closure of V-4 and V-5) at 8d557b2
 
 ## Findings
 
@@ -115,3 +115,23 @@ M19, M25 and M36 were already in `mutations.json` from round 3. M12 is the only 
 - Production code is unchanged between 52ee519 and 669e841 (`git diff 52ee519..669e841 -- py api` is empty). The fixes touch only tests and spec. The plan edit appends one example (`./ifix.csv`) to criterion 3. That example follows from the criterion's existing text ("not exactly `ibovespa.csv`/`ifix.csv`"), so the approved obligation does not change.
 - Full suites at 669e841: `tests` 282 OK (1 skipped); `api/tests` with `PYTHONPATH=../py` 110 OK.
 - `validate_verification.py` needs `proofs.md`'s HEAD to equal the current HEAD. Committing `proofs.md` moves HEAD, so after this docs-only commit the gate also reports the HEAD mismatch. The builder's post-fix `check_proofs.py` run clears it. That run is the last step before the gate, and its commit touches only `proofs.md`.
+
+## Round 4 closure (independent Verifier, at 8d557b2)
+
+Scope set by the human: closure only. No new mutants were hunted beyond the ones listed.
+
+1. `git diff 52ee519..HEAD -- py api` is empty. Production code is unchanged since round 1.
+2. `check_proofs.py --mutations mutations.json` at 8d557b2: 28 pass, 0 fail; 19 mutations killed, 0 not. Spot-checked by hand on a throwaway `git archive HEAD` copy (`/tmp/iw38-v4-copy`, removed afterwards, `py/snapshot_manifest.py` restored and checked with `cmp` against the worktree) with `tests.test_snapshot_manifest` (baseline 12 OK):
+   - V-4 (a), line `and resolved.name == expected` deleted: killed. `test_derived_index_series_must_live_in_allocation_dir` fails 4 subtests (`symlink='allocation/caio_fiis.csv'`, `'allocation/caio_ifix.csv'`, `'allocation/ifix.csv.old'`, `'allocation/IFIX.csv'`).
+   - V-4 (b), `resolved.parent.name == allocation_dir.name`: killed. The same test fails at `symlink='older/allocation/ifix.csv'`.
+   - V-5, explicit `resolved.name.lower() == expected`: killed. `test_series_identity_rule_rejects_non_index_files` fails at `explicit='IFIX.csv'` and `'IBOVESPA.csv'`.
+3. The survivors the builder classified as equivalent or tighter:
+   - M09 confirmed. Without `and allocation is not None`, the only changed shape is an explicit source with `derived_from: allocation` and no allocation source. That shape now crashes on `None.resolved_path()` with an `AttributeError` instead of being checked by name. It is rejected either way and never accepted.
+   - M11 confirmed. The `""` default is reached only by an explicit source that claims `derived_from: allocation` with no `filename`. `declared` then fails `== expected`, so the mutant only rejects more.
+   - M12 confirmed. `resolved` is a fully resolved path from `source_for`. An unresolved `allocation_dir` can equal its parent only when it is already canonical, so it accepts nothing HEAD rejects. It is tighter, never looser.
+   - M31 confirmed. It changes only the message suffix, and only when the declared name is already wrong. The class, the expected name and the declared name stay in the message, and the accept/reject decision is identical.
+   - M46 confirmed. `validate_manifest` has no early return between the call and `return checked`. Every check either raises or passes on its own, so moving the call changes only which error is reported first. The set of accepted manifests is the same.
+   No classification is rejected, so this item has no blocking gap.
+4. Full suites at 8d557b2: `tests` 282 OK (1 skipped); `api/tests` with `PYTHONPATH=../py` 110 OK.
+5. V-4 and V-5 are closed by a439ee5 and re-checked by the mutations above. Every finding has a closing commit.
+

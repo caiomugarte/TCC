@@ -1,6 +1,6 @@
 # ibov-ifix-allocation-series proofs
 
-**HEAD**: f7bc7b2
+**HEAD**: 8d557b2
 **Tree**: clean
 **Result**: 28 pass, 0 fail; mutations 19 killed, 0 not
 
