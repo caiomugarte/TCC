@@ -1,4 +1,5 @@
 import contextlib
+from datetime import date, timedelta
 import io
 import json
 import os
@@ -25,6 +26,7 @@ from snapshot_manifest import (  # noqa: E402
     file_sha256,
     latest_compatible_manifest,
     manifest_canonical_sha256,
+    sha256_path,
     validate_manifest,
 )
 from snapshot_registry import (  # noqa: E402
@@ -362,10 +364,19 @@ def build_fetch_inputs(root: Path, **date_overrides) -> tuple:
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     dates = {
         name: date_overrides.get(f"{name}_dates", PLAIN_DATES)
-        for name in ("stocks", "fiis", "sp500", "di", "btc", "ptax")
+        for name in (
+            "stocks", "fiis", "sp500", "di", "btc", "ptax", "caio_stocks", "caio_fiis"
+        )
     }
-    write_levels_file(snapshot_dir / "caio_stocks.csv", ["AAA3", "BBB3"], dates["stocks"])
-    write_levels_file(snapshot_dir / "caio_fiis.csv", ["AAA11", "BBB11"], dates["fiis"])
+    write_levels_file(snapshot_dir / "ibovespa.csv", ["value"], dates["stocks"])
+    write_levels_file(snapshot_dir / "ifix.csv", ["value"], dates["fiis"])
+    # Fetch still writes the Basic baskets beside the indices; build ignores them.
+    write_levels_file(
+        snapshot_dir / "caio_stocks.csv", ["AAA3", "BBB3"], dates["caio_stocks"]
+    )
+    write_levels_file(
+        snapshot_dir / "caio_fiis.csv", ["AAA11", "BBB11"], dates["caio_fiis"]
+    )
     write_levels_file(snapshot_dir / "sp500_total_return_usd.csv", ["value"], dates["sp500"])
     write_levels_file(snapshot_dir / "di.csv", ["value"], dates["di"])
     write_levels_file(snapshot_dir / "btc_usd.csv", ["value"], dates["btc"])
@@ -598,10 +609,7 @@ class BuildCommandTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
-            (snapshot_dir / "caio_fiis.csv").unlink()
-            (snapshot_dir / "ifix.csv").write_text(
-                "date,value\n2020-01-01,100\n", encoding="utf-8"
-            )
+            (snapshot_dir / "di.csv").unlink()
 
             code, _, err = run_cli(
                 "build",
@@ -620,7 +628,7 @@ class BuildCommandTests(unittest.TestCase):
             )
 
             self.assertEqual(code, 3)
-            self.assertIn("caio_fiis.csv", err)
+            self.assertIn("di.csv", err)
             self.assertFalse((root / "snap-2020-01.json").exists())
 
     def test_failed_replace_keeps_original_manifest(self):
@@ -656,9 +664,9 @@ class BuildCommandTests(unittest.TestCase):
                 allocation["metadata"],
                 {
                     "files": {
-                        "brazilian_stocks": "caio_stocks.csv",
+                        "brazilian_stocks": "ibovespa.csv",
                         "crypto": "btc_usd.csv",
-                        "fiis": "caio_fiis.csv",
+                        "fiis": "ifix.csv",
                         "fixed_income": "di.csv",
                         "international_equity": "sp500_total_return_usd.csv",
                         "ptax": "ptax.csv",
@@ -844,47 +852,13 @@ class ValidateCommandTests(unittest.TestCase):
             self.assertEqual(code, 4)
             self.assertEqual(load_raw(target)["cutoff_date"], "2020-01-02")
 
-    def test_validate_requires_caio_fiis_without_ifix_fallback(self):
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            code, _, err = run_build(root)
-            self.assertEqual(code, 0, err)
-            target = root / "snap-2020-01.json"
-            snapshot_dir = root / "data" / "snapshot-2020"
-            (snapshot_dir / "ifix.csv").write_text(
-                "date,value\n2020-01-01,100\n", encoding="utf-8"
-            )
-            raw = load_raw(target)
-            raw["supported_classes"] = [
-                name for name in raw["supported_classes"] if name != "fiis"
-            ]
-            rehash_manifest(raw)
-            dump_raw(target, raw)
-
-            code, _, err = run_validate(root)
-            self.assertEqual(code, 4)
-
-        with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            code, _, err = run_build(root)
-            self.assertEqual(code, 0, err)
-            snapshot_dir = root / "data" / "snapshot-2020"
-            (snapshot_dir / "caio_fiis.csv").unlink()
-            (snapshot_dir / "ifix.csv").write_text(
-                "date,value\n2020-01-01,100\n", encoding="utf-8"
-            )
-
-            code, _, err = run_validate(root)
-
-            self.assertEqual(code, 4)
-
     def test_validate_missing_source_file_exits_4(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             code, _, err = run_build(root)
             self.assertEqual(code, 0, err)
             target = root / "snap-2020-01.json"
-            (root / "data" / "snapshot-2020" / "caio_fiis.csv").unlink()
+            (root / "data" / "snapshot-2020" / "di.csv").unlink()
             original = target.read_bytes()
 
             for flags in ((), ("--check",)):
@@ -1150,7 +1124,7 @@ class RetireCommandTests(unittest.TestCase):
             self.assertEqual(after, before)
             self.assertTrue((root / "snap-2020-01.json").is_file())
             self.assertTrue(
-                (root / "data" / "snapshot-2020" / "caio_fiis.csv").is_file()
+                (root / "data" / "snapshot-2020" / "ifix.csv").is_file()
             )
 
     def test_retire_refuses_draft_and_retired(self):
@@ -1266,8 +1240,8 @@ class ClassSeriesMapTests(unittest.TestCase):
             mapping = class_series_map(manifest)
 
             expected = {
-                "brazilian_stocks": "data/snapshot-2020/caio_stocks.csv",
-                "fiis": "data/snapshot-2020/caio_fiis.csv",
+                "brazilian_stocks": "data/snapshot-2020/ibovespa.csv",
+                "fiis": "data/snapshot-2020/ifix.csv",
                 "ptax": "data/snapshot-2020/ptax.csv",
                 "stock": "stocks.csv",
                 "fii": "fiis.csv",
@@ -1282,12 +1256,6 @@ class ClassSeriesMapTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
-            (snapshot_dir / "ifix.csv").write_text(
-                "date,value\n2020-01-01,100\n", encoding="utf-8"
-            )
-            (snapshot_dir / "ibovespa.csv").write_text(
-                "date,value\n2020-01-01,100\n", encoding="utf-8"
-            )
             code, _, err = run_cli(
                 "build",
                 "--registry",
@@ -1313,31 +1281,27 @@ class ClassSeriesMapTests(unittest.TestCase):
                 set(mapping), set(ASSET_CLASSES) | {"ptax", "stock", "fii"}
             )
             serialized = json.dumps(mapping)
-            self.assertNotIn("ifix", serialized)
-            self.assertNotIn("ibovespa", serialized)
+            self.assertTrue((snapshot_dir / "caio_stocks.csv").is_file())
+            self.assertNotIn("caio_", serialized)
 
-    def test_class_series_map_resolves_fiis_without_ifix_fallback(self):
+    def test_class_series_map_resolves_index_files(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             code, _, err = run_build(root)
             self.assertEqual(code, 0, err)
-            manifest = SnapshotManifest.load(root / "snap-2020-01.json")
-            self.assertEqual(
-                class_series_map(manifest)["fiis"]["path"],
-                "data/snapshot-2020/caio_fiis.csv",
-            )
             snapshot_dir = root / "data" / "snapshot-2020"
-            (snapshot_dir / "caio_fiis.csv").unlink()
-            (snapshot_dir / "ifix.csv").write_text(
-                "date,value\n2020-01-01,100\n", encoding="utf-8"
-            )
 
-            with self.assertRaises(SnapshotManifestError):
-                class_series_map(manifest)
+            mapping = class_series_map(SnapshotManifest.load(root / "snap-2020-01.json"))
 
-            code, out, err = run_validate(root, "snap-2020-01", "--check", "--json")
-            self.assertEqual(code, 4)
-            self.assertNotIn("ifix", out)
+            for key, filename in (("brazilian_stocks", "ibovespa.csv"), ("fiis", "ifix.csv")):
+                with self.subTest(key=key):
+                    self.assertEqual(
+                        mapping[key]["path"], f"data/snapshot-2020/{filename}"
+                    )
+                    self.assertEqual(
+                        mapping[key]["sha256"], sha256_path(snapshot_dir / filename)
+                    )
+            self.assertNotIn("caio_", json.dumps(mapping))
 
     def test_check_json_prints_map_in_published_state(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -1401,6 +1365,238 @@ class ClassSeriesMapTests(unittest.TestCase):
             )
             self.assertEqual(load_raw(root / "snap-2020-01.json")["state"], "validated")
 
+
+
+INDEX_FILES_MAP = {
+    "brazilian_stocks": "ibovespa.csv",
+    "fiis": "ifix.csv",
+    "international_equity": "sp500_total_return_usd.csv",
+    "fixed_income": "di.csv",
+    "crypto": "btc_usd.csv",
+    "ptax": "ptax.csv",
+}
+
+
+def run_build_from(root: Path, snapshot_dir: Path, manifest_id: str = "snap-2020-01") -> tuple:
+    return run_cli(
+        "build",
+        "--registry",
+        str(root),
+        "--manifest-id",
+        manifest_id,
+        "--created-at",
+        CREATED_AT,
+        "--snapshot-dir",
+        str(snapshot_dir),
+        "--stock-universe",
+        str(root / "stocks.csv"),
+        "--fii-universe",
+        str(root / "fiis.csv"),
+    )
+
+
+def daily_dates(start: str, end: str) -> list:
+    current, last = date.fromisoformat(start), date.fromisoformat(end)
+    result = []
+    while current <= last:
+        result.append(current.isoformat())
+        current += timedelta(days=1)
+    return result
+
+
+class IndexSeriesBuildTests(unittest.TestCase):
+    def test_build_missing_index_file_exits_3(self):
+        cases = (
+            (("ifix.csv",), "caio_fiis.csv"),
+            (("ibovespa.csv",), "caio_stocks.csv"),
+            (("ibovespa.csv", "ifix.csv"), None),
+        )
+        for missing, basket in cases:
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                snapshot_dir, _, _ = build_fetch_inputs(root)
+                for filename in missing:
+                    (snapshot_dir / filename).unlink()
+                if basket is not None:
+                    self.assertTrue((snapshot_dir / basket).is_file())
+
+                code, _, err = run_build_from(root, snapshot_dir)
+
+                self.assertEqual(code, 3)
+                for filename in missing:
+                    self.assertIn(filename, err)
+                self.assertEqual(list(root.glob("*.json")), [])
+
+    def test_build_without_caio_files_records_index_map(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, _, _ = build_fetch_inputs(root)
+            (snapshot_dir / "caio_stocks.csv").unlink()
+            (snapshot_dir / "caio_fiis.csv").unlink()
+
+            code, _, err = run_build_from(root, snapshot_dir)
+
+            self.assertEqual(code, 0, err)
+            raw = load_raw(root / "snap-2020-01.json")
+            self.assertEqual(raw["state"], "draft")
+            self.assertEqual(
+                raw["sources"]["allocation"]["metadata"]["files"], INDEX_FILES_MAP
+            )
+
+    def test_build_common_dates_follow_index_history(self):
+        ten_years = daily_dates("2016-07-21", "2026-07-21")
+        basket = daily_dates("2024-06-13", "2026-07-21")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, _, _ = build_fetch_inputs(
+                root,
+                stocks_dates=ten_years,
+                fiis_dates=ten_years,
+                sp500_dates=ten_years,
+                di_dates=ten_years,
+                btc_dates=ten_years,
+                ptax_dates=ten_years,
+                caio_stocks_dates=ten_years,
+                caio_fiis_dates=basket,
+            )
+
+            code, _, err = run_build_from(root, snapshot_dir)
+
+            self.assertEqual(code, 0, err)
+            raw = load_raw(root / "snap-2020-01.json")
+            self.assertEqual(raw["common_dates"][0], "2016-07-21")
+            self.assertEqual(raw["cutoff_date"], "2026-07-21")
+
+        late_ifix = daily_dates("2018-01-02", "2026-07-21")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, _, _ = build_fetch_inputs(
+                root,
+                stocks_dates=ten_years,
+                fiis_dates=late_ifix,
+                sp500_dates=ten_years,
+                di_dates=ten_years,
+                btc_dates=ten_years,
+                ptax_dates=ten_years,
+                caio_stocks_dates=ten_years,
+                caio_fiis_dates=basket,
+            )
+
+            code, _, err = run_build_from(root, snapshot_dir)
+
+            self.assertEqual(code, 0, err)
+            raw = load_raw(root / "snap-2020-01.json")
+            self.assertEqual(raw["common_dates"][0], "2018-01-02")
+            self.assertEqual(raw["cutoff_date"], "2026-07-21")
+
+    def test_build_multi_series_index_file_exits_4(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, _, _ = build_fetch_inputs(root)
+            (snapshot_dir / "ibovespa.csv").write_bytes(
+                (snapshot_dir / "caio_stocks.csv").read_bytes()
+            )
+
+            code, _, err = run_build_from(root, snapshot_dir)
+
+            self.assertEqual(code, 4, err)
+            self.assertEqual(list(root.glob("*.json")), [])
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, _, _ = build_fetch_inputs(root)
+            write_levels_file(snapshot_dir / "ifix.csv", ["AAA11", "BBB11"], PLAIN_DATES)
+
+            code, _, err = run_build_from(root, snapshot_dir)
+
+            self.assertEqual(code, 4, err)
+            self.assertEqual(list(root.glob("*.json")), [])
+
+
+def declare_caio_fiis(path: Path) -> None:
+    raw = load_raw(path)
+    raw["sources"]["allocation"]["metadata"]["files"]["fiis"] = "caio_fiis.csv"
+    raw["allocation_source"] = raw["sources"]["allocation"]
+    dump_raw(path, rehash_manifest(raw))
+
+
+class IndexSeriesValidateTests(unittest.TestCase):
+    def test_validate_rejects_caio_series_manifest(self):
+        message = "source fiis must be ifix.csv; manifest declares caio_fiis.csv"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            code, _, err = run_build(root)
+            self.assertEqual(code, 0, err)
+            target = root / "snap-2020-01.json"
+            declare_caio_fiis(target)
+            original = target.read_bytes()
+
+            code, _, err = run_validate(root)
+
+            self.assertEqual(code, 4)
+            self.assertIn(message, err)
+            self.assertEqual(target.read_bytes(), original)
+            self.assertEqual(load_raw(target)["state"], "draft")
+
+            set_manifest_state(target, "published")
+            published = target.read_bytes()
+
+            code, _, err = run_validate(root, "snap-2020-01", "--check")
+            self.assertEqual(code, 4)
+            self.assertIn(message, err)
+            self.assertEqual(target.read_bytes(), published)
+
+            code, _, err = run_validate(root)
+            self.assertEqual(code, 5)
+            self.assertEqual(target.read_bytes(), published)
+
+    def test_validate_missing_index_file_exits_4(self):
+        cases = (
+            ("ifix.csv", "caio_fiis.csv", "fiis"),
+            ("ibovespa.csv", "caio_stocks.csv", "brazilian_stocks"),
+        )
+        for missing, basket, asset_class in cases:
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                code, _, err = run_build(root)
+                self.assertEqual(code, 0, err)
+                snapshot_dir = root / "data" / "snapshot-2020"
+                (snapshot_dir / missing).unlink()
+                self.assertTrue((snapshot_dir / basket).is_file())
+                # Re-hash so the index file was already absent when the hash was
+                # taken: only a missing-source check, not a hash mismatch, can fail.
+                manifest_path = root / "snap-2020-01.json"
+                raw = load_raw(manifest_path)
+                for allocation in (raw["allocation_source"], raw["sources"]["allocation"]):
+                    allocation["sha256"] = sha256_path(snapshot_dir)
+                raw["manifest_sha256"] = manifest_canonical_sha256(raw)
+                dump_raw(manifest_path, raw)
+
+                code, _, err = run_validate(root)
+
+                self.assertEqual(code, 4)
+                self.assertIn(f"source {asset_class} not found", err)
+
+    def test_validate_detects_changed_index_bytes(self):
+        for filename in ("ibovespa.csv", "ifix.csv"):
+            with self.subTest(filename=filename), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                code, _, err = run_build(root)
+                self.assertEqual(code, 0, err)
+                series = root / "data" / "snapshot-2020" / filename
+                data = bytearray(series.read_bytes())
+                # Flip the last digit of the last value: one byte, still a valid CSV.
+                position = data.rstrip(b"\n").rfind(b"3")
+                self.assertGreater(position, 0)
+                data[position:position + 1] = b"4"
+                series.write_bytes(bytes(data))
+
+                code, _, err = run_validate(root)
+
+                self.assertEqual(code, 4)
+                self.assertIn("SHA-256 mismatch for source allocation", err)
+                with self.assertRaises(SnapshotManifestError):
+                    validate_manifest(SnapshotManifest.load(root / "snap-2020-01.json"))
 
 if __name__ == "__main__":
     unittest.main()

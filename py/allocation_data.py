@@ -248,16 +248,6 @@ def _manifest_level_series(
     return read_levels_csv(path)
 
 
-def _build_manifest_sleeve(
-    manifest: SnapshotManifest,
-    key: str,
-    *,
-    rebalance_years: int,
-) -> LevelSeries:
-    levels = _manifest_level_series(manifest, key)
-    return build_equal_weight_sleeve(levels, rebalance_years=rebalance_years)
-
-
 def load_premium_snapshot_bundle(
     manifest: SnapshotManifest,
     rebalance_years: int = 1,
@@ -266,8 +256,10 @@ def load_premium_snapshot_bundle(
 
     Return shape is ``SnapshotBundle``.  Its rows contain BRL daily returns for
     ``ASSET_CLASSES``; ``manifest_id`` and ``source_metadata`` carry the
-    provenance needed by the API orchestrator.  This path never reads IFIX,
-    portfolio artifacts, or the network.
+    provenance needed by the API orchestrator.  Brazilian stocks and FIIs are
+    the IBOV and IFIX level series; this path never reads the fixed ticker
+    baskets, portfolio artifacts, or the network.  ``rebalance_years`` is kept
+    for signature compatibility; no class is a rebalanced sleeve here.
     """
 
     try:
@@ -285,16 +277,10 @@ def load_premium_snapshot_bundle(
     metadata.update(_manifest_metadata(checked_manifest))
 
     levels = {
-        "brazilian_stocks": _build_manifest_sleeve(
-            checked_manifest,
-            "brazilian_stocks",
-            rebalance_years=rebalance_years,
+        "brazilian_stocks": _single_series(
+            _manifest_level_series(checked_manifest, "brazilian_stocks")
         ),
-        "fiis": _build_manifest_sleeve(
-            checked_manifest,
-            "fiis",
-            rebalance_years=rebalance_years,
-        ),
+        "fiis": _single_series(_manifest_level_series(checked_manifest, "fiis")),
         "international_equity": multiply_levels(
             _single_series(_manifest_level_series(checked_manifest, "international_equity")),
             _single_series(_manifest_level_series(checked_manifest, "ptax")),
@@ -352,7 +338,8 @@ def load_snapshot_bundle(
 
     Basic keeps its historical signature and IFIX fallback.  Supplying a
     manifest (or ``premium=True``) selects the strict path and requires all
-    manifest-named classes; it never substitutes IFIX or a fixed artifact.
+    manifest-named classes; it never substitutes a fallback series or a fixed
+    artifact.
     """
 
     if isinstance(snapshot_dir, SnapshotManifest):

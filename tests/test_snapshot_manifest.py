@@ -11,6 +11,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "py"))
 
 from allocation_config import ASSET_CLASSES  # noqa: E402
 from snapshot_manifest import (  # noqa: E402
+    ALLOCATION_FILES,
     SnapshotManifest,
     SnapshotManifestError,
     SnapshotRegistry,
@@ -34,6 +35,8 @@ def build_manifest_fixture(root: Path) -> dict[str, object]:
     dates = ["2020-01-01", "2020-01-02", "2020-01-03"]
     _write_levels(allocation / "caio_stocks.csv", ["AAA3", "BBB3"], dates)
     _write_levels(allocation / "caio_fiis.csv", ["AAA11", "BBB11"], dates)
+    _write_levels(allocation / "ibovespa.csv", ["value"], dates)
+    _write_levels(allocation / "ifix.csv", ["value"], dates)
     _write_levels(allocation / "sp500_total_return_usd.csv", ["value"], dates)
     _write_levels(allocation / "di.csv", ["value"], dates)
     _write_levels(allocation / "btc_usd.csv", ["value"], dates)
@@ -137,7 +140,7 @@ class SnapshotManifestTests(unittest.TestCase):
 
             self.assertEqual(
                 manifest.source_for("brazilian_stocks").resolved_path(),
-                (root / "allocation" / "caio_stocks.csv").resolve(),
+                (root / "allocation" / "ibovespa.csv").resolve(),
             )
             self.assertEqual(
                 manifest.selector_source_for("stock").resolved_path(),
@@ -179,6 +182,318 @@ class SnapshotManifestTests(unittest.TestCase):
                 SnapshotManifestError, "ambiguous explicit stock selector sources"
             ):
                 validate_manifest(payload, verify_hashes=False)
+
+
+INDEX_ALLOCATION_FILES = {
+    "brazilian_stocks": "ibovespa.csv",
+    "fiis": "ifix.csv",
+    "international_equity": "sp500_total_return_usd.csv",
+    "fixed_income": "di.csv",
+    "crypto": "btc_usd.csv",
+    "ptax": "ptax.csv",
+}
+
+
+def _declare_files(root: Path, payload: dict, **files: str) -> dict:
+    """Declare ``metadata.files`` overrides and re-hash the allocation dir."""
+
+    allocation = dict(payload["allocation_source"])
+    allocation["metadata"] = {"files": {**INDEX_ALLOCATION_FILES, **files}}
+    allocation["sha256"] = sha256_path(root / "allocation")
+    return {**payload, "allocation_source": allocation}
+
+
+def _manifest_file(root: Path, payload: dict, name: str = "manifest.json") -> Path:
+    path = root / name
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+class SeriesIdentityRuleTests(unittest.TestCase):
+    def test_allocation_files_name_ibov_and_ifix(self):
+        self.assertEqual(dict(ALLOCATION_FILES), INDEX_ALLOCATION_FILES)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            self.assertNotIn("metadata", payload["allocation_source"])
+            manifest = SnapshotManifest.from_dict(payload, base_dir=root)
+
+            self.assertEqual(
+                manifest.source_for("brazilian_stocks").resolved_path(),
+                (root / "allocation" / "ibovespa.csv").resolve(),
+            )
+            self.assertEqual(
+                manifest.source_for("fiis").resolved_path(),
+                (root / "allocation" / "ifix.csv").resolve(),
+            )
+
+    def test_series_identity_rule_rejects_non_index_files(self):
+        cases = (
+            ("fiis", "ifix.csv", "caio_fiis.csv"),
+            ("brazilian_stocks", "ibovespa.csv", "caio_stocks.csv"),
+        )
+        for key, expected, declared in cases:
+            with self.subTest(key=key), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                payload = _declare_files(
+                    root, build_manifest_fixture(root), **{key: declared}
+                )
+                path = _manifest_file(root, payload)
+
+                with self.assertRaises(SnapshotManifestError) as caught:
+                    validate_manifest(path)
+
+                message = str(caught.exception)
+                self.assertIn(
+                    f"source {key} must be {expected}; manifest declares {declared}",
+                    message,
+                )
+
+                with self.assertRaises(SnapshotManifestError) as caught:
+                    validate_manifest(path, verify_hashes=False)
+
+                self.assertIn(
+                    f"source {key} must be {expected}; manifest declares {declared}",
+                    str(caught.exception),
+                )
+
+        explicit_cases = (
+            ("fiis", "ifix.csv", "caio_fiis.csv"),
+            ("fiis", "ifix.csv", "caio_ifix.csv"),
+            ("fiis", "ifix.csv", "ifix.csv.old"),
+            ("fiis", "ifix.csv", "IFIX.csv"),
+            ("brazilian_stocks", "ibovespa.csv", "IBOVESPA.csv"),
+        )
+        for key, expected, name in explicit_cases:
+            with self.subTest(explicit=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                payload = build_manifest_fixture(root)
+                explicit = root / "allocation" / name
+                if not explicit.exists():
+                    explicit.write_bytes((root / "allocation" / expected).read_bytes())
+                    payload["allocation_source"]["sha256"] = sha256_path(
+                        root / "allocation"
+                    )
+                payload["sources"] = {
+                    key: {
+                        "path": f"allocation/{name}",
+                        "sha256": sha256_path(explicit),
+                        "provider": f"fixture-explicit-{key}",
+                    }
+                }
+                path = _manifest_file(root, payload)
+
+                with self.assertRaises(SnapshotManifestError) as caught:
+                    validate_manifest(path)
+
+                self.assertIn(
+                    f"source {key} must be {expected}; manifest declares allocation/{name}",
+                    str(caught.exception),
+                )
+
+        with self.subTest(explicit="explicit/ifix.csv"), tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            basket = root / "allocation" / "caio_fiis.csv"
+            (root / "explicit").mkdir()
+            (root / "explicit" / "ifix.csv").symlink_to(basket)
+            payload["sources"] = {
+                "fiis": {
+                    "path": "explicit/ifix.csv",
+                    "sha256": sha256_path(basket),
+                    "provider": "fixture-explicit-fiis",
+                }
+            }
+            path = _manifest_file(root, payload)
+
+            with self.assertRaises(SnapshotManifestError) as caught:
+                validate_manifest(path)
+
+            self.assertIn(
+                "source fiis must be ifix.csv; manifest declares explicit/ifix.csv",
+                str(caught.exception),
+            )
+
+    def test_series_identity_rule_accepts_index_files(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = _declare_files(
+                root,
+                build_manifest_fixture(root),
+                brazilian_stocks="ibovespa.csv",
+                fiis="ifix.csv",
+            )
+            validated = validate_manifest(_manifest_file(root, payload))
+            self.assertEqual(validated.manifest_id, "fixture-manifest")
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            self.assertNotIn("metadata", payload["allocation_source"])
+            validated = validate_manifest(_manifest_file(root, payload))
+            self.assertEqual(validated.manifest_id, "fixture-manifest")
+
+    def test_derived_index_series_must_live_in_allocation_dir(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            (root / "snap-old").mkdir()
+            (root / "snap-old" / "ifix.csv").write_bytes(
+                (root / "allocation" / "ifix.csv").read_bytes()
+            )
+            payload = _declare_files(root, payload, fiis="../snap-old/ifix.csv")
+
+            with self.assertRaises(SnapshotManifestError) as caught:
+                validate_manifest(_manifest_file(root, payload))
+
+            message = str(caught.exception)
+            self.assertIn("source fiis must be ifix.csv", message)
+            self.assertIn("../snap-old/ifix.csv", message)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            (root / "allocation" / "sub").mkdir()
+            (root / "allocation" / "sub" / "ibovespa.csv").write_bytes(
+                (root / "allocation" / "ibovespa.csv").read_bytes()
+            )
+            payload = _declare_files(
+                root, payload, brazilian_stocks="sub/ibovespa.csv"
+            )
+
+            with self.assertRaises(SnapshotManifestError) as caught:
+                validate_manifest(_manifest_file(root, payload))
+
+            message = str(caught.exception)
+            self.assertIn("source brazilian_stocks must be ibovespa.csv", message)
+            self.assertIn("sub/ibovespa.csv", message)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            (root / "outside").mkdir()
+            outside = root / "outside" / "ifix.csv"
+            outside.write_bytes((root / "allocation" / "ifix.csv").read_bytes())
+            (root / "allocation" / "ifix.csv").unlink()
+            (root / "allocation" / "ifix.csv").symlink_to(outside)
+            payload = _declare_files(root, payload)
+
+            with self.assertRaises(SnapshotManifestError) as caught:
+                validate_manifest(_manifest_file(root, payload))
+
+            self.assertIn("source fiis must be ifix.csv", str(caught.exception))
+
+        symlink_targets = (
+            "allocation/caio_fiis.csv",
+            "allocation/caio_ifix.csv",
+            "allocation/ifix.csv.old",
+            "allocation/IFIX.csv",
+            "allocation/sub/ifix.csv",
+            "older/allocation/ifix.csv",
+        )
+        for target_name in symlink_targets:
+            with self.subTest(symlink=target_name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                payload = build_manifest_fixture(root)
+                target = root / target_name
+                if not target.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes((root / "allocation" / "caio_fiis.csv").read_bytes())
+                (root / "allocation" / "ifix.csv").unlink()
+                (root / "allocation" / "ifix.csv").symlink_to(target)
+                payload = _declare_files(root, payload)
+
+                with self.assertRaises(SnapshotManifestError) as caught:
+                    validate_manifest(_manifest_file(root, payload))
+
+                self.assertIn(
+                    "source fiis must be ifix.csv; manifest declares ifix.csv "
+                    f"(resolves to {target.resolve()})",
+                    str(caught.exception),
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = build_manifest_fixture(root)
+            (root / "allocation" / "IFIX.csv").symlink_to(root / "allocation" / "ifix.csv")
+            for declared in ("ifix.csv/../ifix.csv", "IFIX.csv"):
+                with self.subTest(declared=declared):
+                    declared_payload = _declare_files(root, payload, fiis=declared)
+                    self.assertEqual(
+                        SnapshotManifest.from_dict(declared_payload, base_dir=root)
+                        .source_for("fiis")
+                        .resolved_path(),
+                        (root / "allocation" / "ifix.csv").resolve(),
+                    )
+
+                    with self.assertRaises(SnapshotManifestError) as caught:
+                        validate_manifest(_manifest_file(root, declared_payload))
+
+                    self.assertIn(
+                        f"source fiis must be ifix.csv; manifest declares {declared}",
+                        str(caught.exception),
+                    )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = _declare_files(root, build_manifest_fixture(root), fiis="./ifix.csv")
+            self.assertEqual(
+                SnapshotManifest.from_dict(payload, base_dir=root)
+                .source_for("fiis")
+                .resolved_path(),
+                root / "allocation" / "ifix.csv",
+            )
+
+            with self.assertRaises(SnapshotManifestError) as caught:
+                validate_manifest(_manifest_file(root, payload))
+
+            message = str(caught.exception)
+            self.assertIn("source fiis must be ifix.csv", message)
+            self.assertIn("./ifix.csv", message)
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = _declare_files(root, build_manifest_fixture(root), fiis="ifix.csv")
+            validated = validate_manifest(_manifest_file(root, payload))
+            self.assertEqual(validated.manifest_id, "fixture-manifest")
+
+    def test_selection_raises_when_newest_manifest_names_caio_series(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            base = build_manifest_fixture(root)
+            index_manifest = dict(
+                base,
+                manifest_id="index-older",
+                common_dates=["2020-01-01", "2020-01-02"],
+                cutoff_date="2020-01-02",
+                state="published",
+                state_changed_at="2020-01-04T12:00:00+00:00",
+            )
+            caio_manifest = dict(
+                _declare_files(
+                    root,
+                    base,
+                    brazilian_stocks="caio_stocks.csv",
+                    fiis="caio_fiis.csv",
+                ),
+                manifest_id="caio-newer",
+                state="published",
+                state_changed_at="2020-01-04T12:00:00+00:00",
+            )
+            _manifest_file(root, index_manifest, "index-older.json")
+            caio_path = _manifest_file(root, caio_manifest, "caio-newer.json")
+
+            with self.assertRaises(SnapshotManifestError) as caught:
+                SnapshotRegistry(root).latest_compatible()
+            self.assertIn("must be", str(caught.exception))
+
+            retired = dict(caio_manifest, state="retired")
+            caio_path.write_text(json.dumps(retired), encoding="utf-8")
+
+            selected = SnapshotRegistry(root).latest_compatible()
+
+            self.assertEqual(selected.manifest_id, "index-older")
+            self.assertEqual(selected.cutoff_date, date(2020, 1, 2))
 
 
 if __name__ == "__main__":

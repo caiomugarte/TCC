@@ -387,7 +387,8 @@ def _write_metadata(
             "closing PTAX midpoint. Fixed income uses BCB SGS 12 daily CDI "
             "factors (cross-checked against B3 DI FTP "
             "using the 252-business-day convention). BTC uses Yahoo BTC-USD close. "
-            "Ibovespa is a price-index benchmark and does not include dividends. "
+            "Ibovespa (Yahoo ^BVSP) and IFIX are the Premium series for Brazilian "
+            "stocks and FIIs; both are total-return indices with dividends included. "
             "Permanent Yahoo no-data ticker failures are skipped and recorded; "
             "transient fetch failures stop the snapshot."
         ),
@@ -454,14 +455,11 @@ def fetch_snapshot(
     end_date: date,
     *,
     fii_portfolio_path: Optional[Path] = None,
-    include_ifix: bool = True,
     timeout: int = 45,
     skip_tickers: Optional[Sequence[str]] = None,
 ) -> Mapping[str, object]:
     if start_date >= end_date:
         raise SnapshotFetchError("start date must be before end date")
-    if not include_ifix and fii_portfolio_path is None:
-        raise SnapshotFetchError("FII portfolio is required when IFIX is disabled")
 
     portfolio_tickers = load_caio_tickers(portfolio_path)
     fii_selected_tickers: Tuple[str, ...] = ()
@@ -507,10 +505,8 @@ def fetch_snapshot(
     ibovespa = fetch_yahoo_levels(
         "^BVSP", start_date, end_date, adjusted=False, timeout=timeout
     )
-    ifix = None
-    if include_ifix:
-        print("Fetching B3 IFIX", flush=True)
-        ifix = fetch_ifix_levels(start_date, end_date, timeout=timeout)
+    print("Fetching B3 IFIX", flush=True)
+    ifix = fetch_ifix_levels(start_date, end_date, timeout=timeout)
     print("Fetching BCB CDI/DI daily factor", flush=True)
     di = fetch_bcb_cdi_levels(start_date, end_date, timeout=timeout)
     print("Fetching BCB PTAX", flush=True)
@@ -521,8 +517,7 @@ def fetch_snapshot(
     ranges["caio_stocks.csv"] = _write_levels(snapshot_dir / "caio_stocks.csv", stock_levels)
     if fii_portfolio_path is not None:
         ranges["caio_fiis.csv"] = _write_levels(snapshot_dir / "caio_fiis.csv", fii_levels)
-    if include_ifix:
-        ranges["ifix.csv"] = _write_levels(snapshot_dir / "ifix.csv", {"value": ifix})
+    ranges["ifix.csv"] = _write_levels(snapshot_dir / "ifix.csv", {"value": ifix})
     ranges["sp500_total_return_usd.csv"] = _write_levels(
         snapshot_dir / "sp500_total_return_usd.csv", {"value": sp500}
     )
@@ -544,7 +539,8 @@ def fetch_snapshot(
         "ibovespa": {
             "provider": "Yahoo Finance chart API",
             "symbol": "^BVSP",
-            "treatment": "price index; dividends not included",
+            "role": "allocation:brazilian_stocks",
+            "treatment": "total return index (B3 methodology); dividends included",
         },
         "di": {
             "provider": "Banco Central do Brasil SGS API",
@@ -566,12 +562,11 @@ def fetch_snapshot(
             "skipped_tickers": fii_skipped,
             "skipped_ticker_reasons": fii_skipped_reasons,
         }
-    if include_ifix:
-        sources["ifix"] = {
-            "provider": "B3 Index Statistics API",
-            "index": "IFIX",
-            "role": "benchmark-only",
-        }
+    sources["ifix"] = {
+        "provider": "B3 Index Statistics API",
+        "index": "IFIX",
+        "role": "allocation:fiis",
+    }
     _write_metadata(
         snapshot_dir / "metadata.json",
         start_date=start_date,
@@ -628,12 +623,6 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Skip ticker only in allocation snapshot; repeat for multiple tickers",
     )
-    parser.add_argument(
-        "--skip-ifix",
-        "--no-ifix",
-        action="store_true",
-        help="Do not fetch optional IFIX benchmark data",
-    )
     return parser
 
 
@@ -646,7 +635,6 @@ def main(argv=None) -> int:
             args.start_date,
             args.end_date,
             fii_portfolio_path=args.fii_portfolio,
-            include_ifix=not args.skip_ifix,
             timeout=args.timeout,
             skip_tickers=args.skip_ticker,
         )

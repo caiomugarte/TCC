@@ -24,7 +24,7 @@
 - **Trade-off**: A legacy manifest is treated as `draft` for CLI transitions but as selectable for API runs until an operator runs `validate` - a deliberate split to avoid breaking live selection.
 - **Scope**: `SnapshotRegistry.latest_compatible` / `latest_compatible_manifest`, `api/app/services/premium_recommendation.py`.
 - **Date**: 2026-10-27
-- **Status**: active
+- **Status**: active - "identical results" clause narrowed by AD-017 (a legacy `caio_*` manifest now fails validation; selection-by-state unchanged)
 
 ### AD-004
 - **Decision**: The manifest emit/canonical on-disk form is fixed: `build` writes exactly the `SnapshotManifest.as_dict()` projection (single `allocation` source with `metadata.files`, explicit `stock`/`fii` selector sources and their `*_source` aliases); every manifest write uses `json.dumps(payload, sort_keys=True, indent=2, ensure_ascii=False)` + trailing `\n`; `supported_classes` is derived from `ASSET_CLASSES` (`py/allocation_config.py:14-20`) in fixed order; each source's `provider` is a fixed literal per source role and `metadata` is exactly `{"files": {...}}` (`allocation`) or `{}` (selector sources) - fetch `metadata.json` content is never copied into the manifest; source paths are registry-root-relative POSIX paths and every `build` input must resolve INSIDE the registry root (escape after `Path.resolve()` ⇒ exit 2; `data/<snapshot_name>/` is the conventional layout); byte-reproducibility is proven by building the same `manifest_id` in two distinct registries and comparing bytes.
@@ -128,6 +128,14 @@
 - **Trade-off**: The gate no longer proves the archive's exact bytes; it proves agreement to float64 precision plus exact in-environment equality. A future environment change could widen the drift, so the 4 ULP bound is a measured margin (max observed 2), not a guarantee.
 - **Scope**: VC-25, VC-17/VC-18 note wording, `proofs/control_ulp_drift.json`, `tests/test_v0_corrected_bundle.py`, T9 in `tasks.md`.
 - **Date**: 2026-10-28 (blocking finding during EXECUTE batch B; human ruling: amend to a bounded ULP tolerance)
+- **Status**: active
+
+### AD-017
+- **Decision**: The Premium allocation series for `brazilian_stocks` is IBOV (`ibovespa.csv`) and for `fiis` is IFIX (`ifix.csv`), read as single level series. `ALLOCATION_FILES` carries those names, `snapshot_registry.py build` requires them (exit 3 when missing, `caio_*` no longer required), and `validate_manifest` rejects any manifest whose `brazilian_stocks`/`fiis` series resolves to a file with another basename - whether named by the default, by `sources.allocation.metadata.files`, or by an explicit per-class source; a series derived from `allocation` must also be declared by exactly that name and resolve to a file directly inside the hashed allocation directory - so `validate` exits 4 and Premium loading/selection raises with no fallback. Manifests naming `caio_stocks.csv`/`caio_fiis.csv` are permanently invalid for Premium; this narrows AD-003's "legacy manifests produce identical results" clause (selection-by-state semantics are unchanged, but a legacy `caio_*` manifest now fails validation) and makes `ifix.csv` a required class input where AD-005/AD-006 examples treated it as a never-used fallback.
+- **Reason**: Issue #38 `## Decisões` and ADR 0003: the FII basket's history (from 2024-06-13) cut every class to ~2.3 years; IBOV and IFIX are total-return market indices with 10+ years. A per-manifest override via `metadata.files` was rejected (two live paths, wrong default); only one local dev manifest exists, so republishing it is the whole migration cost.
+- **Trade-off**: Index identity is checked by file basename - the CSV (`date,value`) carries no identity and `provider`/`metadata` are fixed literals (AD-004, AD-006) - so a wrong series saved under the right name is caught only by the content hash recorded at build time, not by the name rule. Queued Premium runs whose persisted manifest names `caio_*` fail at execution.
+- **Scope**: `py/snapshot_manifest.py` (`ALLOCATION_FILES`, `validate_manifest`), `py/snapshot_registry.py` (`build`, `premium_level_series`), `py/allocation_data.py` (`load_premium_snapshot_bundle`), `py/fetch_allocation_snapshot.py`, `docs/snapshot_registry.md`, Premium API consumers, future #39/#40/#17. Feature: `.specs/features/ibov-ifix-allocation-series/`.
+- **Date**: 2026-11-01
 - **Status**: active
 
 ## Handoff

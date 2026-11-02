@@ -64,6 +64,33 @@ the optional lifecycle envelope:
   `metadata.json` content is never copied into a manifest (it carries absolute
   paths that would break byte-reproducibility).
 
+## Class series
+
+`metadata.files` maps each class to its file in the snapshot directory:
+
+| Class | File | Series |
+| ----- | ---- | ------ |
+| `brazilian_stocks` | `ibovespa.csv` | IBOV, total-return |
+| `fiis` | `ifix.csv` | IFIX, total-return |
+| `international_equity` | `sp500_total_return_usd.csv` | S&P 500 total return, USD (converted with `ptax`) |
+| `fixed_income` | `di.csv` | CDI/DI daily factor |
+| `crypto` | `btc_usd.csv` | BTC/USD (converted with `ptax`) |
+| `ptax` | `ptax.csv` | USD/BRL PTAX |
+
+`brazilian_stocks` → `ibovespa.csv` (IBOV) and `fiis` → `ifix.csv` (IFIX) are
+fixed: both are total-return indices read as single series, and no manifest
+can point those two classes anywhere else. `validate_manifest` rejects a
+manifest whose stock or FII series resolves to another file - through
+`metadata.files`, the defaults, or an explicit per-class source - with
+`source <class> must be <expected>; manifest declares <declared>`. A series
+derived from `allocation` must also be declared by exactly that name and live
+directly inside the hashed allocation directory (`../snap-old/ifix.csv`,
+`sub/ifix.csv` and a symlink leaving the directory are rejected). Manifests
+that name the fixed baskets `caio_stocks.csv`/`caio_fiis.csv` are therefore
+invalid for Premium: `validate` exits 4 and Premium selection raises with no
+fallback to an older manifest. The baskets stay in the fetch output for the
+Basic loader only.
+
 ## Canonical manifest hash
 
 `manifest_sha256` = SHA-256 over the canonical JSON
@@ -110,22 +137,26 @@ nothing written: the manifest would land inside the very tree whose
 documented layout `<registry>/data/<snapshot_name>/` is fine because it is not
 an ancestor of `<registry>/<manifest-id>.json`.
 `common_dates` is the sorted intersection of the five class series exactly as
-`load_premium_snapshot_bundle` consumes them (`international_equity`/`crypto`
-already multiplied by `ptax`, multi-ticker sleeves intersected like
+`load_premium_snapshot_bundle` consumes them (IBOV and IFIX as single series,
+`international_equity`/`crypto` already multiplied by `ptax`, intersected like
 `levels_to_returns`), keeping the first date with zero return;
 `cutoff_date` is the last date. The intersection is computed by reusing
 `py/allocation_data.py` (`read_levels_csv`, `multiply_levels`,
 `levels_to_returns`) - never reimplemented. The same `manifest_id` built from
 identical inputs and the same `--created-at` in two different registries yields
 byte-identical manifest files. A target that already exists is exit 3 and is
-never modified; a source input missing on disk is exit 3 with no series
-substitution (`caio_fiis.csv` is required; `ifix.csv` is never used in its
-place).
+never modified. `build` requires the six `ALLOCATION_FILES` (`ibovespa.csv`,
+`ifix.csv`, `sp500_total_return_usd.csv`, `di.csv`, `btc_usd.csv`, `ptax.csv`)
+and no longer `caio_stocks.csv`/`caio_fiis.csv`: a missing one is exit 3, each
+missing file named on stderr, with no series substitution; any `caio_*` file in
+the directory is ignored. An `ibovespa.csv`/`ifix.csv` with more than one
+series column and none named `value` is exit 4.
 
 ### `validate`
 
-Run the full verification set (required classes and selector sources, every
-source hash, `manifest_sha256` recomputation, `cutoff_date` coherence) and on
+Run the full verification set (required classes and selector sources, the
+IBOV/IFIX series identity rule, every source hash, `manifest_sha256`
+recomputation, `cutoff_date` coherence) and on
 success transition `draft` → `validated` (legacy: backfill `manifest_sha256`).
 Re-running on `validated` exits 0 with no write. On `published`/`retired` the
 state gate fires first and the command exits 5 without recomputing anything.
@@ -165,7 +196,7 @@ data stay on disk) - and never rewrites non-envelope fields.
 | exit 0 | success |
 | exit 2 | usage/argument error: bad or missing `--created-at`, `--manifest-id` failing `^[A-Za-z0-9][A-Za-z0-9._-]*$` or equal to `metadata` or differing from the loaded `manifest_id`, a `build` input escaping the registry root, a `build` `--snapshot-dir` containing the destination manifest path, a registry that is not readable/writable (`OSError` mapped here - never a traceback), unknown flag |
 | exit 3 | the operator pointed at something that does not exist: registry directory or `<registry>/<manifest-id>.json` missing on disk, refused overwrite of an existing/published artifact, or a `build` source input missing on disk |
-| exit 4 | the artifact under audit does not hold up: hash divergence, `cutoff_date` != last `common_date`, empty `common_dates` intersection at `build`, or any required-source verification failure in `validate`/`validate --check` (series absent from the manifest OR file missing/unreadable on disk - after `publish` the data files are part of the audited artifact) |
+| exit 4 | the artifact under audit does not hold up: hash divergence, `cutoff_date` != last `common_date`, empty `common_dates` intersection at `build`, a multi-series `ibovespa.csv`/`ifix.csv` at `build`, a stock or FII series that is not `ibovespa.csv`/`ifix.csv` in `validate`/`validate --check`, or any required-source verification failure in `validate`/`validate --check` (series absent from the manifest OR file missing/unreadable on disk - after `publish` the data files are part of the audited artifact) |
 | exit 5 | invalid lifecycle transition |
 
 The 3/4 split: a missing audited source file is exit 4 (tampering), while exit 3
@@ -188,14 +219,14 @@ change.
 ## Class-to-series map (auditability)
 
 `validate --json` / `validate --check --json` print one entry per supported
-class plus `ptax` and the explicit `stock`/`fii` selector sources - non-class
-files that `py/fetch_allocation_snapshot.py` always writes (`ifix.csv`,
-`ibovespa.csv`) are never mapped:
+class plus `ptax` and the explicit `stock`/`fii` selector sources - files that
+are not class inputs, such as the Basic baskets `caio_stocks.csv`/`caio_fiis.csv`
+that `py/fetch_allocation_snapshot.py` still writes, do not appear:
 
 ```json
 {
-  "brazilian_stocks": {"path": "data/snapshot-2020/caio_stocks.csv", "sha256": "…", "provider": "snapshot-build:allocation", "derived_from": "allocation"},
-  "fiis": {"path": "data/snapshot-2020/caio_fiis.csv", "sha256": "…", "provider": "snapshot-build:allocation", "derived_from": "allocation"},
+  "brazilian_stocks": {"path": "data/snapshot-2020/ibovespa.csv", "sha256": "…", "provider": "snapshot-build:allocation", "derived_from": "allocation"},
+  "fiis": {"path": "data/snapshot-2020/ifix.csv", "sha256": "…", "provider": "snapshot-build:allocation", "derived_from": "allocation"},
   "ptax": {"path": "data/snapshot-2020/ptax.csv", "sha256": "…", "provider": "snapshot-build:allocation", "derived_from": "allocation"},
   "stock": {"path": "stocks.csv", "sha256": "…", "provider": "snapshot-build:selector"}
 }
@@ -204,7 +235,8 @@ files that `py/fetch_allocation_snapshot.py` always writes (`ifix.csv`,
 `path` is registry-root-relative POSIX even for derived series and `sha256` is
 the `file_sha256` of the series FILE itself - never the `allocation` directory
 digest. The map is deterministic and byte-stable across runs on the same
-manifest. `fiis` resolves to `caio_fiis.csv` with no fallback.
+manifest. `brazilian_stocks` resolves to `ibovespa.csv` and `fiis` to
+`ifix.csv`, with no fallback.
 
 ## Prohibitions
 
@@ -214,8 +246,8 @@ manifest. `fiis` resolves to `caio_fiis.csv` with no fallback.
   overwrite), and `publish` twice is exit 3 with a byte-identical file.
 - `retire` never deletes files - it is state-only; erasure policy is a separate
   decision.
-- No series fallback (no IFIX substitution, ever): a required class series is
-  used exactly as declared or the command fails.
+- No series fallback: a required class series is used exactly as declared or
+  the command fails, and the stock and FII series can only be IBOV and IFIX.
 - Single-operator writes: concurrent writers on the same manifest are
   prohibited; atomic `os.replace` prevents torn files. Trade-off: there is no
   OS-level exclusivity on the target (no `O_CREAT|O_EXCL` link/rename dance) -
@@ -247,6 +279,26 @@ actionable: when compatible manifests exist but none is selectable it reports
 the per-state counts and instructs the operator to publish, e.g.
 `no compatible snapshot manifest found; registry has 2 validated manifest(s)
 in non-selectable state(s); publish them to make them selectable`.
+
+## Replacing a `caio_*` manifest
+
+A manifest built before the IBOV/IFIX series names `caio_stocks.csv`/
+`caio_fiis.csv` and no longer validates. Manifests are immutable, so it is
+replaced, never edited:
+
+1. Prepare a NEW data directory `data/<new_name>/`: either re-fetch into it
+   with `py/fetch_allocation_snapshot.py --snapshot-dir`, or copy the six
+   `ALLOCATION_FILES` from the old directory into it together with a corrected
+   `metadata.json` (old fetch metadata calls IFIX `benchmark-only` and
+   Ibovespa a price index without dividends, and the Premium loader merges that
+   file into the run's provenance). Never edit the old data directory
+   in place: its directory hash is recorded by the old manifest, and
+   changing any byte there breaks that manifest's hash.
+2. `build` a new manifest from `data/<new_name>/`.
+3. `validate` it.
+4. `publish` it.
+5. `retire` the old `caio_*` manifest (`validate --check` keeps reporting it
+   as exit 4 in any state; retiring removes it from selection).
 
 ## Walkthrough (manual)
 
