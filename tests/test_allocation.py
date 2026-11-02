@@ -752,167 +752,108 @@ class AllocationCoreTests(unittest.TestCase):
         )
         self.assertEqual(winners[0.0].weights, (0.5, 0.5))
 
+    def _write_basic_snapshot(self, directory, values=None):
+        (directory / "metadata.json").write_text(
+            json.dumps({
+                "source": "fixture",
+                "retrieved_at": "2026-07-21T12:00:00-03:00",
+                "cutoff_date": "2020-01-03",
+            }),
+            encoding="utf-8",
+        )
+        series = {
+            "ibovespa.csv": ("100", "110", "121"),
+            "ifix.csv": ("50", "55", "44"),
+            "sp500_total_return_usd.csv": ("100", "101", "102"),
+            "di.csv": ("100", "100.1", "100.2"),
+            "btc_usd.csv": ("100", "110", "120"),
+            "ptax.csv": ("5", "5.1", "5.2"),
+        }
+        series.update(values or {})
+        for filename, levels in series.items():
+            (directory / filename).write_text(
+                "date,value\n"
+                f"2020-01-01,{levels[0]}\n"
+                f"2020-01-02,{levels[1]}\n"
+                f"2020-01-03,{levels[2]}\n",
+                encoding="utf-8",
+            )
+
     def test_snapshot_loader_aligns_and_converts_series_without_filling(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)
-            (directory / "metadata.json").write_text(
-                json.dumps({
-                    "source": "fixture",
-                    "retrieved_at": "2026-07-21T12:00:00-03:00",
-                    "cutoff_date": "2020-01-03",
-                    "skipped_tickers": ["BBB"],
-                }),
-                encoding="utf-8",
-            )
-            (directory / "caio_stocks.csv").write_text(
-                "date,AAA,BBB\n"
-                "2020-01-01,100,100\n"
-                "2020-01-02,101,99\n"
-                "2020-01-03,102,98\n",
-                encoding="utf-8",
-            )
-            for filename, values in {
-                "ifix.csv": ("100", "101", "102"),
-                "sp500_total_return_usd.csv": ("100", "101", "102"),
-                "di.csv": ("100", "100.1", "100.2"),
-                "btc_usd.csv": ("100", "110", "120"),
-                "ptax.csv": ("5", "5.1", "5.2"),
-            }.items():
-                (directory / filename).write_text(
-                    "date,value\n"
-                    f"2020-01-01,{values[0]}\n"
-                    f"2020-01-02,{values[1]}\n"
-                    f"2020-01-03,{values[2]}\n",
-                    encoding="utf-8",
-                )
-            portfolio_path = directory / "portfolio.json"
-            portfolio_path.write_text(
-                json.dumps([{"TICKER": "AAA"}, {"TICKER": "BBB"}]),
+            self._write_basic_snapshot(directory)
+            # A date absent from one series is intersected away, not filled.
+            (directory / "btc_usd.csv").write_text(
+                "date,value\n2020-01-01,100\n2020-01-03,120\n",
                 encoding="utf-8",
             )
 
-            bundle = load_snapshot_bundle(directory, portfolio_path)
+            bundle = load_snapshot_bundle(directory)
 
         self.assertEqual(bundle.start_date, date(2020, 1, 1))
         self.assertEqual(bundle.end_date, date(2020, 1, 3))
-        self.assertEqual(len(bundle.rows), 3)
-        self.assertAlmostEqual(bundle.rows[1].returns["brazilian_stocks"], 0.01)
+        self.assertEqual(len(bundle.rows), 2)
+        self.assertAlmostEqual(bundle.rows[1].returns["brazilian_stocks"], 0.21)
+        self.assertAlmostEqual(bundle.rows[1].returns["fiis"], -0.12)
         self.assertEqual(set(bundle.rows[-1].returns), {
             "brazilian_stocks", "fiis", "international_equity", "fixed_income", "crypto"
         })
-        self.assertGreater(bundle.rows[-1].returns["international_equity"], 0.0)
+        self.assertAlmostEqual(
+            bundle.rows[1].returns["international_equity"], 102 * 5.2 / 500 - 1
+        )
+        self.assertAlmostEqual(bundle.rows[1].returns["crypto"], 120 * 5.2 / 500 - 1)
 
-    def test_basic_snapshot_loader_needs_no_ibovespa_file(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            directory = Path(temporary_directory)
-            (directory / "metadata.json").write_text(
-                json.dumps({
-                    "source": "fixture",
-                    "retrieved_at": "2026-07-21T12:00:00-03:00",
-                    "cutoff_date": "2020-01-03",
-                }),
-                encoding="utf-8",
-            )
-            (directory / "caio_stocks.csv").write_text(
-                "date,AAA\n2020-01-01,100\n2020-01-02,110\n2020-01-03,121\n",
-                encoding="utf-8",
-            )
-            for filename, values in {
-                "ifix.csv": ("50", "55", "44"),
-                "sp500_total_return_usd.csv": ("100", "101", "102"),
-                "di.csv": ("100", "100.1", "100.2"),
-                "btc_usd.csv": ("100", "110", "120"),
-                "ptax.csv": ("5", "5.1", "5.2"),
-            }.items():
-                (directory / filename).write_text(
-                    "date,value\n"
-                    f"2020-01-01,{values[0]}\n"
-                    f"2020-01-02,{values[1]}\n"
-                    f"2020-01-03,{values[2]}\n",
+    def test_basic_snapshot_loader_requires_ibovespa_and_ifix(self):
+        for missing in ("ibovespa.csv", "ifix.csv"):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as temporary_directory:
+                directory = Path(temporary_directory)
+                self._write_basic_snapshot(directory)
+                (directory / "caio_stocks.csv").write_text(
+                    "date,AAA\n2020-01-01,100\n2020-01-02,110\n2020-01-03,121\n",
                     encoding="utf-8",
                 )
-            portfolio_path = directory / "portfolio.json"
-            portfolio_path.write_text(json.dumps([{"TICKER": "AAA"}]), encoding="utf-8")
-            self.assertFalse((directory / "ibovespa.csv").exists())
+                (directory / "caio_fiis.csv").write_text(
+                    "date,FII1\n2020-01-01,100\n2020-01-02,110\n2020-01-03,121\n",
+                    encoding="utf-8",
+                )
+                (directory / missing).unlink()
 
-            bundle = load_snapshot_bundle(directory, portfolio_path)
+                with self.assertRaisesRegex(SnapshotError, missing):
+                    load_snapshot_bundle(directory)
 
-        self.assertEqual(len(bundle.rows), 3)
-        self.assertAlmostEqual(bundle.rows[1].returns["brazilian_stocks"], 0.10)
-        self.assertAlmostEqual(bundle.rows[2].returns["brazilian_stocks"], 0.10)
-        self.assertAlmostEqual(bundle.rows[1].returns["fiis"], 0.10)
-        self.assertAlmostEqual(bundle.rows[2].returns["fiis"], -0.20)
-
-    def test_snapshot_loader_uses_equal_weight_fii_sleeve_without_ifix(self):
+    def test_basic_snapshot_loader_ignores_ticker_baskets_and_portfolios(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)
-            (directory / "metadata.json").write_text(
-                json.dumps({
-                    "source": "fixture",
-                    "retrieved_at": "2026-07-21T12:00:00-03:00",
-                    "cutoff_date": "2021-01-04",
-                }),
-                encoding="utf-8",
-            )
-            dates = ("2020-01-01", "2020-01-02", "2021-01-01", "2021-01-04")
+            self._write_basic_snapshot(directory)
+            index_only = load_snapshot_bundle(directory)
             (directory / "caio_stocks.csv").write_text(
-                "date,AAA\n" + "\n".join(
-                    f"{current_date},{value}"
-                    for current_date, value in zip(dates, (100, 101, 102, 103))
-                ) + "\n",
+                "date,AAA\n2020-01-01,1\n2020-01-02,1000\n2020-01-03,2\n",
                 encoding="utf-8",
             )
             (directory / "caio_fiis.csv").write_text(
-                "date,FII1,FII2\n"
-                "2020-01-01,100,100\n"
-                "2020-01-02,110,100\n"
-                "2021-01-01,220,100\n"
-                "2021-01-04,242,100\n",
+                "date,FII1\n2020-01-01,1\n2020-01-02,1000\n2020-01-03,2\n",
                 encoding="utf-8",
             )
-            for filename, values in {
-                "sp500_total_return_usd.csv": (100, 101, 102, 103),
-                "di.csv": (100, 100.1, 100.2, 100.3),
-                "btc_usd.csv": (100, 110, 120, 130),
-                "ptax.csv": (5, 5.1, 5.2, 5.3),
-            }.items():
-                (directory / filename).write_text(
-                    "date,value\n" + "\n".join(
-                        f"{current_date},{value}"
-                        for current_date, value in zip(dates, values)
-                    ) + "\n",
-                    encoding="utf-8",
-                )
             stock_path = directory / "stocks.json"
             stock_path.write_text(json.dumps([{"TICKER": "AAA"}]), encoding="utf-8")
             fii_path = directory / "fiis.json"
-            fii_path.write_text(
-                json.dumps([{"TICKER": "FII1"}, {"TICKER": "FII2"}]),
-                encoding="utf-8",
-            )
+            fii_path.write_text(json.dumps([{"TICKER": "FII1"}]), encoding="utf-8")
 
-            bundle = load_snapshot_bundle(
+            with_baskets = load_snapshot_bundle(
                 directory,
                 stock_path,
                 fii_portfolio_path=fii_path,
             )
-
-            self.assertEqual(
-                [round(row.returns["fiis"], 8) for row in bundle.rows],
-                [0.0, 0.05, 0.52380952, 0.05],
-            )
-            (directory / "ifix.csv").write_text(
-                "date,value\n2020-01-01,1\n2020-01-02,10000\n2021-01-01,2\n2021-01-04,20000\n",
-                encoding="utf-8",
-            )
-            changed_ifix_bundle = load_snapshot_bundle(
+            missing_portfolio = load_snapshot_bundle(
                 directory,
-                stock_path,
-                fii_portfolio_path=fii_path,
+                directory / "does-not-exist.json",
             )
+
+        for bundle in (with_baskets, missing_portfolio):
             self.assertEqual(
-                [row.returns["fiis"] for row in changed_ifix_bundle.rows],
-                [row.returns["fiis"] for row in bundle.rows],
+                [row.returns for row in bundle.rows],
+                [row.returns for row in index_only.rows],
             )
 
     def test_output_writer_uses_nested_walk_forward_selection(self):

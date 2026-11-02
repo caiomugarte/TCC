@@ -9,7 +9,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 sys.path.insert(0, str(Path(__file__).parent))
 
-from allocation_data import SnapshotError, load_premium_snapshot_bundle  # noqa: E402
+from allocation_data import (  # noqa: E402
+    SnapshotError,
+    load_premium_snapshot_bundle,
+    load_snapshot_bundle,
+)
 from snapshot_manifest import (  # noqa: E402
     ALLOCATION_FILES,
     SnapshotManifest,
@@ -168,6 +172,70 @@ class PremiumAllocationDataTests(unittest.TestCase):
 
                 with self.assertRaises(SnapshotError):
                     load_premium_snapshot_bundle(SnapshotManifest.load(manifest_path))
+
+
+BASIC_DATES = ["2020-01-01", "2020-01-02", "2020-01-03"]
+
+
+def _write_basic_snapshot(directory: Path) -> None:
+    (directory / "metadata.json").write_text(
+        json.dumps({
+            "source": "fixture",
+            "retrieved_at": "2026-07-21T12:00:00-03:00",
+            "cutoff_date": BASIC_DATES[-1],
+        }),
+        encoding="utf-8",
+    )
+    levels = {
+        "brazilian_stocks": (100, 120, 90),
+        "fiis": (10, 11, 12.1),
+        "international_equity": (100, 101, 102),
+        "fixed_income": (100, 100.1, 100.2),
+        "crypto": (100, 110, 120),
+        "ptax": (5, 5, 5),
+    }
+    for key, values in levels.items():
+        _write_series(directory / ALLOCATION_FILES[key], BASIC_DATES, {"value": values})
+
+
+class BasicAllocationDataTests(unittest.TestCase):
+    def test_basic_loader_reads_ibovespa_and_ifix(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_basic_snapshot(root)
+
+            bundle = load_snapshot_bundle(root)
+
+        self.assertEqual([row.date.isoformat() for row in bundle.rows], BASIC_DATES)
+        self.assertAlmostEqual(bundle.rows[1].returns["brazilian_stocks"], 0.20)
+        self.assertAlmostEqual(bundle.rows[2].returns["brazilian_stocks"], -0.25)
+        self.assertAlmostEqual(bundle.rows[1].returns["fiis"], 0.10)
+        self.assertAlmostEqual(bundle.rows[2].returns["fiis"], 0.10)
+        self.assertEqual(bundle.metadata["source"], "fixture")
+
+    def test_basic_loader_ignores_caio_stocks_even_if_present(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_basic_snapshot(root)
+            _write_series(root / "caio_stocks.csv", BASIC_DATES, {"AAA3": (1, 50, 2)})
+            _write_series(root / "caio_fiis.csv", BASIC_DATES, {"AAA11": (1, 50, 2)})
+            portfolio = root / "portfolio.json"
+            portfolio.write_text(json.dumps([{"TICKER": "AAA3"}]), encoding="utf-8")
+
+            bundle = load_snapshot_bundle(root, portfolio)
+
+        self.assertAlmostEqual(bundle.rows[1].returns["brazilian_stocks"], 0.20)
+        self.assertAlmostEqual(bundle.rows[1].returns["fiis"], 0.10)
+
+    def test_basic_loader_missing_ibovespa_raises_without_substitution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            _write_basic_snapshot(root)
+            _write_series(root / "caio_stocks.csv", BASIC_DATES, {"AAA3": (100, 101, 102)})
+            (root / "ibovespa.csv").unlink()
+
+            with self.assertRaisesRegex(SnapshotError, "ibovespa.csv"):
+                load_snapshot_bundle(root)
 
 
 if __name__ == "__main__":
