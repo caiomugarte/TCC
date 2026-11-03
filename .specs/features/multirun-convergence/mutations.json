@@ -339,28 +339,28 @@
     "label": "Q1-reuse-no-mode - T-9 C46: reuse ignores mode",
     "file": "scripts/multirun_convergence.py",
     "old": "        (\"mode\", lot.get(\"mode\"), context[\"mode\"]),\n",
-    "new": "",
+    "new": "\n",
     "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4"
   },
   {
     "label": "Q2-reuse-no-snapshot - T-9 C46: reuse ignores snapshot",
     "file": "scripts/multirun_convergence.py",
     "old": "        (\"snapshot\", lot.get(\"snapshot\"), context[\"snapshot\"]),\n",
-    "new": "",
+    "new": "\n",
     "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4"
   },
   {
     "label": "Q3-reuse-no-codefp - T-9 C46: reuse ignores code_fingerprint",
     "file": "scripts/multirun_convergence.py",
     "old": "        (\"code_fingerprint\", lot[\"code\"].get(\"code_fingerprint\"), context[\"code\"][\"code_fingerprint\"]),\n",
-    "new": "",
+    "new": "\n",
     "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4"
   },
   {
     "label": "Q4-reuse-no-expfp - T-9 C46: reuse ignores experiment_fingerprint",
     "file": "scripts/multirun_convergence.py",
     "old": "        (\"experiment_fingerprint\", lot[\"code\"].get(\"experiment_fingerprint\"), context[\"code\"][\"experiment_fingerprint\"]),\n",
-    "new": "",
+    "new": "\n",
     "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4"
   },
   {
