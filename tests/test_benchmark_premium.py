@@ -2,6 +2,7 @@
 
 from contextlib import contextmanager
 from datetime import date
+import io
 import json
 from pathlib import Path
 import sys
@@ -49,7 +50,9 @@ def _manifest_payload(registry, stock_hash, fii_hash, allocation_hash):
     return payload
 
 
-class SnapshotDeclarationTests(unittest.TestCase):
+class _SnapshotFixture:
+    """A registry holding one declared snapshot, plus its declaration file."""
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.registry = Path(self.temp.name) / "snapshots"
@@ -75,6 +78,15 @@ class SnapshotDeclarationTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
+    def _main(self, *extra):
+        return bench.main([
+            "--declaration", str(self.declaration_path),
+            "--registry", str(self.registry),
+            *extra,
+        ])
+
+
+class SnapshotDeclarationTests(_SnapshotFixture, unittest.TestCase):
     def test_matching_snapshot_is_accepted(self):
         with patch("snapshot_manifest.validate_manifest", side_effect=lambda manifest: manifest):
             _manifest, report = bench.verify_snapshot(self.declaration, self.registry)
@@ -99,12 +111,7 @@ class SnapshotDeclarationTests(unittest.TestCase):
     def test_cli_exits_non_zero_before_running_on_mismatch(self):
         (self.registry / "fiis.csv").write_text("TICKER\nZZZZ11\n")
         with patch.object(bench, "run_profile") as run_profile:
-            code = bench.main([
-                "--declaration", str(self.declaration_path),
-                "--registry", str(self.registry),
-                "--output-dir", str(Path(self.temp.name) / "out"),
-                "--isolation", "none",
-            ])
+            code = self._main("--output-dir", str(Path(self.temp.name) / "out"), "--isolation", "none")
         self.assertEqual(code, bench.EXIT_SNAPSHOT)
         run_profile.assert_not_called()
 
@@ -356,6 +363,68 @@ class StageAccountingTests(unittest.TestCase):
             self.assertIsNot(fii_selection._run_fii_execution, original)
             self.assertEqual(captured, [])
         self.assertIs(fii_selection._run_fii_execution, original)
+
+
+def _measured(profile, policy, wall_s, rss_status="ok"):
+    """A ``run_profile`` result reduced to what ``main`` reads."""
+
+    return {
+        "profile": profile,
+        "policy_sha256": bench._sha256_json(policy),
+        "stages": {"total": {"wall_s": wall_s}},
+        "rss": {"status": rss_status},
+    }
+
+
+CLEAN_GIT = {"commit": "abc", "dirty": False, "code_dirty": False, "code_trees": {}, "code_fingerprint": "code"}
+
+
+class RunPathTests(_SnapshotFixture, unittest.TestCase):
+    """``main`` without ``--compare-only``: exit codes after a (faked) run."""
+
+    def setUp(self):
+        super().setUp()
+        self.patches = [
+            patch("snapshot_manifest.validate_manifest", side_effect=lambda manifest: manifest),
+            patch.object(bench, "git_info", return_value=dict(CLEAN_GIT)),
+            patch.object(bench, "machine_info", return_value={"fingerprint": "machine"}),
+            patch.object(bench, "render_markdown", return_value=""),
+        ]
+        for item in self.patches:
+            item.start()
+        self.addCleanup(lambda: [item.stop() for item in self.patches])
+        self.out = Path(self.temp.name) / "out"
+
+    def _run(self, *extra, wall_s=100.0, rss_status="ok", out=None, side_effect=None):
+        def fake_run_profile(profile, policy, *_args, **_kwargs):
+            if side_effect is not None:
+                raise side_effect
+            return _measured(profile, policy, wall_s, rss_status)
+
+        with patch.object(bench, "run_profile", side_effect=fake_run_profile) as run_profile, \
+                patch("sys.stderr"):
+            code = self._main(
+                "--profiles", "moderado",
+                "--isolation", "none",
+                "--output-dir", str(out or self.out),
+                *extra,
+            )
+        return code, run_profile
+
+    def test_pipeline_failure_reports_the_chained_cause(self):
+        try:
+            try:
+                raise ValueError("root cause: empty stock universe")
+            except ValueError as cause:
+                raise RuntimeError("stock selector failed") from cause
+        except RuntimeError as exc:
+            error = exc
+        stderr = io.StringIO()
+        with patch.object(bench, "run_profile", side_effect=error), patch("sys.stderr", stderr):
+            code = self._main("--profiles", "moderado", "--isolation", "none", "--output-dir", str(self.out))
+        self.assertEqual(code, bench.EXIT_RUN_FAILED)
+        self.assertIn("stock selector failed", stderr.getvalue())
+        self.assertIn("root cause: empty stock universe", stderr.getvalue())
 
 
 if __name__ == "__main__":

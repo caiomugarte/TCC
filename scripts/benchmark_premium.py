@@ -38,6 +38,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import traceback
 from types import SimpleNamespace
 from typing import Any, Callable, Mapping, Sequence
 
@@ -80,6 +81,10 @@ EXIT_NOT_COMPARABLE = 6
 
 class SnapshotDeclarationError(RuntimeError):
     """The snapshot on disk does not match the declared snapshot."""
+
+
+class ProfileProcessError(RuntimeError):
+    """A per-profile child process failed; it already printed its traceback."""
 
 
 # --------------------------------------------------------------------------
@@ -605,10 +610,21 @@ def _measure_in_child(profile: str, args: argparse.Namespace, output_dir: Path) 
         command.append("--smoke")
     completed = subprocess.run(command)
     if completed.returncode != 0:
-        raise RuntimeError(f"profile {profile} exited with {completed.returncode}")
+        raise ProfileProcessError(f"profile {profile} exited with {completed.returncode}")
     measured = json.loads(child_output.read_text(encoding="utf-8"))
     child_output.unlink()
     return measured
+
+
+def _print_failure(profile: str, exc: BaseException) -> None:
+    """Print the failure with its full traceback, chained causes included.
+
+    Selector errors are re-raised by the adapter with the root cause in
+    ``__cause__``; ``repr(exc)`` alone would drop it.
+    """
+
+    print(f"benchmark_premium: profile {profile} failed: {exc!r}", file=sys.stderr)
+    traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -647,8 +663,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.child_output:
         try:
             measured = _measure_in_process(profiles[0], args, manifest, snapshot)
-        except Exception as exc:  # noqa: BLE001 - reported to the parent via the exit code
-            print(f"benchmark_premium: profile {profiles[0]} failed: {exc!r}", file=sys.stderr)
+        except Exception as exc:  # noqa: BLE001 - any pipeline failure maps to EXIT_RUN_FAILED
+            _print_failure(profiles[0], exc)
             return EXIT_RUN_FAILED
         _write_json(args.child_output, measured)
         return EXIT_OK
@@ -676,8 +692,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 measured = _measure_in_child(profile, args, output_dir)
             else:
                 measured = _measure_in_process(profile, args, manifest, snapshot)
-        except Exception as exc:  # noqa: BLE001
+        except ProfileProcessError as exc:
             print(f"benchmark_premium: {exc}", file=sys.stderr)
+            return EXIT_RUN_FAILED
+        except Exception as exc:  # noqa: BLE001 - any pipeline failure maps to EXIT_RUN_FAILED
+            _print_failure(profile, exc)
             return EXIT_RUN_FAILED
         report["profiles"][profile] = measured
         _write_json(output_dir / f"{profile}.json", measured)
