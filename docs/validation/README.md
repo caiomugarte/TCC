@@ -122,3 +122,77 @@ inválidos, 3 caminho inexistente, 4 violação de integridade (vazamento de
 data, sobreposição, buraco ou janela perdida, corte do snapshot divergente ou
 auditoria que difere de uma nova auditoria das captações, que o `report`
 refaz antes de rodar). Uma falha não escreve nada.
+
+# Convergência do multi-run (issue #9, fase 1)
+
+Experimento `multirun-convergence-v1`: o Premium escolhe ações e FIIs como o
+consenso por frequência de até 150 execuções do GA por seletor. O experimento
+mede, no snapshot `dev-2026-10-29-ibov`, quanto esse consenso muda com 30, 60,
+100 e 150 execuções e entre seeds, e recomenda `run_count`, os alvos do critério
+adaptativo e a zona de proteção (K, δ) do #46 por regras registradas **antes**
+da execução. As decisões estão em `.specs/STATE.md` (AD-022, AD-023 e AD-024).
+
+| Arquivo | O que é |
+| --- | --- |
+| `multirun-convergence-protocol.json` | o protocolo pré-registrado: perfis, seeds, prefixos, regra de parada da produção e as três regras de decisão; commitado antes de qualquer lote medido |
+| `multirun-convergence/lots/<perfil>/seed-<seed>.json` | um lote: as 150 execuções de cada seletor (tickers, fitness, HHI, gerações) e o SCORE e o SETOR de cada ticker escolhido, sem tempos nem caminhos |
+| `multirun-convergence/lots/<perfil>/seed-<seed>.cost.json` | o custo medido do lote (wall, CPU, RSS, máquina) |
+| `multirun-convergence/lots/run-summary.json` | o tempo de parede do experimento e `jobs` |
+| `multirun-convergence.json` | o relatório gerado: curvas, frequências, giro, folga de ranking, zona e as recomendações |
+| `multirun-convergence-cost.json` | o custo por lote, copiado dos arquivos de custo |
+| `multirun-convergence.md` | o mesmo relatório em texto |
+
+**Giro entre seeds** é a diferença entre os consensos de seeds diferentes no
+mesmo snapshot: `trocados = n - |C_i ∩ C_j|` para cada par de seeds. Não é o
+giro mês a mês (entre snapshots consecutivos), que a fase 2 mede no #46: com
+os dados fixos, todo giro entre seeds é ruído do GA, o piso da instabilidade.
+O giro dentro da seed (o consenso de uma seed com k execuções contra o mesmo
+com 150) é descritivo e não entra em nenhuma regra.
+
+## Regras de decisão (pré-registradas)
+
+- **`run_count`:** para cada célula (perfil x seletor), `S(k)` e `M(k)` são a
+  média e a mediana de `trocados` sobre os 10 pares de seeds no prefixo k. A
+  célula achatou quando `S(100) - S(150) <= 0,5` (os dois últimos candidatos
+  declarados); seu `k_min` é o menor candidato (30, 60, 100, 150) com
+  `S(k) <= S(150) + 0,5` **e** `M(k) <= M(150) + 0,5`, ε = 0,5 troca na média e
+  na mediana. O valor é o maior `k_min` entre as células, e só existe se todas
+  achataram; senão é `data_insufficient`. A regra roda de novo deixando cada
+  seed de fora (os 6 pares das outras quatro) e a recomendação é o **máximo**
+  das seis (cheia e cinco leave-one-seed-out); `data_insufficient` em qualquer
+  uma vale para a recomendação inteira.
+- **Alvos do critério adaptativo:** julgados juntos a 150 execuções, como a
+  produção para (só para quando os dois valem). `target_jaccard` 0,75 é
+  `reachable` numa célula quando todas as seeds têm `jaccard_mean >= 0,75`,
+  `unreachable` quando nenhuma tem e `mixed` no resto; `target_cv` 0,02 da
+  mesma forma com `fitness_cv <= 0,02`. A ação é `keep` só quando os dois
+  vereditos são `reachable` em todas as células; senão `use_fixed_run_count`
+  com o `run_count` recomendado (150 quando `data_insufficient`).
+- **Zona de proteção (AD-022):** no prefixo recomendado, `K*` é o quantil 0,95
+  por CDF invertida dos rankings, no lote da outra seed, de cada titular, nos 20
+  pares ordenados de seeds (um titular sem ranking conta como infinito; abaixo
+  de n sobe para n; acima de 30 é nulo); a recomendação é `k_offset = K* - n`.
+  `δ*` é o quantil 0,95 por CDF invertida de `|f_i(t) - f_j(t)|` nos 10 pares,
+  calculado exatamente a partir das contagens (frações, sem float) e
+  arredondado para cima em 0,01. Para cada seletor vale o maior `k_offset` e o
+  maior δ entre os perfis.
+
+Os valores (ε, quantil, arredondamento, prefixos, seeds, grade de δ) estão no
+protocolo; o relatório não tem número escrito à mão.
+
+## Como rodar e regenerar
+
+A partir da raiz do repositório, com o `.venv` do projeto:
+
+```sh
+.venv/bin/python scripts/multirun_convergence.py run --protocol docs/validation/multirun-convergence-protocol.json --registry /home/caio/Documents/projetos/TCC/snapshots --lots-dir docs/validation/multirun-convergence/lots --jobs 5
+.venv/bin/python scripts/multirun_convergence.py report --protocol docs/validation/multirun-convergence-protocol.json --lots-dir docs/validation/multirun-convergence/lots --out-dir docs/validation
+```
+
+`run` recusa (saída 6) um protocolo não commitado ou com mudanças, ou código
+modificado em `api/app`, `py` e nos quatro scripts do experimento e do
+benchmark; pula lotes já gravados e válidos; nunca sobrescreve um lote
+inválido (saída 4). `report` reconstrói os três arquivos byte a byte a partir
+do protocolo e dos lotes, sem o registro. Códigos de saída: 0 escrito, 1 um
+processo filho falhou, 2 protocolo ou argumentos inválidos, 3 o registro não
+tem o snapshot declarado, 4 integridade dos lotes, 6 pré-registro violado.
