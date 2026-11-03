@@ -247,8 +247,6 @@ def run_profile(
     engines: Mapping[str, Callable[..., Any]] | None = None,
     fii_capture: Callable[[], Any] = capture_fii_runs,
     sampler: RssSampler | None = None,
-    process_peak_kb: Callable[[], int] = ru_maxrss_kb,
-    hwm_kb: Callable[[], int | None] = lambda: read_proc_status_kb("VmHWM"),
 ) -> dict[str, Any]:
     """Run one Premium optimization with every engine stage measured."""
 
@@ -282,8 +280,8 @@ def run_profile(
 
     stages = compose_stages(meter.stages)
     sampled_peak = sampler.peak_kb()
-    process_peak = int(process_peak_kb())
-    vm_hwm = hwm_kb()
+    process_peak = ru_maxrss_kb()
+    vm_hwm = read_proc_status_kb("VmHWM")
     rss = {
         "interval_s": sampler.interval,
         "samples": len(sampler.snapshot()),
