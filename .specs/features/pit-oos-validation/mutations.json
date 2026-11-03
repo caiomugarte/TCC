@@ -1,0 +1,37 @@
+[
+  {
+    "file": "py/pit_validation.py",
+    "old": "    for row in visible:\n        if row.date > decision:\n            raise PITLeakError(decision, row.date)",
+    "new": "    for row in visible:\n        if row.date.toordinal() > decision.toordinal() + 3:\n            raise PITLeakError(decision, row.date)",
+    "proof": "python3 -m unittest tests.test_pit_validation -k LeakTests",
+    "label": "C10-C12 leak guard tolerates a row up to 3 days after t (weekend leak)"
+  },
+  {
+    "file": "py/pit_validation.py",
+    "old": "        previous = value\n        holdings = [h * (1.0 + row.returns[name]) for h, name in zip(holdings, ASSET_CLASSES)]\n        value = sum(holdings)\n        j = executions.get(row.date)\n        if j is not None and j < len(weights):\n            held = {name: h / value for h, name in zip(holdings, ASSET_CLASSES)}\n            value *= execution_factor(cost_bps, held, weights[j])\n            holdings = [value * weights[j][name] for name in ASSET_CLASSES]\n",
+    "new": "        previous = value\n        j = executions.get(row.date)\n        if j is not None and j < len(weights):\n            held = {name: h / value for h, name in zip(holdings, ASSET_CLASSES)}\n            value *= execution_factor(cost_bps, held, weights[j])\n            holdings = [value * weights[j][name] for name in ASSET_CLASSES]\n        holdings = [h * (1.0 + row.returns[name]) for h, name in zip(holdings, ASSET_CLASSES)]\n        value = sum(holdings)\n",
+    "proof": "python3 -m unittest tests.test_pit_validation -k SimulationTests.test_execution_lag",
+    "label": "C17 exec_j row earned by the new weights (same-close execution)"
+  },
+  {
+    "file": "py/pit_validation.py",
+    "old": "    paths_per_profile = {profile: len(with_windows) for profile in protocol[\"profiles\"]}",
+    "new": "    paths_per_profile = {profile: len(schedules) for profile in protocol[\"profiles\"]}",
+    "proof": "python3 -m unittest tests.test_pit_validation -k VerdictTests",
+    "label": "C9/C31 verdict counts offsets without a window as paths"
+  },
+  {
+    "file": "py/pit_validation.py",
+    "old": "    kept = [row for row in rows if start <= row.date <= end]",
+    "new": "    kept = [row for row in rows if start <= row.date]",
+    "proof": "python3 -m unittest tests.test_pit_validation -k TrimTests",
+    "label": "C14 trim drops the run_period.end bound (unverified tail rows kept)"
+  },
+  {
+    "file": "py/pit_validation.py",
+    "old": "    start, end = max(starts), min(ends)",
+    "new": "    start, end = max(starts), max(ends)",
+    "proof": "python3 -m unittest tests.test_pit_validation -k TrimTests",
+    "label": "C14/C15 run_period.end is the latest verified end, not the intersection"
+  }
+]

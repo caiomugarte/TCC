@@ -1,8 +1,8 @@
 # pit-oos-validation proofs
 
-**HEAD**: 6c07172
+**HEAD**: bfefebb
 **Tree**: clean
-**Result**: 43 pass, 0 fail; mutations 0 killed, 0 not
+**Result**: 43 pass, 0 fail; mutations 2 killed, 3 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -49,3 +49,13 @@
 | C39 | `git diff --quiet 4a2481a HEAD -- data/allocation` | count unknown | - | pass |
 | C40 | `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retrieval_copy_hashes` | 1 | - | pass |
 | Build | `python3 -m py_compile py/pit_validation.py tests/test_pit_validation.py` | - | - | pass |
+
+## Mutations
+
+| Mutation | Location | Killed |
+| --- | --- | --- |
+| C10-C12 leak guard tolerates a row up to 3 days after t (weekend leak) | `py/pit_validation.py:677` | yes |
+| C17 exec_j row earned by the new weights (same-close execution) | `py/pit_validation.py:734` | yes |
+| C9/C31 verdict counts offsets without a window as paths | `py/pit_validation.py:948` | no |
+| C14 trim drops the run_period.end bound (unverified tail rows kept) | `py/pit_validation.py:527` | no |
+| C14/C15 run_period.end is the latest verified end, not the intersection | `py/pit_validation.py:516` | no |
