@@ -4,10 +4,10 @@ Mutations: 4
 Build: `python3 -m py_compile py/pit_validation.py tests/test_pit_validation.py`
 Plan: `.specs/features/pit-oos-validation/plan.md`
 
-40 checks in 8 slices · 4 one-way doors · 0 open
+43 checks in 8 slices · 4 one-way doors · 0 open
 
 Test module: `tests/test_pit_validation.py` (stdlib `unittest`, run from the repo root). The four
-mutations aim at the per-decision slice (C10-C12), the execution lag (C17), the verdict rule (C30)
+mutations aim at the per-decision slice (C10-C12), the execution lag (C17), the verdict rule (C31)
 and the trim to verified dates (C14).
 
 ## Checks

@@ -1,4 +1,4 @@
-"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C40).
+"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C43).
 
 Every test names the check it proves. Fixtures are synthetic weekday series
 whose level on a date depends only on the date, so two retrievals of one
