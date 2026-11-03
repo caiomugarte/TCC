@@ -659,17 +659,16 @@ class SkipTests(unittest.TestCase):
 
 class ChildFailureTests(unittest.TestCase):
     def test_failed_child_exit_1_others_written(self):
-        protocol = fixture_protocol(FIXTURE["declaration"], seeds=[42, 43])
-        protocol["decision"]["run_count"]["leave_one_seed_out"] = None
+        protocol = fixture_protocol(FIXTURE["declaration"])
         bad = copy.deepcopy(protocol["profiles"][PROFILE])
         bad["expected_n_assets"]["stocks"] = 12
         protocol["profiles"]["bad"] = bad
         with tempfile.TemporaryDirectory() as tmp:
             path = write_json(Path(tmp) / "protocol.json", protocol)
             lots = Path(tmp) / "lots"
-            completed = cli("run", "--protocol", path, "--registry", FIXTURE["registry"], "--lots-dir", lots, "--jobs", 4, "--smoke", "--poll-interval", 0.2)
+            completed = cli("run", "--protocol", path, "--registry", FIXTURE["registry"], "--lots-dir", lots, "--jobs", 6, "--smoke", "--poll-interval", 0.2)
             self.assertEqual(completed.returncode, mc.EXIT_CHILD_FAILED, completed.stderr[-2000:])
-            for seed in (42, 43):
+            for seed in SEEDS:
                 self.assertTrue(ca.lot_path(lots, PROFILE, seed).is_file())
                 self.assertTrue(ca.cost_path(lots, PROFILE, seed).is_file())
                 self.assertFalse(ca.lot_path(lots, "bad", seed).exists())
@@ -677,7 +676,7 @@ class ChildFailureTests(unittest.TestCase):
                 self.assertIn(f"multirun_convergence: bad:{seed}: ", completed.stderr)
             summary = json.loads((lots / "run-summary.json").read_text(encoding="utf-8"))
             statuses = {item["lot"]: item["status"] for item in summary["lots"]}
-            self.assertEqual(statuses, {f"{PROFILE}:42": "written", f"{PROFILE}:43": "written", "bad:42": "failed", "bad:43": "failed"})
+            self.assertEqual(statuses, {**{f"{PROFILE}:{s}": "written" for s in SEEDS}, **{f"bad:{s}": "failed" for s in SEEDS}})
 
 
 class RunCountGuardTests(unittest.TestCase):
@@ -746,6 +745,27 @@ class RunCountGuardTests(unittest.TestCase):
             with self.assertRaises(mc.ChildError) as caught:
                 mc.check_selector_runs("fiis", bad_runs, 12, result)
             self.assertEqual((caught.exception.code, caught.exception.where), (1, "fiis"))
+
+
+class LeaveOneOutRequiredTests(unittest.TestCase):
+    def test_null_leave_one_seed_out_exits_2(self):
+        """C47: ``leave_one_seed_out`` null is refused by run and report with exit 2."""
+
+        protocol = json.loads(PROTOCOL_PATH.read_text(encoding="utf-8"))
+        protocol["decision"]["run_count"]["leave_one_seed_out"] = None
+        with tempfile.TemporaryDirectory() as tmp:
+            path = write_json(Path(tmp) / "protocol.json", protocol)
+            lots, out = Path(tmp) / "lots", Path(tmp) / "out"
+            with patch.object(mc, "_spawn_child") as spawn:
+                code, err = run_main("run", "--protocol", path, "--registry", FIXTURE["registry"], "--lots-dir", lots, "--smoke")
+            spawn.assert_not_called()
+            self.assertEqual(code, mc.EXIT_USAGE, err)
+            self.assertIn("leave_one_seed_out", err)
+            self.assertFalse(lots.exists())
+            code, err = run_main("report", "--protocol", path, "--lots-dir", FIXTURE["lots_a"], "--out-dir", out)
+            self.assertEqual(code, mc.EXIT_USAGE, err)
+            self.assertIn("leave_one_seed_out", err)
+            self.assertFalse(out.exists())
 
 
 if __name__ == "__main__":

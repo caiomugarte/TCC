@@ -260,8 +260,8 @@ def validate_protocol(protocol: object) -> dict[str, Any]:
         or not set(statistics) <= {"mean", "median"}
     ):
         raise ProtocolError("decision.run_count.statistics", "must be distinct values of mean, median")
-    if rule["leave_one_seed_out"] not in (None, "max"):
-        raise ProtocolError("decision.run_count.leave_one_seed_out", "must be \"max\" or null")
+    if rule["leave_one_seed_out"] != "max":
+        raise ProtocolError("decision.run_count.leave_one_seed_out", "must be \"max\"")
 
     target = _require_mapping(decision["target"], "decision.target")
     _require_fields(target, "decision.target.", ("prefix", "targets"))
