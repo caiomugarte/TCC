@@ -261,13 +261,24 @@ def _fake_engines(fii_weight=0.2):
             "selected_tickers": ["AAAA3", "BBBB4"],
             "sleeve_weights": {"AAAA3": 0.5, "BBBB4": 0.5},
             "all_runs": runs,
+            "metrics": {
+                "stability": {
+                    "fitness": {"cv": 0.05, "mean": 1.0},
+                    "portfolio_similarity": {"jaccard_mean": 0.6},
+                },
+            },
         }
 
     def fiis(**_kwargs):
         time.sleep(0.1)
         for generations in (50, 70, 90):
             CAPTURED.append({"generations_run": generations})
-        return {"n_runs": 3, "selected_tickers": ["CCCC11"], "sleeve_weights": {"CCCC11": 1.0}}
+        return {
+            "n_runs": 3,
+            "selected_tickers": ["CCCC11"],
+            "sleeve_weights": {"CCCC11": 1.0},
+            "stability": {"fitness_cv": 0.01, "jaccard_mean": 0.8},
+        }
 
     return {
         "snapshot_loader": snapshot_loader,
@@ -352,12 +363,40 @@ class StageAccountingTests(unittest.TestCase):
         self.assertEqual(engines["fiis"]["generations_max"], 90)
         self.assertEqual(measured["output"]["stocks"], ["AAAA3", "BBBB4"])
 
+    def test_selector_stability_and_stop_reason_are_recorded(self):
+        engines = self._run()["engines"]
+        self.assertEqual(engines["stocks"]["fitness_cv"], 0.05)
+        self.assertEqual(engines["stocks"]["jaccard_mean"], 0.6)
+        self.assertFalse(engines["stocks"]["stability_target_met"])
+        self.assertEqual(engines["fiis"]["fitness_cv"], 0.01)
+        self.assertEqual(engines["fiis"]["jaccard_mean"], 0.8)
+        self.assertEqual(engines["fiis"]["target_cv"], 0.02)
+        self.assertEqual(engines["fiis"]["target_jaccard"], 0.75)
+        self.assertTrue(engines["fiis"]["stability_target_met"])
+        # 3 of 150 configured runs with adaptive_mode: stopped by the criterion.
+        self.assertEqual(engines["fiis"]["stop_reason"], "stability_target")
+
+    def test_stop_summary(self):
+        ga = {"adaptive_mode": True, "run_count": 150, "target_cv": 0.02, "target_jaccard": 0.75}
+        full = {"n_runs_effective": 150, "fitness_cv": 0.03, "jaccard_mean": 0.5}
+        self.assertEqual(measure.stop_summary(full, ga)["stop_reason"], "run_count")
+        self.assertFalse(measure.stop_summary(full, ga)["stability_target_met"])
+        early = {"n_runs_effective": 40, "fitness_cv": 0.02, "jaccard_mean": 0.75}
+        self.assertEqual(measure.stop_summary(early, ga)["stop_reason"], "stability_target")
+        self.assertTrue(measure.stop_summary(early, ga)["stability_target_met"])
+        fixed = dict(ga, adaptive_mode=False)
+        self.assertEqual(measure.stop_summary(early, fixed)["stop_reason"], "run_count")
+        skipped = measure.stop_summary({}, ga)
+        self.assertIsNone(skipped["stop_reason"])
+        self.assertIsNone(skipped["stability_target_met"])
+
     def test_skipped_selector_counts_as_zero(self):
         measured = self._run(fii_weight=0.0)
         fiis = measured["stages"]["fiis"]
         self.assertFalse(fiis["executed"])
         self.assertEqual(fiis["wall_s"], 0.0)
         self.assertIsNone(measured["engines"]["fiis"].get("n_runs_effective"))
+        self.assertIsNone(measured["engines"]["fiis"]["stop_reason"])
 
     def test_fii_capture_restores_the_pipeline(self):
         import fii_selection

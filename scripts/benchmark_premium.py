@@ -58,6 +58,7 @@ from bench_measure import (  # noqa: E402 - needs the sys.path entries above
     read_proc_status_kb,
     ru_maxrss_kb,
     stock_inspect,
+    stop_summary,
     validate_rss,
 )
 
@@ -314,6 +315,7 @@ def run_profile(
                 "min_runs": ga.get("min_runs"),
             }
         )
+        stats.update(stop_summary(stats, ga))
         engine_stats[section] = stats
     return {
         "profile": profile,

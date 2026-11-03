@@ -306,16 +306,67 @@ def generation_summary(runs: Sequence[Mapping[str, Any]], reported_n_runs: objec
     }
 
 
+def selector_stability(result: Mapping[str, Any]) -> dict[str, float | None]:
+    """Final ``fitness_cv`` and ``jaccard_mean`` the selector reports.
+
+    The FII selector returns them flat (``_fii_stability``); the stock
+    selector nests them in ``metrics.stability`` (``analyze_stability``).
+    """
+
+    raw = result.get("stability") or (result.get("metrics") or {}).get("stability")
+    if not isinstance(raw, Mapping):
+        return {"fitness_cv": None, "jaccard_mean": None}
+    if "fitness_cv" in raw:
+        cv, jaccard = raw.get("fitness_cv"), raw.get("jaccard_mean")
+    else:
+        cv = (raw.get("fitness") or {}).get("cv")
+        jaccard = (raw.get("portfolio_similarity") or {}).get("jaccard_mean")
+    return {
+        "fitness_cv": float(cv) if cv is not None else None,
+        "jaccard_mean": float(jaccard) if jaccard is not None else None,
+    }
+
+
 def stock_inspect(result: Any) -> dict[str, Any]:
     result = result if isinstance(result, Mapping) else {}
     runs = result.get("all_runs") or []
-    return generation_summary(list(runs), result.get("n_runs"))
+    return {**generation_summary(list(runs), result.get("n_runs")), **selector_stability(result)}
 
 
 def fii_inspect(payload: Any) -> dict[str, Any]:
     result, runs = payload
     result = result if isinstance(result, Mapping) else {}
-    return generation_summary(list(runs), result.get("n_runs"))
+    return {**generation_summary(list(runs), result.get("n_runs")), **selector_stability(result)}
+
+
+def stop_summary(stats: Mapping[str, Any], ga: Mapping[str, Any]) -> dict[str, Any]:
+    """Why a selector stopped, from its effective ``n_runs`` and final stability.
+
+    ``stability_target`` when the adaptive criterion ended it before
+    ``run_count``; ``run_count`` when every configured run executed;
+    ``None`` when the selector did not run.
+    """
+
+    n_runs = stats.get("n_runs_effective")
+    cv, jaccard = stats.get("fitness_cv"), stats.get("jaccard_mean")
+    target_cv, target_jaccard = ga.get("target_cv"), ga.get("target_jaccard")
+    met = (
+        cv <= target_cv and jaccard >= target_jaccard
+        if None not in (cv, jaccard, target_cv, target_jaccard)
+        else None
+    )
+    if n_runs is None:
+        reason = None
+    elif ga.get("adaptive_mode") and ga.get("run_count") is not None and n_runs < ga["run_count"]:
+        reason = "stability_target"
+    else:
+        reason = "run_count"
+    return {
+        "target_cv": target_cv,
+        "target_jaccard": target_jaccard,
+        "stability_target_met": met,
+        "stop_reason": reason,
+    }
 
 
 @contextmanager
