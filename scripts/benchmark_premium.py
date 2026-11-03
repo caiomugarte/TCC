@@ -567,7 +567,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD, help="allowed wall-time regression ratio (default 0.20)")
     parser.add_argument("--compare-only", type=Path, metavar="SUMMARY", help="compare an existing summary.json with --baseline without running")
     parser.add_argument("--isolation", choices=("process", "none"), default="process", help="run each profile in a fresh Python process (default) so ru_maxrss is per profile")
-    parser.add_argument("--workspace", type=Path, help="keep engine workspaces here instead of a temporary directory")
+    parser.add_argument("--workspace", type=Path, help="keep engine workspaces here instead of a temporary directory; <workspace>/<profile> must be empty or absent")
     parser.add_argument("--smoke", action="store_true", help="wiring check with a tiny GA (1 run, 5 generations); not a measurement")
     parser.add_argument("--child-output", type=Path, help=argparse.SUPPRESS)
     return parser
@@ -579,6 +579,13 @@ def _profiles(raw: str) -> list[str]:
     if not values or unknown:
         raise ValueError(f"unknown profiles: {unknown or raw!r}")
     return values
+
+
+def _used_workspaces(workspace: Path, profiles: Sequence[str]) -> list[Path]:
+    """Per-profile workspaces that already hold files (e.g. a resumable checkpoint)."""
+
+    paths = [Path(workspace) / profile for profile in profiles]
+    return [path for path in paths if path.is_dir() and any(path.iterdir())]
 
 
 def _measure_in_process(profile: str, args: argparse.Namespace, manifest: Any, snapshot: Mapping[str, Any]) -> dict[str, Any]:
@@ -651,6 +658,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         return EXIT_USAGE
     if not args.child_output and not args.output_dir:
         print("benchmark_premium: --output-dir is required", file=sys.stderr)
+        return EXIT_USAGE
+    used = _used_workspaces(args.workspace, profiles) if args.workspace else []
+    if used:
+        print(
+            f"benchmark_premium: workspace not empty: {', '.join(map(str, used))}. The stock "
+            "selector resumes from a .checkpoint.json left there, so the run would time only "
+            "the remaining runs; remove it or pass an empty --workspace.",
+            file=sys.stderr,
+        )
         return EXIT_USAGE
 
     # Snapshot identity is checked before any measurement starts.

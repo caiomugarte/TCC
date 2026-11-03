@@ -426,6 +426,24 @@ class RunPathTests(_SnapshotFixture, unittest.TestCase):
         self.assertIn("stock selector failed", stderr.getvalue())
         self.assertIn("root cause: empty stock universe", stderr.getvalue())
 
+    def test_non_empty_workspace_is_refused_before_running(self):
+        workspace = Path(self.temp.name) / "ws"
+        (workspace / "moderado").mkdir(parents=True)
+        (workspace / "moderado" / ".checkpoint.json").write_text("{}")
+        code, run_profile = self._run("--workspace", str(workspace))
+        self.assertEqual(code, bench.EXIT_USAGE)
+        run_profile.assert_not_called()
+
+    def test_empty_or_absent_workspace_is_accepted(self):
+        workspace = Path(self.temp.name) / "ws"
+        (workspace / "moderado").mkdir(parents=True)
+        (workspace / "arrojado").mkdir()
+        (workspace / "arrojado" / "leftover").write_text("x")
+        code, run_profile = self._run("--workspace", str(workspace))
+        self.assertEqual(code, bench.EXIT_OK)
+        run_profile.assert_called_once()
+        self.assertEqual(run_profile.call_args.args[4], workspace / "moderado")
+
 
 if __name__ == "__main__":
     unittest.main()
