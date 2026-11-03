@@ -138,6 +138,22 @@
 - **Date**: 2026-11-01
 - **Status**: active
 
+### AD-018
+- **Decision**: Point-in-time rule and publication gate for historical numbers. A series is `PIT_QUALIFIED` only when its declared kind is non-revisable (`exchange_index_close`, `official_fixing`, `official_rate`, `spot_close`) AND two retrievals of it, with the same provider and identifier, have `retrieved_at` at least 30 days apart, at least 250 overlapping dates, and daily factors equal within relative 1e-9; otherwise `PIT_MISSING` with a reason from `series_absent`, `kind_revisable`, `provider_mismatch`, `no_retrieval_pair_30d`, `overlap_below_250`, `values_revised`. A strategy layer is `VALIDATED` only when every series it consumes is qualified and the walk-forward integrity checks pass; otherwise it is `UNVERIFIABLE`, with the missing items listed. Only a `VALIDATED` layer's report carries performance numbers, and a historical figure published elsewhere must cite the report's verdict.
+- **Reason**: Issue #10 AC 3-4 ("nunca inferido", "nenhum número histórico sem fonte PIT"). No as-of archive exists in the repo: every series was retrieved in 2026 for dates from 2016. Agreement between independent retrievals is the evidence available without collecting new data.
+- **Trade-off**: 99 days of non-revision (2026-07-22 vs 2026-10-29) does not prove that a 2019 value was never revised before July 2026. The rule accepts that residual risk for exchange closes and official fixings, and never for vendor-adjusted prices or fundamentals.
+- **Scope**: `py/pit_validation.py`, `docs/validation/`, any future feature publishing historical performance (#8, #15).
+- **Date**: 2026-11-02
+- **Status**: proposed - pending plan approval (`.specs/features/pit-oos-validation/plan.md` Q2)
+
+### AD-019
+- **Decision**: Walk-forward conventions for Prumo validation: a decision on date `t` sees only rows dated `<= t`; weights execute at the close of the next common date (that day's row is earned by the previous weights); test window j is `(exec_j, exec_{j+1}]`, contiguous with no overlap; weights reset to target only at execution and drift in between; decisions every 12 months, with 12 monthly start offsets per profile; strategy and benchmarks share the schedule, lag and declared cost; the report refuses to run without declared benchmarks and cost.
+- **Reason**: `CONTEXT.md` "Data de execução" forbids deciding and executing on the same close, which `simulate_portfolio` and the 2026-11 research did. S&P 500 and PTAX closes for `t` publish after B3's close. Twelve offsets turn a single path into a distribution without overlapping windows inside a path.
+- **Trade-off**: Paths with different offsets overlap in calendar time, so the 12 paths per profile are not independent samples; the report presents them as a sensitivity to the start date, not as a confidence interval.
+- **Scope**: `py/pit_validation.py`, `docs/validation/protocol.json`, future validation or backtest harnesses (#15).
+- **Date**: 2026-11-02
+- **Status**: proposed - pending plan approval (`.specs/features/pit-oos-validation/plan.md` Q4)
+
 ## Handoff
 
 - **Feature**: p0-02-v0-corrected (Issue #7 / P0-02) - `.specs/features/p0-02-v0-corrected/`
