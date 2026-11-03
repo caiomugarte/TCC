@@ -1,0 +1,114 @@
+{
+  "source": "B3, Banco Central do Brasil, and Yahoo Finance chart API",
+  "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+  "cutoff_date": "2026-10-29",
+  "requested_start_date": "2016-10-29",
+  "notes": "Daily common-date intersection; no forward-fill. Caio stocks use Yahoo adjusted close and equal-weight annual rebalancing. IFIX and S&P 500 TR are total-return levels. USD levels are converted with closing PTAX midpoint. Fixed income uses BCB SGS 12 daily CDI factors (cross-checked against B3 DI FTP using the 252-business-day convention). BTC uses Yahoo BTC-USD close. Ibovespa is a price-index benchmark and does not include dividends. Permanent Yahoo no-data ticker failures are skipped and recorded; transient fetch failures stop the snapshot.",
+  "sources": {
+    "caio_stocks": {
+      "provider": "Yahoo Finance chart API",
+      "portfolio_path": "/home/caio/Documents/projetos/TCC/outputs/carteira_caio_consensus.json",
+      "selected_tickers": [
+        "VULC3",
+        "ISAE4",
+        "BBDC3",
+        "FLRY3",
+        "POMO4",
+        "ITSA3",
+        "BBAS3",
+        "CMIG4",
+        "TAEE3",
+        "UNIP6"
+      ],
+      "symbols": [
+        "VULC3.SA",
+        "ISAE4.SA",
+        "BBDC3.SA",
+        "FLRY3.SA",
+        "POMO4.SA",
+        "ITSA3.SA",
+        "BBAS3.SA",
+        "CMIG4.SA",
+        "TAEE3.SA",
+        "UNIP6.SA"
+      ]
+    },
+    "sp500_total_return_usd": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "^SP500TR"
+    },
+    "btc_usd": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "BTC-USD"
+    },
+    "ibovespa": {
+      "provider": "Yahoo Finance chart API",
+      "symbol": "^BVSP",
+      "treatment": "price index; dividends not included"
+    },
+    "di": {
+      "provider": "Banco Central do Brasil SGS API",
+      "series": 12,
+      "unit": "% per business day",
+      "endpoint": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12/dados",
+      "cross_check": "B3 DI FTP annual rate converted with 252-business-day factor"
+    },
+    "ptax": {
+      "provider": "Banco Central do Brasil PTAX OData",
+      "currency": "USD",
+      "quote": "closing midpoint"
+    },
+    "caio_fiis": {
+      "provider": "Yahoo Finance chart API",
+      "portfolio_path": "/home/caio/Documents/projetos/TCC/outputs/carteira_fii_caio_consensus.json",
+      "selected_tickers": [
+        "URPR11",
+        "TVRI11",
+        "PSEC11",
+        "VPSI11",
+        "CTXT11",
+        "BIME11",
+        "TRNT11",
+        "FLRP11",
+        "BPRP11",
+        "FCFL11"
+      ],
+      "symbols": [
+        "URPR11.SA",
+        "TVRI11.SA",
+        "PSEC11.SA",
+        "VPSI11.SA",
+        "CTXT11.SA",
+        "BIME11.SA",
+        "TRNT11.SA",
+        "FLRP11.SA",
+        "FCFL11.SA"
+      ],
+      "treatment": "adjusted close; equal-weight annual rebalancing in allocation loader",
+      "lookahead_bias": "fixed current optimized FII artifact across historical windows",
+      "skipped_tickers": [
+        "BPRP11"
+      ],
+      "skipped_ticker_reasons": {
+        "BPRP11": "could not fetch https://query2.finance.yahoo.com/v8/finance/chart/BPRP11.SA?period1=1477699200&period2=1793318400&interval=1d&events=div%2Csplits&includeAdjustedClose=true: HTTP Error 404: Not Found"
+      }
+    },
+    "ifix": {
+      "provider": "B3 Index Statistics API",
+      "index": "IFIX",
+      "role": "benchmark-only"
+    }
+  },
+  "portfolio_artifacts": {
+    "caio_stocks": "/home/caio/Documents/projetos/TCC/outputs/carteira_caio_consensus.json",
+    "caio_fiis": "/home/caio/Documents/projetos/TCC/outputs/carteira_fii_caio_consensus.json"
+  },
+  "skipped_tickers": [],
+  "skipped_ticker_reasons": {},
+  "fii_skipped_tickers": [
+    "BPRP11"
+  ],
+  "fii_skipped_ticker_reasons": {
+    "BPRP11": "could not fetch https://query2.finance.yahoo.com/v8/finance/chart/BPRP11.SA?period1=1477699200&period2=1793318400&interval=1d&events=div%2Csplits&includeAdjustedClose=true: HTTP Error 404: Not Found"
+  }
+}
