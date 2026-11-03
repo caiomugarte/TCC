@@ -1,0 +1,787 @@
+{
+  "layers": {
+    "fii_selection": {
+      "excluded_lookahead": {
+        "caio_fiis": "picked in 2025-2026"
+      },
+      "missing": [
+        "Status Invest FII fundamentals as published on each decision date",
+        "historical listed FII universe including delisted tickers",
+        "as-of (not retroactively adjusted) total-return prices per ticker",
+        "as-of FII eligibility data (liquidity, segment, listing)"
+      ],
+      "status": "PIT_MISSING"
+    },
+    "stock_selection": {
+      "excluded_lookahead": {
+        "caio_stocks": "picked in 2025-2026"
+      },
+      "missing": [
+        "Status Invest fundamentals as published on each decision date",
+        "historical listed universe including delisted tickers",
+        "as-of (not retroactively adjusted) total-return prices per ticker"
+      ],
+      "status": "PIT_MISSING"
+    }
+  },
+  "protocol_id": "pit-walk-forward-v1",
+  "protocol_sha256": "c6e0e695392552877c9a6e1be5dbee5fb79f5135cebaf6cf3002e9e5e83a7f7c",
+  "series": {
+    "btc_usd": {
+      "days_apart": 97,
+      "evidence": "non_revision",
+      "file": "btc_usd.csv",
+      "groups": [
+        {
+          "members": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "sha256": "148edd4b55638bf5aa9dc6fee99c8ac0c3d9d7642ec366df444eddfabc3c2212"
+        },
+        {
+          "members": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "sha256": "092a6a33f1a01ee45589788472841b849335dafc843f9f2b920ed0d7af255f3c"
+        }
+      ],
+      "pairs": [
+        {
+          "days_apart": 97,
+          "first_shared_date": "2016-10-29",
+          "last_shared_date": "2026-07-21",
+          "max_rel_diff_daily_factor": 0.0,
+          "other_group": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "other_retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "overlap_complete": true,
+          "qualifies": true,
+          "reasons": [],
+          "shared_dates": 3553,
+          "snapshot_group": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "snapshot_retrieved_at": "2026-07-24T12:06:48.301469-03:00"
+        }
+      ],
+      "reasons": [],
+      "retrievals": [
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "BTC-USD"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation",
+          "retrieved_at": "2026-07-22T11:45:53.089257-03:00",
+          "rows": 3653,
+          "same_bytes_as": [
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "148edd4b55638bf5aa9dc6fee99c8ac0c3d9d7642ec366df444eddfabc3c2212"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "BTC-USD"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_caio_new",
+          "retrieved_at": "2026-07-23T12:33:11.451683-03:00",
+          "rows": 3653,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "148edd4b55638bf5aa9dc6fee99c8ac0c3d9d7642ec366df444eddfabc3c2212"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "BTC-USD"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_caio_last",
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "rows": 3653,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_new"
+          ],
+          "sha256": "148edd4b55638bf5aa9dc6fee99c8ac0c3d9d7642ec366df444eddfabc3c2212"
+        },
+        {
+          "first_date": "2016-10-29",
+          "identifier": {
+            "symbol": "BTC-USD"
+          },
+          "last_date": "2026-10-29",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_retrieval_2026-10-29",
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "rows": 3653,
+          "same_bytes_as": [],
+          "sha256": "092a6a33f1a01ee45589788472841b849335dafc843f9f2b920ed0d7af255f3c"
+        }
+      ],
+      "series": "btc_usd",
+      "series_kind": "spot_close",
+      "status": "PIT_QUALIFIED",
+      "unverified_dates": {
+        "count": 100,
+        "first": "2016-07-21",
+        "last": "2016-10-28"
+      },
+      "verified_range": {
+        "end": "2026-07-21",
+        "start": "2016-10-29"
+      }
+    },
+    "di": {
+      "days_apart": 97,
+      "evidence": "non_revision",
+      "file": "di.csv",
+      "groups": [
+        {
+          "members": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "sha256": "9395ea9dd50b562082ad3ed3ce0c137a75f51dad0e3e777aa14427d2b871598f"
+        },
+        {
+          "members": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "sha256": "650457a93cda97b52ca22643083d06414b5079807e710282b7c9c17733852877"
+        }
+      ],
+      "pairs": [
+        {
+          "days_apart": 97,
+          "first_shared_date": "2016-10-31",
+          "last_shared_date": "2026-07-21",
+          "max_rel_diff_daily_factor": 1.5331291791653712e-11,
+          "other_group": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "other_retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "overlap_complete": true,
+          "qualifies": true,
+          "reasons": [],
+          "shared_dates": 2439,
+          "snapshot_group": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "snapshot_retrieved_at": "2026-07-24T12:06:48.301469-03:00"
+        }
+      ],
+      "reasons": [],
+      "retrievals": [
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "series": 12
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Banco Central do Brasil SGS API",
+          "retrieval": "data/allocation",
+          "retrieved_at": "2026-07-22T11:45:53.089257-03:00",
+          "rows": 2509,
+          "same_bytes_as": [
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "9395ea9dd50b562082ad3ed3ce0c137a75f51dad0e3e777aa14427d2b871598f"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "series": 12
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Banco Central do Brasil SGS API",
+          "retrieval": "data/allocation_caio_new",
+          "retrieved_at": "2026-07-23T12:33:11.451683-03:00",
+          "rows": 2509,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "9395ea9dd50b562082ad3ed3ce0c137a75f51dad0e3e777aa14427d2b871598f"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "series": 12
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Banco Central do Brasil SGS API",
+          "retrieval": "data/allocation_caio_last",
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "rows": 2509,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_new"
+          ],
+          "sha256": "9395ea9dd50b562082ad3ed3ce0c137a75f51dad0e3e777aa14427d2b871598f"
+        },
+        {
+          "first_date": "2016-10-31",
+          "identifier": {
+            "series": 12
+          },
+          "last_date": "2026-10-28",
+          "present": true,
+          "provider": "Banco Central do Brasil SGS API",
+          "retrieval": "data/allocation_retrieval_2026-10-29",
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "rows": 2508,
+          "same_bytes_as": [],
+          "sha256": "650457a93cda97b52ca22643083d06414b5079807e710282b7c9c17733852877"
+        }
+      ],
+      "series": "di",
+      "series_kind": "official_rate",
+      "status": "PIT_QUALIFIED",
+      "unverified_dates": {
+        "count": 70,
+        "first": "2016-07-21",
+        "last": "2016-10-28"
+      },
+      "verified_range": {
+        "end": "2026-07-21",
+        "start": "2016-10-31"
+      }
+    },
+    "ibovespa": {
+      "days_apart": 97,
+      "evidence": "non_revision",
+      "file": "ibovespa.csv",
+      "groups": [
+        {
+          "members": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "sha256": "d286df77b24ba20ae836ba8c6d78cef6463484bee3482085658273997cb02754"
+        },
+        {
+          "members": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "sha256": "35e9ae574c100afe5dff56e8b8e7f9b02567a6d4a0438b6606189db8def37645"
+        }
+      ],
+      "pairs": [
+        {
+          "days_apart": 97,
+          "first_shared_date": "2016-10-31",
+          "last_shared_date": "2026-07-21",
+          "max_rel_diff_daily_factor": 0.0,
+          "other_group": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "other_retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "overlap_complete": true,
+          "qualifies": true,
+          "reasons": [],
+          "shared_dates": 2413,
+          "snapshot_group": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "snapshot_retrieved_at": "2026-07-24T12:06:48.301469-03:00"
+        }
+      ],
+      "reasons": [],
+      "retrievals": [
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "^BVSP"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation",
+          "retrieved_at": "2026-07-22T11:45:53.089257-03:00",
+          "rows": 2483,
+          "same_bytes_as": [
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "d286df77b24ba20ae836ba8c6d78cef6463484bee3482085658273997cb02754"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "^BVSP"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_caio_new",
+          "retrieved_at": "2026-07-23T12:33:11.451683-03:00",
+          "rows": 2483,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "d286df77b24ba20ae836ba8c6d78cef6463484bee3482085658273997cb02754"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "^BVSP"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_caio_last",
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "rows": 2483,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_new"
+          ],
+          "sha256": "d286df77b24ba20ae836ba8c6d78cef6463484bee3482085658273997cb02754"
+        },
+        {
+          "first_date": "2016-10-31",
+          "identifier": {
+            "symbol": "^BVSP"
+          },
+          "last_date": "2026-10-28",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_retrieval_2026-10-29",
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "rows": 2482,
+          "same_bytes_as": [],
+          "sha256": "35e9ae574c100afe5dff56e8b8e7f9b02567a6d4a0438b6606189db8def37645"
+        }
+      ],
+      "series": "ibovespa",
+      "series_kind": "exchange_index_close",
+      "status": "PIT_QUALIFIED",
+      "unverified_dates": {
+        "count": 70,
+        "first": "2016-07-21",
+        "last": "2016-10-28"
+      },
+      "verified_range": {
+        "end": "2026-07-21",
+        "start": "2016-10-31"
+      }
+    },
+    "ifix": {
+      "days_apart": 97,
+      "evidence": "non_revision",
+      "file": "ifix.csv",
+      "groups": [
+        {
+          "members": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "sha256": "02822b0beb0fd858ae12ecd83cce82ecca8ef9d57df036830e944fc4767bd1c2"
+        },
+        {
+          "members": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "sha256": "1bf7c8cf2091c145bebf851efa7bc2af7420e9f34d8ed625940a0af97e3e7cc7"
+        }
+      ],
+      "pairs": [
+        {
+          "days_apart": 97,
+          "first_shared_date": "2016-10-31",
+          "last_shared_date": "2026-07-21",
+          "max_rel_diff_daily_factor": 0.0,
+          "other_group": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "other_retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "overlap_complete": true,
+          "qualifies": true,
+          "reasons": [],
+          "shared_dates": 2413,
+          "snapshot_group": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "snapshot_retrieved_at": "2026-07-24T12:06:48.301469-03:00"
+        }
+      ],
+      "reasons": [],
+      "retrievals": [
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "index": "IFIX"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "B3 Index Statistics API",
+          "retrieval": "data/allocation",
+          "retrieved_at": "2026-07-22T11:45:53.089257-03:00",
+          "rows": 2483,
+          "same_bytes_as": [
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "02822b0beb0fd858ae12ecd83cce82ecca8ef9d57df036830e944fc4767bd1c2"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "index": "IFIX"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "B3 Index Statistics API",
+          "retrieval": "data/allocation_caio_new",
+          "retrieved_at": "2026-07-23T12:33:11.451683-03:00",
+          "rows": 2483,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "02822b0beb0fd858ae12ecd83cce82ecca8ef9d57df036830e944fc4767bd1c2"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "index": "IFIX"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "B3 Index Statistics API",
+          "retrieval": "data/allocation_caio_last",
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "rows": 2483,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_new"
+          ],
+          "sha256": "02822b0beb0fd858ae12ecd83cce82ecca8ef9d57df036830e944fc4767bd1c2"
+        },
+        {
+          "first_date": "2016-10-31",
+          "identifier": {
+            "index": "IFIX"
+          },
+          "last_date": "2026-10-28",
+          "present": true,
+          "provider": "B3 Index Statistics API",
+          "retrieval": "data/allocation_retrieval_2026-10-29",
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "rows": 2482,
+          "same_bytes_as": [],
+          "sha256": "1bf7c8cf2091c145bebf851efa7bc2af7420e9f34d8ed625940a0af97e3e7cc7"
+        }
+      ],
+      "series": "ifix",
+      "series_kind": "exchange_index_close",
+      "status": "PIT_QUALIFIED",
+      "unverified_dates": {
+        "count": 70,
+        "first": "2016-07-21",
+        "last": "2016-10-28"
+      },
+      "verified_range": {
+        "end": "2026-07-21",
+        "start": "2016-10-31"
+      }
+    },
+    "ptax": {
+      "days_apart": 97,
+      "evidence": "non_revision",
+      "file": "ptax.csv",
+      "groups": [
+        {
+          "members": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "sha256": "78dc94fa41fec683b7780a21fbbe8c150b164912190c5a8b4260871b1454110a"
+        },
+        {
+          "members": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "sha256": "ac8cd03f4c97140af74b44dcca3317a5ead4295e341eee2a65557c292b579212"
+        }
+      ],
+      "pairs": [
+        {
+          "days_apart": 97,
+          "first_shared_date": "2016-10-31",
+          "last_shared_date": "2026-07-21",
+          "max_rel_diff_daily_factor": 0.0,
+          "other_group": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "other_retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "overlap_complete": true,
+          "qualifies": true,
+          "reasons": [],
+          "shared_dates": 2439,
+          "snapshot_group": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "snapshot_retrieved_at": "2026-07-24T12:06:48.301469-03:00"
+        }
+      ],
+      "reasons": [],
+      "retrievals": [
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "currency": "USD"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Banco Central do Brasil PTAX OData",
+          "retrieval": "data/allocation",
+          "retrieved_at": "2026-07-22T11:45:53.089257-03:00",
+          "rows": 2509,
+          "same_bytes_as": [
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "78dc94fa41fec683b7780a21fbbe8c150b164912190c5a8b4260871b1454110a"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "currency": "USD"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Banco Central do Brasil PTAX OData",
+          "retrieval": "data/allocation_caio_new",
+          "retrieved_at": "2026-07-23T12:33:11.451683-03:00",
+          "rows": 2509,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "78dc94fa41fec683b7780a21fbbe8c150b164912190c5a8b4260871b1454110a"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "currency": "USD"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Banco Central do Brasil PTAX OData",
+          "retrieval": "data/allocation_caio_last",
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "rows": 2509,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_new"
+          ],
+          "sha256": "78dc94fa41fec683b7780a21fbbe8c150b164912190c5a8b4260871b1454110a"
+        },
+        {
+          "first_date": "2016-10-31",
+          "identifier": {
+            "currency": "USD"
+          },
+          "last_date": "2026-10-28",
+          "present": true,
+          "provider": "Banco Central do Brasil PTAX OData",
+          "retrieval": "data/allocation_retrieval_2026-10-29",
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "rows": 2508,
+          "same_bytes_as": [],
+          "sha256": "ac8cd03f4c97140af74b44dcca3317a5ead4295e341eee2a65557c292b579212"
+        }
+      ],
+      "series": "ptax",
+      "series_kind": "official_fixing",
+      "status": "PIT_QUALIFIED",
+      "unverified_dates": {
+        "count": 70,
+        "first": "2016-07-21",
+        "last": "2016-10-28"
+      },
+      "verified_range": {
+        "end": "2026-07-21",
+        "start": "2016-10-31"
+      }
+    },
+    "sp500_total_return_usd": {
+      "days_apart": 97,
+      "evidence": "non_revision",
+      "file": "sp500_total_return_usd.csv",
+      "groups": [
+        {
+          "members": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "sha256": "2f0a1973bc4832a86b9c33534e895d54f2a18658d54cf83880dadbe562404733"
+        },
+        {
+          "members": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "sha256": "bb0af247e2e170cb5188be0a4b792e78c1d8196385bf842c8c07a77b36d3b706"
+        }
+      ],
+      "pairs": [
+        {
+          "days_apart": 97,
+          "first_shared_date": "2016-10-31",
+          "last_shared_date": "2026-07-21",
+          "max_rel_diff_daily_factor": 0.0,
+          "other_group": [
+            "data/allocation_retrieval_2026-10-29"
+          ],
+          "other_retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "overlap_complete": true,
+          "qualifies": true,
+          "reasons": [],
+          "shared_dates": 2442,
+          "snapshot_group": [
+            "data/allocation",
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "snapshot_retrieved_at": "2026-07-24T12:06:48.301469-03:00"
+        }
+      ],
+      "reasons": [],
+      "retrievals": [
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "^SP500TR"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation",
+          "retrieved_at": "2026-07-22T11:45:53.089257-03:00",
+          "rows": 2513,
+          "same_bytes_as": [
+            "data/allocation_caio_new",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "2f0a1973bc4832a86b9c33534e895d54f2a18658d54cf83880dadbe562404733"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "^SP500TR"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_caio_new",
+          "retrieved_at": "2026-07-23T12:33:11.451683-03:00",
+          "rows": 2513,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_last"
+          ],
+          "sha256": "2f0a1973bc4832a86b9c33534e895d54f2a18658d54cf83880dadbe562404733"
+        },
+        {
+          "first_date": "2016-07-21",
+          "identifier": {
+            "symbol": "^SP500TR"
+          },
+          "last_date": "2026-07-21",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_caio_last",
+          "retrieved_at": "2026-07-24T12:06:48.301469-03:00",
+          "rows": 2513,
+          "same_bytes_as": [
+            "data/allocation",
+            "data/allocation_caio_new"
+          ],
+          "sha256": "2f0a1973bc4832a86b9c33534e895d54f2a18658d54cf83880dadbe562404733"
+        },
+        {
+          "first_date": "2016-10-31",
+          "identifier": {
+            "symbol": "^SP500TR"
+          },
+          "last_date": "2026-10-28",
+          "present": true,
+          "provider": "Yahoo Finance chart API",
+          "retrieval": "data/allocation_retrieval_2026-10-29",
+          "retrieved_at": "2026-10-29T09:51:30.533806-03:00",
+          "rows": 2512,
+          "same_bytes_as": [],
+          "sha256": "bb0af247e2e170cb5188be0a4b792e78c1d8196385bf842c8c07a77b36d3b706"
+        }
+      ],
+      "series": "sp500_total_return_usd",
+      "series_kind": "exchange_index_close",
+      "status": "PIT_QUALIFIED",
+      "unverified_dates": {
+        "count": 71,
+        "first": "2016-07-21",
+        "last": "2016-10-28"
+      },
+      "verified_range": {
+        "end": "2026-07-21",
+        "start": "2016-10-31"
+      }
+    }
+  },
+  "snapshot_dir": "data/allocation",
+  "thresholds": {
+    "max_rel_diff_daily_factor": 1e-09,
+    "min_days_apart": 30,
+    "min_shared_dates": 250
+  }
+}

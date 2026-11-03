@@ -1,0 +1,5762 @@
+{
+  "audit_sha256": "d09f3177159cc8cb3ac0cd9aaa70a1e7b276529ae05f446ecd9060efc8e017db",
+  "environment": {
+    "python": "3.14.4"
+  },
+  "evidence": {
+    "class_allocation": "non_revision"
+  },
+  "missing": {
+    "basic_recommendation": [],
+    "class_allocation": [],
+    "fii_selection": [
+      "Status Invest FII fundamentals as published on each decision date",
+      "historical listed FII universe including delisted tickers",
+      "as-of (not retroactively adjusted) total-return prices per ticker",
+      "as-of FII eligibility data (liquidity, segment, listing)"
+    ],
+    "premium_recommendation": [
+      "stock_selection: UNVERIFIABLE",
+      "fii_selection: UNVERIFIABLE"
+    ],
+    "stock_selection": [
+      "Status Invest fundamentals as published on each decision date",
+      "historical listed universe including delisted tickers",
+      "as-of (not retroactively adjusted) total-return prices per ticker"
+    ]
+  },
+  "profiles": {
+    "arrojado": {
+      "cost_sensitivity": [
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10450073289505868,
+              "median": 0.09916864283300852,
+              "min": 0.09265717165442622,
+              "p25": 0.09660009299331207,
+              "p75": 0.1016883041977592,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.1762913160135584,
+              "median": 0.08442118171874236,
+              "min": 0.05178616702732364,
+              "p25": 0.06242796388156474,
+              "p75": 0.10530730176923664,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.30625497145199954,
+              "median": 0.25713717650916,
+              "min": 0.20204094175485765,
+              "p25": 0.24145205830618577,
+              "p75": 0.2738281547522352,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.2533498135894976,
+              "median": 0.21560038059951014,
+              "min": 0.17394963528315066,
+              "p25": 0.20476969035788023,
+              "p75": 0.2283367358454657,
+              "paths": 12
+            }
+          },
+          "cost_bps": 0,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.15351057175170535,
+              "median": 0.11703172153281516,
+              "min": 0.06944890238809198,
+              "p25": 0.10668813050318271,
+              "p75": 0.13114843310707958,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.19259283424740414,
+              "median": 0.1326966648816178,
+              "min": 0.05816443815192884,
+              "p25": 0.07593753449106233,
+              "p75": 0.1496424647282551,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.02809130647170699,
+              "median": -0.03861795366605525,
+              "min": -0.055264989773016415,
+              "p25": -0.05048965745778711,
+              "p75": -0.034655787571590935,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        },
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10431653066821656,
+              "median": 0.09896690111095163,
+              "min": 0.09247519377824953,
+              "p25": 0.09641722922480217,
+              "p75": 0.10150457101146532,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.1760951409696021,
+              "median": 0.08422219590979863,
+              "min": 0.0516108362465697,
+              "p25": 0.06225083852919788,
+              "p75": 0.10512296502751489,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.3057029480213225,
+              "median": 0.25661834326535604,
+              "min": 0.2016128014806451,
+              "p25": 0.24094116986290176,
+              "p75": 0.2732500261721311,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.25284587497993005,
+              "median": 0.21513290181794786,
+              "min": 0.17356461175281113,
+              "p25": 0.20431767830167696,
+              "p75": 0.2278425405905659,
+              "paths": 12
+            }
+          },
+          "cost_bps": 10,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.1531900579525356,
+              "median": 0.11675367459551522,
+              "min": 0.06924808108459457,
+              "p25": 0.10642831085656473,
+              "p75": 0.1308372205543284,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.192226204370467,
+              "median": 0.13239938005669227,
+              "min": 0.05790673837120752,
+              "p25": 0.07565637616766335,
+              "p75": 0.14937897919172338,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.02804818972783396,
+              "median": -0.038573050743806125,
+              "min": -0.05517095822483897,
+              "p25": -0.05041660543447657,
+              "p75": -0.03462482844350806,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        },
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10357818180565692,
+              "median": 0.09815828470598853,
+              "min": 0.09174576049753158,
+              "p25": 0.0956842453503825,
+              "p75": 0.10073930247924184,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.17530880074424093,
+              "median": 0.08342462556088182,
+              "min": 0.050908047200894035,
+              "p25": 0.06154085622743838,
+              "p75": 0.1043840769808761,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.3034930820040156,
+              "median": 0.2545416121530839,
+              "min": 0.19989907705543408,
+              "p25": 0.23889623346883415,
+              "p75": 0.2709365799951578,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.2508285135035542,
+              "median": 0.21326181265506994,
+              "min": 0.1720233587581601,
+              "p25": 0.20250840376795737,
+              "p75": 0.22586445500669056,
+              "paths": 12
+            }
+          },
+          "cost_bps": 50,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.15190792917363405,
+              "median": 0.115641901325786,
+              "min": 0.06844517695250318,
+              "p25": 0.1053895472439384,
+              "p75": 0.12959259553884644,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.19076009507541758,
+              "median": 0.13121053647432934,
+              "min": 0.056876234879427834,
+              "p25": 0.07453186181359417,
+              "p75": 0.14832548299287157,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.027875718297273977,
+              "median": -0.038393347728862826,
+              "min": -0.05479494793103035,
+              "p25": -0.05012439682516412,
+              "p75": -0.03450086086870097,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        }
+      ],
+      "distribution": {
+        "excess_annualized_return": {
+          "cdi": {
+            "max": 0.1531900579525356,
+            "median": 0.11675367459551522,
+            "min": 0.06924808108459457,
+            "p25": 0.10642831085656473,
+            "p75": 0.1308372205543284,
+            "paths": 12,
+            "share_positive": 1.0
+          },
+          "ibov": {
+            "max": 0.192226204370467,
+            "median": 0.13239938005669227,
+            "min": 0.05790673837120752,
+            "p25": 0.07565637616766335,
+            "p75": 0.14937897919172338,
+            "paths": 12,
+            "share_positive": 1.0
+          },
+          "naive_equal_weight": {
+            "max": -0.02804818972783396,
+            "median": -0.038573050743806125,
+            "min": -0.05517095822483897,
+            "p25": -0.05041660543447657,
+            "p75": -0.03462482844350806,
+            "paths": 12,
+            "share_positive": 0.0
+          }
+        },
+        "series": {
+          "cdi": {
+            "annualized_return": {
+              "max": 0.10431653066821656,
+              "median": 0.09896690111095163,
+              "min": 0.09247519377824953,
+              "p25": 0.09641722922480217,
+              "p75": 0.10150457101146532,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.003105661125886357,
+              "median": 0.0030541904108497293,
+              "min": 0.0028457820783059544,
+              "p25": 0.002986088687663214,
+              "p75": 0.0030828408642732735,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p25": 0.0,
+              "p75": 0.0,
+              "paths": 12
+            }
+          },
+          "ibov": {
+            "annualized_return": {
+              "max": 0.1760951409696021,
+              "median": 0.08422219590979863,
+              "min": 0.0516108362465697,
+              "p25": 0.06225083852919788,
+              "p75": 0.10512296502751489,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.24562375199840664,
+              "median": 0.1915958478728336,
+              "min": 0.1821035713521849,
+              "p25": 0.18460111614429534,
+              "p75": 0.2446997730489926,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.2649951061356812,
+              "median": -0.26499510613568233,
+              "min": -0.4681580884813602,
+              "p25": -0.45840092226090245,
+              "p75": -0.26499510613568145,
+              "paths": 12
+            }
+          },
+          "naive_equal_weight": {
+            "annualized_return": {
+              "max": 0.3057029480213225,
+              "median": 0.25661834326535604,
+              "min": 0.2016128014806451,
+              "p25": 0.24094116986290176,
+              "p75": 0.2732500261721311,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.22216154089757922,
+              "median": 0.205815536277113,
+              "min": 0.1804151245027742,
+              "p25": 0.1968156898807689,
+              "p75": 0.21057497918754053,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.23093818536179334,
+              "median": -0.28743067979752324,
+              "min": -0.4128308255308756,
+              "p25": -0.3425863054307229,
+              "p75": -0.27125982324626463,
+              "paths": 12
+            }
+          },
+          "strategy": {
+            "annualized_return": {
+              "max": 0.25284587497993005,
+              "median": 0.21513290181794786,
+              "min": 0.17356461175281113,
+              "p25": 0.20431767830167696,
+              "p75": 0.2278425405905659,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.16299206189444385,
+              "median": 0.1420034268881185,
+              "min": 0.12968913554836303,
+              "p25": 0.13867683996331764,
+              "p75": 0.15070312314802384,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.12897016682357199,
+              "median": -0.2155963452221057,
+              "min": -0.29484004047039103,
+              "p25": -0.2626673155733602,
+              "p75": -0.16834160012080665,
+              "paths": 12
+            }
+          }
+        }
+      },
+      "paths": [
+        {
+          "decision_dates": [
+            "2019-10-31",
+            "2020-10-30",
+            "2021-10-29",
+            "2022-10-31",
+            "2023-10-31",
+            "2024-10-31"
+          ],
+          "execution_dates": [
+            "2019-11-01",
+            "2020-11-03",
+            "2021-11-01",
+            "2022-11-01",
+            "2023-11-01",
+            "2024-11-01",
+            "2025-11-03"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09247519377824953,
+              "annualized_volatility": 0.0030537854736353174,
+              "max_drawdown": 0.0,
+              "total_return": 0.7011100870106541
+            },
+            "ibov": {
+              "annualized_return": 0.05624798178302726,
+              "annualized_volatility": 0.2448287421075621,
+              "max_drawdown": -0.4681580884813601,
+              "total_return": 0.3891783984620478
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.26882613390750376,
+              "annualized_volatility": 0.20928883923015612,
+              "max_drawdown": -0.29574628962799243,
+              "total_return": 3.1794625689572724
+            },
+            "strategy": {
+              "annualized_return": 0.21922301767533248,
+              "annualized_volatility": 0.1453047843849303,
+              "max_drawdown": -0.22621465899726778,
+              "total_return": 2.289183672115431
+            }
+          },
+          "offset": 0,
+          "period_end": "2025-11-03",
+          "period_start": "2019-11-01",
+          "windows": [
+            {
+              "decision_date": "2019-10-31",
+              "end_date": "2020-11-03",
+              "execution_date": "2019-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 2.9979
+            },
+            {
+              "decision_date": "2020-10-30",
+              "end_date": "2021-11-01",
+              "execution_date": "2020-11-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 3.9973
+            },
+            {
+              "decision_date": "2021-10-29",
+              "end_date": "2022-11-01",
+              "execution_date": "2021-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 4.9938
+            },
+            {
+              "decision_date": "2022-10-31",
+              "end_date": "2023-11-01",
+              "execution_date": "2022-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.135,
+                "crypto": 0.135,
+                "fiis": 0.135,
+                "fixed_income": 0.45999999999999996,
+                "international_equity": 0.135
+              },
+              "years_used": 5.9986
+            },
+            {
+              "decision_date": "2023-10-31",
+              "end_date": "2024-11-01",
+              "execution_date": "2023-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.145,
+                "crypto": 0.145,
+                "fiis": 0.145,
+                "fixed_income": 0.42000000000000004,
+                "international_equity": 0.145
+              },
+              "years_used": 6.9979
+            },
+            {
+              "decision_date": "2024-10-31",
+              "end_date": "2025-11-03",
+              "execution_date": "2024-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1525,
+                "crypto": 0.1525,
+                "fiis": 0.1525,
+                "fixed_income": 0.39,
+                "international_equity": 0.1525
+              },
+              "years_used": 8.0
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2019-11-29",
+            "2020-11-30",
+            "2021-11-30",
+            "2022-11-30",
+            "2023-11-30",
+            "2024-11-29"
+          ],
+          "execution_dates": [
+            "2019-12-02",
+            "2020-12-01",
+            "2021-12-01",
+            "2022-12-01",
+            "2023-12-01",
+            "2024-12-02",
+            "2025-12-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09382405069475541,
+              "annualized_volatility": 0.0030710374341850967,
+              "max_drawdown": 0.0,
+              "total_return": 0.7125036016478252
+            },
+            "ibov": {
+              "annualized_return": 0.06425179077792142,
+              "annualized_volatility": 0.24465678336280275,
+              "max_drawdown": -0.46815808848136,
+              "total_return": 0.4528785633727854
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2865217029660132,
+              "annualized_volatility": 0.20947928498795168,
+              "max_drawdown": -0.2730491533766546,
+              "total_return": 3.532657645283593
+            },
+            "strategy": {
+              "annualized_return": 0.23135074474117423,
+              "annualized_volatility": 0.144922800255583,
+              "max_drawdown": -0.2049780314469436,
+              "total_return": 2.4847123813404712
+            }
+          },
+          "offset": 1,
+          "period_end": "2025-12-01",
+          "period_start": "2019-12-02",
+          "windows": [
+            {
+              "decision_date": "2019-11-29",
+              "end_date": "2020-12-01",
+              "execution_date": "2019-12-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.125,
+                "crypto": 0.125,
+                "fiis": 0.125,
+                "fixed_income": 0.5,
+                "international_equity": 0.125
+              },
+              "years_used": 3.0773
+            },
+            {
+              "decision_date": "2020-11-30",
+              "end_date": "2021-12-01",
+              "execution_date": "2020-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1325,
+                "crypto": 0.1325,
+                "fiis": 0.1325,
+                "fixed_income": 0.47,
+                "international_equity": 0.1325
+              },
+              "years_used": 4.0821
+            },
+            {
+              "decision_date": "2021-11-30",
+              "end_date": "2022-12-01",
+              "execution_date": "2021-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 5.0815
+            },
+            {
+              "decision_date": "2022-11-30",
+              "end_date": "2023-12-01",
+              "execution_date": "2022-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.135,
+                "crypto": 0.135,
+                "fiis": 0.135,
+                "fixed_income": 0.45999999999999996,
+                "international_equity": 0.135
+              },
+              "years_used": 6.0808
+            },
+            {
+              "decision_date": "2023-11-30",
+              "end_date": "2024-12-02",
+              "execution_date": "2023-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.145,
+                "crypto": 0.145,
+                "fiis": 0.145,
+                "fixed_income": 0.42000000000000004,
+                "international_equity": 0.145
+              },
+              "years_used": 7.0801
+            },
+            {
+              "decision_date": "2024-11-29",
+              "end_date": "2025-12-01",
+              "execution_date": "2024-12-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1525,
+                "crypto": 0.1525,
+                "fiis": 0.1525,
+                "fixed_income": 0.39,
+                "international_equity": 0.1525
+              },
+              "years_used": 8.0794
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2019-12-30",
+            "2020-12-30",
+            "2021-12-30",
+            "2022-12-29",
+            "2023-12-28",
+            "2024-12-30"
+          ],
+          "execution_dates": [
+            "2020-01-02",
+            "2021-01-04",
+            "2022-01-03",
+            "2023-01-03",
+            "2024-01-02",
+            "2025-01-02",
+            "2026-01-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09531211710079068,
+              "annualized_volatility": 0.0030980455978951824,
+              "max_drawdown": 0.0,
+              "total_return": 0.7269568143736782
+            },
+            "ibov": {
+              "annualized_return": 0.0516108362465697,
+              "annualized_volatility": 0.24536352085482319,
+              "max_drawdown": -0.4681580884813602,
+              "total_return": 0.3525715044740312
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2979973500026365,
+              "annualized_volatility": 0.2025503436991707,
+              "max_drawdown": -0.26589183285509466,
+              "total_return": 3.7840741050993536
+            },
+            "strategy": {
+              "annualized_return": 0.2438370406170367,
+              "annualized_volatility": 0.13908405352065406,
+              "max_drawdown": -0.17528391109440944,
+              "total_return": 2.7043382676048204
+            }
+          },
+          "offset": 2,
+          "period_end": "2026-01-02",
+          "period_start": "2020-01-02",
+          "windows": [
+            {
+              "decision_date": "2019-12-30",
+              "end_date": "2021-01-04",
+              "execution_date": "2020-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1275,
+                "crypto": 0.1275,
+                "fiis": 0.1275,
+                "fixed_income": 0.49,
+                "international_equity": 0.1275
+              },
+              "years_used": 3.1622
+            },
+            {
+              "decision_date": "2020-12-30",
+              "end_date": "2022-01-03",
+              "execution_date": "2021-01-04",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1325,
+                "crypto": 0.1325,
+                "fiis": 0.1325,
+                "fixed_income": 0.47,
+                "international_equity": 0.1325
+              },
+              "years_used": 4.1643
+            },
+            {
+              "decision_date": "2021-12-30",
+              "end_date": "2023-01-03",
+              "execution_date": "2022-01-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.125,
+                "crypto": 0.125,
+                "fiis": 0.125,
+                "fixed_income": 0.5,
+                "international_equity": 0.125
+              },
+              "years_used": 5.1636
+            },
+            {
+              "decision_date": "2022-12-29",
+              "end_date": "2024-01-02",
+              "execution_date": "2023-01-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.135,
+                "crypto": 0.135,
+                "fiis": 0.135,
+                "fixed_income": 0.45999999999999996,
+                "international_equity": 0.135
+              },
+              "years_used": 6.1602
+            },
+            {
+              "decision_date": "2023-12-28",
+              "end_date": "2025-01-02",
+              "execution_date": "2024-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1475,
+                "crypto": 0.1475,
+                "fiis": 0.1475,
+                "fixed_income": 0.41000000000000003,
+                "international_equity": 0.1475
+              },
+              "years_used": 7.1567
+            },
+            {
+              "decision_date": "2024-12-30",
+              "end_date": "2026-01-02",
+              "execution_date": "2025-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1525,
+                "crypto": 0.1525,
+                "fiis": 0.1525,
+                "fixed_income": 0.39,
+                "international_equity": 0.1525
+              },
+              "years_used": 8.1643
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-01-31",
+            "2021-01-29",
+            "2022-01-31",
+            "2023-01-31",
+            "2024-01-31",
+            "2025-01-31"
+          ],
+          "execution_dates": [
+            "2020-02-03",
+            "2021-02-01",
+            "2022-02-01",
+            "2023-02-01",
+            "2024-02-01",
+            "2025-02-03",
+            "2026-02-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.096785599932806,
+              "annualized_volatility": 0.003105661125886357,
+              "max_drawdown": 0.0,
+              "total_return": 0.7405059619265484
+            },
+            "ibov": {
+              "annualized_return": 0.08071898939183897,
+              "annualized_volatility": 0.24562375199840664,
+              "max_drawdown": -0.4551485335207499,
+              "total_return": 0.5930541747725231
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.24479301433619516,
+              "annualized_volatility": 0.20069159597754574,
+              "max_drawdown": -0.2758005442856041,
+              "total_return": 2.7192268948248497
+            },
+            "strategy": {
+              "annualized_return": 0.20688682691911886,
+              "annualized_volatility": 0.13877247973508863,
+              "max_drawdown": -0.16769869434806528,
+              "total_return": 2.089494929164076
+            }
+          },
+          "offset": 3,
+          "period_end": "2026-02-02",
+          "period_start": "2020-02-03",
+          "windows": [
+            {
+              "decision_date": "2020-01-31",
+              "end_date": "2021-02-01",
+              "execution_date": "2020-02-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 3.2498
+            },
+            {
+              "decision_date": "2021-01-29",
+              "end_date": "2022-02-01",
+              "execution_date": "2021-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 4.2464
+            },
+            {
+              "decision_date": "2022-01-31",
+              "end_date": "2023-02-01",
+              "execution_date": "2022-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.125,
+                "crypto": 0.125,
+                "fiis": 0.125,
+                "fixed_income": 0.5,
+                "international_equity": 0.125
+              },
+              "years_used": 5.2512
+            },
+            {
+              "decision_date": "2023-01-31",
+              "end_date": "2024-02-01",
+              "execution_date": "2023-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1375,
+                "crypto": 0.1375,
+                "fiis": 0.1375,
+                "fixed_income": 0.44999999999999996,
+                "international_equity": 0.1375
+              },
+              "years_used": 6.2505
+            },
+            {
+              "decision_date": "2024-01-31",
+              "end_date": "2025-02-03",
+              "execution_date": "2024-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1475,
+                "crypto": 0.1475,
+                "fiis": 0.1475,
+                "fixed_income": 0.41000000000000003,
+                "international_equity": 0.1475
+              },
+              "years_used": 7.2498
+            },
+            {
+              "decision_date": "2025-01-31",
+              "end_date": "2026-02-02",
+              "execution_date": "2025-02-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1525,
+                "crypto": 0.1525,
+                "fiis": 0.1525,
+                "fixed_income": 0.39,
+                "international_equity": 0.1525
+              },
+              "years_used": 8.2519
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-02-28",
+            "2021-02-26",
+            "2022-02-25",
+            "2023-02-28",
+            "2024-02-29",
+            "2025-02-28"
+          ],
+          "execution_dates": [
+            "2020-03-02",
+            "2021-03-01",
+            "2022-03-02",
+            "2023-03-01",
+            "2024-03-01",
+            "2025-03-05",
+            "2026-03-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09806574315006489,
+              "annualized_volatility": 0.0030969252434219405,
+              "max_drawdown": 0.0,
+              "total_return": 0.752727658860572
+            },
+            "ibov": {
+              "annualized_return": 0.10024225123086872,
+              "annualized_volatility": 0.24344643738303454,
+              "max_drawdown": -0.4071290009699319,
+              "total_return": 0.7736712121922569
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.26752397996683497,
+              "annualized_volatility": 0.19766672913614364,
+              "max_drawdown": -0.23999746775788022,
+              "total_return": 3.1456837287961354
+            },
+            "strategy": {
+              "annualized_return": 0.2266731392070298,
+              "annualized_volatility": 0.13873936423159133,
+              "max_drawdown": -0.14307627978965443,
+              "total_return": 2.406055104762822
+            }
+          },
+          "offset": 4,
+          "period_end": "2026-03-02",
+          "period_start": "2020-03-02",
+          "windows": [
+            {
+              "decision_date": "2020-02-28",
+              "end_date": "2021-03-01",
+              "execution_date": "2020-03-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 3.3265
+            },
+            {
+              "decision_date": "2021-02-26",
+              "end_date": "2022-03-02",
+              "execution_date": "2021-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1275,
+                "crypto": 0.1275,
+                "fiis": 0.1275,
+                "fixed_income": 0.49,
+                "international_equity": 0.1275
+              },
+              "years_used": 4.3231
+            },
+            {
+              "decision_date": "2022-02-25",
+              "end_date": "2023-03-01",
+              "execution_date": "2022-03-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.125,
+                "crypto": 0.125,
+                "fiis": 0.125,
+                "fixed_income": 0.5,
+                "international_equity": 0.125
+              },
+              "years_used": 5.3196
+            },
+            {
+              "decision_date": "2023-02-28",
+              "end_date": "2024-03-01",
+              "execution_date": "2023-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1375,
+                "crypto": 0.1375,
+                "fiis": 0.1375,
+                "fixed_income": 0.44999999999999996,
+                "international_equity": 0.1375
+              },
+              "years_used": 6.3272
+            },
+            {
+              "decision_date": "2024-02-29",
+              "end_date": "2025-03-05",
+              "execution_date": "2024-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1475,
+                "crypto": 0.1475,
+                "fiis": 0.1475,
+                "fixed_income": 0.41000000000000003,
+                "international_equity": 0.1475
+              },
+              "years_used": 7.3292
+            },
+            {
+              "decision_date": "2025-02-28",
+              "end_date": "2026-03-02",
+              "execution_date": "2025-03-05",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.155,
+                "crypto": 0.155,
+                "fiis": 0.155,
+                "fixed_income": 0.38,
+                "international_equity": 0.155
+              },
+              "years_used": 8.3285
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-03-31",
+            "2021-03-31",
+            "2022-03-31",
+            "2023-03-31",
+            "2024-03-28",
+            "2025-03-31"
+          ],
+          "execution_dates": [
+            "2020-04-01",
+            "2021-04-01",
+            "2022-04-01",
+            "2023-04-03",
+            "2024-04-01",
+            "2025-04-01",
+            "2026-04-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09965581702739446,
+              "annualized_volatility": 0.003078146071223718,
+              "max_drawdown": 0.0,
+              "total_return": 0.7680078058130047
+            },
+            "ibov": {
+              "annualized_return": 0.1760951409696021,
+              "annualized_volatility": 0.19506943176936473,
+              "max_drawdown": -0.26499510613568134,
+              "total_return": 1.645807868445886
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.3057029480213225,
+              "annualized_volatility": 0.18413450028381273,
+              "max_drawdown": -0.23093818536179334,
+              "total_return": 3.9534493393961654
+            },
+            "strategy": {
+              "annualized_return": 0.25284587497993005,
+              "annualized_volatility": 0.13361548168558657,
+              "max_drawdown": -0.12897016682357199,
+              "total_return": 2.8659111623210682
+            }
+          },
+          "offset": 5,
+          "period_end": "2026-04-01",
+          "period_start": "2020-04-01",
+          "windows": [
+            {
+              "decision_date": "2020-03-31",
+              "end_date": "2021-04-01",
+              "execution_date": "2020-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 3.4141
+            },
+            {
+              "decision_date": "2021-03-31",
+              "end_date": "2022-04-01",
+              "execution_date": "2021-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1275,
+                "crypto": 0.1275,
+                "fiis": 0.1275,
+                "fixed_income": 0.49,
+                "international_equity": 0.1275
+              },
+              "years_used": 4.4134
+            },
+            {
+              "decision_date": "2022-03-31",
+              "end_date": "2023-04-03",
+              "execution_date": "2022-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1275,
+                "crypto": 0.1275,
+                "fiis": 0.1275,
+                "fixed_income": 0.49,
+                "international_equity": 0.1275
+              },
+              "years_used": 5.4127
+            },
+            {
+              "decision_date": "2023-03-31",
+              "end_date": "2024-04-01",
+              "execution_date": "2023-04-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1375,
+                "crypto": 0.1375,
+                "fiis": 0.1375,
+                "fixed_income": 0.44999999999999996,
+                "international_equity": 0.1375
+              },
+              "years_used": 6.412
+            },
+            {
+              "decision_date": "2024-03-28",
+              "end_date": "2025-04-01",
+              "execution_date": "2024-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1475,
+                "crypto": 0.1475,
+                "fiis": 0.1475,
+                "fixed_income": 0.41000000000000003,
+                "international_equity": 0.1475
+              },
+              "years_used": 7.4059
+            },
+            {
+              "decision_date": "2025-03-31",
+              "end_date": "2026-04-01",
+              "execution_date": "2025-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.155,
+                "crypto": 0.155,
+                "fiis": 0.155,
+                "fixed_income": 0.38,
+                "international_equity": 0.155
+              },
+              "years_used": 8.4134
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-04-30",
+            "2021-04-30",
+            "2022-04-29",
+            "2023-04-28",
+            "2024-04-30",
+            "2025-04-30"
+          ],
+          "execution_dates": [
+            "2020-05-04",
+            "2021-05-03",
+            "2022-05-02",
+            "2023-05-02",
+            "2024-05-02",
+            "2025-05-02",
+            "2026-05-04"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10112108872451042,
+              "annualized_volatility": 0.0030545953480641407,
+              "max_drawdown": 0.0,
+              "total_return": 0.7821867601472265
+            },
+            "ibov": {
+              "annualized_return": 0.15313604758935573,
+              "annualized_volatility": 0.18812226397630247,
+              "max_drawdown": -0.2649951061356822,
+              "total_return": 1.3507074395253222
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2479034978951944,
+              "annualized_volatility": 0.1804151245027742,
+              "max_drawdown": -0.27911506996705404,
+              "total_return": 2.7753250325627636
+            },
+            "strategy": {
+              "annualized_return": 0.21104278596056325,
+              "annualized_volatility": 0.12968913554836303,
+              "max_drawdown": -0.16855590204505377,
+              "total_return": 2.153864877462977
+            }
+          },
+          "offset": 6,
+          "period_end": "2026-05-04",
+          "period_start": "2020-05-04",
+          "windows": [
+            {
+              "decision_date": "2020-04-30",
+              "end_date": "2021-05-03",
+              "execution_date": "2020-05-04",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.125,
+                "crypto": 0.125,
+                "fiis": 0.125,
+                "fixed_income": 0.5,
+                "international_equity": 0.125
+              },
+              "years_used": 3.4962
+            },
+            {
+              "decision_date": "2021-04-30",
+              "end_date": "2022-05-02",
+              "execution_date": "2021-05-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.125,
+                "crypto": 0.125,
+                "fiis": 0.125,
+                "fixed_income": 0.5,
+                "international_equity": 0.125
+              },
+              "years_used": 4.4956
+            },
+            {
+              "decision_date": "2022-04-29",
+              "end_date": "2023-05-02",
+              "execution_date": "2022-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1275,
+                "crypto": 0.1275,
+                "fiis": 0.1275,
+                "fixed_income": 0.49,
+                "international_equity": 0.1275
+              },
+              "years_used": 5.4921
+            },
+            {
+              "decision_date": "2023-04-28",
+              "end_date": "2024-05-02",
+              "execution_date": "2023-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.14,
+                "crypto": 0.14,
+                "fiis": 0.14,
+                "fixed_income": 0.43999999999999995,
+                "international_equity": 0.14
+              },
+              "years_used": 6.4887
+            },
+            {
+              "decision_date": "2024-04-30",
+              "end_date": "2025-05-02",
+              "execution_date": "2024-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.15,
+                "crypto": 0.15,
+                "fiis": 0.15,
+                "fixed_income": 0.4,
+                "international_equity": 0.15
+              },
+              "years_used": 7.4962
+            },
+            {
+              "decision_date": "2025-04-30",
+              "end_date": "2026-05-04",
+              "execution_date": "2025-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.155,
+                "crypto": 0.155,
+                "fiis": 0.155,
+                "fixed_income": 0.38,
+                "international_equity": 0.155
+              },
+              "years_used": 8.4956
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-05-29",
+            "2021-05-28",
+            "2022-05-31",
+            "2023-05-31",
+            "2024-05-31",
+            "2025-05-30"
+          ],
+          "execution_dates": [
+            "2020-06-01",
+            "2021-06-01",
+            "2022-06-01",
+            "2023-06-01",
+            "2024-06-03",
+            "2025-06-02",
+            "2026-06-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10265501787233,
+              "annualized_volatility": 0.003034570966651777,
+              "max_drawdown": 0.0,
+              "total_return": 0.7971314822287106
+            },
+            "ibov": {
+              "annualized_return": 0.11691793277063489,
+              "annualized_volatility": 0.18564673402681298,
+              "max_drawdown": -0.26499510613568233,
+              "total_return": 0.9411622884224726
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.20606452268616238,
+              "annualized_volatility": 0.19426257211464462,
+              "max_drawdown": -0.386416479750353,
+              "total_return": 2.0768892542196165
+            },
+            "strategy": {
+              "annualized_return": 0.17766137269254667,
+              "annualized_volatility": 0.13848926715849655,
+              "max_drawdown": -0.26994043865605666,
+              "total_return": 1.6670144017766297
+            }
+          },
+          "offset": 7,
+          "period_end": "2026-06-01",
+          "period_start": "2020-06-01",
+          "windows": [
+            {
+              "decision_date": "2020-05-29",
+              "end_date": "2021-06-01",
+              "execution_date": "2020-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.125,
+                "crypto": 0.125,
+                "fiis": 0.125,
+                "fixed_income": 0.5,
+                "international_equity": 0.125
+              },
+              "years_used": 3.5756
+            },
+            {
+              "decision_date": "2021-05-28",
+              "end_date": "2022-06-01",
+              "execution_date": "2021-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 4.5722
+            },
+            {
+              "decision_date": "2022-05-31",
+              "end_date": "2023-06-01",
+              "execution_date": "2022-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 5.5797
+            },
+            {
+              "decision_date": "2023-05-31",
+              "end_date": "2024-06-03",
+              "execution_date": "2023-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.14,
+                "crypto": 0.14,
+                "fiis": 0.14,
+                "fixed_income": 0.43999999999999995,
+                "international_equity": 0.14
+              },
+              "years_used": 6.5791
+            },
+            {
+              "decision_date": "2024-05-31",
+              "end_date": "2025-06-02",
+              "execution_date": "2024-06-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.15,
+                "crypto": 0.15,
+                "fiis": 0.15,
+                "fixed_income": 0.4,
+                "international_equity": 0.15
+              },
+              "years_used": 7.5811
+            },
+            {
+              "decision_date": "2025-05-30",
+              "end_date": "2026-06-01",
+              "execution_date": "2025-06-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.155,
+                "crypto": 0.155,
+                "fiis": 0.155,
+                "fixed_income": 0.38,
+                "international_equity": 0.155
+              },
+              "years_used": 8.5777
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-06-30",
+            "2021-06-30",
+            "2022-06-30",
+            "2023-06-30",
+            "2024-06-28",
+            "2025-06-30"
+          ],
+          "execution_dates": [
+            "2020-07-01",
+            "2021-07-01",
+            "2022-07-01",
+            "2023-07-03",
+            "2024-07-01",
+            "2025-07-01",
+            "2026-07-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10431653066821656,
+              "annualized_volatility": 0.0029992974973898287,
+              "max_drawdown": 0.0,
+              "total_return": 0.8134368955692559
+            },
+            "ibov": {
+              "annualized_return": 0.10119130911314156,
+              "annualized_volatility": 0.18371552332751193,
+              "max_drawdown": -0.26499510613568145,
+              "total_return": 0.7828686319553411
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2016128014806451,
+              "annualized_volatility": 0.2090807288550553,
+              "max_drawdown": -0.4128308255308756,
+              "total_return": 2.009387322766318
+            },
+            "strategy": {
+              "annualized_return": 0.17356461175281113,
+              "annualized_volatility": 0.15007790339291818,
+              "max_drawdown": -0.29484004047039103,
+              "total_return": 1.6118418760758577
+            }
+          },
+          "offset": 8,
+          "period_end": "2026-07-01",
+          "period_start": "2020-07-01",
+          "windows": [
+            {
+              "decision_date": "2020-06-30",
+              "end_date": "2021-07-01",
+              "execution_date": "2020-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.125,
+                "crypto": 0.125,
+                "fiis": 0.125,
+                "fixed_income": 0.5,
+                "international_equity": 0.125
+              },
+              "years_used": 3.6632
+            },
+            {
+              "decision_date": "2021-06-30",
+              "end_date": "2022-07-01",
+              "execution_date": "2021-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 4.6626
+            },
+            {
+              "decision_date": "2022-06-30",
+              "end_date": "2023-07-03",
+              "execution_date": "2022-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 5.6619
+            },
+            {
+              "decision_date": "2023-06-30",
+              "end_date": "2024-07-01",
+              "execution_date": "2023-07-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.14,
+                "crypto": 0.14,
+                "fiis": 0.14,
+                "fixed_income": 0.43999999999999995,
+                "international_equity": 0.14
+              },
+              "years_used": 6.6612
+            },
+            {
+              "decision_date": "2024-06-28",
+              "end_date": "2025-07-01",
+              "execution_date": "2024-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.15,
+                "crypto": 0.15,
+                "fiis": 0.15,
+                "fixed_income": 0.4,
+                "international_equity": 0.15
+              },
+              "years_used": 7.6578
+            },
+            {
+              "decision_date": "2025-06-30",
+              "end_date": "2026-07-01",
+              "execution_date": "2025-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1575,
+                "crypto": 0.1575,
+                "fiis": 0.1575,
+                "fixed_income": 0.37,
+                "international_equity": 0.1575
+              },
+              "years_used": 8.6626
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-07-31",
+            "2021-07-30",
+            "2022-07-29",
+            "2023-07-31",
+            "2024-07-31"
+          ],
+          "execution_dates": [
+            "2020-08-03",
+            "2021-08-02",
+            "2022-08-01",
+            "2023-08-01",
+            "2024-08-01",
+            "2025-08-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09827798519450881,
+              "annualized_volatility": 0.0029464622584833714,
+              "max_drawdown": 0.0,
+              "total_return": 0.5970208910828467
+            },
+            "ibov": {
+              "annualized_return": 0.05176327215782184,
+              "annualized_volatility": 0.1848963137498898,
+              "max_drawdown": -0.2649951061356812,
+              "total_return": 0.28663389088786917
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2308552612601178,
+              "annualized_volatility": 0.21386206178630707,
+              "max_drawdown": -0.36781062658622277,
+              "total_return": 1.8214947208198873
+            },
+            "strategy": {
+              "annualized_return": 0.19661023244935127,
+              "annualized_volatility": 0.1525787824133408,
+              "max_drawdown": -0.26207014606223833,
+              "total_return": 1.4506616790854476
+            }
+          },
+          "offset": 9,
+          "period_end": "2025-08-01",
+          "period_start": "2020-08-03",
+          "windows": [
+            {
+              "decision_date": "2020-07-31",
+              "end_date": "2021-08-02",
+              "execution_date": "2020-08-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1275,
+                "crypto": 0.1275,
+                "fiis": 0.1275,
+                "fixed_income": 0.49,
+                "international_equity": 0.1275
+              },
+              "years_used": 3.7481
+            },
+            {
+              "decision_date": "2021-07-30",
+              "end_date": "2022-08-01",
+              "execution_date": "2021-08-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 4.7447
+            },
+            {
+              "decision_date": "2022-07-29",
+              "end_date": "2023-08-01",
+              "execution_date": "2022-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 5.7413
+            },
+            {
+              "decision_date": "2023-07-31",
+              "end_date": "2024-08-01",
+              "execution_date": "2023-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1425,
+                "crypto": 0.1425,
+                "fiis": 0.1425,
+                "fixed_income": 0.43000000000000005,
+                "international_equity": 0.1425
+              },
+              "years_used": 6.7461
+            },
+            {
+              "decision_date": "2024-07-31",
+              "end_date": "2025-08-01",
+              "execution_date": "2024-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.15,
+                "crypto": 0.15,
+                "fiis": 0.15,
+                "fixed_income": 0.4,
+                "international_equity": 0.15
+              },
+              "years_used": 7.7481
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-08-31",
+            "2021-08-31",
+            "2022-08-31",
+            "2023-08-31",
+            "2024-08-30"
+          ],
+          "execution_dates": [
+            "2020-09-01",
+            "2021-09-01",
+            "2022-09-01",
+            "2023-09-01",
+            "2024-09-03",
+            "2025-09-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10042471235226902,
+              "annualized_volatility": 0.002908454338336486,
+              "max_drawdown": 0.0,
+              "total_return": 0.613938618693179
+            },
+            "ibov": {
+              "annualized_return": 0.06530026955625767,
+              "annualized_volatility": 0.18361135423945588,
+              "max_drawdown": -0.2649951061356812,
+              "total_return": 0.37219741014798746
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.24430313939716308,
+              "annualized_volatility": 0.21819249766667645,
+              "max_drawdown": -0.32734563002492534,
+              "total_return": 1.9841861100694844
+            },
+            "strategy": {
+              "annualized_return": 0.2095517110760745,
+              "annualized_volatility": 0.157757925087533,
+              "max_drawdown": -0.2563974690869688,
+              "total_return": 1.5899528681483552
+            }
+          },
+          "offset": 10,
+          "period_end": "2025-09-02",
+          "period_start": "2020-09-01",
+          "windows": [
+            {
+              "decision_date": "2020-08-31",
+              "end_date": "2021-09-01",
+              "execution_date": "2020-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 3.833
+            },
+            {
+              "decision_date": "2021-08-31",
+              "end_date": "2022-09-01",
+              "execution_date": "2021-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 4.8323
+            },
+            {
+              "decision_date": "2022-08-31",
+              "end_date": "2023-09-01",
+              "execution_date": "2022-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1325,
+                "crypto": 0.1325,
+                "fiis": 0.1325,
+                "fixed_income": 0.47,
+                "international_equity": 0.1325
+              },
+              "years_used": 5.8316
+            },
+            {
+              "decision_date": "2023-08-31",
+              "end_date": "2024-09-03",
+              "execution_date": "2023-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1425,
+                "crypto": 0.1425,
+                "fiis": 0.1425,
+                "fixed_income": 0.43000000000000005,
+                "international_equity": 0.1425
+              },
+              "years_used": 6.8309
+            },
+            {
+              "decision_date": "2024-08-30",
+              "end_date": "2025-09-02",
+              "execution_date": "2024-09-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.15,
+                "crypto": 0.15,
+                "fiis": 0.15,
+                "fixed_income": 0.4,
+                "international_equity": 0.15
+              },
+              "years_used": 7.8303
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-09-30",
+            "2021-09-30",
+            "2022-09-30",
+            "2023-09-29",
+            "2024-09-30"
+          ],
+          "execution_dates": [
+            "2020-10-01",
+            "2021-10-01",
+            "2022-10-03",
+            "2023-10-02",
+            "2024-10-01",
+            "2025-10-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10268715236026416,
+              "annualized_volatility": 0.0028457820783059544,
+              "max_drawdown": 0.0,
+              "total_return": 0.630168570452388
+            },
+            "ibov": {
+              "annualized_return": 0.08772540242775828,
+              "annualized_volatility": 0.1821035713521849,
+              "max_drawdown": -0.26499510613568233,
+              "total_return": 0.5225492830884217
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2653331886355177,
+              "annualized_volatility": 0.22216154089757922,
+              "max_drawdown": -0.3341781983788896,
+              "total_return": 2.2430566976682687
+            },
+            "strategy": {
+              "annualized_return": 0.22609327456498174,
+              "annualized_volatility": 0.16299206189444385,
+              "max_drawdown": -0.26445882410672594,
+              "total_return": 1.7704923803769042
+            }
+          },
+          "offset": 11,
+          "period_end": "2025-10-01",
+          "period_start": "2020-10-01",
+          "windows": [
+            {
+              "decision_date": "2020-09-30",
+              "end_date": "2021-10-01",
+              "execution_date": "2020-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.13,
+                "crypto": 0.13,
+                "fiis": 0.13,
+                "fixed_income": 0.48,
+                "international_equity": 0.13
+              },
+              "years_used": 3.9151
+            },
+            {
+              "decision_date": "2021-09-30",
+              "end_date": "2022-10-03",
+              "execution_date": "2021-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1225,
+                "crypto": 0.1225,
+                "fiis": 0.1225,
+                "fixed_income": 0.51,
+                "international_equity": 0.1225
+              },
+              "years_used": 4.9144
+            },
+            {
+              "decision_date": "2022-09-30",
+              "end_date": "2023-10-02",
+              "execution_date": "2022-10-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1325,
+                "crypto": 0.1325,
+                "fiis": 0.1325,
+                "fixed_income": 0.47,
+                "international_equity": 0.1325
+              },
+              "years_used": 5.9138
+            },
+            {
+              "decision_date": "2023-09-29",
+              "end_date": "2024-10-01",
+              "execution_date": "2023-10-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.145,
+                "crypto": 0.145,
+                "fiis": 0.145,
+                "fixed_income": 0.42000000000000004,
+                "international_equity": 0.145
+              },
+              "years_used": 6.9103
+            },
+            {
+              "decision_date": "2024-09-30",
+              "end_date": "2025-10-01",
+              "execution_date": "2024-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1525,
+                "crypto": 0.1525,
+                "fiis": 0.1525,
+                "fixed_income": 0.39,
+                "international_equity": 0.1525
+              },
+              "years_used": 7.9151
+            }
+          ]
+        }
+      ]
+    },
+    "conservador": {
+      "cost_sensitivity": [
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10450073289505868,
+              "median": 0.09916864283300852,
+              "min": 0.09265717165442622,
+              "p25": 0.09660009299331207,
+              "p75": 0.1016883041977592,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.1762913160135584,
+              "median": 0.08442118171874236,
+              "min": 0.05178616702732364,
+              "p25": 0.06242796388156474,
+              "p75": 0.10530730176923664,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.30625497145199954,
+              "median": 0.25713717650916,
+              "min": 0.20204094175485765,
+              "p25": 0.24145205830618577,
+              "p75": 0.2738281547522352,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.18350672801232903,
+              "median": 0.15430340608961235,
+              "min": 0.13849305261183176,
+              "p25": 0.14730462473452371,
+              "p75": 0.1612174666319381,
+              "paths": 12
+            }
+          },
+          "cost_bps": 0,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.08366748617453679,
+              "median": 0.05709791003493736,
+              "min": 0.03399231971677308,
+              "p25": 0.04995370428856993,
+              "p75": 0.06244004212949289,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.11449773232085514,
+              "median": 0.07045530345736972,
+              "min": 0.003746748222869689,
+              "p25": 0.033322456887095286,
+              "p75": 0.09188680868932253,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.06354788914302589,
+              "median": -0.10071138922811851,
+              "min": -0.1323441702386936,
+              "p25": -0.11878582455468856,
+              "p75": -0.09032689067018623,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        },
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10431653066821656,
+              "median": 0.09896690111095163,
+              "min": 0.09247519377824953,
+              "p25": 0.09641722922480217,
+              "p75": 0.10150457101146532,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.1760951409696021,
+              "median": 0.08422219590979863,
+              "min": 0.0516108362465697,
+              "p25": 0.06225083852919788,
+              "p75": 0.10512296502751489,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.3057029480213225,
+              "median": 0.25661834326535604,
+              "min": 0.2016128014806451,
+              "p25": 0.24094116986290176,
+              "p75": 0.2732500261721311,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.18312892473066578,
+              "median": 0.15394385244470143,
+              "min": 0.13819232583767738,
+              "p25": 0.1469732609647571,
+              "p75": 0.1608594268799023,
+              "paths": 12
+            }
+          },
+          "cost_bps": 10,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.08347310770327132,
+              "median": 0.056943625835062406,
+              "min": 0.03387579516946082,
+              "p25": 0.0498145647165254,
+              "p75": 0.06226723034616327,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.11429587743989766,
+              "median": 0.07030245351975706,
+              "min": 0.0036036509009609308,
+              "p25": 0.0332050449163398,
+              "p75": 0.09171834944612461,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.06342047564296771,
+              "median": -0.10053845205630074,
+              "min": -0.13209063631616913,
+              "p25": -0.1185719422640073,
+              "p75": -0.09018353234982712,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        },
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10357818180565692,
+              "median": 0.09815828470598853,
+              "min": 0.09174576049753158,
+              "p25": 0.0956842453503825,
+              "p75": 0.10073930247924184,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.17530880074424093,
+              "median": 0.08342462556088182,
+              "min": 0.050908047200894035,
+              "p25": 0.06154085622743838,
+              "p75": 0.1043840769808761,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.3034930820040156,
+              "median": 0.2545416121530839,
+              "min": 0.19989907705543408,
+              "p25": 0.23889623346883415,
+              "p75": 0.2709365799951578,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.18161620508924736,
+              "median": 0.1525043600551671,
+              "min": 0.13698812794773874,
+              "p25": 0.1456464850116067,
+              "p75": 0.1594258930613095,
+              "paths": 12
+            }
+          },
+          "cost_bps": 50,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.08269562075932724,
+              "median": 0.05632676451237573,
+              "min": 0.033409946142081814,
+              "p25": 0.049258274038715244,
+              "p75": 0.061576318520272066,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.11348874467345449,
+              "median": 0.06969133210260814,
+              "min": 0.0030315287823794446,
+              "p25": 0.032735649796926725,
+              "p75": 0.09104483823248949,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.06291094910769535,
+              "median": -0.09984672497062563,
+              "min": -0.13107660495779005,
+              "p25": -0.11771652821610784,
+              "p75": -0.08961002104058963,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        }
+      ],
+      "distribution": {
+        "excess_annualized_return": {
+          "cdi": {
+            "max": 0.08347310770327132,
+            "median": 0.056943625835062406,
+            "min": 0.03387579516946082,
+            "p25": 0.0498145647165254,
+            "p75": 0.06226723034616327,
+            "paths": 12,
+            "share_positive": 1.0
+          },
+          "ibov": {
+            "max": 0.11429587743989766,
+            "median": 0.07030245351975706,
+            "min": 0.0036036509009609308,
+            "p25": 0.0332050449163398,
+            "p75": 0.09171834944612461,
+            "paths": 12,
+            "share_positive": 1.0
+          },
+          "naive_equal_weight": {
+            "max": -0.06342047564296771,
+            "median": -0.10053845205630074,
+            "min": -0.13209063631616913,
+            "p25": -0.1185719422640073,
+            "p75": -0.09018353234982712,
+            "paths": 12,
+            "share_positive": 0.0
+          }
+        },
+        "series": {
+          "cdi": {
+            "annualized_return": {
+              "max": 0.10431653066821656,
+              "median": 0.09896690111095163,
+              "min": 0.09247519377824953,
+              "p25": 0.09641722922480217,
+              "p75": 0.10150457101146532,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.003105661125886357,
+              "median": 0.0030541904108497293,
+              "min": 0.0028457820783059544,
+              "p25": 0.002986088687663214,
+              "p75": 0.0030828408642732735,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p25": 0.0,
+              "p75": 0.0,
+              "paths": 12
+            }
+          },
+          "ibov": {
+            "annualized_return": {
+              "max": 0.1760951409696021,
+              "median": 0.08422219590979863,
+              "min": 0.0516108362465697,
+              "p25": 0.06225083852919788,
+              "p75": 0.10512296502751489,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.24562375199840664,
+              "median": 0.1915958478728336,
+              "min": 0.1821035713521849,
+              "p25": 0.18460111614429534,
+              "p75": 0.2446997730489926,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.2649951061356812,
+              "median": -0.26499510613568233,
+              "min": -0.4681580884813602,
+              "p25": -0.45840092226090245,
+              "p75": -0.26499510613568145,
+              "paths": 12
+            }
+          },
+          "naive_equal_weight": {
+            "annualized_return": {
+              "max": 0.3057029480213225,
+              "median": 0.25661834326535604,
+              "min": 0.2016128014806451,
+              "p25": 0.24094116986290176,
+              "p75": 0.2732500261721311,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.22216154089757922,
+              "median": 0.205815536277113,
+              "min": 0.1804151245027742,
+              "p25": 0.1968156898807689,
+              "p75": 0.21057497918754053,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.23093818536179334,
+              "median": -0.28743067979752324,
+              "min": -0.4128308255308756,
+              "p25": -0.3425863054307229,
+              "p75": -0.27125982324626463,
+              "paths": 12
+            }
+          },
+          "strategy": {
+            "annualized_return": {
+              "max": 0.18312892473066578,
+              "median": 0.15394385244470143,
+              "min": 0.13819232583767738,
+              "p25": 0.1469732609647571,
+              "p75": 0.1608594268799023,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.08121346218460238,
+              "median": 0.06856006492484701,
+              "min": 0.06361044847818104,
+              "p25": 0.06516921663341488,
+              "p75": 0.07472566025847022,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.06286043659441143,
+              "median": -0.11158568737378027,
+              "min": -0.16500983297738103,
+              "p25": -0.1430102546682677,
+              "p75": -0.06961545616781664,
+              "paths": 12
+            }
+          }
+        }
+      },
+      "paths": [
+        {
+          "decision_dates": [
+            "2019-10-31",
+            "2020-10-30",
+            "2021-10-29",
+            "2022-10-31",
+            "2023-10-31",
+            "2024-10-31"
+          ],
+          "execution_dates": [
+            "2019-11-01",
+            "2020-11-03",
+            "2021-11-01",
+            "2022-11-01",
+            "2023-11-01",
+            "2024-11-01",
+            "2025-11-03"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09247519377824953,
+              "annualized_volatility": 0.0030537854736353174,
+              "max_drawdown": 0.0,
+              "total_return": 0.7011100870106541
+            },
+            "ibov": {
+              "annualized_return": 0.05624798178302726,
+              "annualized_volatility": 0.2448287421075621,
+              "max_drawdown": -0.4681580884813601,
+              "total_return": 0.3891783984620478
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.26882613390750376,
+              "annualized_volatility": 0.20928883923015612,
+              "max_drawdown": -0.29574628962799243,
+              "total_return": 3.1794625689572724
+            },
+            "strategy": {
+              "annualized_return": 0.1515882186523796,
+              "annualized_volatility": 0.06879054714107478,
+              "max_drawdown": -0.12073886185766791,
+              "total_return": 1.3345481494899762
+            }
+          },
+          "offset": 0,
+          "period_end": "2025-11-03",
+          "period_start": "2019-11-01",
+          "windows": [
+            {
+              "decision_date": "2019-10-31",
+              "end_date": "2020-11-03",
+              "execution_date": "2019-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0525,
+                "crypto": 0.0525,
+                "fiis": 0.0525,
+                "fixed_income": 0.79,
+                "international_equity": 0.0525
+              },
+              "years_used": 2.9979
+            },
+            {
+              "decision_date": "2020-10-30",
+              "end_date": "2021-11-01",
+              "execution_date": "2020-11-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 3.9973
+            },
+            {
+              "decision_date": "2021-10-29",
+              "end_date": "2022-11-01",
+              "execution_date": "2021-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0525,
+                "crypto": 0.0525,
+                "fiis": 0.0525,
+                "fixed_income": 0.79,
+                "international_equity": 0.0525
+              },
+              "years_used": 4.9938
+            },
+            {
+              "decision_date": "2022-10-31",
+              "end_date": "2023-11-01",
+              "execution_date": "2022-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 5.9986
+            },
+            {
+              "decision_date": "2023-10-31",
+              "end_date": "2024-11-01",
+              "execution_date": "2023-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0625,
+                "crypto": 0.0625,
+                "fiis": 0.0625,
+                "fixed_income": 0.75,
+                "international_equity": 0.0625
+              },
+              "years_used": 6.9979
+            },
+            {
+              "decision_date": "2024-10-31",
+              "end_date": "2025-11-03",
+              "execution_date": "2024-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.0
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2019-11-29",
+            "2020-11-30",
+            "2021-11-30",
+            "2022-11-30",
+            "2023-11-30",
+            "2024-11-29"
+          ],
+          "execution_dates": [
+            "2019-12-02",
+            "2020-12-01",
+            "2021-12-01",
+            "2022-12-01",
+            "2023-12-01",
+            "2024-12-02",
+            "2025-12-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09382405069475541,
+              "annualized_volatility": 0.0030710374341850967,
+              "max_drawdown": 0.0,
+              "total_return": 0.7125036016478252
+            },
+            "ibov": {
+              "annualized_return": 0.06425179077792142,
+              "annualized_volatility": 0.24465678336280275,
+              "max_drawdown": -0.46815808848136,
+              "total_return": 0.4528785633727854
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2865217029660132,
+              "annualized_volatility": 0.20947928498795168,
+              "max_drawdown": -0.2730491533766546,
+              "total_return": 3.532657645283593
+            },
+            "strategy": {
+              "annualized_return": 0.1559265040668807,
+              "annualized_volatility": 0.06665024098618975,
+              "max_drawdown": -0.10243251288989264,
+              "total_return": 1.3850373445387136
+            }
+          },
+          "offset": 1,
+          "period_end": "2025-12-01",
+          "period_start": "2019-12-02",
+          "windows": [
+            {
+              "decision_date": "2019-11-29",
+              "end_date": "2020-12-01",
+              "execution_date": "2019-12-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0525,
+                "crypto": 0.0525,
+                "fiis": 0.0525,
+                "fixed_income": 0.79,
+                "international_equity": 0.0525
+              },
+              "years_used": 3.0773
+            },
+            {
+              "decision_date": "2020-11-30",
+              "end_date": "2021-12-01",
+              "execution_date": "2020-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 4.0821
+            },
+            {
+              "decision_date": "2021-11-30",
+              "end_date": "2022-12-01",
+              "execution_date": "2021-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 5.0815
+            },
+            {
+              "decision_date": "2022-11-30",
+              "end_date": "2023-12-01",
+              "execution_date": "2022-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.06,
+                "crypto": 0.06,
+                "fiis": 0.06,
+                "fixed_income": 0.76,
+                "international_equity": 0.06
+              },
+              "years_used": 6.0808
+            },
+            {
+              "decision_date": "2023-11-30",
+              "end_date": "2024-12-02",
+              "execution_date": "2023-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0625,
+                "crypto": 0.0625,
+                "fiis": 0.0625,
+                "fixed_income": 0.75,
+                "international_equity": 0.0625
+              },
+              "years_used": 7.0801
+            },
+            {
+              "decision_date": "2024-11-29",
+              "end_date": "2025-12-01",
+              "execution_date": "2024-12-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.0794
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2019-12-30",
+            "2020-12-30",
+            "2021-12-30",
+            "2022-12-29",
+            "2023-12-28",
+            "2024-12-30"
+          ],
+          "execution_dates": [
+            "2020-01-02",
+            "2021-01-04",
+            "2022-01-03",
+            "2023-01-03",
+            "2024-01-02",
+            "2025-01-02",
+            "2026-01-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09531211710079068,
+              "annualized_volatility": 0.0030980455978951824,
+              "max_drawdown": 0.0,
+              "total_return": 0.7269568143736782
+            },
+            "ibov": {
+              "annualized_return": 0.0516108362465697,
+              "annualized_volatility": 0.24536352085482319,
+              "max_drawdown": -0.4681580884813602,
+              "total_return": 0.3525715044740312
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2979973500026365,
+              "annualized_volatility": 0.2025503436991707,
+              "max_drawdown": -0.26589183285509466,
+              "total_return": 3.7840741050993536
+            },
+            "strategy": {
+              "annualized_return": 0.16590671368646737,
+              "annualized_volatility": 0.06361044847818104,
+              "max_drawdown": -0.07683816747973071,
+              "total_return": 1.5123149141595702
+            }
+          },
+          "offset": 2,
+          "period_end": "2026-01-02",
+          "period_start": "2020-01-02",
+          "windows": [
+            {
+              "decision_date": "2019-12-30",
+              "end_date": "2021-01-04",
+              "execution_date": "2020-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 3.1622
+            },
+            {
+              "decision_date": "2020-12-30",
+              "end_date": "2022-01-03",
+              "execution_date": "2021-01-04",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 4.1643
+            },
+            {
+              "decision_date": "2021-12-30",
+              "end_date": "2023-01-03",
+              "execution_date": "2022-01-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 5.1636
+            },
+            {
+              "decision_date": "2022-12-29",
+              "end_date": "2024-01-02",
+              "execution_date": "2023-01-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.06,
+                "crypto": 0.06,
+                "fiis": 0.06,
+                "fixed_income": 0.76,
+                "international_equity": 0.06
+              },
+              "years_used": 6.1602
+            },
+            {
+              "decision_date": "2023-12-28",
+              "end_date": "2025-01-02",
+              "execution_date": "2024-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.1567
+            },
+            {
+              "decision_date": "2024-12-30",
+              "end_date": "2026-01-02",
+              "execution_date": "2025-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.1643
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-01-31",
+            "2021-01-29",
+            "2022-01-31",
+            "2023-01-31",
+            "2024-01-31",
+            "2025-01-31"
+          ],
+          "execution_dates": [
+            "2020-02-03",
+            "2021-02-01",
+            "2022-02-01",
+            "2023-02-01",
+            "2024-02-01",
+            "2025-02-03",
+            "2026-02-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.096785599932806,
+              "annualized_volatility": 0.003105661125886357,
+              "max_drawdown": 0.0,
+              "total_return": 0.7405059619265484
+            },
+            "ibov": {
+              "annualized_return": 0.08071898939183897,
+              "annualized_volatility": 0.24562375199840664,
+              "max_drawdown": -0.4551485335207499,
+              "total_return": 0.5930541747725231
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.24479301433619516,
+              "annualized_volatility": 0.20069159597754574,
+              "max_drawdown": -0.2758005442856041,
+              "total_return": 2.7192268948248497
+            },
+            "strategy": {
+              "annualized_return": 0.14809350459452864,
+              "annualized_volatility": 0.06373969959193192,
+              "max_drawdown": -0.06989599384440126,
+              "total_return": 1.2897151360728216
+            }
+          },
+          "offset": 3,
+          "period_end": "2026-02-02",
+          "period_start": "2020-02-03",
+          "windows": [
+            {
+              "decision_date": "2020-01-31",
+              "end_date": "2021-02-01",
+              "execution_date": "2020-02-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 3.2498
+            },
+            {
+              "decision_date": "2021-01-29",
+              "end_date": "2022-02-01",
+              "execution_date": "2021-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 4.2464
+            },
+            {
+              "decision_date": "2022-01-31",
+              "end_date": "2023-02-01",
+              "execution_date": "2022-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 5.2512
+            },
+            {
+              "decision_date": "2023-01-31",
+              "end_date": "2024-02-01",
+              "execution_date": "2023-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.06,
+                "crypto": 0.06,
+                "fiis": 0.06,
+                "fixed_income": 0.76,
+                "international_equity": 0.06
+              },
+              "years_used": 6.2505
+            },
+            {
+              "decision_date": "2024-01-31",
+              "end_date": "2025-02-03",
+              "execution_date": "2024-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.2498
+            },
+            {
+              "decision_date": "2025-01-31",
+              "end_date": "2026-02-02",
+              "execution_date": "2025-02-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.2519
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-02-28",
+            "2021-02-26",
+            "2022-02-25",
+            "2023-02-28",
+            "2024-02-29",
+            "2025-02-28"
+          ],
+          "execution_dates": [
+            "2020-03-02",
+            "2021-03-01",
+            "2022-03-02",
+            "2023-03-01",
+            "2024-03-01",
+            "2025-03-05",
+            "2026-03-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09806574315006489,
+              "annualized_volatility": 0.0030969252434219405,
+              "max_drawdown": 0.0,
+              "total_return": 0.752727658860572
+            },
+            "ibov": {
+              "annualized_return": 0.10024225123086872,
+              "annualized_volatility": 0.24344643738303454,
+              "max_drawdown": -0.4071290009699319,
+              "total_return": 0.7736712121922569
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.26752397996683497,
+              "annualized_volatility": 0.19766672913614364,
+              "max_drawdown": -0.23999746775788022,
+              "total_return": 3.1456837287961354
+            },
+            "strategy": {
+              "annualized_return": 0.16082730441834214,
+              "annualized_volatility": 0.06546072352808886,
+              "max_drawdown": -0.06286043659441143,
+              "total_return": 1.4463411848898442
+            }
+          },
+          "offset": 4,
+          "period_end": "2026-03-02",
+          "period_start": "2020-03-02",
+          "windows": [
+            {
+              "decision_date": "2020-02-28",
+              "end_date": "2021-03-01",
+              "execution_date": "2020-03-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 3.3265
+            },
+            {
+              "decision_date": "2021-02-26",
+              "end_date": "2022-03-02",
+              "execution_date": "2021-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 4.3231
+            },
+            {
+              "decision_date": "2022-02-25",
+              "end_date": "2023-03-01",
+              "execution_date": "2022-03-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 5.3196
+            },
+            {
+              "decision_date": "2023-02-28",
+              "end_date": "2024-03-01",
+              "execution_date": "2023-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.06,
+                "crypto": 0.06,
+                "fiis": 0.06,
+                "fixed_income": 0.76,
+                "international_equity": 0.06
+              },
+              "years_used": 6.3272
+            },
+            {
+              "decision_date": "2024-02-29",
+              "end_date": "2025-03-05",
+              "execution_date": "2024-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.3292
+            },
+            {
+              "decision_date": "2025-02-28",
+              "end_date": "2026-03-02",
+              "execution_date": "2025-03-05",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.3285
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-03-31",
+            "2021-03-31",
+            "2022-03-31",
+            "2023-03-31",
+            "2024-03-28",
+            "2025-03-31"
+          ],
+          "execution_dates": [
+            "2020-04-01",
+            "2021-04-01",
+            "2022-04-01",
+            "2023-04-03",
+            "2024-04-01",
+            "2025-04-01",
+            "2026-04-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09965581702739446,
+              "annualized_volatility": 0.003078146071223718,
+              "max_drawdown": 0.0,
+              "total_return": 0.7680078058130047
+            },
+            "ibov": {
+              "annualized_return": 0.1760951409696021,
+              "annualized_volatility": 0.19506943176936473,
+              "max_drawdown": -0.26499510613568134,
+              "total_return": 1.645807868445886
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.3057029480213225,
+              "annualized_volatility": 0.18413450028381273,
+              "max_drawdown": -0.23093818536179334,
+              "total_return": 3.9534493393961654
+            },
+            "strategy": {
+              "annualized_return": 0.18312892473066578,
+              "annualized_volatility": 0.06986790609366188,
+              "max_drawdown": -0.06877384313806278,
+              "total_return": 1.7421578841440204
+            }
+          },
+          "offset": 5,
+          "period_end": "2026-04-01",
+          "period_start": "2020-04-01",
+          "windows": [
+            {
+              "decision_date": "2020-03-31",
+              "end_date": "2021-04-01",
+              "execution_date": "2020-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 3.4141
+            },
+            {
+              "decision_date": "2021-03-31",
+              "end_date": "2022-04-01",
+              "execution_date": "2021-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 4.4134
+            },
+            {
+              "decision_date": "2022-03-31",
+              "end_date": "2023-04-03",
+              "execution_date": "2022-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 5.4127
+            },
+            {
+              "decision_date": "2023-03-31",
+              "end_date": "2024-04-01",
+              "execution_date": "2023-04-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.06,
+                "crypto": 0.06,
+                "fiis": 0.06,
+                "fixed_income": 0.76,
+                "international_equity": 0.06
+              },
+              "years_used": 6.412
+            },
+            {
+              "decision_date": "2024-03-28",
+              "end_date": "2025-04-01",
+              "execution_date": "2024-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.4059
+            },
+            {
+              "decision_date": "2025-03-31",
+              "end_date": "2026-04-01",
+              "execution_date": "2025-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.4134
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-04-30",
+            "2021-04-30",
+            "2022-04-29",
+            "2023-04-28",
+            "2024-04-30",
+            "2025-04-30"
+          ],
+          "execution_dates": [
+            "2020-05-04",
+            "2021-05-03",
+            "2022-05-02",
+            "2023-05-02",
+            "2024-05-02",
+            "2025-05-02",
+            "2026-05-04"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10112108872451042,
+              "annualized_volatility": 0.0030545953480641407,
+              "max_drawdown": 0.0,
+              "total_return": 0.7821867601472265
+            },
+            "ibov": {
+              "annualized_return": 0.15313604758935573,
+              "annualized_volatility": 0.18812226397630247,
+              "max_drawdown": -0.2649951061356822,
+              "total_return": 1.3507074395253222
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2479034978951944,
+              "annualized_volatility": 0.1804151245027742,
+              "max_drawdown": -0.27911506996705404,
+              "total_return": 2.7753250325627636
+            },
+            "strategy": {
+              "annualized_return": 0.15673969849031666,
+              "annualized_volatility": 0.06429469594939292,
+              "max_drawdown": -0.06777718678943045,
+              "total_return": 1.395120005353276
+            }
+          },
+          "offset": 6,
+          "period_end": "2026-05-04",
+          "period_start": "2020-05-04",
+          "windows": [
+            {
+              "decision_date": "2020-04-30",
+              "end_date": "2021-05-03",
+              "execution_date": "2020-05-04",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 3.4962
+            },
+            {
+              "decision_date": "2021-04-30",
+              "end_date": "2022-05-02",
+              "execution_date": "2021-05-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 4.4956
+            },
+            {
+              "decision_date": "2022-04-29",
+              "end_date": "2023-05-02",
+              "execution_date": "2022-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 5.4921
+            },
+            {
+              "decision_date": "2023-04-28",
+              "end_date": "2024-05-02",
+              "execution_date": "2023-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.06,
+                "crypto": 0.06,
+                "fiis": 0.06,
+                "fixed_income": 0.76,
+                "international_equity": 0.06
+              },
+              "years_used": 6.4887
+            },
+            {
+              "decision_date": "2024-04-30",
+              "end_date": "2025-05-02",
+              "execution_date": "2024-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.4962
+            },
+            {
+              "decision_date": "2025-04-30",
+              "end_date": "2026-05-04",
+              "execution_date": "2025-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.4956
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-05-29",
+            "2021-05-28",
+            "2022-05-31",
+            "2023-05-31",
+            "2024-05-31",
+            "2025-05-30"
+          ],
+          "execution_dates": [
+            "2020-06-01",
+            "2021-06-01",
+            "2022-06-01",
+            "2023-06-01",
+            "2024-06-03",
+            "2025-06-02",
+            "2026-06-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10265501787233,
+              "annualized_volatility": 0.003034570966651777,
+              "max_drawdown": 0.0,
+              "total_return": 0.7971314822287106
+            },
+            "ibov": {
+              "annualized_return": 0.11691793277063489,
+              "annualized_volatility": 0.18564673402681298,
+              "max_drawdown": -0.26499510613568233,
+              "total_return": 0.9411622884224726
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.20606452268616238,
+              "annualized_volatility": 0.19426257211464462,
+              "max_drawdown": -0.386416479750353,
+              "total_return": 2.0768892542196165
+            },
+            "strategy": {
+              "annualized_return": 0.13873506226238663,
+              "annualized_volatility": 0.06832958270861923,
+              "max_drawdown": -0.13564431669415233,
+              "total_return": 1.1800121778250037
+            }
+          },
+          "offset": 7,
+          "period_end": "2026-06-01",
+          "period_start": "2020-06-01",
+          "windows": [
+            {
+              "decision_date": "2020-05-29",
+              "end_date": "2021-06-01",
+              "execution_date": "2020-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 3.5756
+            },
+            {
+              "decision_date": "2021-05-28",
+              "end_date": "2022-06-01",
+              "execution_date": "2021-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0525,
+                "crypto": 0.0525,
+                "fiis": 0.0525,
+                "fixed_income": 0.79,
+                "international_equity": 0.0525
+              },
+              "years_used": 4.5722
+            },
+            {
+              "decision_date": "2022-05-31",
+              "end_date": "2023-06-01",
+              "execution_date": "2022-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 5.5797
+            },
+            {
+              "decision_date": "2023-05-31",
+              "end_date": "2024-06-03",
+              "execution_date": "2023-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.06,
+                "crypto": 0.06,
+                "fiis": 0.06,
+                "fixed_income": 0.76,
+                "international_equity": 0.06
+              },
+              "years_used": 6.5791
+            },
+            {
+              "decision_date": "2024-05-31",
+              "end_date": "2025-06-02",
+              "execution_date": "2024-06-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.5811
+            },
+            {
+              "decision_date": "2025-05-30",
+              "end_date": "2026-06-01",
+              "execution_date": "2025-06-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.5777
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-06-30",
+            "2021-06-30",
+            "2022-06-30",
+            "2023-06-30",
+            "2024-06-28",
+            "2025-06-30"
+          ],
+          "execution_dates": [
+            "2020-07-01",
+            "2021-07-01",
+            "2022-07-01",
+            "2023-07-03",
+            "2024-07-01",
+            "2025-07-01",
+            "2026-07-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10431653066821656,
+              "annualized_volatility": 0.0029992974973898287,
+              "max_drawdown": 0.0,
+              "total_return": 0.8134368955692559
+            },
+            "ibov": {
+              "annualized_return": 0.10119130911314156,
+              "annualized_volatility": 0.18371552332751193,
+              "max_drawdown": -0.26499510613568145,
+              "total_return": 0.7828686319553411
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2016128014806451,
+              "annualized_volatility": 0.2090807288550553,
+              "max_drawdown": -0.4128308255308756,
+              "total_return": 2.009387322766318
+            },
+            "strategy": {
+              "annualized_return": 0.13819232583767738,
+              "annualized_volatility": 0.07521321127283842,
+              "max_drawdown": -0.16500983297738103,
+              "total_return": 1.173786881414021
+            }
+          },
+          "offset": 8,
+          "period_end": "2026-07-01",
+          "period_start": "2020-07-01",
+          "windows": [
+            {
+              "decision_date": "2020-06-30",
+              "end_date": "2021-07-01",
+              "execution_date": "2020-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 3.6632
+            },
+            {
+              "decision_date": "2021-06-30",
+              "end_date": "2022-07-01",
+              "execution_date": "2021-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0525,
+                "crypto": 0.0525,
+                "fiis": 0.0525,
+                "fixed_income": 0.79,
+                "international_equity": 0.0525
+              },
+              "years_used": 4.6626
+            },
+            {
+              "decision_date": "2022-06-30",
+              "end_date": "2023-07-03",
+              "execution_date": "2022-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 5.6619
+            },
+            {
+              "decision_date": "2023-06-30",
+              "end_date": "2024-07-01",
+              "execution_date": "2023-07-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0625,
+                "crypto": 0.0625,
+                "fiis": 0.0625,
+                "fixed_income": 0.75,
+                "international_equity": 0.0625
+              },
+              "years_used": 6.6612
+            },
+            {
+              "decision_date": "2024-06-28",
+              "end_date": "2025-07-01",
+              "execution_date": "2024-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.6578
+            },
+            {
+              "decision_date": "2025-06-30",
+              "end_date": "2026-07-01",
+              "execution_date": "2025-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0675,
+                "crypto": 0.0675,
+                "fiis": 0.0675,
+                "fixed_income": 0.73,
+                "international_equity": 0.0675
+              },
+              "years_used": 8.6626
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-07-31",
+            "2021-07-30",
+            "2022-07-29",
+            "2023-07-31",
+            "2024-07-31"
+          ],
+          "execution_dates": [
+            "2020-08-03",
+            "2021-08-02",
+            "2022-08-01",
+            "2023-08-01",
+            "2024-08-01",
+            "2025-08-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09827798519450881,
+              "annualized_volatility": 0.0029464622584833714,
+              "max_drawdown": 0.0,
+              "total_return": 0.5970208910828467
+            },
+            "ibov": {
+              "annualized_return": 0.05176327215782184,
+              "annualized_volatility": 0.1848963137498898,
+              "max_drawdown": -0.2649951061356812,
+              "total_return": 0.28663389088786917
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2308552612601178,
+              "annualized_volatility": 0.21386206178630707,
+              "max_drawdown": -0.36781062658622277,
+              "total_return": 1.8214947208198873
+            },
+            "strategy": {
+              "annualized_return": 0.1436125300754425,
+              "annualized_volatility": 0.07456314325368082,
+              "max_drawdown": -0.14487963607643528,
+              "total_return": 0.9544992937128811
+            }
+          },
+          "offset": 9,
+          "period_end": "2025-08-01",
+          "period_start": "2020-08-03",
+          "windows": [
+            {
+              "decision_date": "2020-07-31",
+              "end_date": "2021-08-02",
+              "execution_date": "2020-08-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 3.7481
+            },
+            {
+              "decision_date": "2021-07-30",
+              "end_date": "2022-08-01",
+              "execution_date": "2021-08-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 4.7447
+            },
+            {
+              "decision_date": "2022-07-29",
+              "end_date": "2023-08-01",
+              "execution_date": "2022-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 5.7413
+            },
+            {
+              "decision_date": "2023-07-31",
+              "end_date": "2024-08-01",
+              "execution_date": "2023-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0625,
+                "crypto": 0.0625,
+                "fiis": 0.0625,
+                "fixed_income": 0.75,
+                "international_equity": 0.0625
+              },
+              "years_used": 6.7461
+            },
+            {
+              "decision_date": "2024-07-31",
+              "end_date": "2025-08-01",
+              "execution_date": "2024-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.7481
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-08-31",
+            "2021-08-31",
+            "2022-08-31",
+            "2023-08-31",
+            "2024-08-30"
+          ],
+          "execution_dates": [
+            "2020-09-01",
+            "2021-09-01",
+            "2022-09-01",
+            "2023-09-01",
+            "2024-09-03",
+            "2025-09-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10042471235226902,
+              "annualized_volatility": 0.002908454338336486,
+              "max_drawdown": 0.0,
+              "total_return": 0.613938618693179
+            },
+            "ibov": {
+              "annualized_return": 0.06530026955625767,
+              "annualized_volatility": 0.18361135423945588,
+              "max_drawdown": -0.2649951061356812,
+              "total_return": 0.37219741014798746
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.24430313939716308,
+              "annualized_volatility": 0.21819249766667645,
+              "max_drawdown": -0.32734563002492534,
+              "total_return": 1.9841861100694844
+            },
+            "strategy": {
+              "annualized_return": 0.15196120082252218,
+              "annualized_volatility": 0.07774700375090596,
+              "max_drawdown": -0.14238712753221183,
+              "total_return": 1.0291558998176145
+            }
+          },
+          "offset": 10,
+          "period_end": "2025-09-02",
+          "period_start": "2020-09-01",
+          "windows": [
+            {
+              "decision_date": "2020-08-31",
+              "end_date": "2021-09-01",
+              "execution_date": "2020-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 3.833
+            },
+            {
+              "decision_date": "2021-08-31",
+              "end_date": "2022-09-01",
+              "execution_date": "2021-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.055,
+                "crypto": 0.055,
+                "fiis": 0.055,
+                "fixed_income": 0.78,
+                "international_equity": 0.055
+              },
+              "years_used": 4.8323
+            },
+            {
+              "decision_date": "2022-08-31",
+              "end_date": "2023-09-01",
+              "execution_date": "2022-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 5.8316
+            },
+            {
+              "decision_date": "2023-08-31",
+              "end_date": "2024-09-03",
+              "execution_date": "2023-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0625,
+                "crypto": 0.0625,
+                "fiis": 0.0625,
+                "fixed_income": 0.75,
+                "international_equity": 0.0625
+              },
+              "years_used": 6.8309
+            },
+            {
+              "decision_date": "2024-08-30",
+              "end_date": "2025-09-02",
+              "execution_date": "2024-09-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.8303
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-09-30",
+            "2021-09-30",
+            "2022-09-30",
+            "2023-09-29",
+            "2024-09-30"
+          ],
+          "execution_dates": [
+            "2020-10-01",
+            "2021-10-01",
+            "2022-10-03",
+            "2023-10-02",
+            "2024-10-01",
+            "2025-10-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10268715236026416,
+              "annualized_volatility": 0.0028457820783059544,
+              "max_drawdown": 0.0,
+              "total_return": 0.630168570452388
+            },
+            "ibov": {
+              "annualized_return": 0.08772540242775828,
+              "annualized_volatility": 0.1821035713521849,
+              "max_drawdown": -0.26499510613568233,
+              "total_return": 0.5225492830884217
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2653331886355177,
+              "annualized_volatility": 0.22216154089757922,
+              "max_drawdown": -0.3341781983788896,
+              "total_return": 2.2430566976682687
+            },
+            "strategy": {
+              "annualized_return": 0.16095579426458273,
+              "annualized_volatility": 0.08121346218460238,
+              "max_drawdown": -0.14945775430934805,
+              "total_return": 1.1087934945498534
+            }
+          },
+          "offset": 11,
+          "period_end": "2025-10-01",
+          "period_start": "2020-10-01",
+          "windows": [
+            {
+              "decision_date": "2020-09-30",
+              "end_date": "2021-10-01",
+              "execution_date": "2020-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 3.9151
+            },
+            {
+              "decision_date": "2021-09-30",
+              "end_date": "2022-10-03",
+              "execution_date": "2021-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0525,
+                "crypto": 0.0525,
+                "fiis": 0.0525,
+                "fixed_income": 0.79,
+                "international_equity": 0.0525
+              },
+              "years_used": 4.9144
+            },
+            {
+              "decision_date": "2022-09-30",
+              "end_date": "2023-10-02",
+              "execution_date": "2022-10-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0575,
+                "crypto": 0.0575,
+                "fiis": 0.0575,
+                "fixed_income": 0.77,
+                "international_equity": 0.0575
+              },
+              "years_used": 5.9138
+            },
+            {
+              "decision_date": "2023-09-29",
+              "end_date": "2024-10-01",
+              "execution_date": "2023-10-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0625,
+                "crypto": 0.0625,
+                "fiis": 0.0625,
+                "fixed_income": 0.75,
+                "international_equity": 0.0625
+              },
+              "years_used": 6.9103
+            },
+            {
+              "decision_date": "2024-09-30",
+              "end_date": "2025-10-01",
+              "execution_date": "2024-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.065,
+                "crypto": 0.065,
+                "fiis": 0.065,
+                "fixed_income": 0.74,
+                "international_equity": 0.065
+              },
+              "years_used": 7.9151
+            }
+          ]
+        }
+      ]
+    },
+    "moderado": {
+      "cost_sensitivity": [
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10450073289505868,
+              "median": 0.09916864283300852,
+              "min": 0.09265717165442622,
+              "p25": 0.09660009299331207,
+              "p75": 0.1016883041977592,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.1762913160135584,
+              "median": 0.08442118171874236,
+              "min": 0.05178616702732364,
+              "p25": 0.06242796388156474,
+              "p75": 0.10530730176923664,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.30625497145199954,
+              "median": 0.25713717650916,
+              "min": 0.20204094175485765,
+              "p25": 0.24145205830618577,
+              "p75": 0.2738281547522352,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.22044254063474478,
+              "median": 0.18492462546400334,
+              "min": 0.1568012794754261,
+              "p25": 0.17535989251078637,
+              "p75": 0.19402309835932519,
+              "paths": 12
+            }
+          },
+          "cost_bps": 0,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.12060329879695253,
+              "median": 0.08688862273771547,
+              "min": 0.052300546580367424,
+              "p25": 0.07698672187623995,
+              "p75": 0.09713867986962643,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.15150426647417192,
+              "median": 0.10104253392761176,
+              "min": 0.03084268357584663,
+              "p25": 0.05260752322682699,
+              "p75": 0.12084731570845858,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.04523966227943155,
+              "median": -0.07012415875787648,
+              "min": -0.09533763608537682,
+              "p25": -0.08423879246767385,
+              "p75": -0.06346639954511946,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        },
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10431653066821656,
+              "median": 0.09896690111095163,
+              "min": 0.09247519377824953,
+              "p25": 0.09641722922480217,
+              "p75": 0.10150457101146532,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.1760951409696021,
+              "median": 0.08422219590979863,
+              "min": 0.0516108362465697,
+              "p25": 0.06225083852919788,
+              "p75": 0.10512296502751489,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.3057029480213225,
+              "median": 0.25661834326535604,
+              "min": 0.2016128014806451,
+              "p25": 0.24094116986290176,
+              "p75": 0.2732500261721311,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.21999492092467188,
+              "median": 0.18451771813858175,
+              "min": 0.15645623876032033,
+              "p25": 0.17496261520857587,
+              "p75": 0.19358399765675133,
+              "paths": 12
+            }
+          },
+          "cost_bps": 10,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.12033910389727742,
+              "median": 0.08667098606885826,
+              "min": 0.052139708092103776,
+              "p25": 0.0767885400352592,
+              "p75": 0.09689263033630224,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.15121868756204693,
+              "median": 0.10082233612469194,
+              "min": 0.030639340455648423,
+              "p25": 0.05242364222415152,
+              "p75": 0.12063472035865036,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.045156562720324755,
+              "median": -0.07001856945136586,
+              "min": -0.09516782619401987,
+              "p25": -0.08410157103067095,
+              "p75": -0.0633829616627169,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        },
+        {
+          "annualized_return": {
+            "cdi": {
+              "max": 0.10357818180565692,
+              "median": 0.09815828470598853,
+              "min": 0.09174576049753158,
+              "p25": 0.0956842453503825,
+              "p75": 0.10073930247924184,
+              "paths": 12
+            },
+            "ibov": {
+              "max": 0.17530880074424093,
+              "median": 0.08342462556088182,
+              "min": 0.050908047200894035,
+              "p25": 0.06154085622743838,
+              "p75": 0.1043840769808761,
+              "paths": 12
+            },
+            "naive_equal_weight": {
+              "max": 0.3034930820040156,
+              "median": 0.2545416121530839,
+              "min": 0.19989907705543408,
+              "p25": 0.23889623346883415,
+              "p75": 0.2709365799951578,
+              "paths": 12
+            },
+            "strategy": {
+              "max": 0.2182028820760138,
+              "median": 0.18288887459301362,
+              "min": 0.155074848540788,
+              "p25": 0.17337225540402396,
+              "p75": 0.19182626201610925,
+              "paths": 12
+            }
+          },
+          "cost_bps": 50,
+          "excess_annualized_return": {
+            "cdi": {
+              "max": 0.11928229774609367,
+              "median": 0.08580077862263713,
+              "min": 0.05149666673513109,
+              "p25": 0.07599625328616572,
+              "p75": 0.09590867952252763,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "ibov": {
+              "max": 0.1500767444774147,
+              "median": 0.09994190098177724,
+              "min": 0.029826266377154687,
+              "p25": 0.05168836940224186,
+              "p75": 0.11978472825573361,
+              "paths": 12,
+              "share_positive": 1.0
+            },
+            "naive_equal_weight": {
+              "max": -0.04482422851464607,
+              "median": -0.06959615609145653,
+              "min": -0.09448860515382984,
+              "p25": -0.08355273539842883,
+              "p75": -0.06304908280153393,
+              "paths": 12,
+              "share_positive": 0.0
+            }
+          }
+        }
+      ],
+      "distribution": {
+        "excess_annualized_return": {
+          "cdi": {
+            "max": 0.12033910389727742,
+            "median": 0.08667098606885826,
+            "min": 0.052139708092103776,
+            "p25": 0.0767885400352592,
+            "p75": 0.09689263033630224,
+            "paths": 12,
+            "share_positive": 1.0
+          },
+          "ibov": {
+            "max": 0.15121868756204693,
+            "median": 0.10082233612469194,
+            "min": 0.030639340455648423,
+            "p25": 0.05242364222415152,
+            "p75": 0.12063472035865036,
+            "paths": 12,
+            "share_positive": 1.0
+          },
+          "naive_equal_weight": {
+            "max": -0.045156562720324755,
+            "median": -0.07001856945136586,
+            "min": -0.09516782619401987,
+            "p25": -0.08410157103067095,
+            "p75": -0.0633829616627169,
+            "paths": 12,
+            "share_positive": 0.0
+          }
+        },
+        "series": {
+          "cdi": {
+            "annualized_return": {
+              "max": 0.10431653066821656,
+              "median": 0.09896690111095163,
+              "min": 0.09247519377824953,
+              "p25": 0.09641722922480217,
+              "p75": 0.10150457101146532,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.003105661125886357,
+              "median": 0.0030541904108497293,
+              "min": 0.0028457820783059544,
+              "p25": 0.002986088687663214,
+              "p75": 0.0030828408642732735,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": 0.0,
+              "median": 0.0,
+              "min": 0.0,
+              "p25": 0.0,
+              "p75": 0.0,
+              "paths": 12
+            }
+          },
+          "ibov": {
+            "annualized_return": {
+              "max": 0.1760951409696021,
+              "median": 0.08422219590979863,
+              "min": 0.0516108362465697,
+              "p25": 0.06225083852919788,
+              "p75": 0.10512296502751489,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.24562375199840664,
+              "median": 0.1915958478728336,
+              "min": 0.1821035713521849,
+              "p25": 0.18460111614429534,
+              "p75": 0.2446997730489926,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.2649951061356812,
+              "median": -0.26499510613568233,
+              "min": -0.4681580884813602,
+              "p25": -0.45840092226090245,
+              "p75": -0.26499510613568145,
+              "paths": 12
+            }
+          },
+          "naive_equal_weight": {
+            "annualized_return": {
+              "max": 0.3057029480213225,
+              "median": 0.25661834326535604,
+              "min": 0.2016128014806451,
+              "p25": 0.24094116986290176,
+              "p75": 0.2732500261721311,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.22216154089757922,
+              "median": 0.205815536277113,
+              "min": 0.1804151245027742,
+              "p25": 0.1968156898807689,
+              "p75": 0.21057497918754053,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.23093818536179334,
+              "median": -0.28743067979752324,
+              "min": -0.4128308255308756,
+              "p25": -0.3425863054307229,
+              "p75": -0.27125982324626463,
+              "paths": 12
+            }
+          },
+          "strategy": {
+            "annualized_return": {
+              "max": 0.21999492092467188,
+              "median": 0.18451771813858175,
+              "min": 0.15645623876032033,
+              "p25": 0.17496261520857587,
+              "p75": 0.19358399765675133,
+              "paths": 12
+            },
+            "annualized_volatility": {
+              "max": 0.1230581100255826,
+              "median": 0.1039432700012225,
+              "min": 0.09648604477724769,
+              "p25": 0.10086422729036255,
+              "p75": 0.11396756956488034,
+              "paths": 12
+            },
+            "max_drawdown": {
+              "max": -0.09479447187788348,
+              "median": -0.16596447961101446,
+              "min": -0.2326163774370662,
+              "p25": -0.20271148456579946,
+              "p75": -0.11306322125065846,
+              "paths": 12
+            }
+          }
+        }
+      },
+      "paths": [
+        {
+          "decision_dates": [
+            "2019-10-31",
+            "2020-10-30",
+            "2021-10-29",
+            "2022-10-31",
+            "2023-10-31",
+            "2024-10-31"
+          ],
+          "execution_dates": [
+            "2019-11-01",
+            "2020-11-03",
+            "2021-11-01",
+            "2022-11-01",
+            "2023-11-01",
+            "2024-11-01",
+            "2025-11-03"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09247519377824953,
+              "annualized_volatility": 0.0030537854736353174,
+              "max_drawdown": 0.0,
+              "total_return": 0.7011100870106541
+            },
+            "ibov": {
+              "annualized_return": 0.05624798178302726,
+              "annualized_volatility": 0.2448287421075621,
+              "max_drawdown": -0.4681580884813601,
+              "total_return": 0.3891783984620478
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.26882613390750376,
+              "annualized_volatility": 0.20928883923015612,
+              "max_drawdown": -0.29574628962799243,
+              "total_return": 3.1794625689572724
+            },
+            "strategy": {
+              "annualized_return": 0.18526004823215936,
+              "annualized_volatility": 0.10657210066012805,
+              "max_drawdown": -0.1772465387055452,
+              "total_return": 1.7757931629351837
+            }
+          },
+          "offset": 0,
+          "period_end": "2025-11-03",
+          "period_start": "2019-11-01",
+          "windows": [
+            {
+              "decision_date": "2019-10-31",
+              "end_date": "2020-11-03",
+              "execution_date": "2019-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.085,
+                "crypto": 0.085,
+                "fiis": 0.085,
+                "fixed_income": 0.6599999999999999,
+                "international_equity": 0.085
+              },
+              "years_used": 2.9979
+            },
+            {
+              "decision_date": "2020-10-30",
+              "end_date": "2021-11-01",
+              "execution_date": "2020-11-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 3.9973
+            },
+            {
+              "decision_date": "2021-10-29",
+              "end_date": "2022-11-01",
+              "execution_date": "2021-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.085,
+                "crypto": 0.085,
+                "fiis": 0.085,
+                "fixed_income": 0.6599999999999999,
+                "international_equity": 0.085
+              },
+              "years_used": 4.9938
+            },
+            {
+              "decision_date": "2022-10-31",
+              "end_date": "2023-11-01",
+              "execution_date": "2022-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.095,
+                "crypto": 0.095,
+                "fiis": 0.095,
+                "fixed_income": 0.62,
+                "international_equity": 0.095
+              },
+              "years_used": 5.9986
+            },
+            {
+              "decision_date": "2023-10-31",
+              "end_date": "2024-11-01",
+              "execution_date": "2023-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1025,
+                "crypto": 0.1025,
+                "fiis": 0.1025,
+                "fixed_income": 0.5900000000000001,
+                "international_equity": 0.1025
+              },
+              "years_used": 6.9979
+            },
+            {
+              "decision_date": "2024-10-31",
+              "end_date": "2025-11-03",
+              "execution_date": "2024-11-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1075,
+                "crypto": 0.1075,
+                "fiis": 0.1075,
+                "fixed_income": 0.5700000000000001,
+                "international_equity": 0.1075
+              },
+              "years_used": 8.0
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2019-11-29",
+            "2020-11-30",
+            "2021-11-30",
+            "2022-11-30",
+            "2023-11-30",
+            "2024-11-29"
+          ],
+          "execution_dates": [
+            "2019-12-02",
+            "2020-12-01",
+            "2021-12-01",
+            "2022-12-01",
+            "2023-12-01",
+            "2024-12-02",
+            "2025-12-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09382405069475541,
+              "annualized_volatility": 0.0030710374341850967,
+              "max_drawdown": 0.0,
+              "total_return": 0.7125036016478252
+            },
+            "ibov": {
+              "annualized_return": 0.06425179077792142,
+              "annualized_volatility": 0.24465678336280275,
+              "max_drawdown": -0.46815808848136,
+              "total_return": 0.4528785633727854
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2865217029660132,
+              "annualized_volatility": 0.20947928498795168,
+              "max_drawdown": -0.2730491533766546,
+              "total_return": 3.532657645283593
+            },
+            "strategy": {
+              "annualized_return": 0.1929572562065256,
+              "annualized_volatility": 0.10488431850549461,
+              "max_drawdown": -0.15468242051648373,
+              "total_return": 1.8816710601130535
+            }
+          },
+          "offset": 1,
+          "period_end": "2025-12-01",
+          "period_start": "2019-12-02",
+          "windows": [
+            {
+              "decision_date": "2019-11-29",
+              "end_date": "2020-12-01",
+              "execution_date": "2019-12-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 3.0773
+            },
+            {
+              "decision_date": "2020-11-30",
+              "end_date": "2021-12-01",
+              "execution_date": "2020-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 4.0821
+            },
+            {
+              "decision_date": "2021-11-30",
+              "end_date": "2022-12-01",
+              "execution_date": "2021-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 5.0815
+            },
+            {
+              "decision_date": "2022-11-30",
+              "end_date": "2023-12-01",
+              "execution_date": "2022-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.095,
+                "crypto": 0.095,
+                "fiis": 0.095,
+                "fixed_income": 0.62,
+                "international_equity": 0.095
+              },
+              "years_used": 6.0808
+            },
+            {
+              "decision_date": "2023-11-30",
+              "end_date": "2024-12-02",
+              "execution_date": "2023-12-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1025,
+                "crypto": 0.1025,
+                "fiis": 0.1025,
+                "fixed_income": 0.5900000000000001,
+                "international_equity": 0.1025
+              },
+              "years_used": 7.0801
+            },
+            {
+              "decision_date": "2024-11-29",
+              "end_date": "2025-12-01",
+              "execution_date": "2024-12-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1075,
+                "crypto": 0.1075,
+                "fiis": 0.1075,
+                "fixed_income": 0.5700000000000001,
+                "international_equity": 0.1075
+              },
+              "years_used": 8.0794
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2019-12-30",
+            "2020-12-30",
+            "2021-12-30",
+            "2022-12-29",
+            "2023-12-28",
+            "2024-12-30"
+          ],
+          "execution_dates": [
+            "2020-01-02",
+            "2021-01-04",
+            "2022-01-03",
+            "2023-01-03",
+            "2024-01-02",
+            "2025-01-02",
+            "2026-01-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09531211710079068,
+              "annualized_volatility": 0.0030980455978951824,
+              "max_drawdown": 0.0,
+              "total_return": 0.7269568143736782
+            },
+            "ibov": {
+              "annualized_return": 0.0516108362465697,
+              "annualized_volatility": 0.24536352085482319,
+              "max_drawdown": -0.4681580884813602,
+              "total_return": 0.3525715044740312
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2979973500026365,
+              "annualized_volatility": 0.2025503436991707,
+              "max_drawdown": -0.26589183285509466,
+              "total_return": 3.7840741050993536
+            },
+            "strategy": {
+              "annualized_return": 0.20282952380861663,
+              "annualized_volatility": 0.09888985285878993,
+              "max_drawdown": -0.12200207383938277,
+              "total_return": 2.029244095711051
+            }
+          },
+          "offset": 2,
+          "period_end": "2026-01-02",
+          "period_start": "2020-01-02",
+          "windows": [
+            {
+              "decision_date": "2019-12-30",
+              "end_date": "2021-01-04",
+              "execution_date": "2020-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 3.1622
+            },
+            {
+              "decision_date": "2020-12-30",
+              "end_date": "2022-01-03",
+              "execution_date": "2021-01-04",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 4.1643
+            },
+            {
+              "decision_date": "2021-12-30",
+              "end_date": "2023-01-03",
+              "execution_date": "2022-01-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 5.1636
+            },
+            {
+              "decision_date": "2022-12-29",
+              "end_date": "2024-01-02",
+              "execution_date": "2023-01-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.095,
+                "crypto": 0.095,
+                "fiis": 0.095,
+                "fixed_income": 0.62,
+                "international_equity": 0.095
+              },
+              "years_used": 6.1602
+            },
+            {
+              "decision_date": "2023-12-28",
+              "end_date": "2025-01-02",
+              "execution_date": "2024-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1025,
+                "crypto": 0.1025,
+                "fiis": 0.1025,
+                "fixed_income": 0.5900000000000001,
+                "international_equity": 0.1025
+              },
+              "years_used": 7.1567
+            },
+            {
+              "decision_date": "2024-12-30",
+              "end_date": "2026-01-02",
+              "execution_date": "2025-01-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1075,
+                "crypto": 0.1075,
+                "fiis": 0.1075,
+                "fixed_income": 0.5700000000000001,
+                "international_equity": 0.1075
+              },
+              "years_used": 8.1643
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-01-31",
+            "2021-01-29",
+            "2022-01-31",
+            "2023-01-31",
+            "2024-01-31",
+            "2025-01-31"
+          ],
+          "execution_dates": [
+            "2020-02-03",
+            "2021-02-01",
+            "2022-02-01",
+            "2023-02-01",
+            "2024-02-01",
+            "2025-02-03",
+            "2026-02-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.096785599932806,
+              "annualized_volatility": 0.003105661125886357,
+              "max_drawdown": 0.0,
+              "total_return": 0.7405059619265484
+            },
+            "ibov": {
+              "annualized_return": 0.08071898939183897,
+              "annualized_volatility": 0.24562375199840664,
+              "max_drawdown": -0.4551485335207499,
+              "total_return": 0.5930541747725231
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.24479301433619516,
+              "annualized_volatility": 0.20069159597754574,
+              "max_drawdown": -0.2758005442856041,
+              "total_return": 2.7192268948248497
+            },
+            "strategy": {
+              "annualized_return": 0.17671423889149418,
+              "annualized_volatility": 0.09976047059417877,
+              "max_drawdown": -0.1159010937814704,
+              "total_return": 1.6541735002974036
+            }
+          },
+          "offset": 3,
+          "period_end": "2026-02-02",
+          "period_start": "2020-02-03",
+          "windows": [
+            {
+              "decision_date": "2020-01-31",
+              "end_date": "2021-02-01",
+              "execution_date": "2020-02-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 3.2498
+            },
+            {
+              "decision_date": "2021-01-29",
+              "end_date": "2022-02-01",
+              "execution_date": "2021-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 4.2464
+            },
+            {
+              "decision_date": "2022-01-31",
+              "end_date": "2023-02-01",
+              "execution_date": "2022-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 5.2512
+            },
+            {
+              "decision_date": "2023-01-31",
+              "end_date": "2024-02-01",
+              "execution_date": "2023-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0975,
+                "crypto": 0.0975,
+                "fiis": 0.0975,
+                "fixed_income": 0.61,
+                "international_equity": 0.0975
+              },
+              "years_used": 6.2505
+            },
+            {
+              "decision_date": "2024-01-31",
+              "end_date": "2025-02-03",
+              "execution_date": "2024-02-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1025,
+                "crypto": 0.1025,
+                "fiis": 0.1025,
+                "fixed_income": 0.5900000000000001,
+                "international_equity": 0.1025
+              },
+              "years_used": 7.2498
+            },
+            {
+              "decision_date": "2025-01-31",
+              "end_date": "2026-02-02",
+              "execution_date": "2025-02-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1075,
+                "crypto": 0.1075,
+                "fiis": 0.1075,
+                "fixed_income": 0.5700000000000001,
+                "international_equity": 0.1075
+              },
+              "years_used": 8.2519
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-02-28",
+            "2021-02-26",
+            "2022-02-25",
+            "2023-02-28",
+            "2024-02-29",
+            "2025-02-28"
+          ],
+          "execution_dates": [
+            "2020-03-02",
+            "2021-03-01",
+            "2022-03-02",
+            "2023-03-01",
+            "2024-03-01",
+            "2025-03-05",
+            "2026-03-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09806574315006489,
+              "annualized_volatility": 0.0030969252434219405,
+              "max_drawdown": 0.0,
+              "total_return": 0.752727658860572
+            },
+            "ibov": {
+              "annualized_return": 0.10024225123086872,
+              "annualized_volatility": 0.24344643738303454,
+              "max_drawdown": -0.4071290009699319,
+              "total_return": 0.7736712121922569
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.26752397996683497,
+              "annualized_volatility": 0.19766672913614364,
+              "max_drawdown": -0.23999746775788022,
+              "total_return": 3.1456837287961354
+            },
+            "strategy": {
+              "annualized_return": 0.19421151509454448,
+              "annualized_volatility": 0.10123214618909049,
+              "max_drawdown": -0.09865247442774205,
+              "total_return": 1.8998932336062921
+            }
+          },
+          "offset": 4,
+          "period_end": "2026-03-02",
+          "period_start": "2020-03-02",
+          "windows": [
+            {
+              "decision_date": "2020-02-28",
+              "end_date": "2021-03-01",
+              "execution_date": "2020-03-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 3.3265
+            },
+            {
+              "decision_date": "2021-02-26",
+              "end_date": "2022-03-02",
+              "execution_date": "2021-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 4.3231
+            },
+            {
+              "decision_date": "2022-02-25",
+              "end_date": "2023-03-01",
+              "execution_date": "2022-03-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 5.3196
+            },
+            {
+              "decision_date": "2023-02-28",
+              "end_date": "2024-03-01",
+              "execution_date": "2023-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0975,
+                "crypto": 0.0975,
+                "fiis": 0.0975,
+                "fixed_income": 0.61,
+                "international_equity": 0.0975
+              },
+              "years_used": 6.3272
+            },
+            {
+              "decision_date": "2024-02-29",
+              "end_date": "2025-03-05",
+              "execution_date": "2024-03-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.105,
+                "crypto": 0.105,
+                "fiis": 0.105,
+                "fixed_income": 0.5800000000000001,
+                "international_equity": 0.105
+              },
+              "years_used": 7.3292
+            },
+            {
+              "decision_date": "2025-02-28",
+              "end_date": "2026-03-02",
+              "execution_date": "2025-03-05",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1075,
+                "crypto": 0.1075,
+                "fiis": 0.1075,
+                "fixed_income": 0.5700000000000001,
+                "international_equity": 0.1075
+              },
+              "years_used": 8.3285
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-03-31",
+            "2021-03-31",
+            "2022-03-31",
+            "2023-03-31",
+            "2024-03-28",
+            "2025-03-31"
+          ],
+          "execution_dates": [
+            "2020-04-01",
+            "2021-04-01",
+            "2022-04-01",
+            "2023-04-03",
+            "2024-04-01",
+            "2025-04-01",
+            "2026-04-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09965581702739446,
+              "annualized_volatility": 0.003078146071223718,
+              "max_drawdown": 0.0,
+              "total_return": 0.7680078058130047
+            },
+            "ibov": {
+              "annualized_return": 0.1760951409696021,
+              "annualized_volatility": 0.19506943176936473,
+              "max_drawdown": -0.26499510613568134,
+              "total_return": 1.645807868445886
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.3057029480213225,
+              "annualized_volatility": 0.18413450028381273,
+              "max_drawdown": -0.23093818536179334,
+              "total_return": 3.9534493393961654
+            },
+            "strategy": {
+              "annualized_return": 0.21999492092467188,
+              "annualized_volatility": 0.10242597265187818,
+              "max_drawdown": -0.09479447187788348,
+              "total_return": 2.29632419409465
+            }
+          },
+          "offset": 5,
+          "period_end": "2026-04-01",
+          "period_start": "2020-04-01",
+          "windows": [
+            {
+              "decision_date": "2020-03-31",
+              "end_date": "2021-04-01",
+              "execution_date": "2020-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 3.4141
+            },
+            {
+              "decision_date": "2021-03-31",
+              "end_date": "2022-04-01",
+              "execution_date": "2021-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 4.4134
+            },
+            {
+              "decision_date": "2022-03-31",
+              "end_date": "2023-04-03",
+              "execution_date": "2022-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 5.4127
+            },
+            {
+              "decision_date": "2023-03-31",
+              "end_date": "2024-04-01",
+              "execution_date": "2023-04-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0975,
+                "crypto": 0.0975,
+                "fiis": 0.0975,
+                "fixed_income": 0.61,
+                "international_equity": 0.0975
+              },
+              "years_used": 6.412
+            },
+            {
+              "decision_date": "2024-03-28",
+              "end_date": "2025-04-01",
+              "execution_date": "2024-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.105,
+                "crypto": 0.105,
+                "fiis": 0.105,
+                "fixed_income": 0.5800000000000001,
+                "international_equity": 0.105
+              },
+              "years_used": 7.4059
+            },
+            {
+              "decision_date": "2025-03-31",
+              "end_date": "2026-04-01",
+              "execution_date": "2025-04-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.11,
+                "crypto": 0.11,
+                "fiis": 0.11,
+                "fixed_income": 0.56,
+                "international_equity": 0.11
+              },
+              "years_used": 8.4134
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-04-30",
+            "2021-04-30",
+            "2022-04-29",
+            "2023-04-28",
+            "2024-04-30",
+            "2025-04-30"
+          ],
+          "execution_dates": [
+            "2020-05-04",
+            "2021-05-03",
+            "2022-05-02",
+            "2023-05-02",
+            "2024-05-02",
+            "2025-05-02",
+            "2026-05-04"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10112108872451042,
+              "annualized_volatility": 0.0030545953480641407,
+              "max_drawdown": 0.0,
+              "total_return": 0.7821867601472265
+            },
+            "ibov": {
+              "annualized_return": 0.15313604758935573,
+              "annualized_volatility": 0.18812226397630247,
+              "max_drawdown": -0.2649951061356822,
+              "total_return": 1.3507074395253222
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2479034978951944,
+              "annualized_volatility": 0.1804151245027742,
+              "max_drawdown": -0.27911506996705404,
+              "total_return": 2.7753250325627636
+            },
+            "strategy": {
+              "annualized_return": 0.18377538804500415,
+              "annualized_volatility": 0.09648604477724769,
+              "max_drawdown": -0.10454960365822263,
+              "total_return": 1.7511580297194813
+            }
+          },
+          "offset": 6,
+          "period_end": "2026-05-04",
+          "period_start": "2020-05-04",
+          "windows": [
+            {
+              "decision_date": "2020-04-30",
+              "end_date": "2021-05-03",
+              "execution_date": "2020-05-04",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 3.4962
+            },
+            {
+              "decision_date": "2021-04-30",
+              "end_date": "2022-05-02",
+              "execution_date": "2021-05-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 4.4956
+            },
+            {
+              "decision_date": "2022-04-29",
+              "end_date": "2023-05-02",
+              "execution_date": "2022-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 5.4921
+            },
+            {
+              "decision_date": "2023-04-28",
+              "end_date": "2024-05-02",
+              "execution_date": "2023-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0975,
+                "crypto": 0.0975,
+                "fiis": 0.0975,
+                "fixed_income": 0.61,
+                "international_equity": 0.0975
+              },
+              "years_used": 6.4887
+            },
+            {
+              "decision_date": "2024-04-30",
+              "end_date": "2025-05-02",
+              "execution_date": "2024-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.105,
+                "crypto": 0.105,
+                "fiis": 0.105,
+                "fixed_income": 0.5800000000000001,
+                "international_equity": 0.105
+              },
+              "years_used": 7.4962
+            },
+            {
+              "decision_date": "2025-04-30",
+              "end_date": "2026-05-04",
+              "execution_date": "2025-05-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.11,
+                "crypto": 0.11,
+                "fiis": 0.11,
+                "fixed_income": 0.56,
+                "international_equity": 0.11
+              },
+              "years_used": 8.4956
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-05-29",
+            "2021-05-28",
+            "2022-05-31",
+            "2023-05-31",
+            "2024-05-31",
+            "2025-05-30"
+          ],
+          "execution_dates": [
+            "2020-06-01",
+            "2021-06-01",
+            "2022-06-01",
+            "2023-06-01",
+            "2024-06-03",
+            "2025-06-02",
+            "2026-06-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10265501787233,
+              "annualized_volatility": 0.003034570966651777,
+              "max_drawdown": 0.0,
+              "total_return": 0.7971314822287106
+            },
+            "ibov": {
+              "annualized_return": 0.11691793277063489,
+              "annualized_volatility": 0.18564673402681298,
+              "max_drawdown": -0.26499510613568233,
+              "total_return": 0.9411622884224726
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.20606452268616238,
+              "annualized_volatility": 0.19426257211464462,
+              "max_drawdown": -0.386416479750353,
+              "total_return": 2.0768892542196165
+            },
+            "strategy": {
+              "annualized_return": 0.15750810088632616,
+              "annualized_volatility": 0.10300222149695039,
+              "max_drawdown": -0.1940956838319533,
+              "total_return": 1.4046799104150298
+            }
+          },
+          "offset": 7,
+          "period_end": "2026-06-01",
+          "period_start": "2020-06-01",
+          "windows": [
+            {
+              "decision_date": "2020-05-29",
+              "end_date": "2021-06-01",
+              "execution_date": "2020-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 3.5756
+            },
+            {
+              "decision_date": "2021-05-28",
+              "end_date": "2022-06-01",
+              "execution_date": "2021-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 4.5722
+            },
+            {
+              "decision_date": "2022-05-31",
+              "end_date": "2023-06-01",
+              "execution_date": "2022-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 5.5797
+            },
+            {
+              "decision_date": "2023-05-31",
+              "end_date": "2024-06-03",
+              "execution_date": "2023-06-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0975,
+                "crypto": 0.0975,
+                "fiis": 0.0975,
+                "fixed_income": 0.61,
+                "international_equity": 0.0975
+              },
+              "years_used": 6.5791
+            },
+            {
+              "decision_date": "2024-05-31",
+              "end_date": "2025-06-02",
+              "execution_date": "2024-06-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.105,
+                "crypto": 0.105,
+                "fiis": 0.105,
+                "fixed_income": 0.5800000000000001,
+                "international_equity": 0.105
+              },
+              "years_used": 7.5811
+            },
+            {
+              "decision_date": "2025-05-30",
+              "end_date": "2026-06-01",
+              "execution_date": "2025-06-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.11,
+                "crypto": 0.11,
+                "fiis": 0.11,
+                "fixed_income": 0.56,
+                "international_equity": 0.11
+              },
+              "years_used": 8.5777
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-06-30",
+            "2021-06-30",
+            "2022-06-30",
+            "2023-06-30",
+            "2024-06-28",
+            "2025-06-30"
+          ],
+          "execution_dates": [
+            "2020-07-01",
+            "2021-07-01",
+            "2022-07-01",
+            "2023-07-03",
+            "2024-07-01",
+            "2025-07-01",
+            "2026-07-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10431653066821656,
+              "annualized_volatility": 0.0029992974973898287,
+              "max_drawdown": 0.0,
+              "total_return": 0.8134368955692559
+            },
+            "ibov": {
+              "annualized_return": 0.10119130911314156,
+              "annualized_volatility": 0.18371552332751193,
+              "max_drawdown": -0.26499510613568145,
+              "total_return": 0.7828686319553411
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2016128014806451,
+              "annualized_volatility": 0.2090807288550553,
+              "max_drawdown": -0.4128308255308756,
+              "total_return": 2.009387322766318
+            },
+            "strategy": {
+              "annualized_return": 0.15645623876032033,
+              "annualized_volatility": 0.11411455165743789,
+              "max_drawdown": -0.2326163774370662,
+              "total_return": 1.3916014111914032
+            }
+          },
+          "offset": 8,
+          "period_end": "2026-07-01",
+          "period_start": "2020-07-01",
+          "windows": [
+            {
+              "decision_date": "2020-06-30",
+              "end_date": "2021-07-01",
+              "execution_date": "2020-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 3.6632
+            },
+            {
+              "decision_date": "2021-06-30",
+              "end_date": "2022-07-01",
+              "execution_date": "2021-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 4.6626
+            },
+            {
+              "decision_date": "2022-06-30",
+              "end_date": "2023-07-03",
+              "execution_date": "2022-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 5.6619
+            },
+            {
+              "decision_date": "2023-06-30",
+              "end_date": "2024-07-01",
+              "execution_date": "2023-07-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1,
+                "crypto": 0.1,
+                "fiis": 0.1,
+                "fixed_income": 0.6,
+                "international_equity": 0.1
+              },
+              "years_used": 6.6612
+            },
+            {
+              "decision_date": "2024-06-28",
+              "end_date": "2025-07-01",
+              "execution_date": "2024-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.105,
+                "crypto": 0.105,
+                "fiis": 0.105,
+                "fixed_income": 0.5800000000000001,
+                "international_equity": 0.105
+              },
+              "years_used": 7.6578
+            },
+            {
+              "decision_date": "2025-06-30",
+              "end_date": "2026-07-01",
+              "execution_date": "2025-07-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.11,
+                "crypto": 0.11,
+                "fiis": 0.11,
+                "fixed_income": 0.56,
+                "international_equity": 0.11
+              },
+              "years_used": 8.6626
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-07-31",
+            "2021-07-30",
+            "2022-07-29",
+            "2023-07-31",
+            "2024-07-31"
+          ],
+          "execution_dates": [
+            "2020-08-03",
+            "2021-08-02",
+            "2022-08-01",
+            "2023-08-01",
+            "2024-08-01",
+            "2025-08-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.09827798519450881,
+              "annualized_volatility": 0.0029464622584833714,
+              "max_drawdown": 0.0,
+              "total_return": 0.5970208910828467
+            },
+            "ibov": {
+              "annualized_return": 0.05176327215782184,
+              "annualized_volatility": 0.1848963137498898,
+              "max_drawdown": -0.2649951061356812,
+              "total_return": 0.28663389088786917
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2308552612601178,
+              "annualized_volatility": 0.21386206178630707,
+              "max_drawdown": -0.36781062658622277,
+              "total_return": 1.8214947208198873
+            },
+            "strategy": {
+              "annualized_return": 0.16970774415982093,
+              "annualized_volatility": 0.11391857553402783,
+              "max_drawdown": -0.20927518302183157,
+              "total_return": 1.1875977008873493
+            }
+          },
+          "offset": 9,
+          "period_end": "2025-08-01",
+          "period_start": "2020-08-03",
+          "windows": [
+            {
+              "decision_date": "2020-07-31",
+              "end_date": "2021-08-02",
+              "execution_date": "2020-08-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 3.7481
+            },
+            {
+              "decision_date": "2021-07-30",
+              "end_date": "2022-08-01",
+              "execution_date": "2021-08-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 4.7447
+            },
+            {
+              "decision_date": "2022-07-29",
+              "end_date": "2023-08-01",
+              "execution_date": "2022-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 5.7413
+            },
+            {
+              "decision_date": "2023-07-31",
+              "end_date": "2024-08-01",
+              "execution_date": "2023-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1,
+                "crypto": 0.1,
+                "fiis": 0.1,
+                "fixed_income": 0.6,
+                "international_equity": 0.1
+              },
+              "years_used": 6.7461
+            },
+            {
+              "decision_date": "2024-07-31",
+              "end_date": "2025-08-01",
+              "execution_date": "2024-08-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.105,
+                "crypto": 0.105,
+                "fiis": 0.105,
+                "fixed_income": 0.5800000000000001,
+                "international_equity": 0.105
+              },
+              "years_used": 7.7481
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-08-31",
+            "2021-08-31",
+            "2022-08-31",
+            "2023-08-31",
+            "2024-08-30"
+          ],
+          "execution_dates": [
+            "2020-09-01",
+            "2021-09-01",
+            "2022-09-01",
+            "2023-09-01",
+            "2024-09-03",
+            "2025-09-02"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10042471235226902,
+              "annualized_volatility": 0.002908454338336486,
+              "max_drawdown": 0.0,
+              "total_return": 0.613938618693179
+            },
+            "ibov": {
+              "annualized_return": 0.06530026955625767,
+              "annualized_volatility": 0.18361135423945588,
+              "max_drawdown": -0.2649951061356812,
+              "total_return": 0.37219741014798746
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.24430313939716308,
+              "annualized_volatility": 0.21819249766667645,
+              "max_drawdown": -0.32734563002492534,
+              "total_return": 1.9841861100694844
+            },
+            "strategy": {
+              "annualized_return": 0.17899951274417725,
+              "annualized_volatility": 0.11640092745013174,
+              "max_drawdown": -0.20052358508045542,
+              "total_return": 1.2788459784170358
+            }
+          },
+          "offset": 10,
+          "period_end": "2025-09-02",
+          "period_start": "2020-09-01",
+          "windows": [
+            {
+              "decision_date": "2020-08-31",
+              "end_date": "2021-09-01",
+              "execution_date": "2020-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.09,
+                "crypto": 0.09,
+                "fiis": 0.09,
+                "fixed_income": 0.64,
+                "international_equity": 0.09
+              },
+              "years_used": 3.833
+            },
+            {
+              "decision_date": "2021-08-31",
+              "end_date": "2022-09-01",
+              "execution_date": "2021-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 4.8323
+            },
+            {
+              "decision_date": "2022-08-31",
+              "end_date": "2023-09-01",
+              "execution_date": "2022-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 5.8316
+            },
+            {
+              "decision_date": "2023-08-31",
+              "end_date": "2024-09-03",
+              "execution_date": "2023-09-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1,
+                "crypto": 0.1,
+                "fiis": 0.1,
+                "fixed_income": 0.6,
+                "international_equity": 0.1
+              },
+              "years_used": 6.8309
+            },
+            {
+              "decision_date": "2024-08-30",
+              "end_date": "2025-09-02",
+              "execution_date": "2024-09-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.105,
+                "crypto": 0.105,
+                "fiis": 0.105,
+                "fixed_income": 0.5800000000000001,
+                "international_equity": 0.105
+              },
+              "years_used": 7.8303
+            }
+          ]
+        },
+        {
+          "decision_dates": [
+            "2020-09-30",
+            "2021-09-30",
+            "2022-09-30",
+            "2023-09-29",
+            "2024-09-30"
+          ],
+          "execution_dates": [
+            "2020-10-01",
+            "2021-10-01",
+            "2022-10-03",
+            "2023-10-02",
+            "2024-10-01",
+            "2025-10-01"
+          ],
+          "metrics": {
+            "cdi": {
+              "annualized_return": 0.10268715236026416,
+              "annualized_volatility": 0.0028457820783059544,
+              "max_drawdown": 0.0,
+              "total_return": 0.630168570452388
+            },
+            "ibov": {
+              "annualized_return": 0.08772540242775828,
+              "annualized_volatility": 0.1821035713521849,
+              "max_drawdown": -0.26499510613568233,
+              "total_return": 0.5225492830884217
+            },
+            "naive_equal_weight": {
+              "annualized_return": 0.2653331886355177,
+              "annualized_volatility": 0.22216154089757922,
+              "max_drawdown": -0.3341781983788896,
+              "total_return": 2.2430566976682687
+            },
+            "strategy": {
+              "annualized_return": 0.19337482517748694,
+              "annualized_volatility": 0.1230581100255826,
+              "max_drawdown": -0.21253338576656056,
+              "total_return": 1.4200916256221356
+            }
+          },
+          "offset": 11,
+          "period_end": "2025-10-01",
+          "period_start": "2020-10-01",
+          "windows": [
+            {
+              "decision_date": "2020-09-30",
+              "end_date": "2021-10-01",
+              "execution_date": "2020-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 3.9151
+            },
+            {
+              "decision_date": "2021-09-30",
+              "end_date": "2022-10-03",
+              "execution_date": "2021-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0875,
+                "crypto": 0.0875,
+                "fiis": 0.0875,
+                "fixed_income": 0.65,
+                "international_equity": 0.0875
+              },
+              "years_used": 4.9144
+            },
+            {
+              "decision_date": "2022-09-30",
+              "end_date": "2023-10-02",
+              "execution_date": "2022-10-03",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.0925,
+                "crypto": 0.0925,
+                "fiis": 0.0925,
+                "fixed_income": 0.63,
+                "international_equity": 0.0925
+              },
+              "years_used": 5.9138
+            },
+            {
+              "decision_date": "2023-09-29",
+              "end_date": "2024-10-01",
+              "execution_date": "2023-10-02",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1025,
+                "crypto": 0.1025,
+                "fiis": 0.1025,
+                "fixed_income": 0.5900000000000001,
+                "international_equity": 0.1025
+              },
+              "years_used": 6.9103
+            },
+            {
+              "decision_date": "2024-09-30",
+              "end_date": "2025-10-01",
+              "execution_date": "2024-10-01",
+              "full_history": true,
+              "weights": {
+                "brazilian_stocks": 0.1075,
+                "crypto": 0.1075,
+                "fiis": 0.1075,
+                "fixed_income": 0.5700000000000001,
+                "international_equity": 0.1075
+              },
+              "years_used": 7.9151
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "protocol_id": "pit-walk-forward-v1",
+  "protocol_sha256": "c6e0e695392552877c9a6e1be5dbee5fb79f5135cebaf6cf3002e9e5e83a7f7c",
+  "run_period": {
+    "end": "2026-07-21",
+    "start": "2016-10-31",
+    "unverified_common_rows": 69
+  },
+  "selection_overlap": {
+    "class_allocation": "full"
+  },
+  "snapshot": {
+    "cutoff_date": "2026-07-21",
+    "dir": "data/allocation",
+    "files": {
+      "btc_usd.csv": "148edd4b55638bf5aa9dc6fee99c8ac0c3d9d7642ec366df444eddfabc3c2212",
+      "di.csv": "9395ea9dd50b562082ad3ed3ce0c137a75f51dad0e3e777aa14427d2b871598f",
+      "ibovespa.csv": "d286df77b24ba20ae836ba8c6d78cef6463484bee3482085658273997cb02754",
+      "ifix.csv": "02822b0beb0fd858ae12ecd83cce82ecca8ef9d57df036830e944fc4767bd1c2",
+      "ptax.csv": "78dc94fa41fec683b7780a21fbbe8c150b164912190c5a8b4260871b1454110a",
+      "sp500_total_return_usd.csv": "2f0a1973bc4832a86b9c33534e895d54f2a18658d54cf83880dadbe562404733"
+    }
+  },
+  "verdicts": {
+    "basic_recommendation": "VALIDATED",
+    "class_allocation": "VALIDATED",
+    "fii_selection": "UNVERIFIABLE",
+    "premium_recommendation": "UNVERIFIABLE",
+    "stock_selection": "UNVERIFIABLE"
+  }
+}
