@@ -29,6 +29,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import hashlib
+from importlib import metadata
 import json
 import os
 from pathlib import Path
@@ -69,6 +70,9 @@ DEFAULT_REGISTRY = PROJECT_ROOT / "snapshots"
 DEFAULT_SEED = 42
 DEFAULT_CAPITAL_BRL = 100_000.0
 DEFAULT_THRESHOLD = 0.20
+# Numeric libraries on the GA hot path; unpinned in api/requirements.txt, so
+# their versions are part of the machine fingerprint.
+KEY_LIBRARIES = ("numpy", "pandas")
 # Paths whose content defines "the same code" for baseline comparability.
 CODE_PATHS = ("api/app", "py", "scripts/benchmark_premium.py", "scripts/bench_measure.py")
 
@@ -401,6 +405,16 @@ def _os_release() -> str | None:
     return None
 
 
+def library_versions(names: Sequence[str] = KEY_LIBRARIES) -> dict[str, str | None]:
+    versions: dict[str, str | None] = {}
+    for name in names:
+        try:
+            versions[name] = metadata.version(name)
+        except metadata.PackageNotFoundError:
+            versions[name] = None
+    return versions
+
+
 def machine_info() -> dict[str, Any]:
     model, physical_cores = _cpuinfo()
     mem_total_kb = read_proc_status_kb("MemTotal", Path("/proc/meminfo"))
@@ -414,9 +428,13 @@ def machine_info() -> dict[str, Any]:
         "arch": platform.machine(),
         "python": platform.python_version(),
         "python_implementation": platform.python_implementation(),
+        "libraries": library_versions(),
     }
     info["fingerprint"] = _sha256_json(
-        {key: info[key] for key in ("cpu_model", "logical_cpus", "mem_total_kb", "os", "kernel", "arch", "python")}
+        {
+            key: info[key]
+            for key in ("cpu_model", "logical_cpus", "mem_total_kb", "os", "kernel", "arch", "python", "libraries")
+        }
     )
     return info
 
@@ -508,7 +526,8 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         f"- seed: {report['seed']}; RSS interval: {RSS_INTERVAL_S:.0f} s",
         f"- machine: {report['machine'].get('cpu_model')}, {report['machine'].get('physical_cores')} cores / "
         f"{report['machine'].get('logical_cpus')} threads, {_fmt((report['machine'].get('mem_total_kb') or 0) / 1048576)} GiB, "
-        f"{report['machine'].get('os')}, Python {report['machine'].get('python')}",
+        f"{report['machine'].get('os')}, Python {report['machine'].get('python')}"
+        + "".join(f", {name} {version}" for name, version in (report["machine"].get("libraries") or {}).items()),
         f"- command: `{report['command']}`",
         "",
         "| perfil | etapa | wall (s) | CPU (s) | CPU filhos (s) | CPU/wall | pico RSS amostrado (MiB) | n_runs efetivo | gerações (total / média) |",

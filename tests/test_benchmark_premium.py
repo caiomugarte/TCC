@@ -184,6 +184,19 @@ def _report(wall_by_profile, **overrides):
     return report
 
 
+class MachineInfoTests(unittest.TestCase):
+    def test_library_versions_are_recorded_and_fingerprinted(self):
+        import numpy
+        import pandas
+
+        info = bench.machine_info()
+        self.assertEqual(info["libraries"], {"numpy": numpy.__version__, "pandas": pandas.__version__})
+        with patch.object(bench, "library_versions", return_value={"numpy": "0.0", "pandas": "0.0"}):
+            other = bench.machine_info()
+        self.assertNotEqual(info["fingerprint"], other["fingerprint"])
+        self.assertEqual(bench.library_versions(("no-such-package-xyz",)), {"no-such-package-xyz": None})
+
+
 class RegressionGateTests(unittest.TestCase):
     def test_more_than_twenty_percent_slower_is_a_regression(self):
         comparison = bench.compare_to_baseline(
