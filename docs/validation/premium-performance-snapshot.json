@@ -1,0 +1,11 @@
+{
+  "manifest_id": "dev-2026-10-29-ibov",
+  "manifest_sha256": "b66a5764bdcb8d8a20cfc4e10f9ad4d7b14448e3c997fec8e597fdcaccd2d014",
+  "cutoff_date": "2026-10-28",
+  "sources": {
+    "allocation": "631ea74c5ae78b3b83cf08627e7a1e17f13f3289f5cc625ed0c8b0baf97e48bc",
+    "stock": "690e9ae99f9277cdf725977a2bcbd3a07b8cf532f48cb5423792b33868c710a5",
+    "fii": "549af15bfc9a78013fc1fdf2bcc22ff02795e31856d7462dcb905ce9d565f10a"
+  },
+  "notes": "Declared snapshot for the Premium performance baseline (issue #8). Registry layout per docs/snapshot_registry.md: <registry>/dev-2026-10-29-ibov.json, data/snap-2026-10-29-ibov/, stocks.csv (frozen Status Invest stocks export), fiis.csv (frozen Status Invest FII export). Hashes are sha256_path from py/snapshot_manifest.py."
+}
