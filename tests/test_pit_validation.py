@@ -1,4 +1,4 @@
-"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C43).
+"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C44).
 
 Every test names the check it proves. Fixtures are synthetic weekday series
 whose level on a date depends only on the date, so two retrievals of one
@@ -565,6 +565,35 @@ class IntegrityTests(FixtureCase):
             return "retrievals"
 
         for change in (revisable_btc, snapshot_only):
+            with self.subTest(case=change.__name__):
+                protocol = json.loads(json.dumps(audited))
+                field = change(protocol)
+                fixture.write_protocol(protocol)
+                code, stderr = fixture.report()
+                self.assertEqual(code, 4, stderr)
+                self.assertIn(field, stderr)
+                self.assertEqual(list(fixture.out.iterdir()), [])
+        fixture.write_protocol(audited)
+        self.assertEqual(fixture.report()[0], 0)
+
+    def test_audit_layer_mismatch_exits_4(self):  # C44
+        fixture = self.fixture()
+        self.assertEqual(fixture.audit()[0], 0)
+        audited = fixture.protocol()
+
+        def stock_missing_added(protocol):
+            protocol["layers"]["stock_selection"]["missing"].append("one more missing input")
+            return "layers.stock_selection.missing"
+
+        def stock_lookahead_changed(protocol):
+            protocol["layers"]["stock_selection"]["excluded_lookahead"]["caio_stocks"] = "picked in 2016"
+            return "layers.stock_selection.excluded_lookahead"
+
+        def fii_lookahead_removed(protocol):
+            protocol["layers"]["fii_selection"].pop("excluded_lookahead")
+            return "layers.fii_selection.excluded_lookahead"
+
+        for change in (stock_missing_added, stock_lookahead_changed, fii_lookahead_removed):
             with self.subTest(case=change.__name__):
                 protocol = json.loads(json.dumps(audited))
                 field = change(protocol)

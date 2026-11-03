@@ -4,7 +4,7 @@ Mutations: 4
 Build: `python3 -m py_compile py/pit_validation.py tests/test_pit_validation.py`
 Plan: `.specs/features/pit-oos-validation/plan.md`
 
-43 checks in 8 slices · 4 one-way doors · 0 open
+44 checks in 8 slices · 4 one-way doors · 0 open
 
 Test module: `tests/test_pit_validation.py` (stdlib `unittest`, run from the repo root). The four
 mutations aim at the per-decision slice (C10-C12), the execution lag (C17), the verdict rule (C31)
@@ -145,6 +145,9 @@ Proof: `python3 -m unittest tests.test_pit_validation -k CliTests.test_failed_wr
 **C42** - After `audit`, changing the protocol's `series_kind.btc_usd` to `vendor_composite_close`, or cutting `retrievals` to the snapshot alone, makes `report` exit 4 naming `series_kind.btc_usd` (resp. `retrievals`) with no output written; the audited protocol restored exits 0 (AC 22, AC 25; Verifier V-2)
 Proof: `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_audit_protocol_mismatch_exits_4`
 
+**C44** - After `audit`, adding one item to the protocol's `layers.stock_selection.missing`, changing `layers.stock_selection.excluded_lookahead.caio_stocks`, or removing `layers.fii_selection.excluded_lookahead` makes `report` exit 4 naming that field (`layers.<layer>.missing`, resp. `layers.<layer>.excluded_lookahead`) with no output written; the audited protocol restored exits 0 (AC 22, AC 25; Verifier V-8)
+Proof: `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_audit_layer_mismatch_exits_4`
+
 ### S8 - Historical numbers already published are marked
 
 **C37** - ADR 0003, `docs/research/class-allocation-methods-2026-11.md` and `docs/research/class-allocation-2026-11/README.md` each carry, right below the title, the notice line whose verdict and overlap equal the committed JSON's, with the right relative link (AC 27)
@@ -164,7 +167,7 @@ Proof: `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retr
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
 | CLI exit codes (4) | 0 C33 · 2 C3 · 3 C4 · 4 C8 | - |
-| exit-4 integrity violations (8) | leak C12 · overlap C8 · gap C8 · dropped-window C8 · cutoff-late C13 · cutoff-early C13 · hash-mismatch C34 · audit-protocol-mismatch C42 | - |
+| exit-4 integrity violations (8) | leak C12 · overlap C8 · gap C8 · dropped-window C8 · cutoff-late C13 · cutoff-early C13 · hash-mismatch C34 · audit-protocol-mismatch C42, C44 | - |
 | invalid protocol examples, AC 3 (10) | no-ibov C3 · sp500-added C3 · cost-removed C3 · cost-string C3 · cost-negative C3 · cost-nan C3 · basis-removed C3 · taxes-empty C3 · kind-unknown C3 · cost-zero-accepted C3 | - |
 | missing paths, AC 4 (4) | `--protocol` C4 · `--audit` C4 · `snapshot_dir` C4 · retrieval C4 | - |
 | `series_kind` vocabulary (7) | `exchange_index_close` C27 · `official_rate` C27 · `official_fixing` C28 · `spot_close` C28 · `vendor_composite_close` C27 · `vendor_adjusted_close` C27 · unknown C3 | - |
