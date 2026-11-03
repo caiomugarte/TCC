@@ -64,6 +64,9 @@ Proof: `python3 -m unittest tests.test_pit_validation -k TrimTests.test_run_uses
 **C15** - On `data/allocation` with the committed audit, `run_period` is 2016-10-31..2026-07-21 and `unverified_common_rows` 69 (AC 12)
 Proof: `python3 -m unittest tests.test_pit_validation -k TrimTests.test_real_run_period`
 
+**C41** - On the weekday fixture to 2022-07-21 whose paired `btc_usd` retrieval ends on 2022-06-30 (the other five end later), `run_period.end` is 2022-06-30, `unverified_common_rows` is 15, and no strategy call, path or benchmark sees a row dated after 2022-06-30 (AC 12; Verifier V-1)
+Proof: `python3 -m unittest tests.test_pit_validation -k TrimTests.test_run_stops_at_verified_end`
+
 **C16** - The committed `class-allocation-oos.json` records `run_period` 2016-10-31..2026-07-21, and every path's first window starts after `run_period.start` (AC 12)
 Proof: `python3 -m unittest tests.test_pit_validation -k TrimTests.test_committed_report_run_period`
 

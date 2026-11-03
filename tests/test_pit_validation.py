@@ -738,6 +738,45 @@ class TrimTests(FixtureCase):
             self.assertEqual(first.date, date(2016, 8, 1))
             self.assertEqual(dict(first.returns), {name: 0.0 for name in ASSET_CLASSES})
 
+    def test_run_stops_at_verified_end(self):  # C41
+        fixture = self.fixture(end=date(2022, 7, 21), sensitivity=False)
+        path = fixture.other / "btc_usd.csv"
+        lines = path.read_text(encoding="utf-8").splitlines()
+        kept = [lines[0]] + [line for line in lines[1:] if line[:10] <= "2022-06-30"]
+        path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+        self.assertEqual(fixture.audit()[0], 0)
+        audit = json.loads(fixture.audit_path.read_text(encoding="utf-8"))
+        self.assertEqual(audit["series"]["btc_usd"]["verified_range"]["end"], "2022-06-30")
+        self.assertEqual(audit["series"]["ibovespa"]["verified_range"]["end"], "2022-07-21")
+        last_seen = {"strategy": [], "simulate": []}
+
+        def spy(rows, *, allocation_config):
+            last_seen["strategy"].append(rows[-1].date)
+            return stub_strategy(rows, allocation_config=allocation_config)
+
+        original = pv.simulate_path
+
+        def simulate_spy(rows, schedule, weights, cost_bps):
+            last_seen["simulate"].append(rows[-1].date)
+            return original(rows, schedule, weights, cost_bps)
+
+        with mock.patch.object(pv, "simulate_path", simulate_spy):
+            report = fixture.compute(spy)
+        self.assertEqual(report["verdicts"]["class_allocation"], "VALIDATED")
+        self.assertEqual(report["run_period"]["start"], "2016-07-21")
+        self.assertEqual(report["run_period"]["end"], "2022-06-30")
+        self.assertEqual(report["run_period"]["unverified_common_rows"], 15)
+        # one simulate call per path for the strategy and each of the three benchmarks
+        paths = len(report["profiles"]["conservador"]["paths"])
+        self.assertEqual(len(last_seen["simulate"]), 3 * paths * 4)
+        self.assertTrue(last_seen["strategy"])
+        for day in last_seen["strategy"] + last_seen["simulate"]:
+            self.assertLessEqual(day, date(2022, 6, 30))
+        self.assertIn(date(2022, 6, 30), last_seen["simulate"])
+        for profile in report["profiles"].values():
+            for record in profile["paths"]:
+                self.assertLessEqual(record["period_end"], "2022-06-30")
+
     def test_real_run_period(self):  # C15
         audit = real_audit()
         self.assertEqual(pv.run_period_from_audit(audit), (date(2016, 10, 31), date(2026, 7, 21)))
