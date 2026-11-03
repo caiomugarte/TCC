@@ -4,7 +4,7 @@ Mutations: 4
 Build: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m py_compile scripts/multirun_convergence.py scripts/convergence_analysis.py tests/test_convergence_analysis.py tests/test_multirun_convergence.py`
 Plan: `.specs/features/multirun-convergence/plan.md`
 
-50 checks in 9 slices · 5 one-way doors · 0 open
+52 checks in 10 slices · 5 one-way doors · 0 open
 
 Test modules: `tests/test_convergence_analysis.py` (pure analysis on hand-built lots, offline) and
 `tests/test_multirun_convergence.py` (CLI, child runner and a fixture registry built from the
@@ -197,6 +197,14 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests.test_nan_breaks_the_whole_count_tie`
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests.test_limitation_in_markdown`
 
+### S10 - Gaps closed after the second tooling review (appended)
+
+**C51** - With 3 seeds where seed 1 ranks A1 9, B1 1 of 10 and seeds 2 and 3 rank B1 6, A1 5 (n 1, δ 0.5), the simulated zone turnovers at K 2 are the 6 ordered pairs (1,2) 0, (1,3) 0, (2,1) 1, (2,3) 0, (3,1) 1, (3,2) 0; the zone grid (window 3) gives `turnover_mean` / `turnover_max` 2/3 / 1 at K 0 and 1 and 1/3 / 1 at K 2 and 3, baseline 2/3 / 1; `recommend_zone` gives K* 2, `k_offset` 1, δ 0.5, `at_k0` 2/3 / 1 and `at_recommended` K 2 1/3 / 1 for both selectors (AC 24, AC 27, round-2 review U-1)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZonePairOrderTests`
+
+**C52** - k 10, incumbent P at 1/10, challenger C ranked above it at 3/10, K 2, δ 0.2 (0.1 + 0.2 > 0.3 in floats) → C replaces P, turnover 1; C at 0.29 and P at 0.10 (k 100) → P stays, turnover 0 (door 3, round-2 review U-2)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests.test_delta_boundary_float_inexact`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
@@ -217,6 +225,7 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 | report sections, AC 31 (10) | curves C31 · frequencies C31 · seed turnover C31 · within-seed C31 · rank gap C31 · zone grid C31 · recommendations C31 · production run C31 · cost C32 · limitations C31 | - |
 | generated files (3) | `multirun-convergence.json` C9 · `multirun-convergence-cost.json` C32 · `multirun-convergence.md` C31 | - |
 | tooling review findings (12) | T-1 C38 · T-2 C39 · T-3 C40 · T-4 C41 · T-5 C42 · T-6 C43 · T-7 C44 · T-8 C45 · T-9 C46 · T-10 C47 · T-11 C48 C50 · T-12 C49 | - |
+| second tooling review findings (2) | U-1 C51 · U-2 C52 | - |
 | child exit-1 guards before writing (5) | run count C34 · candidate scores C48 · consensus C49 · code provenance at start C44 · code provenance before writing C44 | - |
 | reuse fields of an existing lot (4) | `mode` C46 · `snapshot` C46 · `code_fingerprint` C46 · `experiment_fingerprint` C46 | - |
 | production code paths kept (4) | `py` C36 · `api/app` C36 · `scripts/benchmark_premium.py` C36 · `scripts/bench_measure.py` C36 | - |

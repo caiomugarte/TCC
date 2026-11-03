@@ -685,6 +685,18 @@ class ZoneTests(unittest.TestCase):
         portfolio, turnover = ca.zone_portfolio(["POMO4", "PETR4"], ranking, counts, 10, 30, 0.1, "stocks")
         self.assertEqual((portfolio, turnover), ({"POMO3", "VALE3"}, 2))
 
+    def test_delta_boundary_float_inexact(self):
+        """C52: f(c) = f(p) + δ swaps even where the float sum overshoots (0.1 + 0.2 > 0.3)."""
+
+        self.assertGreater(1 / 10 + 0.2, 3 / 10)
+        counts = Counter({"C": 3, "P": 1})
+        portfolio, turnover = ca.zone_portfolio(["P"], ["C", "P"], counts, 10, 2, 0.2, "fiis")
+        self.assertEqual((portfolio, turnover), ({"C"}, 1))
+        # Just past the boundary (f(c) = 0.29 at k 100) the incumbent stays.
+        counts = Counter({"C": 29, "P": 10})
+        portfolio, turnover = ca.zone_portfolio(["P"], ["C", "P"], counts, 100, 2, 0.2, "fiis")
+        self.assertEqual((portfolio, turnover), ({"P"}, 0))
+
 
 class ZoneGridTests(unittest.TestCase):
     def test_grid_shape(self):
@@ -705,6 +717,52 @@ class ZoneGridTests(unittest.TestCase):
             self.assertEqual(len(ca._ordered_pairs([1, 2, 3, 4, 5])), 20)
         finally:
             lots.close()
+
+
+class ZonePairOrderTests(unittest.TestCase):
+    """C51: the zone grid and the zone recommendation simulate the 6 ordered pairs of 3 seeds.
+
+    Seed 1 ranks only A1 and B1 (A1 9, B1 1 of 10); seeds 2 and 3 rank B1 then A1 (B1 6, A1 5).
+    At K 2, δ 0.5: 1 -> 2 keeps A1 (B1's 0.6 is below A1's 0.5 + 0.5), turnover 0;
+    2 -> 1 swaps B1 for A1 (0.9 >= 0.1 + 0.5), turnover 1. The ordered list is
+    (1,2) 0, (1,3) 0, (2,1) 1, (2,3) 0, (3,1) 1, (3,2) 0: mean 1/3, max 1, while the 3 unordered
+    pairs (1,2), (1,3), (2,3) would give 0 and 0.
+    """
+
+    SEEDS = [1, 2, 3]
+
+    def series(self):
+        first = Stub(1, ["A1"], ["A1", "B1"], {"A1": 9, "B1": 1})
+        return {1: first, **{s: Stub(1, ["B1"], ["B1", "A1"], {"B1": 6, "A1": 5}) for s in (2, 3)}}
+
+    def test_simulated_pairs_are_ordered(self):
+        turnovers = ca.simulate_pairs(self.series(), self.SEEDS, 10, 2, 0.5, "fiis")
+        self.assertEqual(turnovers, [0, 0, 1, 0, 1, 0])
+
+    def test_grid_over_ordered_pairs(self):
+        grid = ca.zone_grid(self.series(), self.SEEDS, 10, 1, 3, [0.5], "fiis")
+        rows = {row["K"]: (row["turnover_mean"], row["turnover_max"]) for row in grid["rows"]}
+        self.assertEqual(sorted(rows), [0, 1, 2, 3])
+        expected = {0: (4 / 6, 1), 1: (4 / 6, 1), 2: (2 / 6, 1), 3: (2 / 6, 1)}
+        for K, (mean, top) in expected.items():
+            self.assertAlmostEqual(rows[K][0], mean, delta=1e-12, msg=f"K {K}")
+            self.assertEqual(rows[K][1], top, f"K {K}")
+        self.assertAlmostEqual(grid["baseline"]["turnover_mean"], 4 / 6, delta=1e-12)
+        self.assertEqual(grid["baseline"]["turnover_max"], 1)
+
+    def test_recommendation_over_ordered_pairs(self):
+        series = self.series()
+        cells = {"p/stocks": (series, 1), "p/fiis": (series, 1)}
+        zone = ca.recommend_zone(small_protocol(), cells, 10)
+        for selector in ca.SELECTORS:
+            item = zone[selector]["per_cell"][f"p/{selector}"]
+            # Incumbent ranks over the ordered pairs: 2, 2, 2, 1, 2, 1 -> K* 2; differences 0.4, 0.5 -> δ 0.5.
+            self.assertEqual((item["k_star"], item["k_offset"], item["delta"]), (2, 1, 0.5), selector)
+            self.assertAlmostEqual(item["at_k0"]["turnover_mean"], 4 / 6, delta=1e-12)
+            self.assertEqual(item["at_k0"]["turnover_max"], 1)
+            at = item["at_recommended"]
+            self.assertEqual((at["K"], at["delta"], at["turnover_max"]), (2, 0.5, 1), selector)
+            self.assertAlmostEqual(at["turnover_mean"], 2 / 6, delta=1e-12)
 
 
 # --------------------------------------------------------------------------
