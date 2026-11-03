@@ -1,8 +1,8 @@
 # pit-oos-validation proofs
 
-**HEAD**: 5217ebe
+**HEAD**: 31ee11e
 **Tree**: clean
-**Result**: 46 pass, 0 fail; mutations 5 killed, 0 not
+**Result**: 46 pass, 0 fail; mutations 7 killed, 1 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -62,3 +62,6 @@
 | C9/C31 verdict counts offsets without a window as paths | `py/pit_validation.py:987` | yes |
 | C14 trim drops the run_period.end bound (unverified tail rows kept) | `py/pit_validation.py:533` | yes |
 | C14/C15 run_period.end is the latest verified end, not the intersection | `py/pit_validation.py:522` | yes |
+| C42 report ignores a series_kind change since the audit (V-2 round 2) | `py/pit_validation.py:898` | yes |
+| C42 report compares only the snapshot retrieval, not the paired ones (V-2 round 2) | `py/pit_validation.py:900` | yes |
+| V-2 report ignores a selection-layer missing-list change since the audit (round 2) | `py/pit_validation.py:905` | no |
