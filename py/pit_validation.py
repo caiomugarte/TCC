@@ -878,6 +878,38 @@ def verdicts_for(class_status: str) -> Dict[str, str]:
 # --------------------------------------------------------------------------- report
 
 
+def check_audit_protocol(protocol: Mapping[str, Any], audit: Mapping[str, Any]) -> None:
+    """Exit 4 when the audit was computed under other audit inputs than this protocol's."""
+
+    def mismatch(field: str, recorded: Any, current: Any) -> None:
+        if recorded != current:
+            raise IntegrityError(
+                f"audit.{field}",
+                f"audit recorded {json.dumps(recorded, sort_keys=True)}, "
+                f"protocol has {json.dumps(current, sort_keys=True)}",
+            )
+
+    mismatch("snapshot_dir", audit.get("snapshot_dir"), protocol["snapshot_dir"])
+    for name in REQUIRED_SERIES:
+        record = audit["series"].get(name)
+        if not isinstance(record, Mapping):
+            raise IntegrityError(f"audit.{name}", "has no series record")
+        mismatch(f"series.{name}", record.get("file"), protocol["series"][name])
+        mismatch(f"series_kind.{name}", record.get("series_kind"), protocol["series_kind"][name])
+        recorded = [entry.get("retrieval") for entry in record.get("retrievals") or []]
+        mismatch(f"retrievals.{name}", recorded, list(protocol["retrievals"]))
+    layers = audit.get("layers") if isinstance(audit.get("layers"), Mapping) else {}
+    for name in SELECTION_LAYERS:
+        layer = protocol["layers"][name]
+        recorded = layers.get(name) if isinstance(layers.get(name), Mapping) else {}
+        mismatch(f"layers.{name}.missing", recorded.get("missing"), list(layer["missing"]))
+        mismatch(
+            f"layers.{name}.excluded_lookahead",
+            recorded.get("excluded_lookahead"),
+            dict(layer.get("excluded_lookahead") or {}),
+        )
+
+
 def check_audit_matches(protocol: Mapping[str, Any], audit: Mapping[str, Any]) -> Dict[str, str]:
     """Return the snapshot file hashes; exit 4 when the audit is about other files."""
 
@@ -885,6 +917,7 @@ def check_audit_matches(protocol: Mapping[str, Any], audit: Mapping[str, Any]) -
     series = audit.get("series") if isinstance(audit, Mapping) else None
     if not isinstance(series, Mapping):
         raise IntegrityError("audit", "has no series records")
+    check_audit_protocol(protocol, audit)
     for name in REQUIRED_SERIES:
         filename = protocol["series"][name]
         path = Path(protocol["snapshot_dir"]) / filename

@@ -106,6 +106,9 @@ Proof: `python3 -m unittest tests.test_pit_validation -k SensitivityTests.test_i
 **C27** - The door-3 rule on synthetic retrievals: identical values over 300 dates -> `PIT_QUALIFIED` `non_revision`; B day 0, A (snapshot) day 20, C day 40 -> pairs A-B and A-C only, `no_retrieval_pair_30d`; one value off by 1e-6 -> `values_revised`; `di` rebased at another start -> `PIT_QUALIFIED`; `^BVSP` vs `^IBOV` -> `provider_mismatch`; 249 shared -> `overlap_below_250`; one interior date missing -> `overlap_incomplete`; retrieval without the file -> `series_absent`; `vendor_composite_close` and `vendor_adjusted_close` -> `kind_revisable`; two qualifying pairs -> the one with more shared dates wins (AC 20, AC 12)
 Proof: `python3 -m unittest tests.test_pit_validation -k AuditTests.test_rule_examples`
 
+**C43** - The door-3 rule on a NaN level: the paired retrieval (or the snapshot) identical except one interior level `nan` -> `PIT_MISSING` `values_revised`, with `max_rel_diff_daily_factor` null (AC 20; Verifier V-3)
+Proof: `python3 -m unittest tests.test_pit_validation -k AuditTests.test_non_finite_level_is_revision`
+
 **C28** - The real audit groups the three repo copies of `ibovespa.csv` with `retrieved_at` 2026-07-24 and each member's `same_bytes_as` listing the other two; the pair with `data/allocation_retrieval_2026-10-29` has `days_apart` 97 and 2413 shared dates; all six series are `PIT_QUALIFIED` with `unverified_dates` 70 from 2016-07-21 to 2016-10-28 (S&P TR 71, BTC 100) (AC 20)
 Proof: `python3 -m unittest tests.test_pit_validation -k AuditTests.test_real_audit`
 
@@ -158,11 +161,11 @@ Proof: `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retr
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
 | CLI exit codes (4) | 0 C33 · 2 C3 · 3 C4 · 4 C8 | - |
-| exit-4 integrity violations (7) | leak C12 · overlap C8 · gap C8 · dropped-window C8 · cutoff-late C13 · cutoff-early C13 · hash-mismatch C34 | - |
+| exit-4 integrity violations (8) | leak C12 · overlap C8 · gap C8 · dropped-window C8 · cutoff-late C13 · cutoff-early C13 · hash-mismatch C34 · audit-protocol-mismatch C42 | - |
 | invalid protocol examples, AC 3 (10) | no-ibov C3 · sp500-added C3 · cost-removed C3 · cost-string C3 · cost-negative C3 · cost-nan C3 · basis-removed C3 · taxes-empty C3 · kind-unknown C3 · cost-zero-accepted C3 | - |
 | missing paths, AC 4 (4) | `--protocol` C4 · `--audit` C4 · `snapshot_dir` C4 · retrieval C4 | - |
 | `series_kind` vocabulary (7) | `exchange_index_close` C27 · `official_rate` C27 · `official_fixing` C28 · `spot_close` C28 · `vendor_composite_close` C27 · `vendor_adjusted_close` C27 · unknown C3 | - |
-| `PIT_MISSING` reasons (7) | `series_absent` C27 · `kind_revisable` C27 · `provider_mismatch` C27 · `no_retrieval_pair_30d` C27 · `overlap_below_250` C27 · `overlap_incomplete` C27 · `values_revised` C27 | - |
+| `PIT_MISSING` reasons (7) | `series_absent` C27 · `kind_revisable` C27 · `provider_mismatch` C27 · `no_retrieval_pair_30d` C27 · `overlap_below_250` C27 · `overlap_incomplete` C27 · `values_revised` C27, C43 | - |
 | schedule examples, AC 5 (6) | fixture-offset-0 C5 · fixture-offset-11 C5 · real-offset-0 C6 · real-offset-4-clamp C6 · real-offset-4-j5 C6 · real-offset-9 C6 | - |
 | path ends, AC 6 (2) | offset-8 C7 · offset-9 C7 | - |
 | `insufficient_history` examples, AC 7 (3) | to-2020-08-31 C9 · to-2020-07-31 C9 · to-2020-07-21 C9 | - |

@@ -551,6 +551,31 @@ class IntegrityTests(FixtureCase):
                     with self.assertRaises(pv.IntegrityError):
                         fixture.compute()
 
+    def test_audit_protocol_mismatch_exits_4(self):  # C42
+        fixture = self.fixture()
+        self.assertEqual(fixture.audit()[0], 0)
+        audited = fixture.protocol()
+
+        def revisable_btc(protocol):
+            protocol["series_kind"]["btc_usd"] = "vendor_composite_close"
+            return "series_kind.btc_usd"
+
+        def snapshot_only(protocol):
+            protocol["retrievals"] = [protocol["snapshot_dir"]]
+            return "retrievals"
+
+        for change in (revisable_btc, snapshot_only):
+            with self.subTest(case=change.__name__):
+                protocol = json.loads(json.dumps(audited))
+                field = change(protocol)
+                fixture.write_protocol(protocol)
+                code, stderr = fixture.report()
+                self.assertEqual(code, 4, stderr)
+                self.assertIn(field, stderr)
+                self.assertEqual(list(fixture.out.iterdir()), [])
+        fixture.write_protocol(audited)
+        self.assertEqual(fixture.report()[0], 0)
+
     def test_audit_hash_mismatch_exits_4(self):  # C34
         fixture = self.fixture()
         self.assertEqual(fixture.audit()[0], 0)
