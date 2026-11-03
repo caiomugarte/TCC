@@ -1,0 +1,380 @@
+[
+  {
+    "label": "C1b-sim-unordered - U-1 C51: simulate_pairs over unordered pairs",
+    "file": "scripts/convergence_analysis.py",
+    "old": "for incumbent_seed, new_seed in _ordered_pairs(seeds):\n        new =",
+    "new": "for incumbent_seed, new_seed in _pairs(seeds):\n        new =",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZonePairOrderTests"
+  },
+  {
+    "label": "Z3-zone-delta-no-tol - U-2 C52: zone δ test without - TOLERANCE",
+    "file": "scripts/convergence_analysis.py",
+    "old": "freq(challenger) >= freq(weakest) + delta - TOLERANCE",
+    "new": "freq(challenger) >= freq(weakest) + delta",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests.test_delta_boundary_float_inexact"
+  },
+  {
+    "label": "P3-keys-no-commit - U-3 C53: PROVENANCE_KEYS without commit",
+    "file": "scripts/multirun_convergence.py",
+    "old": "PROVENANCE_KEYS = (\"commit\", \"code_fingerprint\", \"experiment_fingerprint\")",
+    "new": "PROVENANCE_KEYS = (\"code_fingerprint\", \"experiment_fingerprint\")",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_each_provenance_key_at_start_exits_1"
+  },
+  {
+    "label": "P4-keys-no-codefp - U-3 C53: PROVENANCE_KEYS without code_fingerprint",
+    "file": "scripts/multirun_convergence.py",
+    "old": "PROVENANCE_KEYS = (\"commit\", \"code_fingerprint\", \"experiment_fingerprint\")",
+    "new": "PROVENANCE_KEYS = (\"commit\", \"experiment_fingerprint\")",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_each_provenance_key_at_start_exits_1"
+  },
+  {
+    "label": "P5-keys-no-expfp - U-3 C53: PROVENANCE_KEYS without experiment_fingerprint",
+    "file": "scripts/multirun_convergence.py",
+    "old": "PROVENANCE_KEYS = (\"commit\", \"code_fingerprint\", \"experiment_fingerprint\")",
+    "new": "PROVENANCE_KEYS = (\"commit\", \"code_fingerprint\")",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_each_provenance_key_at_start_exits_1"
+  },
+  {
+    "label": "P8-measured-mode-only - U-4 C54: measured = context mode only",
+    "file": "scripts/multirun_convergence.py",
+    "old": "measured = not smoke or context[\"mode\"] == \"measured\"",
+    "new": "measured = context[\"mode\"] == \"measured\"",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_provenance_checked_without_smoke_flag"
+  },
+  {
+    "label": "P10-consensus-stocks-only - U-5 C55: child consensus check on stocks only",
+    "file": "scripts/multirun_convergence.py",
+    "old": "    for selector in analysis.SELECTORS:\n        check_consensus(",
+    "new": "    for selector in (\"stocks\",):\n        check_consensus(",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_fii_selected_tickers_off_consensus_exits_1"
+  },
+  {
+    "label": "C1-ranks-unordered - T-3 C40: incumbent_ranks over unordered pairs",
+    "file": "scripts/convergence_analysis.py",
+    "old": "for incumbent_seed, new_seed in _ordered_pairs(seeds):\n        rank =",
+    "new": "for incumbent_seed, new_seed in _pairs(seeds):\n        rank =",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_incumbent_ranks_over_ordered_pairs"
+  },
+  {
+    "label": "A1-flat-no-tol - T-1 C38: flattened test without tolerance",
+    "file": "scripts/convergence_analysis.py",
+    "old": "S[candidates[-2]] - S[last] <= epsilon + TOLERANCE",
+    "new": "S[candidates[-2]] - S[last] <= epsilon",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountBoundaryTests"
+  },
+  {
+    "label": "A2-flat-strict - T-1 C38: flattened test strict",
+    "file": "scripts/convergence_analysis.py",
+    "old": "S[candidates[-2]] - S[last] <= epsilon + TOLERANCE",
+    "new": "S[candidates[-2]] - S[last] < epsilon",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountBoundaryTests"
+  },
+  {
+    "label": "A3-kmin-strict - T-1 C38: k_min test strict",
+    "file": "scripts/convergence_analysis.py",
+    "old": "curves[stat][k] <= curves[stat][last] + epsilon + TOLERANCE",
+    "new": "curves[stat][k] < curves[stat][last] + epsilon",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountBoundaryTests"
+  },
+  {
+    "label": "A4-kmin-no-tol - T-1 C38: k_min test without tolerance",
+    "file": "scripts/convergence_analysis.py",
+    "old": "curves[stat][k] <= curves[stat][last] + epsilon + TOLERANCE",
+    "new": "curves[stat][k] <= curves[stat][last] + epsilon",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountBoundaryTests"
+  },
+  {
+    "label": "A6-flat-wrong-pair - T-1 C38: plateau over the first candidate",
+    "file": "scripts/convergence_analysis.py",
+    "old": "S[candidates[-2]] - S[last]",
+    "new": "S[candidates[0]] - S[last]",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountBoundaryTests"
+  },
+  {
+    "label": "A5b-kmin-mean-only-all - C25/C38: k_min checks the mean only",
+    "file": "scripts/convergence_analysis.py",
+    "old": "for stat in statistics)",
+    "new": "for stat in (\"mean\",))",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCount"
+  },
+  {
+    "label": "B1-loo-all-seeds - T-2 C39: leave-one-out over all seeds",
+    "file": "scripts/convergence_analysis.py",
+    "old": "evaluate([s for s in seeds if s != seed])",
+    "new": "evaluate(seeds)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountWiringTests"
+  },
+  {
+    "label": "B2-S-median - T-2 C39: S from the median",
+    "file": "scripts/convergence_analysis.py",
+    "old": "S[k], M[k] = mean(values), median(values)",
+    "new": "S[k], M[k] = median(values), median(values)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountWiringTests"
+  },
+  {
+    "label": "B3-M-mean - T-2 C39: M from the mean",
+    "file": "scripts/convergence_analysis.py",
+    "old": "S[k], M[k] = mean(values), median(values)",
+    "new": "S[k], M[k] = mean(values), mean(values)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountWiringTests"
+  },
+  {
+    "label": "B4-final-min - C25: final run_count min instead of max",
+    "file": "scripts/convergence_analysis.py",
+    "old": "        return DATA_INSUFFICIENT\n    return max(values)",
+    "new": "        return DATA_INSUFFICIENT\n    return min(values)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCount"
+  },
+  {
+    "label": "C2-delta-Ci-only - T-3 C40: δ differences over C_i only",
+    "file": "scripts/convergence_analysis.py",
+    "old": "sorted(set(series[a].consensus(k)) | set(series[b].consensus(k)))",
+    "new": "sorted(set(series[a].consensus(k)))",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_frequency_differences_over_union"
+  },
+  {
+    "label": "C3-delta-intersection - T-3 C40: δ differences over the intersection",
+    "file": "scripts/convergence_analysis.py",
+    "old": "sorted(set(series[a].consensus(k)) | set(series[b].consensus(k)))",
+    "new": "sorted(set(series[a].consensus(k)) & set(series[b].consensus(k)))",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_frequency_differences_over_union"
+  },
+  {
+    "label": "D1-kstar-window-ge - T-4 C41: K* window exclusive",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if value == math.inf or value > window:",
+    "new": "if value == math.inf or value >= window:",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_k_star_window_inclusive"
+  },
+  {
+    "label": "D2-kstar-no-floor-n - C27: K* not floored at n",
+    "file": "scripts/convergence_analysis.py",
+    "old": "return max(int(value), n)",
+    "new": "return int(value)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k Zone"
+  },
+  {
+    "label": "K1-kstar-floor-wrong - C27: K* floored at n + 1",
+    "file": "scripts/convergence_analysis.py",
+    "old": "return max(int(value), n)",
+    "new": "return max(int(value), n + 1)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k Zone"
+  },
+  {
+    "label": "E1-at-prefix-hardcoded - T-5 C42: zone at the fixed run_count",
+    "file": "scripts/convergence_analysis.py",
+    "old": "at_prefix = protocol[\"ga_override\"][\"run_count\"] if run_count_value == DATA_INSUFFICIENT else int(run_count_value)",
+    "new": "at_prefix = protocol[\"ga_override\"][\"run_count\"]",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_zone_at_run_count_prefix"
+  },
+  {
+    "label": "F1-jaccard-strict - T-8 C45: Jaccard target strict",
+    "file": "scripts/convergence_analysis.py",
+    "old": "lambda v: v >= stop_rule[\"target_jaccard\"]",
+    "new": "lambda v: v > stop_rule[\"target_jaccard\"]",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReachabilityReportTests"
+  },
+  {
+    "label": "F2-cv-strict - T-8 C45: CV target strict",
+    "file": "scripts/convergence_analysis.py",
+    "old": "lambda v: v <= stop_rule[\"target_cv\"]",
+    "new": "lambda v: v < stop_rule[\"target_cv\"]",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReachabilityReportTests"
+  },
+  {
+    "label": "F3-jaccard-reads-cv - T-8 C45: Jaccard verdict reads CV",
+    "file": "scripts/convergence_analysis.py",
+    "old": "{str(seed): by_seed[str(seed)][target_index][\"jaccard_mean\"] for seed in seeds}",
+    "new": "{str(seed): by_seed[str(seed)][target_index][\"fitness_cv\"] for seed in seeds}",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReachabilityReportTests"
+  },
+  {
+    "label": "F4-cv-reads-jaccard - T-8 C45: CV verdict reads Jaccard",
+    "file": "scripts/convergence_analysis.py",
+    "old": "{str(seed): by_seed[str(seed)][target_index][\"fitness_cv\"] for seed in seeds}",
+    "new": "{str(seed): by_seed[str(seed)][target_index][\"jaccard_mean\"] for seed in seeds}",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReachabilityReportTests"
+  },
+  {
+    "label": "F5-keep-any - T-8 C45: keep when any target is reachable",
+    "file": "scripts/convergence_analysis.py",
+    "old": "keep = all(result[name][\"verdict\"] == \"reachable\" for name in targets)",
+    "new": "keep = any(result[name][\"verdict\"] == \"reachable\" for name in targets)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReachabilityReportTests"
+  },
+  {
+    "label": "G1-fii-null-allowed - T-11b C48: report accepts a null FII score",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if info[\"score\"] is None and selector != \"stocks\":",
+    "new": "if False:",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests"
+  },
+  {
+    "label": "G2-null-rule-on-stocks - T-11b C48: null rule on stocks",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if info[\"score\"] is None and selector != \"stocks\":",
+    "new": "if info[\"score\"] is None and selector == \"stocks\":",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests"
+  },
+  {
+    "label": "I1-limitation-dropped - T-11 C50: door-5 limitation shortened",
+    "file": "scripts/convergence_analysis.py",
+    "old": "desfaz a ordem por score de todo ticker empatado na mesma contagem, não só a dele. O consenso (as n \"\n        \"primeiras posições de R) reproduz a produção exatamente, mas as posições além de n carregam",
+    "new": "desfaz a ordem. O consenso reproduz a produção; as posições seguintes carregam",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests.test_limitation_in_markdown"
+  },
+  {
+    "label": "Z2-zone-no-rank-cond - C23: zone swap ignores the rank condition",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if rank[challenger] < rank[weakest] and freq(",
+    "new": "if freq(",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests"
+  },
+  {
+    "label": "Z4-protect-strict - C23: protection rank < K",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if t in rank and rank[t] <= K}",
+    "new": "if t in rank and rank[t] < K}",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests"
+  },
+  {
+    "label": "S1-stop-cv-strict - C19: stop CV target strict",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if cv <= rule[\"target_cv\"] and jm >= rule[\"target_jaccard\"]:",
+    "new": "if cv < rule[\"target_cv\"] and jm >= rule[\"target_jaccard\"]:",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k StopTests"
+  },
+  {
+    "label": "S2-stop-or - C19: stop on either target",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if cv <= rule[\"target_cv\"] and jm >= rule[\"target_jaccard\"]:",
+    "new": "if cv <= rule[\"target_cv\"] or jm >= rule[\"target_jaccard\"]:",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k StopTests"
+  },
+  {
+    "label": "N1-drop-api - T-6 C43: CODE_PATHS without api/app",
+    "file": "scripts/multirun_convergence.py",
+    "old": "    \"api/app\",\n    \"py\",\n",
+    "new": "    \"py\",\n",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k CodePathTests"
+  },
+  {
+    "label": "N2-drop-py - T-6 C43: CODE_PATHS without py",
+    "file": "scripts/multirun_convergence.py",
+    "old": "    \"api/app\",\n    \"py\",\n",
+    "new": "    \"api/app\",\n",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k CodePathTests"
+  },
+  {
+    "label": "N3-drop-mc - T-6 C43: CODE_PATHS without multirun_convergence.py",
+    "file": "scripts/multirun_convergence.py",
+    "old": "\n    \"scripts/multirun_convergence.py\",\n",
+    "new": "\n",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k CodePathTests"
+  },
+  {
+    "label": "N4-drop-ca - T-6 C43: CODE_PATHS without convergence_analysis.py",
+    "file": "scripts/multirun_convergence.py",
+    "old": "\n    \"scripts/convergence_analysis.py\",\n    \"scripts/benchmark_premium.py\",",
+    "new": "\n    \"scripts/benchmark_premium.py\",",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k CodePathTests"
+  },
+  {
+    "label": "N5-drop-bp - T-6 C43: CODE_PATHS without benchmark_premium.py",
+    "file": "scripts/multirun_convergence.py",
+    "old": "\n    \"scripts/benchmark_premium.py\",\n    \"scripts/bench_measure.py\",\n)",
+    "new": "\n    \"scripts/bench_measure.py\",\n)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k CodePathTests"
+  },
+  {
+    "label": "N6-drop-bm - T-6 C43: CODE_PATHS without bench_measure.py",
+    "file": "scripts/multirun_convergence.py",
+    "old": "\n    \"scripts/bench_measure.py\",\n)\nSMOKE_GA",
+    "new": "\n)\nSMOKE_GA",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k CodePathTests"
+  },
+  {
+    "label": "P1-no-start-check - T-7 C44: no provenance check at start",
+    "file": "scripts/multirun_convergence.py",
+    "old": "check_code_provenance(protocol_path, context, \"at start\")",
+    "new": "pass",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_code_changed_at_start_exits_1"
+  },
+  {
+    "label": "P2-no-write-check - T-7 C44: no provenance check before writing",
+    "file": "scripts/multirun_convergence.py",
+    "old": "check_code_provenance(protocol_path, context, \"before writing\")",
+    "new": "pass",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_code_changed_before_writing_exits_1"
+  },
+  {
+    "label": "P5b-loop-skips-commit - T-7 C53: provenance loop skips commit",
+    "file": "scripts/multirun_convergence.py",
+    "old": "for key in PROVENANCE_KEYS:\n        if current.get(key)",
+    "new": "for key in PROVENANCE_KEYS[1:]:\n        if current.get(key)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_each_provenance_key_at_start_exits_1"
+  },
+  {
+    "label": "P6-no-prereg-in-child - T-7 C44: child skips preregistration_problems",
+    "file": "scripts/multirun_convergence.py",
+    "old": "    problems = preregistration_problems(protocol_path)\n    if problems:\n        raise ChildError(EXIT_CHILD_FAILED, \"pre-registration\"",
+    "new": "    problems = []\n    if problems:\n        raise ChildError(EXIT_CHILD_FAILED, \"pre-registration\"",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_code_changed_at_start_exits_1"
+  },
+  {
+    "label": "P7-measured-not-smoke - T-7 C44: measured = not smoke",
+    "file": "scripts/multirun_convergence.py",
+    "old": "measured = not smoke or context[\"mode\"] == \"measured\"",
+    "new": "measured = not smoke",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_measured_child_consistent_writes"
+  },
+  {
+    "label": "P9-no-consensus-check - T-12 C49: no child consensus check",
+    "file": "scripts/multirun_convergence.py",
+    "old": "    for selector in analysis.SELECTORS:\n        check_consensus(",
+    "new": "    for selector in ():\n        check_consensus(",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_selected_tickers_off_consensus_exits_1"
+  },
+  {
+    "label": "Q1-reuse-no-mode - T-9 C46: reuse ignores mode",
+    "file": "scripts/multirun_convergence.py",
+    "old": "        (\"mode\", lot.get(\"mode\"), context[\"mode\"]),\n",
+    "new": "",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4"
+  },
+  {
+    "label": "Q2-reuse-no-snapshot - T-9 C46: reuse ignores snapshot",
+    "file": "scripts/multirun_convergence.py",
+    "old": "        (\"snapshot\", lot.get(\"snapshot\"), context[\"snapshot\"]),\n",
+    "new": "",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4"
+  },
+  {
+    "label": "Q3-reuse-no-codefp - T-9 C46: reuse ignores code_fingerprint",
+    "file": "scripts/multirun_convergence.py",
+    "old": "        (\"code_fingerprint\", lot[\"code\"].get(\"code_fingerprint\"), context[\"code\"][\"code_fingerprint\"]),\n",
+    "new": "",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4"
+  },
+  {
+    "label": "Q4-reuse-no-expfp - T-9 C46: reuse ignores experiment_fingerprint",
+    "file": "scripts/multirun_convergence.py",
+    "old": "        (\"experiment_fingerprint\", lot[\"code\"].get(\"experiment_fingerprint\"), context[\"code\"][\"experiment_fingerprint\"]),\n",
+    "new": "",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4"
+  },
+  {
+    "label": "H1-loo-null-allowed - T-10 C47: leave_one_seed_out null accepted",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if rule[\"leave_one_seed_out\"] != \"max\":",
+    "new": "if rule[\"leave_one_seed_out\"] not in (None, \"max\"):",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k LeaveOneOutRequiredTests"
+  },
+  {
+    "label": "G1b-fii-null-allowed-child - T-11b C48: child accepts a null FII score",
+    "file": "scripts/convergence_analysis.py",
+    "old": "if info[\"score\"] is None and selector != \"stocks\":",
+    "new": "if False:",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_null_fii_score_exits_1"
+  }
+]
