@@ -15,6 +15,7 @@ from unittest.mock import patch
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+import bench_measure as measure  # noqa: E402
 import benchmark_premium as bench  # noqa: E402
 
 from snapshot_manifest import SnapshotManifest, manifest_canonical_sha256, sha256_path  # noqa: E402
@@ -314,7 +315,7 @@ class StageAccountingTests(unittest.TestCase):
         self.assertEqual(
             set(stages), {"snapshot_load", "allocation", "stocks", "fiis", "composition", "total"}
         )
-        for field in bench.TIME_FIELDS:
+        for field in measure.TIME_FIELDS:
             engines = sum(stages[name][field] for name in bench.ENGINE_STAGES)
             self.assertAlmostEqual(stages["composition"][field], stages["total"][field] - engines, places=9)
         self.assertGreaterEqual(stages["composition"]["wall_s"], 0.0)
