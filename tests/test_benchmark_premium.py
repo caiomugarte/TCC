@@ -209,6 +209,10 @@ class RegressionGateTests(unittest.TestCase):
             "dirty": _report({"moderado": 100.0}, git={"code_fingerprint": "code", "code_dirty": True}),
             "mode": _report({"moderado": 100.0}, mode="smoke"),
             "profile": _report({"arrojado": 100.0}),
+            "policy": _report(
+                {},
+                profiles={"moderado": {"policy_sha256": "other", "stages": {"total": {"wall_s": 100.0}}}},
+            ),
         }
         for label, current in variants.items():
             comparison = bench.compare_to_baseline(current, baseline)
@@ -364,6 +368,26 @@ class StageAccountingTests(unittest.TestCase):
             self.assertEqual(captured, [])
         self.assertIs(fii_selection._run_fii_execution, original)
 
+    def test_fii_capture_records_each_execution_and_passes_results_through(self):
+        import fii_selection
+
+        portfolios = []
+
+        def fake_execution(run_id, **_kwargs):
+            portfolio = object()
+            portfolios.append(portfolio)
+            return {"run_id": run_id, "generations_run": 10 * (run_id + 1)}, portfolio
+
+        with patch.object(fii_selection, "_run_fii_execution", fake_execution):
+            with measure.capture_fii_runs() as captured:
+                outputs = [fii_selection._run_fii_execution(run_id) for run_id in range(3)]
+            self.assertIs(fii_selection._run_fii_execution, fake_execution)
+        self.assertEqual([item["generations_run"] for item in captured], [10, 20, 30])
+        self.assertEqual([portfolio for _result, portfolio in outputs], portfolios)
+        self.assertEqual(
+            measure.fii_inspect(({"n_runs": 3}, captured))["generations_total"], 60
+        )
+
 
 def _measured(profile, policy, wall_s, rss_status="ok"):
     """A ``run_profile`` result reduced to what ``main`` reads."""
@@ -443,6 +467,40 @@ class RunPathTests(_SnapshotFixture, unittest.TestCase):
         self.assertEqual(code, bench.EXIT_OK)
         run_profile.assert_called_once()
         self.assertEqual(run_profile.call_args.args[4], workspace / "moderado")
+
+    def _baseline(self):
+        base_out = Path(self.temp.name) / "base"
+        code, _ = self._run(wall_s=100.0, out=base_out)
+        self.assertEqual(code, bench.EXIT_OK)
+        return base_out / "summary.json"
+
+    def test_run_exit_codes_against_a_baseline(self):
+        baseline = self._baseline()
+        summary = json.loads(baseline.read_text())
+        self.assertEqual(summary["profiles"]["moderado"]["stages"]["total"]["wall_s"], 100.0)
+        self.assertNotIn("comparison", summary)
+
+        code, _ = self._run("--baseline", str(baseline), wall_s=110.0)
+        self.assertEqual(code, bench.EXIT_OK)
+        code, _ = self._run("--baseline", str(baseline), wall_s=125.0)
+        self.assertEqual(code, bench.EXIT_REGRESSION)
+        written = json.loads((self.out / "summary.json").read_text())
+        self.assertEqual(written["comparison"]["status"], "regression")
+
+        with patch.object(bench, "git_info", return_value=dict(CLEAN_GIT, dirty=True, code_dirty=True)):
+            code, _ = self._run("--baseline", str(baseline), wall_s=100.0)
+        self.assertEqual(code, bench.EXIT_NOT_COMPARABLE)
+        code, _ = self._run("--baseline", str(baseline), "--seed", "7", wall_s=100.0)
+        self.assertEqual(code, bench.EXIT_NOT_COMPARABLE)
+
+    def test_invalid_rss_exits_4_and_takes_precedence_over_the_baseline(self):
+        code, _ = self._run(rss_status="invalid")
+        self.assertEqual(code, bench.EXIT_RSS)
+        baseline = self._baseline()
+        code, _ = self._run("--baseline", str(baseline), wall_s=125.0, rss_status="invalid")
+        self.assertEqual(code, bench.EXIT_RSS)
+        code, _ = self._run(rss_status="undersampled")
+        self.assertEqual(code, bench.EXIT_OK)
 
 
 if __name__ == "__main__":
