@@ -4,7 +4,7 @@ Mutations: 4
 Build: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m py_compile scripts/multirun_convergence.py scripts/convergence_analysis.py tests/test_convergence_analysis.py tests/test_multirun_convergence.py`
 Plan: `.specs/features/multirun-convergence/plan.md`
 
-37 checks in 8 slices · 4 one-way doors · 0 open
+50 checks in 9 slices · 5 one-way doors · 0 open
 
 Test modules: `tests/test_convergence_analysis.py` (pure analysis on hand-built lots, offline) and
 `tests/test_multirun_convergence.py` (CLI, child runner and a fixture registry built from the
@@ -150,12 +150,59 @@ Proof: `git diff --quiet 751cafb HEAD -- py api/app scripts/benchmark_premium.py
 **C37** - Every generated JSON file and lot is `json.dumps(sort_keys=True, indent=2, ensure_ascii=False)` + newline with no timestamp other than those copied from the lots, and the analysis floats come from stdlib arithmetic (`report` with numpy's `mean` patched to add 1e-14 gives the same report bytes) (door 1, door 2)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReportTests.test_serialization_is_stdlib`
 
+### S9 - Gaps closed after the tooling review (appended, AD-025)
+
+**C38** - The run_count rule's boundaries are inclusive with 1e-12 tolerance (candidates 30/60/100/150, ε 0.5): S {30: 3.1, 60: 2.6, 100: 2.5, 150: 2.0} → flattened, `k_min` 100; S {30: 3.1, 60: 2.5, 100: 2.2, 150: 2.0} → `k_min` 60; S {60: 2.0, 100: 2.0, 150: 2.0} with M {60: 2.5, 100: 2.2, 150: 2.0} → `k_min` 60; S {30: 3.1, 60: 2.4, 100: 1.1, 150: 0.6} (float difference 0.5000000000000001) → flattened, `k_min` 100; S {30: 3.1, 60: 0.68, 100: 0.3, 150: 0.18} (0.68 > 0.18 + 0.5 in float) → `k_min` 60 (AC 25, tooling review T-1)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountBoundaryTests`
+
+**C39** - On a 4-seed report, every cell's `recommendation.run_count.per_cell[cell].full.curve` S and M at each candidate equal the mean and the median of the 6 `seed_turnover[k].pairs[*].swapped`, and each left-out seed's S and M equal the mean and the median over the 3 pairs that exclude that seed (AC 25, T-2)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountWiringTests`
+
+**C40** - `incumbent_ranks` over 3 seeds with n 2 returns 6 · 2 values, one per incumbent of each of the 6 ordered pairs, with the multiset [1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, inf] for the hand-built stubs; `frequency_differences` returns one entry per ticker of C_i ∪ C_j for each of the 3 unordered pairs (3 + 3 + 4 = 10 for consensuses {A1, B1}, {A1, C1}, {B1, D1}), equal to [1, 5, 2, 6, 2, 8, 5, 3, 5, 7] / 10 (AC 27, T-3)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_incumbent_ranks_over_ordered_pairs`
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_frequency_differences_over_union`
+
+**C41** - `k_star([1] * 246 + [30] * 14, 0.95, 13, 30)` is 30 (the window is inclusive) and `[1] * 246 + [31] * 14` gives null (AC 27, T-4)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_k_star_window_inclusive`
+
+**C42** - `recommend_zone(protocol, cells, 4)` with run_count 6 and stubs whose data differs per k reports `at_prefix` 4 and takes K* (2, `k_offset` 0) and δ (0.25) from the k = 4 data, while the same stubs at 6 give a null `k_offset` (AC 27, T-5)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTests.test_zone_at_run_count_prefix`
+
+**C43** - `CODE_PATHS` is exactly `api/app`, `py`, `scripts/multirun_convergence.py`, `scripts/convergence_analysis.py`, `scripts/benchmark_premium.py`, `scripts/bench_measure.py`, and a modified file under each one makes measured `run` exit 6 naming the file, spawning no child and writing nothing (AC 4, door 4, T-6)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k CodePathTests`
+
+**C44** - A measured child (`--smoke` absent or the context's `mode` `measured`) calls `preregistration_problems` and compares `code_info()`'s `commit`, `code_fingerprint` and `experiment_fingerprint` with the context's `code` at start and again right before writing: consistent → exit 0 with the lot and cost file written and `code_info` called twice; any of the three keys differing at start → exit 1 naming the key and `at start`, no GA run, nothing written; `experiment_fingerprint` differing before writing, or a pre-registration problem at start or before writing → exit 1 naming it, nothing written (door 4, T-7)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_measured_child_consistent_writes`
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_code_changed_at_start_exits_1`
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_code_changed_before_writing_exits_1`
+
+**C45** - On a report with `target_jaccard` 1.0 and `target_cv` 0.0 and identical runs, every cell's `reachability` holds Jaccard 1.0 and CV 0.0 per seed, both verdicts `reachable` and the action `keep`; with the stock fitness spread over identical tickers, stocks' Jaccard stays `reachable`, its CV is `unreachable`, the combined CV verdict is `mixed` and the action `use_fixed_run_count` (AC 26, T-8)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReachabilityReportTests`
+
+**C46** - An existing lot whose `mode`, `snapshot`, `code_fingerprint` or `experiment_fingerprint` differs from the run's makes `run` exit 4 naming that field, spawns nothing and leaves the file byte-identical, for each of the four fields (AC 11, T-9)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.test_each_reuse_field_exit_4`
+
+**C47** - `decision.run_count.leave_one_seed_out` null makes `run` and `report` exit 2 naming `leave_one_seed_out` and write nothing (AC 3, T-10)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k LeaveOneOutRequiredTests`
+
+**C48** - A null FII candidate score makes `report` exit 4 naming the lot's `fiis` selector and `FII <ticker> has a null score`, and makes the child exit 1 with no lot or cost file; null stock scores (door 5) still give `report` exit 0 (door 5, T-11b)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests.test_null_fii_score_exits_4`
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests.test_null_stock_score_accepted`
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_null_fii_score_exits_1`
+
+**C49** - A child whose `selected_tickers` for a selector differ from the consensus `SeedSeries(...).consensus(run_count)` recomputes from its runs exits 1 naming the selector, with no lot or cost file (AC 18, T-12)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_selected_tickers_off_consensus_exits_1`
+
+**C50** - At equal count, `extended_ranking` ranks AAAA3 0.5, BBBB3 NaN, CCCC3 0.7 as [AAAA3, BBBB3, CCCC3] and, without BBBB3, [CCCC3, AAAA3]; the Markdown limitations state the NaN SCORE (door 5) and that ranks beyond n carry production's within-tie order, affecting the rank gap, K* and the zone swaps at δ = 0 (door 5, AD-025, T-11)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests.test_nan_breaks_the_whole_count_tie`
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTests.test_limitation_in_markdown`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
 | exit codes of `run` and `report` (6) | 0 C9 · 1 C12 · 2 C3 · 3 C8 · 4 C11 · 6 C4 | - |
-| exit-4 integrity causes (12) | missing run C20 · duplicated run C20 · out of order C20 · `protocol_sha256` C20 · snapshot C20 · `code_fingerprint` C20 · `experiment_fingerprint` C20 · `mode` C20 · missing lot C20 · consensus mismatch C18 · candidate scores C18 · stdlib vs production metric C14 | - |
+| exit-4 integrity causes (13) | missing run C20 · duplicated run C20 · out of order C20 · `protocol_sha256` C20 · snapshot C20 · `code_fingerprint` C20 · `experiment_fingerprint` C20 · `mode` C20 · missing lot C20 · consensus mismatch C18 · candidate scores C18 · stdlib vs production metric C14 · null FII score C48 | - |
 | protocol validation rules (12) | missing field C3 · `prefixes` C3 · `seeds` distinct C3 · `seeds` >= 3 with leave-one-out C3 · `adaptive_mode` C3 · `curve_step` C3 · quantile range C3 · `candidates` C3 · target `prefix` C3 · `leave_one_seed_out` enum C3 · `quantile_method` enum C3 · `delta_arithmetic` enum C3 | - |
 | door 1 protocol and report contract (3) | protocol file C1 · report shape C9 · serialization C37 | - |
 | door 2 lot format (3) | lot fields C6 · deterministic bytes C9 · cost file and run summary C13 | - |
@@ -169,6 +216,9 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 | profiles of the protocol (2) | `premium-2026-11-02` C7 · `arrojado-anchor` C7 | - |
 | report sections, AC 31 (10) | curves C31 · frequencies C31 · seed turnover C31 · within-seed C31 · rank gap C31 · zone grid C31 · recommendations C31 · production run C31 · cost C32 · limitations C31 | - |
 | generated files (3) | `multirun-convergence.json` C9 · `multirun-convergence-cost.json` C32 · `multirun-convergence.md` C31 | - |
+| tooling review findings (12) | T-1 C38 · T-2 C39 · T-3 C40 · T-4 C41 · T-5 C42 · T-6 C43 · T-7 C44 · T-8 C45 · T-9 C46 · T-10 C47 · T-11 C48 C50 · T-12 C49 | - |
+| child exit-1 guards before writing (5) | run count C34 · candidate scores C48 · consensus C49 · code provenance at start C44 · code provenance before writing C44 | - |
+| reuse fields of an existing lot (4) | `mode` C46 · `snapshot` C46 · `code_fingerprint` C46 · `experiment_fingerprint` C46 | - |
 | production code paths kept (4) | `py` C36 · `api/app` C36 · `scripts/benchmark_premium.py` C36 · `scripts/bench_measure.py` C36 | - |
 
 ## Swept
