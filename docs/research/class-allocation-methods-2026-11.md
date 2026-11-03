@@ -1,5 +1,7 @@
 # Pesquisa: métodos de alocação entre classes
 
+> **Validação point-in-time:** os números históricos deste documento não têm fonte point-in-time auditada. Veredito da alocação entre classes: VALIDATED; sobreposição com o período da escolha do método: full (ver [docs/validation/class-allocation-oos.md](../validation/class-allocation-oos.md)).
+
 **Datas:** 29 de outubro a 1º de novembro de 2026
 **Dados:** snapshot `dev-2026-10-29`, com corte em 2026-10-28
 **Escopo:** entender por que a alocação Premium saía com ~65–75% em renda

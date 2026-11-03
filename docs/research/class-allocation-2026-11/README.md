@@ -1,5 +1,7 @@
 # Artefatos da pesquisa de alocação entre classes (2026-11)
 
+> **Validação point-in-time:** os números históricos deste documento não têm fonte point-in-time auditada. Veredito da alocação entre classes: VALIDATED; sobreposição com o período da escolha do método: full (ver [docs/validation/class-allocation-oos.md](../../validation/class-allocation-oos.md)).
+
 Scripts e saídas brutas por trás de
 [`../class-allocation-methods-2026-11.md`](../class-allocation-methods-2026-11.md).
 

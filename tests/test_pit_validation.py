@@ -1403,6 +1403,36 @@ class RealDataTests(unittest.TestCase):
         self.assertEqual(offset8["windows"][-1]["years_used"], 8.6626)
 
 
+# --------------------------------------------------------------------------- S8
+
+
+class NoticeTests(unittest.TestCase):
+    DOCS = {
+        "docs/adr/0003-equal-weight-risky-classes-with-fixed-income.md": "../validation/class-allocation-oos.md",
+        "docs/research/class-allocation-methods-2026-11.md": "../validation/class-allocation-oos.md",
+        "docs/research/class-allocation-2026-11/README.md": "../../validation/class-allocation-oos.md",
+    }
+
+    def test_notices_match_report(self):  # C37
+        report = json.loads(REPORT_JSON.read_text(encoding="utf-8"))
+        verdict = report["verdicts"]["class_allocation"]
+        overlap = report["selection_overlap"]["class_allocation"]
+        for relative, link in self.DOCS.items():
+            with self.subTest(doc=relative):
+                path = PROJECT_ROOT / relative
+                lines = path.read_text(encoding="utf-8").splitlines()
+                self.assertTrue(lines[0].startswith("# "))
+                first_body = next(line for line in lines[1:] if line.strip())
+                expected = (
+                    "> **Validação point-in-time:** os números históricos deste documento não têm "
+                    "fonte point-in-time auditada. Veredito da alocação entre classes: "
+                    f"{verdict}; sobreposição com o período da escolha do método: {overlap} "
+                    f"(ver [docs/validation/class-allocation-oos.md]({link}))."
+                )
+                self.assertEqual(first_body, expected)
+                self.assertTrue((path.parent / link).resolve() == REPORT_MD.resolve())
+
+
 # --------------------------------------------------------------------------- door 2
 
 

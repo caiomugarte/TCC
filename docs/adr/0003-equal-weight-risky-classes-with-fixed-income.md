@@ -1,5 +1,7 @@
 # ADR 0003: Pesos iguais entre as classes de risco, completados com renda fixa
 
+> **Validação point-in-time:** os números históricos deste documento não têm fonte point-in-time auditada. Veredito da alocação entre classes: VALIDATED; sobreposição com o período da escolha do método: full (ver [docs/validation/class-allocation-oos.md](../validation/class-allocation-oos.md)).
+
 ## Status
 
 Aceita. Substitui as partes de alocação entre classes da ADR 0001 (cesta fixa
