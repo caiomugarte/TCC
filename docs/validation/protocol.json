@@ -1,0 +1,96 @@
+{
+  "protocol_id": "pit-walk-forward-v1",
+  "snapshot_dir": "data/allocation",
+  "retrievals": [
+    "data/allocation",
+    "data/allocation_caio_new",
+    "data/allocation_caio_last",
+    "data/allocation_retrieval_2026-10-29"
+  ],
+  "series": {
+    "ibovespa": "ibovespa.csv",
+    "ifix": "ifix.csv",
+    "sp500_total_return_usd": "sp500_total_return_usd.csv",
+    "di": "di.csv",
+    "btc_usd": "btc_usd.csv",
+    "ptax": "ptax.csv"
+  },
+  "series_kind": {
+    "ibovespa": "exchange_index_close",
+    "ifix": "exchange_index_close",
+    "sp500_total_return_usd": "exchange_index_close",
+    "di": "official_rate",
+    "ptax": "official_fixing",
+    "btc_usd": "spot_close"
+  },
+  "decision": {
+    "data_rule": "rows_dated_on_or_before_decision_date",
+    "execution_lag_common_dates": 1,
+    "min_lookback_years": 3,
+    "max_lookback_years": 10,
+    "test_months": 12,
+    "offset_months": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "rebalance": "reset_to_target_at_execution_date_drift_between"
+  },
+  "profiles": [
+    "conservador",
+    "moderado",
+    "arrojado"
+  ],
+  "benchmarks": [
+    "cdi",
+    "ibov",
+    "naive_equal_weight"
+  ],
+  "cost": {
+    "cost_bps": 10,
+    "sensitivity_bps": [
+      0,
+      10,
+      50
+    ],
+    "basis": "one_way_on_traded_value_all_classes",
+    "taxes": "excluded"
+  },
+  "method": {
+    "id": "equal-weight-risky-v1",
+    "adopted_on": "2026-11-01",
+    "adr": "docs/adr/0003-equal-weight-risky-classes-with-fixed-income.md"
+  },
+  "layers": {
+    "stock_selection": {
+      "missing": [
+        "Status Invest fundamentals as published on each decision date",
+        "historical listed universe including delisted tickers",
+        "as-of (not retroactively adjusted) total-return prices per ticker"
+      ],
+      "excluded_lookahead": {
+        "caio_stocks": "picked in 2025-2026"
+      }
+    },
+    "fii_selection": {
+      "missing": [
+        "Status Invest FII fundamentals as published on each decision date",
+        "historical listed FII universe including delisted tickers",
+        "as-of (not retroactively adjusted) total-return prices per ticker",
+        "as-of FII eligibility data (liquidity, segment, listing)"
+      ],
+      "excluded_lookahead": {
+        "caio_fiis": "picked in 2025-2026"
+      }
+    }
+  }
+}
