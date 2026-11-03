@@ -4,7 +4,7 @@ Mutations: 4
 Build: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m py_compile scripts/multirun_convergence.py scripts/convergence_analysis.py tests/test_convergence_analysis.py tests/test_multirun_convergence.py`
 Plan: `.specs/features/multirun-convergence/plan.md`
 
-52 checks in 10 slices · 5 one-way doors · 0 open
+55 checks in 10 slices · 5 one-way doors · 0 open
 
 Test modules: `tests/test_convergence_analysis.py` (pure analysis on hand-built lots, offline) and
 `tests/test_multirun_convergence.py` (CLI, child runner and a fixture registry built from the
@@ -205,6 +205,15 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 **C52** - k 10, incumbent P at 1/10, challenger C ranked above it at 3/10, K 2, δ 0.2 (0.1 + 0.2 > 0.3 in floats) → C replaces P, turnover 1; C at 0.29 and P at 0.10 (k 100) → P stays, turnover 0 (door 3, round-2 review U-2)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests.test_delta_boundary_float_inexact`
 
+**C53** - `PROVENANCE_KEYS` equals `("commit", "code_fingerprint", "experiment_fingerprint")`, and a measured child whose `code_info()` differs from the context in each of those three literal keys exits 1 naming the key and `at start`, without running the GA and writing nothing (door 4, round-2 review U-3)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_each_provenance_key_at_start_exits_1`
+
+**C54** - A child run without `--smoke` whose context `mode` is `smoke` still checks code provenance: a differing `commit` exits 1 naming `commit: at start`, `code_info` called once, no GA run, nothing written (door 4, round-2 review U-4)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_provenance_checked_without_smoke_flag`
+
+**C55** - A child whose FII `selected_tickers` differ from the consensus recomputed from its runs exits 1 naming `fiis: consensus recomputed at 12 runs`, with no lot or cost file (AC 18, round-2 review U-5)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_fii_selected_tickers_off_consensus_exits_1`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
@@ -225,8 +234,8 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 | report sections, AC 31 (10) | curves C31 · frequencies C31 · seed turnover C31 · within-seed C31 · rank gap C31 · zone grid C31 · recommendations C31 · production run C31 · cost C32 · limitations C31 | - |
 | generated files (3) | `multirun-convergence.json` C9 · `multirun-convergence-cost.json` C32 · `multirun-convergence.md` C31 | - |
 | tooling review findings (12) | T-1 C38 · T-2 C39 · T-3 C40 · T-4 C41 · T-5 C42 · T-6 C43 · T-7 C44 · T-8 C45 · T-9 C46 · T-10 C47 · T-11 C48 C50 · T-12 C49 | - |
-| second tooling review findings (2) | U-1 C51 · U-2 C52 | - |
-| child exit-1 guards before writing (5) | run count C34 · candidate scores C48 · consensus C49 · code provenance at start C44 · code provenance before writing C44 | - |
+| second tooling review findings (5) | U-1 C51 · U-2 C52 · U-3 C53 · U-4 C54 · U-5 C55 | - |
+| child exit-1 guards before writing (5) | run count C34 · candidate scores C48 · consensus C49 C55 · code provenance at start C44 · code provenance before writing C44 | - |
 | reuse fields of an existing lot (4) | `mode` C46 · `snapshot` C46 · `code_fingerprint` C46 · `experiment_fingerprint` C46 | - |
 | production code paths kept (4) | `py` C36 · `api/app` C36 · `scripts/benchmark_premium.py` C36 · `scripts/bench_measure.py` C36 | - |
 

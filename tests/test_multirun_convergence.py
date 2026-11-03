@@ -772,11 +772,14 @@ class LeaveOneOutRequiredTests(unittest.TestCase):
 class ChildGuardTests(unittest.TestCase):
     """C44 (code provenance in a measured child), C48 (null FII score), C49 (consensus)."""
 
-    def run_child(self, patches=(), **context_changes):
+    def run_child(self, patches=(), smoke=True, **context_changes):
         with tempfile.TemporaryDirectory() as tmp:
             context_path, context = write_context(tmp, FIXTURE["protocol"], **context_changes)
             lots = Path(tmp) / "lots"
-            args = mc.build_parser().parse_args([str(a) for a in child_args(FIXTURE["protocol"], lots, context_path)])
+            argv = [str(a) for a in child_args(FIXTURE["protocol"], lots, context_path)]
+            if not smoke:
+                argv.remove("--smoke")
+            args = mc.build_parser().parse_args(argv)
             stderr = io.StringIO()
             with redirect_stdout(io.StringIO()), patch("sys.stderr", stderr):
                 with contextlib.ExitStack() as stack:
@@ -873,6 +876,64 @@ class ChildGuardTests(unittest.TestCase):
         code, err, written = self.run_child([patch.object(adapter, "run_premium_optimization", rpo)])
         self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
         self.assertIn("stocks: consensus recomputed at 12 runs", err)
+        self.assertIn("differs from selected_tickers", err)
+        self.assertEqual(written, [])
+
+
+class ChildGuardGapTests(unittest.TestCase):
+    """C53 (every provenance key, named literally), C54 (no --smoke flag), C55 (FII consensus)."""
+
+    run_child = ChildGuardTests.run_child
+    measured = ChildGuardTests.measured
+    KEYS = ("commit", "code_fingerprint", "experiment_fingerprint")
+
+    def no_ga(self):
+        import app.adapters.premium_optimization as adapter
+
+        return patch.object(adapter, "run_premium_optimization", side_effect=AssertionError("GA ran"))
+
+    def test_each_provenance_key_at_start_exits_1(self):
+        self.assertEqual(mc.PROVENANCE_KEYS, self.KEYS)
+        for key in self.KEYS:
+            def code_info(context, key=key):
+                return lambda: {**context["code"], key: "0" * 40}
+
+            code, err, written = self.run_child(self.measured(code_info, extra=[self.no_ga()]), mode="measured")
+            self.assertEqual(code, mc.EXIT_CHILD_FAILED, f"{key}: {err}")
+            self.assertIn(f"{key}: at start", err)
+            self.assertNotIn("GA ran", err)
+            self.assertEqual(written, [], key)
+
+    def test_provenance_checked_without_smoke_flag(self):
+        calls = []
+
+        def code_info(context):
+            def effect():
+                calls.append("code_info")
+                return {**context["code"], "commit": "0" * 40}
+            return effect
+
+        code, err, written = self.run_child(self.measured(code_info, extra=[self.no_ga()]), smoke=False, mode="smoke")
+        self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
+        self.assertIn("commit: at start", err)
+        self.assertNotIn("GA ran", err)
+        self.assertEqual(calls, ["code_info"])
+        self.assertEqual(written, [])
+
+    def test_fii_selected_tickers_off_consensus_exits_1(self):
+        import app.adapters.premium_optimization as adapter
+
+        original = adapter.run_premium_optimization
+
+        def rpo(*args, **kwargs):
+            output = dict(original(*args, **kwargs))
+            output["fiis"] = [dict(item) for item in output["fiis"]]
+            output["fiis"][0]["ticker"] = "ZZZZ11"
+            return output
+
+        code, err, written = self.run_child([patch.object(adapter, "run_premium_optimization", rpo)])
+        self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
+        self.assertIn("fiis: consensus recomputed at 12 runs", err)
         self.assertIn("differs from selected_tickers", err)
         self.assertEqual(written, [])
 
