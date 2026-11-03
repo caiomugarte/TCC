@@ -194,3 +194,8 @@ Proof: `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retr
 - observability: C3
 
 ## Handoff
+
+- **Boundary:** C1-C40 closed at `681def9` (code and outputs at `d0bdcd1`, notices at `681def9`, data copy at `95dbbf3`). Real run: `class_allocation` `VALIDATED`, `basic_recommendation` `VALIDATED`, `stock_selection`/`fii_selection`/`premium_recommendation` `UNVERIFIABLE`, `selection_overlap.class_allocation` `full`, `run_period` 2016-10-31..2026-07-21 (69 unverified common rows), 12 paths x 3 profiles, 207 decisions; `report` takes about 55 s on Python 3.14.4
+- **Settled mid-build:** none asked. Decided: the decision guard also rejects a slice whose last row is not `t` (`IntegrityError`, exit 4), which is how C12's one-row-short case fails; `run_period` is `null` and `selection_overlap` `none` when a series has no verified range; an I/O failure while staging outputs exits 1 with one `pit_validation: output: <reason>` line and leaves previous files untouched (C36); `cost.sensitivity_bps` is optional (absent -> no `cost_sensitivity` block), validated when present; Markdown percentages use a decimal comma
+- **Abandoned:** none
+- **Walked:** n/a - no screen. Root suite: system `python3` 3.14.4 has no pandas, so 4 pre-existing modules fail to import there exactly as at the base commit; with `/home/caio/Documents/projetos/TCC/.venv/bin/python` the full root suite passes (336 tests, 1 skipped)
