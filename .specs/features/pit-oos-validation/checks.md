@@ -157,7 +157,7 @@ Proof: `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_aud
 Proof: `python3 -m unittest tests.test_pit_validation -k NoticeTests.test_notices_match_report`
 
 **C38** - The change adds no line matching `[0-9]+[,.][0-9]+ ?%` under `docs/adr`, `docs/research`, `web`, `api` or `landing.html` (AC 28)
-Proof: `! git diff 4a2481a..HEAD -- docs/adr docs/research web api landing.html | grep -E '^\+[^+].*[0-9]+[,.][0-9]+ ?%'`
+Proof: `d=$(mktemp) && git diff 4a2481a..HEAD -- docs/adr docs/research web api landing.html > "$d" && ! grep -E '^\+[^+].*[0-9]+[,.][0-9]+ ?%' "$d"`
 
 **C39** - `data/allocation/` is byte-identical to the base commit (Out of scope: its `metadata.json` is not rewritten) (Changes underneath)
 Proof: `git diff --quiet 4a2481a HEAD -- data/allocation`

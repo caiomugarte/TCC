@@ -162,6 +162,14 @@
 - **Date**: 2026-11-02
 - **Status**: active
 
+### AD-021
+- **Decision**: The human authorized rewriting C38's frozen proof text in `.specs/features/pit-oos-validation/checks.md` (Verifier V-6) so it carries no literal `|`; C38's claim is unchanged. The pipe `git diff ... | grep` became `d=$(mktemp) && git diff ... > "$d" && ! grep -E ... "$d"`, the same regex over the same diff range and paths.
+- **Reason**: Human approval at a checkpoint, relayed by the orchestrator. `check_proofs.py` copies the proof into a `proofs.md` table cell and `validate_verification.py` splits rows on every `|`, escaped or not, so a `\|` in `checks.md` would both break the shell command and still split the cell; only a pipe-free command lets the gate read C38's row.
+- **Trade-off**: Checks are frozen after `validate_checks.py` (rule 4); this is a proof-text change only, made with the human's go-ahead. The new form also fails when `git diff` itself fails, which the pipe hid.
+- **Scope**: `.specs/features/pit-oos-validation/checks.md` C38 proof.
+- **Date**: 2026-11-03
+- **Status**: active
+
 ## Handoff
 
 - **Feature**: p0-02-v0-corrected (Issue #7 / P0-02) - `.specs/features/p0-02-v0-corrected/`
