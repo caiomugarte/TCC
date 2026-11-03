@@ -641,6 +641,9 @@ def check_lot(
                 raise IntegrityError(label, f"inconsistent candidate scores: {ticker} has no score")
             if info["score"] is not None and not _is_number(info["score"]):
                 raise IntegrityError(label, f"inconsistent candidate scores: {ticker} score is not a number or null")
+            if info["score"] is None and selector != "stocks":
+                # Door 5 covers NaN stock scores only; production scores every FII.
+                raise IntegrityError(label, f"inconsistent candidate scores: FII {ticker} has a null score")
         selected = data.get("selected_tickers")
         if not isinstance(selected, list) or len(selected) != expected_n:
             raise IntegrityError(label, "selected_tickers does not hold n_assets tickers")
@@ -1556,6 +1559,10 @@ def render_markdown(protocol: Mapping[str, Any], report: Mapping[str, Any], cost
         "- A zona simulada é o modelo da porta 3 (AD-022); o #46 precisa reproduzi-lo ou re-simular sobre estes lotes.",
         "- Nenhuma afirmação fora da amostra: o relatório mede estabilidade, não qualidade.",
         "- Outras configurações do GA (população, gerações, mutação) não foram medidas.",
+        "- SCORE NaN (porta 5, AD-025): produção deixa algumas ações com SCORE NaN e o GA as escolhe; um NaN "
+        "desfaz a ordem por score de todo ticker empatado na mesma contagem, não só a dele. O consenso (as n "
+        "primeiras posições de R) reproduz a produção exatamente, mas as posições além de n carregam a ordem "
+        "arbitrária da produção dentro do empate, o que afeta o rank gap, o K* e as trocas da zona com δ = 0.",
         "- Cobertura de perfis: selector score "
         + ", ".join(f"{_num(score, 6)} para `{pid}`" for pid, score in scores.items())
         + f"; nenhum perfil com selector score abaixo de {_num(lowest, 6)} (cerca de 0,70), e nenhum na metade "

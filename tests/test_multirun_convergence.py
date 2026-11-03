@@ -5,6 +5,7 @@ The fixture registry is built from the committed ``data/allocation`` series and 
 the fixture GA is population 20, 5 generations, 12 runs (``--smoke``).
 """
 
+import contextlib
 from contextlib import contextmanager, redirect_stdout
 import copy
 import io
@@ -766,6 +767,41 @@ class LeaveOneOutRequiredTests(unittest.TestCase):
             self.assertEqual(code, mc.EXIT_USAGE, err)
             self.assertIn("leave_one_seed_out", err)
             self.assertFalse(out.exists())
+
+
+class ChildGuardTests(unittest.TestCase):
+    """C48 (null FII score)."""
+
+    def run_child(self, patches=(), **context_changes):
+        with tempfile.TemporaryDirectory() as tmp:
+            context_path, context = write_context(tmp, FIXTURE["protocol"], **context_changes)
+            lots = Path(tmp) / "lots"
+            args = mc.build_parser().parse_args([str(a) for a in child_args(FIXTURE["protocol"], lots, context_path)])
+            stderr = io.StringIO()
+            with redirect_stdout(io.StringIO()), patch("sys.stderr", stderr):
+                with contextlib.ExitStack() as stack:
+                    for item in patches:
+                        stack.enter_context(item if hasattr(item, "__enter__") else item(context))
+                    code = mc.command_child(args)
+            written = sorted(p.name for p in lots.rglob("*")) if lots.exists() else []
+        return code, stderr.getvalue(), written
+
+    def test_null_fii_score_exits_1(self):
+        original = mc.capture_selector_runs
+
+        @contextmanager
+        def nulling():
+            with original() as captured:
+                yield captured
+            for run in captured["fiis"]:
+                for info in run["picked"].values():
+                    info["score"] = None
+
+        code, err, written = self.run_child([patch.object(mc, "capture_selector_runs", nulling)])
+        self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
+        self.assertIn("fiis: inconsistent candidate scores: FII", err)
+        self.assertIn("null score", err)
+        self.assertEqual(written, [])
 
 
 if __name__ == "__main__":

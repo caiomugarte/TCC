@@ -1004,6 +1004,57 @@ class ReachabilityReportTests(unittest.TestCase):
         self.assertEqual(targets["action"], "use_fixed_run_count")
 
 
+class NaNScoreTests(unittest.TestCase):
+    """C48 and C50: a null FII score is refused; door 5's NaN tie example and its limitation."""
+
+    def test_null_fii_score_exits_4(self):
+        lots = LotSet()
+        try:
+            data = lots.lots[("p", 2)]["selectors"]["fiis"]
+            ticker = sorted(data["candidates"])[0]
+            data["candidates"][ticker]["score"] = None
+            lots.write()
+            code, err = lots.report()
+            self.assertEqual(code, ca.EXIT_INTEGRITY, err)
+            self.assertIn("p:2 fiis", err)
+            self.assertIn(f"FII {ticker} has a null score", err)
+            self.assertFalse(lots.out_dir.exists())
+        finally:
+            lots.close()
+
+    def test_null_stock_score_accepted(self):
+        lots = LotSet()
+        try:
+            for lot in lots.lots.values():
+                data = lot["selectors"]["stocks"]
+                for info in data["candidates"].values():
+                    info["score"] = None
+                data["selected_tickers"] = ca.production_consensus(data["runs"], data["candidates"], "stocks", 2)
+            lots.write()
+            code, err = lots.report()
+            self.assertEqual(code, 0, err)
+        finally:
+            lots.close()
+
+    def test_nan_breaks_the_whole_count_tie(self):
+        counts = Counter({"AAAA3": 1, "BBBB3": 1, "CCCC3": 1})
+        scores = {"AAAA3": 0.5, "BBBB3": math.nan, "CCCC3": 0.7}
+        self.assertEqual(ca.extended_ranking(counts, scores, "stocks"), ["AAAA3", "BBBB3", "CCCC3"])
+        del counts["BBBB3"]
+        self.assertEqual(ca.extended_ranking(counts, scores, "stocks"), ["CCCC3", "AAAA3"])
+
+    def test_limitation_in_markdown(self):
+        lots = LotSet()
+        try:
+            lots.report_json()
+            text = (lots.out_dir / "multirun-convergence.md").read_text(encoding="utf-8")
+        finally:
+            lots.close()
+        limitations = text.split("## Limitações", 1)[1]
+        for needle in ("SCORE NaN", "porta 5", "além de n", "rank gap", "K*", "δ = 0"):
+            self.assertIn(needle, limitations)
+
+
 class ProductionMatchTests(unittest.TestCase):
     def test_match_reported(self):
         lots = LotSet()
