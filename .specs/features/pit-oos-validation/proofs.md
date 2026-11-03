@@ -1,8 +1,8 @@
 # pit-oos-validation proofs
 
-**HEAD**: 31ee11e
+**HEAD**: 512f0cc
 **Tree**: clean
-**Result**: 46 pass, 0 fail; mutations 7 killed, 1 not
+**Result**: 48 pass, 0 fail; mutations 8 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -36,6 +36,7 @@
 | C26 | `python3 -m unittest tests.test_pit_validation -k SensitivityTests.test_invalid_sensitivity_exits_2` | 1 | - | pass |
 | C27 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_rule_examples` | 1 | - | pass |
 | C43 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_non_finite_level_is_revision` | 1 | - | pass |
+| C45 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_infinite_or_subnormal_level_is_revision` | 1 | - | pass |
 | C28 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_real_audit` | 1 | - | pass |
 | C29 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_audit_record_fields` | 1 | - | pass |
 | C30 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_selection_layers_recorded` | 1 | - | pass |
@@ -47,8 +48,9 @@
 | C35 | `python3 -m unittest tests.test_pit_validation -k ReportTests.test_committed_environment_matches` | 1 | - | pass |
 | C36 | `python3 -m unittest tests.test_pit_validation -k CliTests.test_failed_write_leaves_previous_outputs` | 1 | - | pass |
 | C42 | `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_audit_protocol_mismatch_exits_4` | 1 | - | pass |
+| C44 | `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_audit_layer_mismatch_exits_4` | 1 | - | pass |
 | C37 | `python3 -m unittest tests.test_pit_validation -k NoticeTests.test_notices_match_report` | 1 | - | pass |
-| C38 | `! git diff 4a2481a..HEAD -- docs/adr docs/research web api landing.html | grep -E '^\+[^+].*[0-9]+[,.][0-9]+ ?` | count unknown | - | pass |
+| C38 | `d=$(mktemp) && git diff 4a2481a..HEAD -- docs/adr docs/research web api landing.html > "$d" && ! grep -E '^\+[` | count unknown | - | pass |
 | C39 | `git diff --quiet 4a2481a HEAD -- data/allocation` | count unknown | - | pass |
 | C40 | `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retrieval_copy_hashes` | 1 | - | pass |
 | Build | `python3 -m py_compile py/pit_validation.py tests/test_pit_validation.py` | - | - | pass |
@@ -57,11 +59,11 @@
 
 | Mutation | Location | Killed |
 | --- | --- | --- |
-| C10-C12 leak guard tolerates a row up to 3 days after t (weekend leak) | `py/pit_validation.py:683` | yes |
-| C17 exec_j row earned by the new weights (same-close execution) | `py/pit_validation.py:740` | yes |
-| C9/C31 verdict counts offsets without a window as paths | `py/pit_validation.py:987` | yes |
-| C14 trim drops the run_period.end bound (unverified tail rows kept) | `py/pit_validation.py:533` | yes |
-| C14/C15 run_period.end is the latest verified end, not the intersection | `py/pit_validation.py:522` | yes |
-| C42 report ignores a series_kind change since the audit (V-2 round 2) | `py/pit_validation.py:898` | yes |
-| C42 report compares only the snapshot retrieval, not the paired ones (V-2 round 2) | `py/pit_validation.py:900` | yes |
-| V-2 report ignores a selection-layer missing-list change since the audit (round 2) | `py/pit_validation.py:905` | no |
+| C10-C12 leak guard tolerates a row up to 3 days after t (weekend leak) | `py/pit_validation.py:686` | yes |
+| C17 exec_j row earned by the new weights (same-close execution) | `py/pit_validation.py:743` | yes |
+| C9/C31 verdict counts offsets without a window as paths | `py/pit_validation.py:990` | yes |
+| C14 trim drops the run_period.end bound (unverified tail rows kept) | `py/pit_validation.py:536` | yes |
+| C14/C15 run_period.end is the latest verified end, not the intersection | `py/pit_validation.py:525` | yes |
+| C42 report ignores a series_kind change since the audit (V-2 round 2) | `py/pit_validation.py:901` | yes |
+| C42 report compares only the snapshot retrieval, not the paired ones (V-2 round 2) | `py/pit_validation.py:903` | yes |
+| V-2 report ignores a selection-layer missing-list change since the audit (round 2) | `py/pit_validation.py:908` | yes |
