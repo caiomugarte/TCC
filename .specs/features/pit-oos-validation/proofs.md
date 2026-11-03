@@ -1,6 +1,6 @@
 # pit-oos-validation proofs
 
-**HEAD**: 8a988e9
+**HEAD**: 5217ebe
 **Tree**: clean
 **Result**: 46 pass, 0 fail; mutations 5 killed, 0 not
 
