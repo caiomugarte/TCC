@@ -103,7 +103,7 @@ diretório de saída não entra nas condições comparadas pelo gate.
 | Seed | 42 (mesma nos três perfis) |
 | Capital | R$ 100.000,00 |
 | Modo / isolamento | `measured` / `process` (um processo Python novo por perfil, em sequência) |
-| Data da execução (UTC) | término em 2026-11-03T01:07:14Z (`created_at`); duração somada dos três perfis ≈ 21.383 s ≈ 5,9 h |
+| Data da execução (UTC) | início em 2026-11-03T01:07:14Z (`created_at`, gravado antes do primeiro perfil); duração somada dos três perfis ≈ 21.383 s ≈ 5,9 h |
 | Carga da máquina durante a execução | Não dedicada: havia outro trabalho leve. Load average ≈ 2–4,7 no início e ≈ 2,1–2,2 no fim (12 threads lógicas). Registrado como condição da medição, não controlado. |
 
 O `summary.json` da execução está em
