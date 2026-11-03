@@ -1,8 +1,8 @@
 # multirun-convergence proofs
 
-**HEAD**: 3056834
+**HEAD**: 506cd20
 **Tree**: clean
-**Result**: 42 pass, 2 fail; mutations 0 killed, 0 not
+**Result**: 61 pass, 2 fail; mutations 0 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -49,4 +49,23 @@
 | C30 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k CommittedRep` | 1 | - | **fail** |
 | C36 | `git diff --quiet 751cafb HEAD -- py api/app scripts/benchmark_premium.py scripts/bench_measure.py` | count unknown | - | pass |
 | C37 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReportTests.` | 1 | - | pass |
+| C38 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountBoun` | 1 | - | pass |
+| C39 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountWiri` | 1 | - | pass |
+| C40 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTes` | 1 | - | pass |
+| C40 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTes` | 1 | - | pass |
+| C41 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTes` | 1 | - | pass |
+| C42 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneInputTes` | 1 | - | pass |
+| C43 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k CodePathTest` | 1 | - | pass |
+| C44 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTe` | 1 | - | pass |
+| C44 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTe` | 1 | - | pass |
+| C44 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTe` | 1 | - | pass |
+| C45 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k Reachability` | 2 | - | pass |
+| C46 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k SkipTests.te` | 1 | - | pass |
+| C47 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k LeaveOneOutR` | 1 | - | pass |
+| C48 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTest` | 1 | - | pass |
+| C48 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTest` | 1 | - | pass |
+| C48 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTe` | 1 | - | pass |
+| C49 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTe` | 1 | - | pass |
+| C50 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTest` | 1 | - | pass |
+| C50 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k NaNScoreTest` | 1 | - | pass |
 | Build | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m py_compile scripts/multirun_convergence.py scripts/conve` | - | - | pass |
