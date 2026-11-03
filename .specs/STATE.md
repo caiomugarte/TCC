@@ -144,7 +144,7 @@
 - **Trade-off**: 97 days of non-revision (2026-07-24 vs 2026-10-29) does not prove that a 2019 value was never revised before July 2026; it is non-revision evidence, not an as-of vintage. The rule accepts that residual risk for exchange closes, official rates and fixings and the declared spot close, and never for vendor-adjusted or vendor-composite prices or fundamentals. Trimming to the verified range drops 69 common rows (2016-07-21..2016-10-28) and one window on three offsets.
 - **Scope**: `py/pit_validation.py`, `docs/validation/`, any future feature publishing historical performance (#8, #15).
 - **Date**: 2026-11-02 (revised at spec review round 1)
-- **Status**: proposed - pending plan approval (`.specs/features/pit-oos-validation/plan.md` Q2, Q10, Q12)
+- **Status**: active - accepted by the human at plan approval, 2026-11-02 (AD-020)
 
 ### AD-019
 - **Decision**: Walk-forward conventions for Prumo validation: a decision on date `t` sees only verified rows dated `<= t`; weights execute at the close of the next common date (that day's row is earned by the previous weights); anchors are computed in one step from the run start (start + 12 x min lookback + k + 12j months, day clamped to month end); test window j is `(exec_j, exec_{j+1}]`, contiguous with no overlap, and each path ends on the last execution on or before the run end; weights reset to target only at execution and drift in between; decisions every 12 months, with 12 monthly start offsets per profile; the strategy is called only for decisions that open a test window, and the last execution is recorded only as the path's end; the lookback expands from 3 years and the strategy's own 10-year cap applies; strategy and benchmarks share the schedule, lag and declared cost; the report refuses to run without declared benchmarks and cost; each decision records the strategy's `window.years_used` and `full_history`.
@@ -152,7 +152,15 @@
 - **Trade-off**: Paths with different offsets overlap in calendar time, so the 12 paths per profile are not independent samples; the report presents them as a sensitivity to the start date, not as a confidence interval. No decision sees production's 10-year window (verified history gives about 3 to 8.7 years), and the first decisions use the crisis-free 3-year window ADR 0003 rejects; the alternative, a 5-year minimum, keeps March 2020 out of every test window. The method, its caps and its window were chosen after seeing the evaluated period, which the report states.
 - **Scope**: `py/pit_validation.py`, `docs/validation/protocol.json`, future validation or backtest harnesses (#15).
 - **Date**: 2026-11-02 (revised at spec review round 1)
-- **Status**: proposed - pending plan approval (`.specs/features/pit-oos-validation/plan.md` Q4)
+- **Status**: active - accepted by the human at plan approval, 2026-11-02 (AD-020)
+
+### AD-020
+- **Decision**: Plan approval for `pit-oos-validation` (issue #10): the human approved every recommended default of plan Q1-Q12. Q1 only the class allocation runs the walk-forward, selection layers are `UNVERIFIABLE`; Q2 the non-revision PIT rule of AD-018; Q3 version the 2026-10-29 retrieval byte for byte; Q4 lookback expanding from 3 years (not a 5-year minimum); Q5 naive = 1/5 per class; Q6 flat `cost_bps` 10 one-way, taxes excluded, AND a cost-sensitivity block at 0, 10 and 50 bps (`cost.sensitivity_bps`) reported beside the headline over the same paths and benchmarks, the headline cost staying the required declared field (plan criterion 29); Q7 `VALIDATED` is evidential with `selection_overlap` beside it; Q8 notices, no number removed; Q9 `docs/validation/`, JSON in English and prose in Portuguese; Q10 `btc_usd` is `spot_close`; Q11 IBOV labelled total return (B3 methodology) with the stale metadata quoted; Q12 trim to the verified range. Mutation budget raised to 4, the fourth probing the trim (criterion 12).
+- **Reason**: Human answer at the plan checkpoint, relayed by the orchestrator: "approved ALL of the author's recommendations" with Q10 `spot_close`, Q4 expanding from 3 years and Q6 the 10 bps headline plus the 0/10/50 bps sensitivity row.
+- **Trade-off**: See AD-018 and AD-019. A flat 10 bps headline understates crypto spreads; the sensitivity row shows how far the result moves with cost but is not a per-class cost model.
+- **Scope**: `.specs/features/pit-oos-validation/`, `docs/validation/protocol.json`, future validation harnesses (#15).
+- **Date**: 2026-11-02
+- **Status**: active
 
 ## Handoff
 
