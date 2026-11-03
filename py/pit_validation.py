@@ -949,6 +949,31 @@ def check_audit_matches(protocol: Mapping[str, Any], audit: Mapping[str, Any]) -
     return files
 
 
+def check_audit_current(
+    protocol: Mapping[str, Any], protocol_bytes: bytes, audit: Mapping[str, Any]
+) -> None:
+    """Exit 4 when a fresh audit of the retrievals differs from the audit document.
+
+    ``protocol_sha256`` is left out: a protocol edit that leaves the audit inputs
+    unchanged needs no re-audit (``check_audit_protocol`` names the inputs).
+    """
+
+    fresh = json.loads(dump_json(build_audit(protocol, protocol_bytes)))
+    recorded = audit.get("series") if isinstance(audit.get("series"), Mapping) else {}
+    for name in REQUIRED_SERIES:
+        if fresh["series"][name] != recorded.get(name):
+            raise IntegrityError(
+                f"audit.{name}",
+                "differs from a fresh audit of the current files; re-run audit",
+            )
+    for key in sorted(set(fresh) | set(audit)):
+        if key != "protocol_sha256" and fresh.get(key) != audit.get(key):
+            raise IntegrityError(
+                f"audit.{key}",
+                "differs from a fresh audit of the current files; re-run audit",
+            )
+
+
 def run_report(
     protocol: Mapping[str, Any],
     protocol_bytes: bytes,
@@ -961,6 +986,7 @@ def run_report(
     strategy = strategy or default_strategy
     snapshot_dir = Path(protocol["snapshot_dir"])
     files = check_audit_matches(protocol, audit)
+    check_audit_current(protocol, protocol_bytes, audit)
     try:
         bundle = load_snapshot_bundle(snapshot_dir)
     except SnapshotError as exc:

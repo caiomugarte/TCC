@@ -120,4 +120,5 @@ python3 py/pit_validation.py report --protocol docs/validation/protocol.json --a
 Códigos de saída: 0 escrito (qualquer veredito), 2 protocolo ou argumentos
 inválidos, 3 caminho inexistente, 4 violação de integridade (vazamento de
 data, sobreposição, buraco ou janela perdida, corte do snapshot divergente ou
-auditoria de outros arquivos). Uma falha não escreve nada.
+auditoria que difere de uma nova auditoria das captações, que o `report`
+refaz antes de rodar). Uma falha não escreve nada.

@@ -4,7 +4,7 @@ Mutations: 4
 Build: `python3 -m py_compile py/pit_validation.py tests/test_pit_validation.py`
 Plan: `.specs/features/pit-oos-validation/plan.md`
 
-46 checks in 8 slices · 4 one-way doors · 0 open
+47 checks in 8 slices · 4 one-way doors · 0 open
 
 Test module: `tests/test_pit_validation.py` (stdlib `unittest`, run from the repo root). The four
 mutations aim at the per-decision slice (C10-C12), the execution lag (C17), the verdict rule (C31)
@@ -141,6 +141,9 @@ Proof: `python3 -m unittest tests.test_pit_validation -k ReportTests.test_unveri
 **C34** - An audit whose `snapshot_dir` sha256 for a series differs from the current file makes `report` exit 4 naming the series (AC 25)
 Proof: `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_audit_hash_mismatch_exits_4`
 
+**C47** - After `audit`, revising one shared interior level of the paired (non-snapshot) retrieval's `ifix.csv` makes `report` exit 4 naming `audit.ifix`, and changing the paired retrieval's `metadata.json` `retrieved_at` makes it exit 4 naming `audit.`, each with no output written; the paired retrieval restored exits 0 (AC 25; review F3)
+Proof: `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_paired_retrieval_revised_exits_4`
+
 **C35** - Running `audit` then `report` at `HEAD` on the committed protocol reproduces `pit-audit.json`, `class-allocation-oos.json` and `class-allocation-oos.md` byte for byte, on the interpreter the JSON records (AC 26)
 Proof: `d=$(mktemp -d) && python3 py/pit_validation.py audit --protocol docs/validation/protocol.json --out "$d/pit-audit.json" && cmp "$d/pit-audit.json" docs/validation/pit-audit.json && python3 py/pit_validation.py report --protocol docs/validation/protocol.json --audit docs/validation/pit-audit.json --out-dir "$d" && cmp "$d/class-allocation-oos.json" docs/validation/class-allocation-oos.json && cmp "$d/class-allocation-oos.md" docs/validation/class-allocation-oos.md`
 Proof: `python3 -m unittest tests.test_pit_validation -k ReportTests.test_committed_environment_matches`
@@ -173,7 +176,7 @@ Proof: `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retr
 | Set (size) | Member -> proof | Unproven |
 | --- | --- | --- |
 | CLI exit codes (4) | 0 C33 · 2 C3 · 3 C4 · 4 C8 | - |
-| exit-4 integrity violations (8) | leak C12 · overlap C8 · gap C8 · dropped-window C8 · cutoff-late C13 · cutoff-early C13 · hash-mismatch C34 · audit-protocol-mismatch C42, C44 | - |
+| exit-4 integrity violations (9) | leak C12 · overlap C8 · gap C8 · dropped-window C8 · cutoff-late C13 · cutoff-early C13 · hash-mismatch C34 · audit-protocol-mismatch C42, C44 · paired-retrieval-revised C47 | - |
 | invalid protocol examples, AC 3 (11) | no-ibov C3 · sp500-added C3 · cost-removed C3 · cost-string C3 · cost-negative C3 · cost-nan C3 · basis-removed C3 · taxes-empty C3 · kind-unknown C3 · cost-zero-accepted C3 · series-file-not-loaders C46 | - |
 | missing paths, AC 4 (4) | `--protocol` C4 · `--audit` C4 · `snapshot_dir` C4 · retrieval C4 | - |
 | `series_kind` vocabulary (7) | `exchange_index_close` C27 · `official_rate` C27 · `official_fixing` C28 · `spot_close` C28 · `vendor_composite_close` C27 · `vendor_adjusted_close` C27 · unknown C3 | - |

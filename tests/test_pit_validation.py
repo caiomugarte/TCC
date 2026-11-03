@@ -1,4 +1,4 @@
-"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C46).
+"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C47).
 
 Every test names the check it proves. Fixtures are synthetic weekday series
 whose level on a date depends only on the date, so two retrievals of one
@@ -640,6 +640,40 @@ class IntegrityTests(FixtureCase):
         self.assertEqual(code, 4)
         self.assertIn("ifix", stderr)
         self.assertEqual(list(fixture.out.iterdir()), [])
+
+    def test_paired_retrieval_revised_exits_4(self):  # C47
+        fixture = self.fixture()
+        self.assertEqual(fixture.audit()[0], 0)
+        csv_path = fixture.other / "ifix.csv"
+        metadata_path = fixture.other / "metadata.json"
+        audited = {path: path.read_bytes() for path in (csv_path, metadata_path)}
+
+        def revise_level():
+            lines = csv_path.read_text(encoding="utf-8").splitlines()
+            middle = len(lines) // 2
+            day, value = lines[middle].split(",")
+            lines[middle] = f"{day},{float(value) * 1.001!r}"
+            csv_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            return "audit.ifix"
+
+        def change_retrieved_at():
+            metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+            metadata["retrieved_at"] = "2026-04-02T10:00:00-03:00"
+            metadata_path.write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+            return "audit."
+
+        for change in (revise_level, change_retrieved_at):
+            with self.subTest(case=change.__name__):
+                for path, raw in audited.items():
+                    path.write_bytes(raw)
+                needle = change()
+                code, stderr = fixture.report()
+                self.assertEqual(code, 4, stderr)
+                self.assertIn(needle, stderr)
+                self.assertEqual(list(fixture.out.iterdir()), [])
+        for path, raw in audited.items():
+            path.write_bytes(raw)
+        self.assertEqual(fixture.report()[0], 0)
 
 
 # --------------------------------------------------------------------------- S3
