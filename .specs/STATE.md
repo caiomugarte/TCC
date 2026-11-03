@@ -170,6 +170,22 @@
 - **Date**: 2026-11-03
 - **Status**: active
 
+### AD-022
+- **Decision**: The protection-zone model that K and δ are calibrated against (issue #9 door 3, consumed by #46): incumbents `I` (n tickers); the new lot's extended ranking `R` = every ticker picked in the first k runs ordered by frequency desc, score desc, ticker asc, with stocks skipping a ticker whose base company (suffix `11`, `3`, `4`, `5` or `6` stripped) is already ranked, as `build_consensus_portfolio` does; frequency = count / k, 0 when never picked. (i) protected = incumbents with rank in `R` `<= K`; (ii) fill with the best-ranked tickers of `R` not held, skipping a stock whose base company is held, up to n; (iii) repeat: the best-ranked outside ticker `c` (replaced incumbents never re-admitted; a stock may share a base company only with the incumbent it replaces) replaces the lowest-ranked protected incumbent still held `p` iff `f(c) >= f(p) + δ - 1e-12`, else stop. `K = 0` is the pure consensus. K is recommended as `k_offset = K - n_assets`, δ in frequency units (fraction of runs).
+- **Reason**: #46 states the rule in one sentence and leaves open which incumbent is challenged, whether unprotected incumbents may re-enter by rank, the boundary and dedup during replacement; a K and δ recommended against an unwritten rule could not be checked by #46.
+- **Trade-off**: #46 is bound to these semantics or must re-run the zone simulation of `scripts/convergence_analysis.py` over the committed lots with its own function before using the recommended values; calibration is on seed noise of one snapshot only (phase 2 in #46 measures month-to-month).
+- **Scope**: `.specs/features/multirun-convergence/` (criteria 23, 24, 27), #46 (`py/core/` zone function, Premium policy K and δ).
+- **Date**: 2026-11-03
+- **Status**: proposed - awaiting human approval at the multirun-convergence plan checkpoint (issue #9)
+
+### AD-023
+- **Decision**: Convergence evidence for the multi-run GA is gathered as pre-registered full lots analysed by prefix: the decision rules live in a committed JSON protocol (`docs/validation/multirun-convergence-protocol.json`) that `run` refuses to use unless it is committed and clean (exit 6, with the code paths clean too); every (profile, seed) runs the production pipeline (`run_premium_optimization`, default engines) with `adaptive_mode` false only in the experiment's policy copy; each lot (`docs/validation/multirun-convergence/lots/<profile_id>/seed-<seed>.json`, schema `multirun-lot-v1`) stores every run and the SCORE/SETOR of every picked ticker with no timings, paths or timestamps (those go in `seed-<seed>.cost.json`), so a rerun is byte-identical; a prefix of k stored runs stands for a k-run execution (per-run seeds come from `derive_run_seed(base, run_id, namespace)`), and the report is rebuilt byte for byte from the protocol and the committed lots. The tooling lives in `scripts/`, not `py/`, so the #8 performance gate's `code_fingerprint` is untouched.
+- **Reason**: issue #9 requires the criterion to be registered before the experiment, prefix analysis deterministic over the same lot, and reruns with the same seed to give the same report; re-running the GA per prefix would cost about 22 CPU-hours per experiment, and #46's phase 2 needs the same lots to re-simulate.
+- **Trade-off**: about 1-2 MB of committed lots; the lots' recorded commits must stay reachable, so the PR is merged with a merge commit (the repository's practice), never squashed.
+- **Scope**: `docs/validation/`, `scripts/multirun_convergence.py`, `scripts/convergence_analysis.py`, #46 phase 2, future run_count or adaptive-stop experiments.
+- **Date**: 2026-11-03
+- **Status**: proposed - awaiting human approval at the multirun-convergence plan checkpoint (issue #9)
+
 ## Handoff
 
 - **Feature**: p0-02-v0-corrected (Issue #7 / P0-02) - `.specs/features/p0-02-v0-corrected/`
