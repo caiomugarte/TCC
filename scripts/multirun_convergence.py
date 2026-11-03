@@ -321,6 +321,41 @@ def merge_candidates(selector: str, runs: Sequence[Mapping[str, Any]]) -> dict[s
     return candidates
 
 
+def check_consensus(where: str, selector: str, data: Mapping[str, Any], protocol: Mapping[str, Any]) -> None:
+    """The lot's ``selected_tickers`` must be the consensus ``report`` recomputes from its runs."""
+
+    run_count = int(protocol["ga_override"]["run_count"])
+    try:
+        consensus = analysis.SeedSeries(where, selector, data, protocol).consensus(run_count)
+    except IntegrityError as exc:
+        raise ChildError(EXIT_CHILD_FAILED, selector, exc.reason) from exc
+    if consensus != sorted(data["selected_tickers"]):
+        raise ChildError(
+            EXIT_CHILD_FAILED,
+            selector,
+            f"consensus recomputed at {run_count} runs {consensus} differs from selected_tickers",
+        )
+
+
+PROVENANCE_KEYS = ("commit", "code_fingerprint", "experiment_fingerprint")
+
+
+def check_code_provenance(protocol_path: Path, context: Mapping[str, Any], moment: str) -> None:
+    """A measured child runs, and writes, only the code the parent checked (door 4)."""
+
+    problems = preregistration_problems(protocol_path)
+    if problems:
+        raise ChildError(EXIT_CHILD_FAILED, "pre-registration", f"{moment}: {'; '.join(problems)}")
+    current = code_info()
+    for key in PROVENANCE_KEYS:
+        if current.get(key) != context["code"].get(key):
+            raise ChildError(
+                EXIT_CHILD_FAILED,
+                key,
+                f"{moment}: HEAD has {current.get(key)}, the run was checked at {context['code'].get(key)}",
+            )
+
+
 def _json_copy(value: Any) -> Any:
     return json.loads(json.dumps(value, sort_keys=True))
 
@@ -366,6 +401,9 @@ def run_child(
     protocol, protocol_sha256 = analysis.load_protocol(protocol_path)
     if protocol_sha256 != context["protocol_sha256"]:
         raise ChildError(EXIT_INTEGRITY, "protocol", "changed while the run was starting")
+    measured = not smoke or context["mode"] == "measured"
+    if measured:
+        check_code_provenance(protocol_path, context, "at start")
     declared = protocol["profiles"][profile_id]
     run_count = int(protocol["ga_override"]["run_count"])
 
@@ -459,6 +497,8 @@ def run_child(
         analysis.check_lot(lot, where, protocol, protocol_sha256, profile_id, seed)
     except IntegrityError as exc:
         raise ChildError(EXIT_CHILD_FAILED, exc.where, exc.reason) from exc
+    for selector in analysis.SELECTORS:
+        check_consensus(where, selector, selectors[selector], protocol)
 
     usage_end = resource.getrusage(resource.RUSAGE_SELF)
     stages = _stage_costs(compose_stages(meter.stages))
@@ -484,6 +524,8 @@ def run_child(
         "load_avg_end": _loadavg(),
         "machine": benchmark_premium.machine_info(),
     }
+    if measured:
+        check_code_provenance(protocol_path, context, "before writing")
     return {
         analysis.cost_path(lots_dir, profile_id, seed): analysis.dumps(cost),
         analysis.lot_path(lots_dir, profile_id, seed): analysis.dumps(lot),

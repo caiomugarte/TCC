@@ -770,7 +770,7 @@ class LeaveOneOutRequiredTests(unittest.TestCase):
 
 
 class ChildGuardTests(unittest.TestCase):
-    """C48 (null FII score)."""
+    """C44 (code provenance in a measured child), C48 (null FII score), C49 (consensus)."""
 
     def run_child(self, patches=(), **context_changes):
         with tempfile.TemporaryDirectory() as tmp:
@@ -785,6 +785,62 @@ class ChildGuardTests(unittest.TestCase):
                     code = mc.command_child(args)
             written = sorted(p.name for p in lots.rglob("*")) if lots.exists() else []
         return code, stderr.getvalue(), written
+
+    def measured(self, code_info=None, problems=None, extra=()):
+        """Patches for a measured child; ``code_info(context)`` gives the side effect."""
+
+        def code_patch(context):
+            effect = code_info(context) if code_info else None
+            return patch.object(mc, "code_info", side_effect=effect or (lambda: copy.deepcopy(context["code"])))
+
+        return [code_patch, patch.object(mc, "preregistration_problems", side_effect=problems or (lambda _path: [])), *extra]
+
+    def test_measured_child_consistent_writes(self):
+        calls = []
+
+        def code_info(context):
+            def effect():
+                calls.append("code_info")
+                return copy.deepcopy(context["code"])
+            return effect
+
+        code, err, written = self.run_child(self.measured(code_info), mode="measured")
+        self.assertEqual(code, mc.EXIT_OK, err)
+        self.assertEqual(written, [PROFILE, f"seed-{SEEDS[0]}.cost.json", f"seed-{SEEDS[0]}.json"])
+        self.assertEqual(calls, ["code_info", "code_info"])
+
+    def test_code_changed_at_start_exits_1(self):
+        import app.adapters.premium_optimization as adapter
+
+        for key in mc.PROVENANCE_KEYS:
+            def code_info(context, key=key):
+                return lambda: {**context["code"], key: "0" * 40}
+
+            rpo = patch.object(adapter, "run_premium_optimization", side_effect=AssertionError("GA ran"))
+            code, err, written = self.run_child(self.measured(code_info, extra=[rpo]), mode="measured")
+            self.assertEqual(code, mc.EXIT_CHILD_FAILED, f"{key}: {err}")
+            self.assertIn(f"{key}: at start", err)
+            self.assertEqual(written, [], key)
+        problems = lambda _path: ["uncommitted changes: py/x.py"]
+        code, err, written = self.run_child(self.measured(problems=problems), mode="measured")
+        self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
+        self.assertIn("pre-registration: at start: uncommitted changes: py/x.py", err)
+        self.assertEqual(written, [])
+
+    def test_code_changed_before_writing_exits_1(self):
+        real = mc.experiment_info()
+        changed = dict(real, experiment_fingerprint="0" * 64)
+        experiment = patch.object(mc, "experiment_info", side_effect=[real, changed])
+        prereg = patch.object(mc, "preregistration_problems", return_value=[])
+        code, err, written = self.run_child([experiment, prereg], mode="measured")
+        self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
+        self.assertIn("experiment_fingerprint: before writing", err)
+        self.assertEqual(written, [])
+        answers = iter([[], ["uncommitted changes: scripts/convergence_analysis.py"]])
+        code, err, written = self.run_child(self.measured(problems=lambda _path: next(answers)), mode="measured")
+        self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
+        self.assertIn("pre-registration: before writing", err)
+        self.assertEqual(written, [])
 
     def test_null_fii_score_exits_1(self):
         original = mc.capture_selector_runs
@@ -801,6 +857,23 @@ class ChildGuardTests(unittest.TestCase):
         self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
         self.assertIn("fiis: inconsistent candidate scores: FII", err)
         self.assertIn("null score", err)
+        self.assertEqual(written, [])
+
+    def test_selected_tickers_off_consensus_exits_1(self):
+        import app.adapters.premium_optimization as adapter
+
+        original = adapter.run_premium_optimization
+
+        def rpo(*args, **kwargs):
+            output = dict(original(*args, **kwargs))
+            output["stocks"] = [dict(item) for item in output["stocks"]]
+            output["stocks"][0]["ticker"] = "ZZZZ3"
+            return output
+
+        code, err, written = self.run_child([patch.object(adapter, "run_premium_optimization", rpo)])
+        self.assertEqual(code, mc.EXIT_CHILD_FAILED, err)
+        self.assertIn("stocks: consensus recomputed at 12 runs", err)
+        self.assertIn("differs from selected_tickers", err)
         self.assertEqual(written, [])
 
 
