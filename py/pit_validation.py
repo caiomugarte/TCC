@@ -288,11 +288,17 @@ def compare_levels(
     inside = [d for d in snapshot if shared[0] <= d <= shared[-1]]
     result["overlap_complete"] = len(inside) == len(shared)
     worst = 0.0
+    finite = True
     for previous, current in zip(shared, shared[1:]):
         f_snap = snapshot[current] / snapshot[previous]
         f_other = other[current] / other[previous]
-        worst = max(worst, abs(f_snap / f_other - 1.0))
-    result["max_rel_diff_daily_factor"] = worst if len(shared) > 1 else None
+        diff = abs(f_snap / f_other - 1.0)
+        if not math.isfinite(diff):
+            finite = False
+            break
+        worst = max(worst, diff)
+    # A non-finite factor cannot show agreement: None reads as `values_revised`.
+    result["max_rel_diff_daily_factor"] = worst if len(shared) > 1 and finite else None
     return result
 
 

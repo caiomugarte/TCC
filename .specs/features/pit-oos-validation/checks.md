@@ -136,6 +136,9 @@ Proof: `python3 -m unittest tests.test_pit_validation -k ReportTests.test_commit
 **C36** - A `report` that fails while writing its second output leaves both previous files in `--out-dir` byte-identical and no temporary file behind; `audit` does the same for its one file (Surface)
 Proof: `python3 -m unittest tests.test_pit_validation -k CliTests.test_failed_write_leaves_previous_outputs`
 
+**C42** - After `audit`, changing the protocol's `series_kind.btc_usd` to `vendor_composite_close`, or cutting `retrievals` to the snapshot alone, makes `report` exit 4 naming `series_kind.btc_usd` (resp. `retrievals`) with no output written; the audited protocol restored exits 0 (AC 22, AC 25; Verifier V-2)
+Proof: `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_audit_protocol_mismatch_exits_4`
+
 ### S8 - Historical numbers already published are marked
 
 **C37** - ADR 0003, `docs/research/class-allocation-methods-2026-11.md` and `docs/research/class-allocation-2026-11/README.md` each carry, right below the title, the notice line whose verdict and overlap equal the committed JSON's, with the right relative link (AC 27)

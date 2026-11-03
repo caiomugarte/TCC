@@ -1188,6 +1188,18 @@ class AuditTests(unittest.TestCase):
                 {"count": len(unverified), "first": unverified[0].isoformat(), "last": unverified[-1].isoformat()},
             )
 
+    def test_non_finite_level_is_revision(self):  # C43
+        dates = self.DATES
+        snap = series_levels(dates)
+        a = rfile("A", "2026-01-01T09:00:00-03:00", snap)
+        other = dict(snap)
+        other[dates[100]] = float("nan")
+        record = self.classify([a, rfile("B", "2026-03-01T09:00:00-03:00", other)])
+        self.assertEqual((record["status"], record["reasons"]), ("PIT_MISSING", ["values_revised"]))
+        self.assertIsNone(record["pairs"][0]["max_rel_diff_daily_factor"])
+        record = self.classify([rfile("A", "2026-01-01T09:00:00-03:00", other), rfile("B", "2026-03-01T09:00:00-03:00", dict(snap))])
+        self.assertEqual((record["status"], record["reasons"]), ("PIT_MISSING", ["values_revised"]))
+
     def test_real_audit(self):  # C28
         audit = real_audit()
         ibov = audit["series"]["ibovespa"]
