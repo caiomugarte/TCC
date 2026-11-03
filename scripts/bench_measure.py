@@ -142,9 +142,10 @@ def validate_rss(
 ) -> dict[str, Any]:
     """Cross-check the sampled peak against the kernel's process peak.
 
-    The process peak is ``max(ru_maxrss, VmHWM)``: ``getrusage`` reads the
-    approximate per-CPU RSS counters, so it can trail the exact ``VmHWM`` by
-    a little; both must agree within ``tolerance``.
+    The process peak is ``max(ru_maxrss, VmHWM)``. Neither is exact: both
+    come from the kernel's approximate RSS counters (proc_pid_status(5)
+    calls VmHWM inaccurate too), so they may differ a little; they must
+    agree within ``tolerance``.
 
     ``invalid``: the sampler saw more than the process peak, or the two
     kernel peaks disagree (the measurement is broken). ``undersampled``: the
