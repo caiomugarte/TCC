@@ -194,6 +194,14 @@
 - **Date**: 2026-11-03
 - **Status**: active
 
+### AD-025
+- **Decision**: Checkpoint decisions for `multirun-convergence` (issue #9) after the independent tooling review of part (a), 2026-11-03. Door 5 (NaN SCORE): the experiment reproduces production as built. A lot stores a stock's NaN SCORE as `"score": null`, and the extended ranking `R` and the consensus reproduce production's order exactly; FIIs have no NaN score in production, so a null FII score is refused (child exit 1, `report` exit 4). A NaN breaks the score ordering of every ticker in the same count tie, not only its own: at equal count, AAAA3 0.5, BBBB3 NaN, CCCC3 0.7 rank [AAAA3, BBBB3, CCCC3], while without BBBB3 they rank [CCCC3, AAAA3]. The first n of `R` equal production's consensus (checked, exit 4 otherwise), so only ranks beyond n carry production's arbitrary within-tie order; this is a limitation of the rank gap, of K* and of the zone swaps at δ = 0, stated in the report. That production selects NaN-score stocks at all is a production defect outside #9, handled by a separate issue. Report size: the full generated `docs/validation/multirun-convergence.json` (about 2.4 MB) is committed beside the lots (about 2 MB).
+- **Reason**: Human answer at the checkpoint on 2026-11-03, relayed by the orchestrator, with the reviewer's T-11 amendment to door 5's wording. Treating NaN as the lowest score would make `R` disagree with the consensus production returns, so criterion 18 would exit 4 on real lots and #46 would calibrate against an order production does not use.
+- **Trade-off**: K*, the rank gap's tickers and the δ = 0 zone swaps depend, where a count tie contains a NaN-score stock beyond rank n, on first appearance in the runs rather than on score; fixing production's NaN scores later changes those values, and #46 must re-simulate over these lots if it does. A 2.4 MB generated JSON in the repository, regenerable byte for byte from the lots (C30).
+- **Scope**: `.specs/features/multirun-convergence/` (door 5, criteria 18, 22, 27, 31), `scripts/convergence_analysis.py`, `scripts/multirun_convergence.py`, #46.
+- **Date**: 2026-11-03
+- **Status**: active
+
 ## Handoff
 
 - **Feature**: p0-02-v0-corrected (Issue #7 / P0-02) - `.specs/features/p0-02-v0-corrected/`
