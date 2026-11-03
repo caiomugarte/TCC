@@ -45,12 +45,14 @@ from allocation_data import (  # noqa: E402
 from allocation_profiles import build_anchor_profiles, interpolate_profile  # noqa: E402
 from core.allocation import DailyReturn, PortfolioPath, portfolio_metrics  # noqa: E402
 from pipelines.equal_weight_risky import run_equal_weight_risky  # noqa: E402
-from snapshot_manifest import file_sha256  # noqa: E402
+from snapshot_manifest import ALLOCATION_FILES, file_sha256  # noqa: E402
 
 QUALIFYING_KINDS = ("exchange_index_close", "official_fixing", "official_rate", "spot_close")
 REVISABLE_KINDS = ("vendor_adjusted_close", "vendor_composite_close")
 REQUIRED_BENCHMARKS = ("cdi", "ibov", "naive_equal_weight")
 REQUIRED_SERIES = ("ibovespa", "ifix", "sp500_total_return_usd", "di", "btc_usd", "ptax")
+# The file each series is read from by load_snapshot_bundle; the audit must hash the same one.
+LOADER_FILES = {Path(filename).stem: filename for filename in ALLOCATION_FILES.values()}
 IDENTIFIER_KEYS = ("symbol", "index", "series", "currency")
 LAYERS = (
     "class_allocation",
@@ -151,6 +153,11 @@ def validate_protocol(protocol: Any) -> Mapping[str, Any]:
     for name, filename in series.items():
         if not isinstance(filename, str) or not filename:
             raise ProtocolError(f"series.{name}", "must be a file name")
+        if filename != LOADER_FILES.get(name):
+            raise ProtocolError(
+                f"series.{name}",
+                f"must be {LOADER_FILES.get(name)!r}, the file the report loads",
+            )
     kinds = protocol.get("series_kind")
     if not isinstance(kinds, Mapping):
         raise ProtocolError("series_kind", "must be an object")

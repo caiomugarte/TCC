@@ -1,4 +1,4 @@
-"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C45).
+"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C46).
 
 Every test names the check it proves. Fixtures are synthetic weekday series
 whose level on a date depends only on the date, so two retrievals of one
@@ -380,6 +380,29 @@ class ProtocolValidationTests(FixtureCase):
         fixture.write_protocol(protocol)
         code, stderr = fixture.report()
         self.assertEqual(code, 0, stderr)
+
+
+    def test_series_must_be_loader_files(self):  # C46
+        fixture = self.fixture()
+        self.assertEqual(fixture.audit()[0], 0)
+        audit_before = fixture.audit_path.read_bytes()
+        for directory in (fixture.snap, fixture.other):
+            shutil.copyfile(directory / "ibovespa.csv", directory / "ibovespa_copy.csv")
+        (fixture.out / pv.REPORT_JSON).write_text("previous json\n", encoding="utf-8")
+        (fixture.out / pv.REPORT_MD).write_text("previous md\n", encoding="utf-8")
+        before = self.snapshot_of(fixture.out)
+        protocol = fixture.protocol()
+        protocol["series"]["ibovespa"] = "ibovespa_copy.csv"
+        fixture.write_protocol(protocol)
+        for command, run in (("audit", fixture.audit), ("report", fixture.report)):
+            with self.subTest(command=command):
+                code, stderr = run()
+                self.assertEqual(code, 2, stderr)
+                lines = stderr.strip().splitlines()
+                self.assertEqual(len(lines), 1)
+                self.assertIn("series.ibovespa", lines[0])
+                self.assertEqual(fixture.audit_path.read_bytes(), audit_before)
+                self.assertEqual(self.snapshot_of(fixture.out), before)
 
 
 class CliPathTests(FixtureCase):

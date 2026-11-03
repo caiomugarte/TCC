@@ -4,7 +4,7 @@ Mutations: 4
 Build: `python3 -m py_compile py/pit_validation.py tests/test_pit_validation.py`
 Plan: `.specs/features/pit-oos-validation/plan.md`
 
-45 checks in 8 slices · 4 one-way doors · 0 open
+46 checks in 8 slices · 4 one-way doors · 0 open
 
 Test module: `tests/test_pit_validation.py` (stdlib `unittest`, run from the repo root). The four
 mutations aim at the per-decision slice (C10-C12), the execution lag (C17), the verdict rule (C31)
@@ -26,6 +26,9 @@ Proof: `python3 -m unittest tests.test_pit_validation -k ProtocolValidationTests
 
 **C4** - `audit` and `report` exit 3 naming the path and write nothing when `--protocol`, `--audit`, `snapshot_dir` or one retrieval does not exist (AC 4)
 Proof: `python3 -m unittest tests.test_pit_validation -k CliPathTests.test_missing_paths_exit_3`
+
+**C46** - A protocol whose `series.ibovespa` names `ibovespa_copy.csv` (a byte-identical copy present in every retrieval) instead of `ibovespa.csv`, the file `load_snapshot_bundle` reads, makes `audit` and `report` each exit 2 with one line naming `series.ibovespa`, writing nothing and leaving `--out-dir` byte-identical (AC 3, AC 25; review F2)
+Proof: `python3 -m unittest tests.test_pit_validation -k ProtocolValidationTests.test_series_must_be_loader_files`
 
 ### S2 - The walk-forward covers its declared period without overlap
 
@@ -171,7 +174,7 @@ Proof: `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retr
 | --- | --- | --- |
 | CLI exit codes (4) | 0 C33 · 2 C3 · 3 C4 · 4 C8 | - |
 | exit-4 integrity violations (8) | leak C12 · overlap C8 · gap C8 · dropped-window C8 · cutoff-late C13 · cutoff-early C13 · hash-mismatch C34 · audit-protocol-mismatch C42, C44 | - |
-| invalid protocol examples, AC 3 (10) | no-ibov C3 · sp500-added C3 · cost-removed C3 · cost-string C3 · cost-negative C3 · cost-nan C3 · basis-removed C3 · taxes-empty C3 · kind-unknown C3 · cost-zero-accepted C3 | - |
+| invalid protocol examples, AC 3 (11) | no-ibov C3 · sp500-added C3 · cost-removed C3 · cost-string C3 · cost-negative C3 · cost-nan C3 · basis-removed C3 · taxes-empty C3 · kind-unknown C3 · cost-zero-accepted C3 · series-file-not-loaders C46 | - |
 | missing paths, AC 4 (4) | `--protocol` C4 · `--audit` C4 · `snapshot_dir` C4 · retrieval C4 | - |
 | `series_kind` vocabulary (7) | `exchange_index_close` C27 · `official_rate` C27 · `official_fixing` C28 · `spot_close` C28 · `vendor_composite_close` C27 · `vendor_adjusted_close` C27 · unknown C3 | - |
 | `PIT_MISSING` reasons (7) | `series_absent` C27 · `kind_revisable` C27 · `provider_mismatch` C27 · `no_retrieval_pair_30d` C27 · `overlap_below_250` C27 · `overlap_incomplete` C27 · `values_revised` C27, C43, C45 | - |
@@ -198,7 +201,7 @@ Proof: `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retr
 
 ## Swept
 
-- validation: C3, C26
+- validation: C3, C26, C46
 - failure modes: C36
 - idempotency: C35
 - authorization: n/a - a local operator CLI over committed files; no user, network or credential
