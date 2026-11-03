@@ -840,6 +840,170 @@ class ZoneRecommendationTests(unittest.TestCase):
         self.assertIsNone(fiis["per_cell"]["q/fiis"]["at_recommended"])
 
 
+class RunCountBoundaryTests(unittest.TestCase):
+    """C38: the run_count rule's inclusive boundaries and their 1e-12 tolerance."""
+
+    CANDIDATES = [30, 60, 100, 150]
+
+    def rule(self, S, M=None):
+        return ca.run_count_rule(S, M or S, self.CANDIDATES, 0.5)
+
+    def test_boundaries(self):
+        self.assertEqual(self.rule({30: 3.1, 60: 2.6, 100: 2.5, 150: 2.0}), {"flattened": True, "k_min": 100})
+        self.assertEqual(self.rule({30: 3.1, 60: 2.5, 100: 2.2, 150: 2.0}), {"flattened": True, "k_min": 60})
+        S = {30: 3.1, 60: 2.0, 100: 2.0, 150: 2.0}
+        M = {30: 3.1, 60: 2.5, 100: 2.2, 150: 2.0}
+        self.assertEqual(self.rule(S, M), {"flattened": True, "k_min": 60})
+        self.assertEqual(1.1 - 0.6, 0.5000000000000001)
+        self.assertEqual(self.rule({30: 3.1, 60: 2.4, 100: 1.1, 150: 0.6}), {"flattened": True, "k_min": 100})
+        self.assertGreater(0.68, 0.18 + 0.5)
+        self.assertEqual(self.rule({30: 3.1, 60: 0.68, 100: 0.3, 150: 0.18}), {"flattened": True, "k_min": 60})
+
+
+class RunCountWiringTests(unittest.TestCase):
+    """C39: S and M are the mean and median of criterion 21's swaps, in full and per left-out seed."""
+
+    def test_curves_from_seed_turnover(self):
+        protocol = small_protocol(seeds=[1, 2, 3, 4])
+        lots = LotSet(protocol=protocol)
+        try:
+            report = lots.report_json()
+        finally:
+            lots.close()
+        rec = report["recommendation"]["run_count"]
+        self.assertEqual(sorted(rec["leave_one_seed_out"]), ["1", "2", "3", "4"])
+        mean_differs = median_differs = subset_differs = False
+        for cell_id, cell in report["cells"].items():
+            turnover = {item["k"]: item["pairs"] for item in cell["seed_turnover"]}
+            full = rec["per_cell"][cell_id]["full"]["curve"]
+            self.assertEqual([point["k"] for point in full], [2, 4, 6])
+            for point in full:
+                swaps = [pair["swapped"] for pair in turnover[point["k"]]]
+                self.assertEqual(len(swaps), 6)
+                self.assertEqual(point["S"], ca.mean(swaps), cell_id)
+                self.assertEqual(point["M"], ca.median(swaps), cell_id)
+                mean_differs |= point["S"] != point["M"]
+            for seed in (1, 2, 3, 4):
+                curve = rec["per_cell"][cell_id]["leave_one_seed_out"][str(seed)]["curve"]
+                for point, full_point in zip(curve, full):
+                    swaps = [pair["swapped"] for pair in turnover[point["k"]] if seed not in pair["seeds"]]
+                    self.assertEqual(len(swaps), 3)
+                    self.assertEqual(point["S"], ca.mean(swaps), (cell_id, seed))
+                    self.assertEqual(point["M"], ca.median(swaps), (cell_id, seed))
+                    median_differs |= point["M"] != point["S"]
+                    subset_differs |= point["S"] != full_point["S"]
+        # The data must tell the mean from the median and a subset from all seeds.
+        self.assertTrue(mean_differs and median_differs and subset_differs)
+
+
+class PrefixStub(Stub):
+    """A Stub whose consensus, ranking and counts depend on k."""
+
+    def __init__(self, n, by_k):
+        self.n = n
+        self.by_k = {k: Stub(n, *data) for k, data in by_k.items()}
+
+    def consensus(self, k):
+        return self.by_k[k].consensus(k)
+
+    def ranking(self, k):
+        return self.by_k[k].ranking(k)
+
+    def counts(self, k):
+        return self.by_k[k].counts(k)
+
+
+class ZoneInputTests(unittest.TestCase):
+    """C40-C42: the K* and δ* input sets, K*'s window boundary and the zone's prefix."""
+
+    def series(self):
+        consensus = {1: ["A1", "B1"], 2: ["A1", "C1"], 3: ["B1", "D1"]}
+        ranking = {1: ["A1", "B1", "C1", "D1"], 2: ["C1", "A1", "D1", "B1"], 3: ["D1", "B1", "A1"]}
+        counts = {
+            1: {"A1": 8, "B1": 6, "C1": 3, "D1": 1},
+            2: {"A1": 7, "C1": 5, "D1": 2, "B1": 1},
+            3: {"D1": 9, "B1": 4, "A1": 2},
+        }
+        return {s: Stub(2, consensus[s], ranking[s], counts[s]) for s in (1, 2, 3)}
+
+    def test_incumbent_ranks_over_ordered_pairs(self):
+        ranks = ca.incumbent_ranks(self.series(), [1, 2, 3], 10)
+        self.assertEqual(len(ranks), 6 * 2)
+        self.assertEqual(sorted(ranks), [1, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, math.inf])
+
+    def test_frequency_differences_over_union(self):
+        values = ca.frequency_differences(self.series(), [1, 2, 3], 10)
+        tenths = [Fraction(v, 10) for v in (1, 5, 2, 6, 2, 8, 5, 3, 5, 7)]
+        self.assertEqual(values, tenths)
+        self.assertEqual(len(values), 3 + 3 + 4)
+
+    def test_k_star_window_inclusive(self):
+        self.assertEqual(ca.k_star([1] * 246 + [30] * 14, 0.95, 13, 30), 30)
+        self.assertIsNone(ca.k_star([1] * 246 + [31] * 14, 0.95, 13, 30))
+
+    def test_zone_at_run_count_prefix(self):
+        protocol = small_protocol()
+        stable = (["A1", "B1"], ["A1", "B1", "C1"])
+
+        def seed(s):
+            at_4 = (*stable, {"A1": 4, "B1": 2 if s == 3 else 3, "C1": 1})
+            at_6 = (["A1", "B1"], ["Z1"], {"A1": 6, "B1": 6})
+            return PrefixStub(2, {4: at_4, 6: at_6})
+
+        series = {s: seed(s) for s in (1, 2, 3)}
+        cells = {"p/stocks": (series, 2), "p/fiis": (series, 2)}
+        zone = ca.recommend_zone(protocol, cells, 4)
+        for selector in ca.SELECTORS:
+            self.assertEqual(zone[selector]["at_prefix"], 4)
+            self.assertEqual(zone[selector]["per_cell"][f"p/{selector}"]["k_star"], 2)
+            self.assertEqual(zone[selector]["k_offset"], 0)
+            self.assertEqual(zone[selector]["delta"], 0.25)
+        self.assertIsNone(ca.recommend_zone(protocol, cells, 6)["stocks"]["k_offset"])
+
+
+class ReachabilityReportTests(unittest.TestCase):
+    """C45: the reachability verdicts on a report at the registered targets' boundaries."""
+
+    def lots_with(self, stock_fitness):
+        protocol = small_protocol()
+        protocol["production_stop_rule"]["target_jaccard"] = 1.0
+        protocol["production_stop_rule"]["target_cv"] = 0.0
+        lots = LotSet(protocol=protocol)
+        for lot in lots.lots.values():
+            lot["selectors"]["stocks"] = selector_lot("stocks", [["POMO4", "VALE3"]] * 6, 2, fitness=stock_fitness)
+            lot["selectors"]["fiis"] = selector_lot("fiis", [["KNCR11", "KNRI11"]] * 6, 2, fitness=[1.0] * 6)
+        lots.write()
+        return lots
+
+    def test_identical_runs_at_the_targets(self):
+        lots = self.lots_with([1.0] * 6)
+        try:
+            report = lots.report_json()
+        finally:
+            lots.close()
+        for cell_id, cell in report["cells"].items():
+            reach = cell["reachability"]
+            self.assertEqual(set(reach["target_jaccard"]["by_seed"].values()), {1.0}, cell_id)
+            self.assertEqual(set(reach["target_cv"]["by_seed"].values()), {0.0}, cell_id)
+            self.assertEqual(reach["target_jaccard"]["verdict"], "reachable", cell_id)
+            self.assertEqual(reach["target_cv"]["verdict"], "reachable", cell_id)
+        self.assertEqual(report["recommendation"]["adaptive_targets"]["action"], "keep")
+
+    def test_fitness_spread_fails_only_cv(self):
+        lots = self.lots_with([1.0, 1.1, 1.2, 1.0, 1.1, 1.2])
+        try:
+            report = lots.report_json()
+        finally:
+            lots.close()
+        reach = report["cells"]["p/stocks"]["reachability"]
+        self.assertEqual(reach["target_jaccard"]["verdict"], "reachable")
+        self.assertEqual(reach["target_cv"]["verdict"], "unreachable")
+        self.assertEqual(report["cells"]["p/fiis"]["reachability"]["target_cv"]["verdict"], "reachable")
+        targets = report["recommendation"]["adaptive_targets"]
+        self.assertEqual((targets["target_jaccard"]["verdict"], targets["target_cv"]["verdict"]), ("reachable", "mixed"))
+        self.assertEqual(targets["action"], "use_fixed_run_count")
+
+
 class ProductionMatchTests(unittest.TestCase):
     def test_match_reported(self):
         lots = LotSet()

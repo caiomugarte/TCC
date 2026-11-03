@@ -314,6 +314,31 @@ class PreregistrationTests(unittest.TestCase):
                 self.assertEqual(load_lot(label, seed)["mode"], "smoke")
 
 
+class CodePathTests(unittest.TestCase):
+    """C43: a modification under each of the six CODE_PATHS stops a measured run with exit 6."""
+
+    setUp = PreregistrationTests.setUp
+    git = PreregistrationTests.git
+    run_measured = PreregistrationTests.run_measured
+
+    def test_each_code_path_exits_6(self):
+        self.git("add", "protocol.json")
+        self.git("commit", "-q", "-m", "protocol")
+        files = ("api/app/x.py", "py/x.py", "scripts/multirun_convergence.py", "scripts/convergence_analysis.py",
+                 "scripts/benchmark_premium.py", "scripts/bench_measure.py")
+        self.assertEqual(sorted(mc.CODE_PATHS), sorted(f if f.startswith("scripts/") else f.rsplit("/", 1)[0] for f in files))
+        for rel in files:
+            path = self.repo / rel
+            path.write_text("x = 2\n")
+            code, err, spawned, lots = self.run_measured()
+            self.assertEqual(code, mc.EXIT_PREREGISTRATION, f"{rel}: {err}")
+            self.assertIn(rel, err)
+            self.assertEqual(spawned, [], rel)
+            self.assertFalse(lots.exists(), rel)
+            path.write_text("x = 1\n")
+            self.assertEqual(mc.preregistration_problems(self.protocol), [], rel)
+
+
 class ProvenanceTests(unittest.TestCase):
     def test_protocol_commit_of_committed_protocol(self):
         def git(*args):
@@ -597,6 +622,39 @@ class SkipTests(unittest.TestCase):
             self.assertIn("experiment_fingerprint", err)
             spawn.assert_not_called()
             self.assertEqual(ca.lot_path(lots, PROFILE, SEEDS[0]).read_bytes(), before)
+
+
+    def test_each_reuse_field_exit_4(self):
+        """C46: each field check_existing_lot compares with HEAD stops a reuse with exit 4."""
+
+        def mode(lot):
+            lot["mode"] = "measured"
+
+        def snapshot(lot):
+            lot["snapshot"]["manifest_id"] = "other"
+
+        def code_fingerprint(lot):
+            lot["code"]["code_fingerprint"] = "0" * 64
+
+        def experiment_fingerprint(lot):
+            lot["code"]["experiment_fingerprint"] = "0" * 64
+
+        for mutate in (mode, snapshot, code_fingerprint, experiment_fingerprint):
+            field = mutate.__name__
+            with tempfile.TemporaryDirectory() as tmp:
+                lots = Path(tmp) / "lots"
+                shutil.copytree(FIXTURE["lots_a"], lots)
+                path = ca.lot_path(lots, PROFILE, SEEDS[0])
+                lot = json.loads(path.read_text(encoding="utf-8"))
+                mutate(lot)
+                path.write_text(ca.dumps(lot), encoding="utf-8")
+                before = path.read_bytes()
+                with patch.object(mc, "_spawn_child") as spawn:
+                    code, err = run_main("run", "--protocol", FIXTURE["protocol"], "--registry", FIXTURE["registry"], "--lots-dir", lots, "--smoke")
+                self.assertEqual(code, mc.EXIT_INTEGRITY, f"{field}: {err}")
+                self.assertIn(f"another {field} than HEAD", err)
+                spawn.assert_not_called()
+                self.assertEqual(path.read_bytes(), before, field)
 
 
 class ChildFailureTests(unittest.TestCase):
