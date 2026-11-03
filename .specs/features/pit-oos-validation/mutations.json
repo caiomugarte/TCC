@@ -33,5 +33,26 @@
     "new": "    start, end = max(starts), max(ends)",
     "proof": "python3 -m unittest tests.test_pit_validation -k TrimTests",
     "label": "C14/C15 run_period.end is the latest verified end, not the intersection"
+  },
+  {
+    "file": "py/pit_validation.py",
+    "old": "        mismatch(f\"series_kind.{name}\", record.get(\"series_kind\"), protocol[\"series_kind\"][name])",
+    "new": "        mismatch(f\"series_kind.{name}\", record.get(\"series_kind\"), record.get(\"series_kind\"))",
+    "proof": "python3 -m unittest tests.test_pit_validation -k IntegrityTests",
+    "label": "C42 report ignores a series_kind change since the audit (V-2 round 2)"
+  },
+  {
+    "file": "py/pit_validation.py",
+    "old": "        mismatch(f\"retrievals.{name}\", recorded, list(protocol[\"retrievals\"]))",
+    "new": "        mismatch(f\"retrievals.{name}\", recorded[:1], list(protocol[\"retrievals\"])[:1])",
+    "proof": "python3 -m unittest tests.test_pit_validation -k IntegrityTests",
+    "label": "C42 report compares only the snapshot retrieval, not the paired ones (V-2 round 2)"
+  },
+  {
+    "file": "py/pit_validation.py",
+    "old": "        mismatch(f\"layers.{name}.missing\", recorded.get(\"missing\"), list(layer[\"missing\"]))",
+    "new": "        mismatch(f\"layers.{name}.missing\", recorded.get(\"missing\"), recorded.get(\"missing\"))",
+    "proof": "python3 -m unittest tests.test_pit_validation -k IntegrityTests",
+    "label": "V-2 report ignores a selection-layer missing-list change since the audit (round 2)"
   }
 ]
