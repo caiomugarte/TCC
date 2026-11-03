@@ -88,23 +88,23 @@ projeto; o diretório de saída é neutro e fica fora do repo):
   --output-dir /tmp/prumo-bench/premium-baseline
 ```
 
-A execução registrada rodou no commit `7bf7284` com a árvore limpa, com
+A execução registrada rodou no commit `a7c7d38` com a árvore limpa, com
 `--registry /home/caio/Documents/projetos/TCC/snapshots` e um diretório de
 saída temporário (o campo `command` do JSON guarda esse caminho original). O
 diretório de saída não entra nas condições comparadas pelo gate.
 
 | Campo | Valor (medido) |
 | --- | --- |
-| Comando exato | `python scripts/benchmark_premium.py --registry /home/caio/Documents/projetos/TCC/snapshots --output-dir <scratch>/bench-baseline` (padrões: `--profiles conservador,moderado,arrojado`, `--seed 42`, `--capital 100000`, `--isolation process`) |
-| Commit (`git rev-parse HEAD`) | `7bf7284c30ea2bbe903177fcae689d5f097a21ce` |
+| Comando exato | `python scripts/benchmark_premium.py --registry /home/caio/Documents/projetos/TCC/snapshots --output-dir <scratch>/bench-baseline-r2` (padrões: `--profiles conservador,moderado,arrojado`, `--seed 42`, `--capital 100000`, `--isolation process`) |
+| Commit (`git rev-parse HEAD`) | `a7c7d38544102e08bbd120f0be5c4cc013b0e02e` |
 | Árvore suja (`dirty` / `code_dirty`) | `false` / `false` |
-| `code_fingerprint` | `70d61e419faf68d87aef187440558a6f3642474277cc82cbc383924560731562` (trees: `api/app` `9cc956f`, `py` `b86aec5`, `scripts/benchmark_premium.py` `f6efe74`) |
+| `code_fingerprint` | `1d52d44d1db268280112a0495a827a1589e82121c1655ef1bcc23cfb3c35ff40` (trees: `api/app` `9cc956f`, `py` `b86aec5`, `scripts/bench_measure.py` `0aa2ebc`, `scripts/benchmark_premium.py` `e057bf3`) |
 | Snapshot (`manifest_id` / `manifest_sha256`) | `dev-2026-10-29-ibov` / `b66a5764bdcb8d8a20cfc4e10f9ad4d7b14448e3c997fec8e597fdcaccd2d014` (`cutoff_date` 2026-10-28) |
 | Seed | 42 (mesma nos três perfis) |
 | Capital | R$ 100.000,00 |
 | Modo / isolamento | `measured` / `process` (um processo Python novo por perfil, em sequência) |
-| Data da execução (UTC) | início em 2026-11-03T01:07:14Z (`created_at`, gravado antes do primeiro perfil); duração somada dos três perfis ≈ 21.383 s ≈ 5,9 h |
-| Carga da máquina durante a execução | Não dedicada: havia outro trabalho leve. Load average ≈ 2–4,7 no início e ≈ 2,1–2,2 no fim (12 threads lógicas). Registrado como condição da medição, não controlado. |
+| Data da execução (UTC) | início em 2026-11-03T07:39:17Z (`created_at`, gravado antes do primeiro perfil); duração somada dos três perfis ≈ 21.266 s ≈ 5,9 h |
+| Carga da máquina durante a execução | Não dedicada: havia outro trabalho leve. Load average ≈ 1,3–2,6 (12 threads lógicas). Registrado como condição da medição, não controlado. |
 
 O `summary.json` da execução está em
 [`docs/validation/premium-performance-baseline.json`](premium-performance-baseline.json)
@@ -122,7 +122,8 @@ capacidade, não uma medição.
 | RAM | 31.358.128 kB (29,91 GiB) |
 | SO / kernel | Ubuntu 26.04.1 LTS / 7.0.0-38-generic |
 | Python | CPython 3.14.4 |
-| `machine.fingerprint` | `48000f0b2a53398f5ac05763b5204e8633c0ca8bff1694870b86f850a992002b` |
+| Bibliotecas (`machine.libraries`) | numpy 2.5.4, pandas 3.0.6 |
+| `machine.fingerprint` | `7e180109c5fd263c7687373422045f6a29636375972351b195d017da41706955` (inclui as versões de numpy e pandas) |
 
 ## Resultados por perfil e etapa (medido)
 
@@ -131,21 +132,21 @@ Todos os valores desta seção são **medidos** (`mode: measured`). Fonte:
 
 | Perfil | Etapa | Wall (s) | CPU-s (user+sys) | CPU filhos (s) | CPU/wall | Pico RSS amostrado (MiB) | n_runs efetivo | Gerações (total / média / mín–máx) |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| conservador | alocação (`snapshot_load` + `allocation`) | 0,47 | 0,47 | 0,00 | 1,00 | 146,3 | n/a | n/a (sem GA, ADR 0003) |
-| conservador | ações | 4.090,93 | 4.029,05 | 0,00 | 0,985 | 192,2 | 150 (de 150) | 12.295 / 82,0 / 51–209 |
-| conservador | FIIs | 854,42 | 843,69 | 0,00 | 0,987 | 194,5 | **40** (de 150) | 2.090 / 52,2 / 51–58 |
+| conservador | alocação (`snapshot_load` + `allocation`) | 0,48 | 0,48 | 0,00 | 1,00 | 145,8 | n/a | n/a (sem GA, ADR 0003) |
+| conservador | ações | 4.020,37 | 3.984,34 | 0,00 | 0,991 | 191,8 | 150 (de 150) | 12.295 / 82,0 / 51–209 |
+| conservador | FIIs | 842,70 | 834,94 | 0,00 | 0,991 | 194,1 | **40** (de 150) | 2.090 / 52,2 / 51–58 |
 | conservador | composição (derivada) | 0,002 | 0,002 | 0,00 | 1,00 | n/a (sem amostra) | n/a | n/a |
-| conservador | **total** | **4.945,83** (82,4 min) | 4.873,21 | 0,00 | 0,985 | 194,5 | n/a | n/a |
-| moderado | alocação (`snapshot_load` + `allocation`) | 0,47 | 0,47 | 0,00 | 1,00 | 146,1 | n/a | n/a (sem GA, ADR 0003) |
-| moderado | ações | 3.989,41 | 3.949,02 | 0,00 | 0,990 | 192,0 | 150 (de 150) | 13.475 / 89,8 / 51–176 |
-| moderado | FIIs | 5.464,26 | 5.419,88 | 0,00 | 0,992 | 204,1 | 150 (de 150) | 14.490 / 96,6 / 51–232 |
+| conservador | **total** | **4.863,55** (81,1 min) | 4.819,75 | 0,00 | 0,991 | 194,1 | n/a | n/a |
+| moderado | alocação (`snapshot_load` + `allocation`) | 0,48 | 0,48 | 0,00 | 1,00 | 145,6 | n/a | n/a (sem GA, ADR 0003) |
+| moderado | ações | 3.972,66 | 3.940,86 | 0,00 | 0,992 | 191,5 | 150 (de 150) | 13.475 / 89,8 / 51–176 |
+| moderado | FIIs | 5.422,18 | 5.381,24 | 0,00 | 0,992 | 203,8 | 150 (de 150) | 14.490 / 96,6 / 51–232 |
 | moderado | composição (derivada) | 0,003 | 0,003 | 0,00 | 1,00 | n/a (sem amostra) | n/a | n/a |
-| moderado | **total** | **9.454,15** (157,6 min) | 9.369,37 | 0,00 | 0,991 | 204,1 | n/a | n/a |
-| arrojado | alocação (`snapshot_load` + `allocation`) | 0,47 | 0,47 | 0,00 | 1,00 | 146,3 | n/a | n/a (sem GA, ADR 0003) |
-| arrojado | ações | 3.039,69 | 3.013,73 | 0,00 | 0,991 | 192,1 | 150 (de 150) | 11.640 / 77,6 / 51–205 |
-| arrojado | FIIs | 3.942,73 | 3.907,22 | 0,00 | 0,991 | 203,2 | 150 (de 150) | 11.918 / 79,5 / 51–202 |
-| arrojado | composição (derivada) | 0,003 | 0,003 | 0,00 | 1,00 | n/a (sem amostra) | n/a | n/a |
-| arrojado | **total** | **6.982,90** (116,4 min) | 6.921,43 | 0,00 | 0,991 | 203,2 | n/a | n/a |
+| moderado | **total** | **9.395,33** (156,6 min) | 9.322,58 | 0,00 | 0,992 | 203,8 | n/a | n/a |
+| arrojado | alocação (`snapshot_load` + `allocation`) | 0,47 | 0,47 | 0,00 | 1,00 | 145,9 | n/a | n/a (sem GA, ADR 0003) |
+| arrojado | ações | 3.068,71 | 3.034,70 | 0,00 | 0,989 | 191,5 | 150 (de 150) | 11.640 / 77,6 / 51–205 |
+| arrojado | FIIs | 3.937,64 | 3.924,14 | 0,00 | 0,997 | 202,7 | 150 (de 150) | 11.918 / 79,5 / 51–202 |
+| arrojado | composição (derivada) | 0,002 | 0,002 | 0,00 | 1,00 | n/a (sem amostra) | n/a | n/a |
+| arrojado | **total** | **7.006,83** (116,8 min) | 6.959,32 | 0,00 | 0,993 | 202,7 | n/a | n/a |
 
 Notas da tabela (medido): a alocação se divide em `snapshot_load` ≈ 0,03 s
 e `allocation` ≈ 0,45 s nos três perfis. A composição dura poucos
@@ -154,59 +155,95 @@ CPU/wall de etapas abaixo de 1 s são ruidosos (podem passar de 1,00 por
 arredondamento). "CPU filhos" é 0 em todas as etapas, como esperado com
 `parallel=False`. Gerações configuradas: 400 por run, população 300.
 
+Parada adaptativa dos seletores (medido, `profiles.<perfil>.engines.<seletor>`;
+alvos registrados em todos: `target_cv` 0,02, `target_jaccard` 0,75,
+`min_runs` 40):
+
+| Perfil | Seletor | `stop_reason` | `stability_target_met` | `fitness_cv` | `jaccard_mean` | `runs_observed` |
+| --- | --- | --- | --- | ---: | ---: | ---: |
+| conservador | ações | `run_count` | `false` | 0,0502 | 0,2659 | 150 |
+| conservador | FIIs | `stability_target` | `true` | 0,0000 | 1,0000 | 40 |
+| moderado | ações | `run_count` | `false` | 0,0587 | 0,1588 | 150 |
+| moderado | FIIs | `run_count` | `false` | 0,0435 | 0,4735 | 150 |
+| arrojado | ações | `run_count` | `false` | 0,0570 | 0,1158 | 150 |
+| arrojado | FIIs | `run_count` | `false` | 0,0556 | 0,1885 | 150 |
+
 Validação do RSS (medido):
 
 | Perfil | Pico amostrado (MiB) | `ru_maxrss` (MiB) | `VmHWM` (MiB) | Razão amostrado/pico | Amostras / maior intervalo (s) | Status |
 | --- | ---: | ---: | ---: | ---: | --- | --- |
-| conservador | 194,6 | 193,3 | 194,6 | 1,00 | 4.951 / 1,11 | `ok` |
-| moderado | 204,2 | 203,4 | 204,2 | 1,00 | 9.455 / 1,08 | `ok` |
-| arrojado | 203,3 | 202,2 | 203,3 | 1,00 | 6.988 / 1,04 | `ok` |
+| conservador | 194,2 | 193,4 | 194,2 | 1,00 | 4.869 / 1,04 | `ok` |
+| moderado | 203,9 | 203,1 | 203,9 | 1,00 | 9.397 / 1,05 | `ok` |
+| arrojado | 202,8 | 202,2 | 202,8 | 1,00 | 7.012 / 1,06 | `ok` |
 
 O pico amostrado do processo inclui as amostras de fronteira e fica alguns
 centésimos de MiB acima do pico da etapa `total`. `ru_maxrss` e `VmHWM`
-divergem menos de 1% (limite: 2%). `ru_maxrss_children` é 0.
+divergem menos de 0,5% (limite: 2%). `ru_maxrss_children` é 0.
 
 ### Observações factuais
 
 Registradas sem conclusão sobre qualidade, convergência ou sobre o número de
 runs.
 
-- **FIIs do conservador pararam em 40 runs.** Nos outros cinco seletores o
-  `n_runs` efetivo foi 150. A causa está no código: com `adaptive_mode`, o
-  laço sequencial de `run_fii_selection` (`py/fii_selection.py`, ramo
-  `parallel=False`) recalcula `_fii_stability` depois de **cada** run e
-  interrompe quando `len(resultados) >= min_runs` **e** `fitness_cv <=
-  target_cv` **e** `jaccard_mean >= target_jaccard`. A política Premium passa
-  `min_runs` 40, `target_cv` 0,02 e `target_jaccard` 0,75
-  (`SYSTEM_GA_CONFIG` em `api/app/services/premium_policy.py`, repassados por
-  `_default_fii_engine` em `api/app/adapters/premium_optimization.py`). O
-  `n_runs` 40 indica que o critério foi satisfeito já na primeira checagem
-  elegível (run 40). Os valores de CV e Jaccard dos FIIs não ficam no
-  `summary.json` nem no log (o seletor de FIIs não imprime a verificação),
-  então não estão registrados aqui.
-- **O critério de parada das ações é checado em outro ritmo.**
-  `run_multi_execution_profile` (`py/pipelines/multi_run.py`) checa a
-  estabilidade a cada 10 runs e imprime CV e Jaccard no `run.log`; nas três
-  execuções de ações o critério não foi atingido e os 150 runs rodaram. As
-  linhas de verificação de convergência por run do log ficam fora do escopo
-  deste relatório.
+- **FIIs do conservador pararam em 40 runs, pelo critério de estabilidade.**
+  O JSON registra `stop_reason: stability_target` e
+  `stability_target_met: true`, com `fitness_cv` 0,0 (alvo ≤ 0,02) e
+  `jaccard_mean` 1,0 (alvo ≥ 0,75) em 40 runs, que é o `min_runs`. Nos
+  outros cinco seletores o JSON registra `stop_reason: run_count` e
+  `stability_target_met: false`: rodaram os 150 runs configurados com
+  `fitness_cv` entre 0,044 e 0,059 e `jaccard_mean` entre 0,116 e 0,474
+  (tabela acima).
+- **O critério de parada é checado em ritmos diferentes.** O seletor de FIIs
+  (`run_fii_selection`, ramo `parallel=False`) checa a estabilidade depois de
+  cada run e só pode parar a partir do `min_runs`; o de ações
+  (`run_multi_execution_profile`) checa a cada 10 runs e imprime CV e
+  Jaccard no `run.log`. Os valores de `fitness_cv` e `jaccard_mean` da tabela
+  são os do fim de cada seletor.
 - **`converged_early_runs` mede outra coisa.** É o número de runs em que o GA
   parou antes das 400 gerações configuradas (parada antecipada por geração);
-  foi igual ao número de runs em todos os seletores (por exemplo, 40/40 nos
-  FIIs do conservador e 150/150 nos demais). Não é o mesmo critério do
-  `n_runs` adaptativo.
-- **O tempo por geração não é constante.** Wall por geração: ações 0,333 /
-  0,296 / 0,261 s e FIIs 0,409 / 0,377 / 0,331 s (conservador / moderado /
-  arrojado). Por run: ações 27,3 / 26,6 / 20,3 s e FIIs 21,4 / 36,4 / 26,3 s.
+  foi igual ao número de runs em todos os seletores (40/40 nos FIIs do
+  conservador e 150/150 nos demais). Não é o mesmo critério do `n_runs`
+  adaptativo.
+- **O tempo por geração não é constante.** Wall por geração: ações 0,327 /
+  0,295 / 0,264 s e FIIs 0,403 / 0,374 / 0,330 s (conservador / moderado /
+  arrojado). Por run: ações 26,8 / 26,5 / 20,5 s e FIIs 21,1 / 36,1 / 26,3 s.
 - **Os seletores dominam o tempo.** Ações + FIIs respondem por mais de
   99,99% do wall total nos três perfis; alocação (< 0,5 s) e composição
   (< 0,01 s) são desprezíveis.
-- **O moderado foi o perfil mais lento** (9.454 s), puxado pelos FIIs
-  (5.464 s, 96,6 gerações em média). O conservador foi o mais rápido
-  (4.946 s), em boa parte porque os FIIs rodaram 40 runs.
+- **O moderado foi o perfil mais lento** (9.395 s), puxado pelos FIIs
+  (5.422 s, 96,6 gerações em média). O conservador foi o mais rápido
+  (4.864 s), em boa parte porque os FIIs rodaram 40 runs.
 - **Faixa medida contra a estimativa sintética anterior.** O total medido
-  ficou entre 82 e 158 min por execução, dentro da faixa sintética de 45 min
+  ficou entre 81 e 157 min por execução, dentro da faixa sintética de 45 min
   a 2,7 h citada no objetivo (e perto do teto no moderado).
+
+### Repetição (rodada 1 contra rodada 2)
+
+Fato registrado, não calibração. A rodada 1 (commit `7bf7284`, início
+2026-11-03T01:07:14Z, load ≈ 2–4,7) e a rodada 2 (commit `a7c7d38`, a deste
+relatório, load ≈ 1,3–2,6) usaram o mesmo código de engine (tree hashes
+iguais nos dois JSONs: `api/app` `9cc956f` e `py` `b86aec5`), o mesmo
+snapshot (`manifest_sha256` e `sources` iguais), a mesma seed (42), a mesma
+política por perfil (`policy_sha256` igual) e o mesmo hardware (todos os
+campos de `machine` iguais, exceto `libraries`, que a rodada 1 não
+registrava). Mudaram só os arquivos do benchmark
+(`scripts/benchmark_premium.py` e o novo `scripts/bench_measure.py`).
+
+- Gerações por etapa idênticas: `generations_total`, mín, máx, `n_runs`
+  efetivo e `runs_observed` de ações e FIIs coincidem nos três perfis, assim
+  como os ativos escolhidos e os pesos por classe.
+- Wall total da rodada 2 contra a rodada 1: conservador 4.945,83 →
+  4.863,55 s (−1,66%), moderado 9.454,15 → 9.395,33 s (−0,62%), arrojado
+  6.982,90 → 7.006,83 s (+0,34%). Por seletor: ações −1,72% / −0,42% /
+  +0,95% e FIIs −1,37% / −0,77% / −0,13% (conservador / moderado /
+  arrojado).
+- O próprio gate se recusa a comparar as duas rodadas: `--compare-only`
+  da rodada 2 contra a rodada 1 sai com código 6, porque o
+  `code_fingerprint` (inclui os arquivos do benchmark) e o
+  `machine.fingerprint` (agora inclui numpy e pandas) diferem. Os deltas
+  acima foram calculados à parte, direto dos dois JSONs.
+- É uma única repetição (n = 2) com cargas de máquina diferentes. Não mede a
+  distribuição do ruído e não calibra o limiar de 20% do gate.
 
 ## Modelo inicial de capacidade
 
@@ -223,10 +260,11 @@ runs.
    + na fila). Hoje o executor rejeita `max_workers != 1`; mais de um worker
    exige mudança de código e, por causa do GIL, workers em processos
    separados, não threads.
-2. **P2, CPU-bound de um núcleo.** Medido: CPU/wall de 0,985 a 0,991 no total
+2. **P2, CPU-bound de um núcleo.** Medido: CPU/wall de 0,991 a 0,993 no total
    e "CPU filhos" 0. O modelo trata cada execução como ≈ 1 núcleo ocupado o
    tempo todo (≈ 0,99 CPU/wall). A execução de referência rodou com a
-   máquina sob carga leve (load ≈ 2), sem contenção de núcleo aparente.
+   máquina sob carga leve (load ≈ 1,3–2,6), sem contenção de núcleo
+   aparente.
 3. **P3, custo independente do capital e da conta.** O capital investível só
    escala os valores em BRL. A seed muda os resultados e, com o modo
    adaptativo, pode mudar o `n_runs` efetivo e as gerações (ver os FIIs do
@@ -236,7 +274,7 @@ runs.
    esta máquina. `k` **não foi medido**; o jeito mais barato de obtê-lo é
    rodar `--profiles moderado` uma vez no servidor. Até lá, os valores de
    servidor abaixo são fórmulas em `k`, não números.
-5. **P5, memória por worker ≈ 205 MiB.** Pico medido do pior perfil: 204,2
+5. **P5, memória por worker ≈ 205 MiB.** Pico medido do pior perfil: 203,9
    MiB (moderado) num processo Python dedicado; o processo já está em ≈ 146
    MiB depois dos imports e da carga do snapshot, então a execução em si
    acrescenta ≈ 58 MiB. Num worker dentro do processo da API o número muda;
@@ -251,41 +289,41 @@ runs.
 
 ### Valores derivados
 
-Com `T_p` = wall total medido do perfil `p`: `T_cons` = 4.945,83 s,
-`T_mod` = 9.454,15 s, `T_arr` = 6.982,90 s; `T̄ = média(T_p)` = 7.127,63 s
-(118,8 min ≈ 1,98 h); `T_max` = 9.454,15 s (moderado, ≈ 2,63 h);
-`M_max` = 204,2 MiB.
+Com `T_p` = wall total medido do perfil `p`: `T_cons` = 4.863,55 s,
+`T_mod` = 9.395,33 s, `T_arr` = 7.006,83 s; `T̄ = média(T_p)` = 7.088,57 s
+(118,1 min ≈ 1,97 h); `T_max` = 9.395,33 s (moderado, ≈ 2,61 h);
+`M_max` = 203,9 MiB.
 
 Execuções por worker (1 núcleo, 24 h de uso contínuo, P1, P2, P7):
 
 | Perfil | Wall total (h) | Execuções/h por worker | Execuções/dia por worker (local) | Execuções/dia por worker (servidor) |
 | --- | ---: | ---: | ---: | --- |
-| conservador | 1,37 | 0,73 | 17,5 | 17,5 / k |
-| moderado | 2,63 | 0,38 | 9,1 | 9,1 / k |
-| arrojado | 1,94 | 0,52 | 12,4 | 12,4 / k |
-| média (P6) | 1,98 | 0,51 | 12,1 | 12,1 / k |
+| conservador | 1,35 | 0,74 | 17,8 | 17,8 / k |
+| moderado | 2,61 | 0,38 | 9,2 | 9,2 / k |
+| arrojado | 1,95 | 0,51 | 12,3 | 12,3 / k |
+| média (P6) | 1,97 | 0,51 | 12,2 | 12,2 / k |
 
 | Grandeza | Fórmula | Valor local (derivado) | Valor servidor (derivado, P4) |
 | --- | --- | --- | --- |
 | Execuções por hora, 1 worker (P1, P6) | `3600 / T̄` | 0,51 | 0,51 / k |
-| Execuções por dia, 1 worker | `86400 / T̄` | 12,1 | 12,1 / k |
-| Espera no pior caso para a 2ª execução aceita (P1) | `2 × T_max` (a que está rodando + a própria) | 18.908 s ≈ 5,25 h | 5,25 × k h |
+| Execuções por dia, 1 worker | `86400 / T̄` | 12,2 | 12,2 / k |
+| Espera no pior caso para a 2ª execução aceita (P1) | `2 × T_max` (a que está rodando + a própria) | 18.791 s ≈ 5,22 h | 5,22 × k h |
 | Workers para N núcleos físicos (P2, P5, P8) | `min(N, floor(RAM_livre / M_max))` | N (a CPU limita antes da RAM: cada worker usa ≈ 0,2 GiB) | N do servidor, conferindo a RAM livre |
-| Execuções por dia com N workers | `N × 86400 / T̄` | 12,1 × N (6 núcleos: ≈ 72,7) | 12,1 × N / k |
+| Execuções por dia com N workers | `N × 86400 / T̄` | 12,2 × N (6 núcleos: ≈ 73,1) | 12,2 × N / k |
 | Memória para N workers (P5) | `N × 205 MiB` + folga | 1 worker ≈ 0,2 GiB; 4 ≈ 0,8 GiB; 6 ≈ 1,2 GiB | idem |
-| Timeout sugerido por execução | `1,5 × T_max`, arredondado | 14.181 s → **4 h** | 4 × k h (recalibrar após medir `k`) |
-| Custo por geração, ações | `wall_ações / gerações_total_ações` | 0,333 / 0,296 / 0,261 s (cons / mod / arr) | × k |
-| Custo por geração, FIIs | `wall_FIIs / gerações_total_FIIs` | 0,409 / 0,377 / 0,331 s (cons / mod / arr) | × k |
+| Timeout sugerido por execução | `1,5 × T_max`, arredondado | 14.093 s (3,91 h) → **4 h** | 4 × k h (recalibrar após medir `k`) |
+| Custo por geração, ações | `wall_ações / gerações_total_ações` | 0,327 / 0,295 / 0,264 s (cons / mod / arr) | × k |
+| Custo por geração, FIIs | `wall_FIIs / gerações_total_FIIs` | 0,403 / 0,374 / 0,330 s (cons / mod / arr) | × k |
 | Participação dos seletores no total | `(wall_ações + wall_FIIs) / T_p` | > 99,99% nos três perfis | n/a |
 
 O timeout usa uma margem de 50% sobre o pior perfil medido para cobrir
 variância de seed e carga (P3), que não foi medida; a margem é uma escolha,
-não um dado. A espera de 5,25 h é o caso em que duas execuções moderadas
+não um dado. A espera de 5,22 h é o caso em que duas execuções moderadas
 ficam enfileiradas no único worker.
 
 O custo por geração permite reestimar `T_p` para outro número efetivo de
 runs ou de gerações sem nova medição, mas a medição mostra que ele varia
-entre perfis e seletores (0,26 a 0,41 s), então a extrapolação vale só
+entre perfis e seletores (0,26 a 0,40 s), então a extrapolação vale só
 dentro do mesmo perfil e seletor. Isso é uma extrapolação, não uma
 recomendação de mudar o `run_count`.
 
@@ -303,9 +341,10 @@ O próprio script é o gate; não há CI.
 - Sai com código **5** se o wall total de qualquer perfil ficar mais de 20%
   acima do baseline (`--threshold`, padrão 0,20).
 - Sai com código **6** e não compara se mudar qualquer condição: código
-  (`code_fingerprint`, os tree hashes de `api/app`, `py` e
-  `scripts/benchmark_premium.py`, que não mudam com commits só de docs),
-  árvore de código suja, snapshot, seed, máquina (`machine.fingerprint`),
+  (`code_fingerprint`, os tree hashes de `api/app`, `py`,
+  `scripts/benchmark_premium.py` e `scripts/bench_measure.py`, que não mudam
+  com commits só de docs), árvore de código suja, snapshot, seed, máquina
+  (`machine.fingerprint`, que inclui as versões de numpy e pandas),
   modo (`measured` ou `smoke`), política do perfil ou perfil ausente do
   baseline.
 - Para comparar dois `summary.json` já existentes sem rodar nada:
@@ -324,15 +363,15 @@ O próprio script é o gate; não há CI.
 
 ## Limitações
 
-- Uma seed por perfil e uma execução por perfil: não mede a variância entre
-  seeds, entre contas nem o ruído entre repetições da mesma execução. O
-  limiar de 20% do gate não foi calibrado contra esse ruído.
+- Uma seed por perfil e duas execuções por perfil (rodadas 1 e 2, n = 2):
+  não mede a variância entre seeds nem entre contas, e uma repetição não
+  mede a distribuição do ruído entre execuções. O limiar de 20% do gate não
+  foi calibrado contra esse ruído.
 - Máquina não dedicada: havia outro trabalho leve durante a medição (load
-  average ≈ 2–4,7 no início, ≈ 2,1–2,2 no fim, em 12 threads). Os CPU/wall
-  ≈ 0,99 sugerem pouca contenção, mas o efeito não foi isolado.
-- O `summary.json` não registra o CV de fitness nem o Jaccard da parada
-  adaptativa dos FIIs; o motivo dos 40 runs no conservador vem do código, não
-  de um valor registrado.
+  average ≈ 1,3–2,6 em 12 threads). Os CPU/wall ≈ 0,99 sugerem pouca
+  contenção, mas o efeito não foi isolado.
+- `fitness_cv` e `jaccard_mean` são os valores do fim de cada seletor; o
+  JSON não guarda a série por checagem.
 - Máquina local; o servidor entra só pela premissa P4.
 - O amostrador de 1 s pode perder picos de memória com menos de 1 s; o
   status `undersampled` sinaliza isso pela comparação com `VmHWM`.
