@@ -1382,7 +1382,6 @@ class VerdictTests(unittest.TestCase):
         self.assertEqual(report["verdicts"]["premium_recommendation"], "UNVERIFIABLE")
 
     def test_insufficient_history_examples(self):  # C9
-        audit = qualified_audit()
         cases = [
             (date(2020, 8, 31), 2, "VALIDATED"),
             (date(2020, 7, 31), 1, "UNVERIFIABLE"),
@@ -1390,20 +1389,27 @@ class VerdictTests(unittest.TestCase):
         ]
         for end, paths, expected in cases:
             with self.subTest(end=end):
-                dates = weekdays(date(2016, 7, 21), end)
-                schedules = [schedule_for(dates, k) for k in range(12)]
-                with_windows = [s for s in schedules if s.windows]
-                self.assertEqual(len(with_windows), paths)
-                status, missing = pv.class_verdict(
-                    audit, {p: len(with_windows) for p in ("conservador", "moderado", "arrojado")}
-                )
-                self.assertEqual(status, expected)
-                self.assertEqual("insufficient_history" in missing, expected == "UNVERIFIABLE")
-        dates = weekdays(date(2016, 7, 21), date(2020, 8, 31))
-        zero, one = schedule_for(dates, 0), schedule_for(dates, 1)
-        self.assertEqual((len(zero.windows), len(one.windows)), (1, 1))
-        self.assertEqual(zero.executions[1], date(2020, 7, 22))
-        self.assertEqual(one.executions[1], date(2020, 8, 24))
+                fixture = Fixture(end=end, sensitivity=False)
+                self.addCleanup(fixture.cleanup)
+                self.assertEqual(fixture.audit()[0], 0)
+                report = fixture.compute()
+                self.assertEqual(report["run_period"]["end"], end.isoformat())
+                self.assertEqual(report["verdicts"]["class_allocation"], expected)
+                missing = report["missing"]["class_allocation"]
+                self.assertEqual(missing, [] if expected == "VALIDATED" else ["insufficient_history"])
+                if expected == "VALIDATED":
+                    for profile in report["profiles"].values():
+                        self.assertEqual(len(profile["paths"]), paths)
+                        self.assertEqual(
+                            [(p["offset"], p["execution_dates"][1]) for p in profile["paths"]],
+                            [(0, "2020-07-22"), (1, "2020-08-24")],
+                        )
+                else:
+                    self.assertNotIn("profiles", report)
+        dates = weekdays(date(2016, 7, 21), date(2020, 7, 31))
+        self.assertEqual(sum(1 for k in range(12) if schedule_for(dates, k).windows), 1)
+        dates = weekdays(date(2016, 7, 21), date(2020, 7, 21))
+        self.assertEqual(sum(1 for k in range(12) if schedule_for(dates, k).windows), 0)
 
     def test_selection_overlap_examples(self):  # C32
         end = date(2026, 7, 21)
