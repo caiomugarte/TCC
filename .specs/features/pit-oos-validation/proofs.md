@@ -1,8 +1,8 @@
 # pit-oos-validation proofs
 
-**HEAD**: bfefebb
+**HEAD**: 8a988e9
 **Tree**: clean
-**Result**: 43 pass, 0 fail; mutations 2 killed, 3 not
+**Result**: 46 pass, 0 fail; mutations 5 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -22,6 +22,7 @@
 | C13 | `python3 -m unittest tests.test_pit_validation -k CutoffTests.test_cutoff_mismatch_exits_4` | 1 | - | pass |
 | C14 | `python3 -m unittest tests.test_pit_validation -k TrimTests.test_run_uses_verified_range_only` | 1 | - | pass |
 | C15 | `python3 -m unittest tests.test_pit_validation -k TrimTests.test_real_run_period` | 1 | - | pass |
+| C41 | `python3 -m unittest tests.test_pit_validation -k TrimTests.test_run_stops_at_verified_end` | 1 | - | pass |
 | C16 | `python3 -m unittest tests.test_pit_validation -k TrimTests.test_committed_report_run_period` | 1 | - | pass |
 | C17 | `python3 -m unittest tests.test_pit_validation -k SimulationTests.test_execution_lag` | 1 | - | pass |
 | C18 | `python3 -m unittest tests.test_pit_validation -k SimulationTests.test_cost_factor_examples` | 1 | - | pass |
@@ -34,6 +35,7 @@
 | C25 | `python3 -m unittest tests.test_pit_validation -k SensitivityTests.test_sensitivity_rows` | 1 | - | pass |
 | C26 | `python3 -m unittest tests.test_pit_validation -k SensitivityTests.test_invalid_sensitivity_exits_2` | 1 | - | pass |
 | C27 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_rule_examples` | 1 | - | pass |
+| C43 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_non_finite_level_is_revision` | 1 | - | pass |
 | C28 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_real_audit` | 1 | - | pass |
 | C29 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_audit_record_fields` | 1 | - | pass |
 | C30 | `python3 -m unittest tests.test_pit_validation -k AuditTests.test_selection_layers_recorded` | 1 | - | pass |
@@ -44,6 +46,7 @@
 | C35 | `d=$(mktemp -d) && python3 py/pit_validation.py audit --protocol docs/validation/protocol.json --out "$d/pit-au` | count unknown | - | pass |
 | C35 | `python3 -m unittest tests.test_pit_validation -k ReportTests.test_committed_environment_matches` | 1 | - | pass |
 | C36 | `python3 -m unittest tests.test_pit_validation -k CliTests.test_failed_write_leaves_previous_outputs` | 1 | - | pass |
+| C42 | `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_audit_protocol_mismatch_exits_4` | 1 | - | pass |
 | C37 | `python3 -m unittest tests.test_pit_validation -k NoticeTests.test_notices_match_report` | 1 | - | pass |
 | C38 | `! git diff 4a2481a..HEAD -- docs/adr docs/research web api landing.html | grep -E '^\+[^+].*[0-9]+[,.][0-9]+ ?` | count unknown | - | pass |
 | C39 | `git diff --quiet 4a2481a HEAD -- data/allocation` | count unknown | - | pass |
@@ -54,8 +57,8 @@
 
 | Mutation | Location | Killed |
 | --- | --- | --- |
-| C10-C12 leak guard tolerates a row up to 3 days after t (weekend leak) | `py/pit_validation.py:677` | yes |
-| C17 exec_j row earned by the new weights (same-close execution) | `py/pit_validation.py:734` | yes |
-| C9/C31 verdict counts offsets without a window as paths | `py/pit_validation.py:948` | no |
-| C14 trim drops the run_period.end bound (unverified tail rows kept) | `py/pit_validation.py:527` | no |
-| C14/C15 run_period.end is the latest verified end, not the intersection | `py/pit_validation.py:516` | no |
+| C10-C12 leak guard tolerates a row up to 3 days after t (weekend leak) | `py/pit_validation.py:683` | yes |
+| C17 exec_j row earned by the new weights (same-close execution) | `py/pit_validation.py:740` | yes |
+| C9/C31 verdict counts offsets without a window as paths | `py/pit_validation.py:987` | yes |
+| C14 trim drops the run_period.end bound (unverified tail rows kept) | `py/pit_validation.py:533` | yes |
+| C14/C15 run_period.end is the latest verified end, not the intersection | `py/pit_validation.py:522` | yes |
