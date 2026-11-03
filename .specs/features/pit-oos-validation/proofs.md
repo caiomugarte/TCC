@@ -1,8 +1,8 @@
 # pit-oos-validation proofs
 
-**HEAD**: 701a8b2
+**HEAD**: 088e9ae
 **Tree**: clean
-**Result**: 48 pass, 0 fail; mutations 11 killed, 0 not
+**Result**: 50 pass, 0 fail; mutations 11 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -11,6 +11,7 @@
 | C3 | `python3 -m unittest tests.test_pit_validation -k ProtocolValidationTests.test_invalid_protocol_exits_2` | 1 | - | pass |
 | C3 | `python3 -m unittest tests.test_pit_validation -k ProtocolValidationTests.test_zero_cost_is_accepted` | 1 | - | pass |
 | C4 | `python3 -m unittest tests.test_pit_validation -k CliPathTests.test_missing_paths_exit_3` | 1 | - | pass |
+| C46 | `python3 -m unittest tests.test_pit_validation -k ProtocolValidationTests.test_series_must_be_loader_files` | 1 | - | pass |
 | C5 | `python3 -m unittest tests.test_pit_validation -k ScheduleTests.test_weekday_fixture_offsets` | 1 | - | pass |
 | C6 | `python3 -m unittest tests.test_pit_validation -k ScheduleTests.test_real_snapshot_schedule` | 1 | - | pass |
 | C7 | `python3 -m unittest tests.test_pit_validation -k ScheduleTests.test_period_end_and_union` | 1 | - | pass |
@@ -44,6 +45,7 @@
 | C32 | `python3 -m unittest tests.test_pit_validation -k VerdictTests.test_selection_overlap_examples` | 1 | - | pass |
 | C33 | `python3 -m unittest tests.test_pit_validation -k ReportTests.test_unverifiable_outputs` | 1 | - | pass |
 | C34 | `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_audit_hash_mismatch_exits_4` | 1 | - | pass |
+| C47 | `python3 -m unittest tests.test_pit_validation -k IntegrityTests.test_paired_retrieval_revised_exits_4` | 1 | - | pass |
 | C35 | `d=$(mktemp -d) && python3 py/pit_validation.py audit --protocol docs/validation/protocol.json --out "$d/pit-au` | count unknown | - | pass |
 | C35 | `python3 -m unittest tests.test_pit_validation -k ReportTests.test_committed_environment_matches` | 1 | - | pass |
 | C36 | `python3 -m unittest tests.test_pit_validation -k CliTests.test_failed_write_leaves_previous_outputs` | 1 | - | pass |
@@ -59,14 +61,14 @@
 
 | Mutation | Location | Killed |
 | --- | --- | --- |
-| C10-C12 leak guard tolerates a row up to 3 days after t (weekend leak) | `py/pit_validation.py:686` | yes |
-| C17 exec_j row earned by the new weights (same-close execution) | `py/pit_validation.py:743` | yes |
-| C9/C31 verdict counts offsets without a window as paths | `py/pit_validation.py:990` | yes |
-| C14 trim drops the run_period.end bound (unverified tail rows kept) | `py/pit_validation.py:536` | yes |
-| C14/C15 run_period.end is the latest verified end, not the intersection | `py/pit_validation.py:525` | yes |
-| C42 report ignores a series_kind change since the audit (V-2 round 2) | `py/pit_validation.py:901` | yes |
-| C42 report compares only the snapshot retrieval, not the paired ones (V-2 round 2) | `py/pit_validation.py:903` | yes |
-| V-2 report ignores a selection-layer missing-list change since the audit (round 2) | `py/pit_validation.py:908` | yes |
-| C44 report ignores an excluded_lookahead change since the audit (round 3) | `py/pit_validation.py:911` | yes |
-| C45 a zero or non-finite factor is skipped, not read as a revision (round 3) | `py/pit_validation.py:295` | yes |
-| C45 zero factor (subnormal level) reaches the division again (round 3) | `py/pit_validation.py:295` | yes |
+| C10-C12 leak guard tolerates a row up to 3 days after t (weekend leak) | `py/pit_validation.py:693` | yes |
+| C17 exec_j row earned by the new weights (same-close execution) | `py/pit_validation.py:750` | yes |
+| C9/C31 verdict counts offsets without a window as paths | `py/pit_validation.py:1023` | yes |
+| C14 trim drops the run_period.end bound (unverified tail rows kept) | `py/pit_validation.py:543` | yes |
+| C14/C15 run_period.end is the latest verified end, not the intersection | `py/pit_validation.py:532` | yes |
+| C42 report ignores a series_kind change since the audit (V-2 round 2) | `py/pit_validation.py:908` | yes |
+| C42 report compares only the snapshot retrieval, not the paired ones (V-2 round 2) | `py/pit_validation.py:910` | yes |
+| V-2 report ignores a selection-layer missing-list change since the audit (round 2) | `py/pit_validation.py:915` | yes |
+| C44 report ignores an excluded_lookahead change since the audit (round 3) | `py/pit_validation.py:918` | yes |
+| C45 a zero or non-finite factor is skipped, not read as a revision (round 3) | `py/pit_validation.py:302` | yes |
+| C45 zero factor (subnormal level) reaches the division again (round 3) | `py/pit_validation.py:302` | yes |
