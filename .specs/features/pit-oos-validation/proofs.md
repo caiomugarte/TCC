@@ -1,8 +1,8 @@
 # pit-oos-validation proofs
 
-**HEAD**: 512f0cc
+**HEAD**: 701a8b2
 **Tree**: clean
-**Result**: 48 pass, 0 fail; mutations 8 killed, 0 not
+**Result**: 48 pass, 0 fail; mutations 11 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -67,3 +67,6 @@
 | C42 report ignores a series_kind change since the audit (V-2 round 2) | `py/pit_validation.py:901` | yes |
 | C42 report compares only the snapshot retrieval, not the paired ones (V-2 round 2) | `py/pit_validation.py:903` | yes |
 | V-2 report ignores a selection-layer missing-list change since the audit (round 2) | `py/pit_validation.py:908` | yes |
+| C44 report ignores an excluded_lookahead change since the audit (round 3) | `py/pit_validation.py:911` | yes |
+| C45 a zero or non-finite factor is skipped, not read as a revision (round 3) | `py/pit_validation.py:295` | yes |
+| C45 zero factor (subnormal level) reaches the division again (round 3) | `py/pit_validation.py:295` | yes |
