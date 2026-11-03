@@ -1,0 +1,589 @@
+{
+  "capital_brl": 100000.0,
+  "command": "python scripts/benchmark_premium.py --registry /home/caio/Documents/projetos/TCC/snapshots --output-dir /tmp/claude-1000/-home-caio--orbita-worktrees-TCC-herdr-issue-8/b3f6e8a2-7cd6-4f0f-8af2-fb93f30c724b/scratchpad/bench-baseline",
+  "created_at": "2026-11-03T01:07:14.209682+00:00",
+  "git": {
+    "code_dirty": false,
+    "code_fingerprint": "70d61e419faf68d87aef187440558a6f3642474277cc82cbc383924560731562",
+    "code_trees": {
+      "api/app": "9cc956ffbef0d0cc3fd6a7756e6fb9f65040f8a2",
+      "py": "b86aec54b14675f31c7e828ce7834f93d270d923",
+      "scripts/benchmark_premium.py": "f6efe748b5476471116ed97ec84e6a15cffae811"
+    },
+    "commit": "7bf7284c30ea2bbe903177fcae689d5f097a21ce",
+    "dirty": false
+  },
+  "isolation": "process",
+  "machine": {
+    "arch": "x86_64",
+    "cpu_model": "AMD Ryzen 5 7600X 6-Core Processor",
+    "fingerprint": "48000f0b2a53398f5ac05763b5204e8633c0ca8bff1694870b86f850a992002b",
+    "kernel": "7.0.0-38-generic",
+    "logical_cpus": 12,
+    "mem_total_kb": 31358128,
+    "os": "Ubuntu 26.04.1 LTS",
+    "physical_cores": 6,
+    "python": "3.14.4",
+    "python_implementation": "CPython"
+  },
+  "mode": "measured",
+  "profiles": {
+    "arrojado": {
+      "capital_brl": 100000.0,
+      "engines": {
+        "allocation": {
+          "ga": false,
+          "note": "ADR 0003: equal-weight allocation, no GA"
+        },
+        "fiis": {
+          "adaptive_mode": true,
+          "converged_early_runs": 150,
+          "ga": true,
+          "generations_configured": 400,
+          "generations_max": 202,
+          "generations_mean": 79.45333333333333,
+          "generations_min": 51,
+          "generations_total": 11918,
+          "min_runs": 40,
+          "n_runs_effective": 150,
+          "population_configured": 300,
+          "run_count_configured": 150,
+          "runs_observed": 150
+        },
+        "stocks": {
+          "adaptive_mode": true,
+          "converged_early_runs": 150,
+          "ga": true,
+          "generations_configured": 400,
+          "generations_max": 205,
+          "generations_mean": 77.6,
+          "generations_min": 51,
+          "generations_total": 11640,
+          "min_runs": 40,
+          "n_runs_effective": 150,
+          "population_configured": 300,
+          "run_count_configured": 150,
+          "runs_observed": 150
+        }
+      },
+      "output": {
+        "classes": {
+          "brazilian_stocks": 0.17,
+          "crypto": 0.17,
+          "fiis": 0.17,
+          "fixed_income": 0.32,
+          "international": 0.17
+        },
+        "fiis": [
+          "JCCJ11",
+          "KNCR11",
+          "BTCR11",
+          "RBRF11",
+          "MXRF11",
+          "PLAG11",
+          "PQDP11",
+          "TVRI11",
+          "KNUQ11",
+          "HLOG11",
+          "SAPI11",
+          "TRXB11",
+          "XPML11",
+          "BTLG11",
+          "ALZR11"
+        ],
+        "stocks": [
+          "BBSE3",
+          "BMOB3",
+          "CURY3",
+          "CXSE3",
+          "DEXP3",
+          "EQPA3",
+          "EUCA4",
+          "FESA4",
+          "FIQE3",
+          "JSLG3",
+          "LOGG3",
+          "MDNE3",
+          "RDOR3",
+          "TFCO4",
+          "VULC3"
+        ]
+      },
+      "policy_sha256": "65c49adf895da6a18929451a16d005dd71a4d181e095bdac567a1269a160d5e9",
+      "profile": "arrojado",
+      "rss": {
+        "interval_s": 1.0,
+        "max_gap_s": 1.039889428007882,
+        "process_peak_kb": 208192,
+        "ratio": 1.0,
+        "reason": null,
+        "ru_maxrss_children_kb": 0,
+        "ru_maxrss_kb": 207060,
+        "sampled_peak_kb": 208192,
+        "samples": 6988,
+        "status": "ok",
+        "vm_hwm_kb": 208192
+      },
+      "seed": 42,
+      "stages": {
+        "allocation": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.4466113999999999,
+          "cpu_seconds": 0.4466089999999999,
+          "cpu_seconds_total": 0.4466089999999999,
+          "cpu_system_s": 0.0,
+          "cpu_user_s": 0.4466089999999999,
+          "cpu_utilization": 1.0000003201484355,
+          "executed": true,
+          "rss_peak_sampled_kb": 149840,
+          "rss_samples": 2,
+          "vm_hwm_kb_at_end": 149840,
+          "wall_s": 0.4466088570188731
+        },
+        "composition": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.0026230010007566307,
+          "cpu_seconds": 0.002629000000524684,
+          "cpu_seconds_total": 0.002629000000524684,
+          "cpu_system_s": 1.6000000000016e-05,
+          "cpu_user_s": 0.0026129999996555853,
+          "cpu_utilization": 1.001076484743948,
+          "derived": "total - engines",
+          "executed": true,
+          "rss_peak_sampled_kb": null,
+          "rss_samples": 0,
+          "vm_hwm_kb_at_end": null,
+          "wall_s": 0.0026261729653924704
+        },
+        "fiis": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 3907.223341795,
+          "cpu_seconds": 3907.2233399999996,
+          "cpu_seconds_total": 3907.2233399999996,
+          "cpu_system_s": 0.6387349999999999,
+          "cpu_user_s": 3906.5846049999996,
+          "cpu_utilization": 0.9909939100728099,
+          "executed": true,
+          "rss_peak_sampled_kb": 208076,
+          "rss_samples": 3941,
+          "vm_hwm_kb_at_end": 208076,
+          "wall_s": 3942.7319383959984
+        },
+        "snapshot_load": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.02720547200000001,
+          "cpu_seconds": 0.02720599999999993,
+          "cpu_seconds_total": 0.02720599999999993,
+          "cpu_system_s": 0.0029619999999999994,
+          "cpu_user_s": 0.024243999999999932,
+          "cpu_utilization": 1.000019591970601,
+          "executed": true,
+          "rss_peak_sampled_kb": 149644,
+          "rss_samples": 2,
+          "vm_hwm_kb_at_end": 149644,
+          "wall_s": 0.02720546699129045
+        },
+        "stocks": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 3013.725485646,
+          "cpu_seconds": 3013.725484,
+          "cpu_seconds_total": 3013.725484,
+          "cpu_system_s": 0.462534,
+          "cpu_user_s": 3013.2629500000003,
+          "cpu_utilization": 0.991457228804355,
+          "executed": true,
+          "rss_peak_sampled_kb": 196688,
+          "rss_samples": 3039,
+          "vm_hwm_kb_at_end": 196688,
+          "wall_s": 3039.6928848200478
+        },
+        "total": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 6921.425267314001,
+          "cpu_seconds": 6921.425268,
+          "cpu_seconds_total": 6921.425268,
+          "cpu_system_s": 1.104247,
+          "cpu_user_s": 6920.321021,
+          "cpu_utilization": 0.9911962100864171,
+          "executed": true,
+          "rss_peak_sampled_kb": 208076,
+          "rss_samples": 6986,
+          "vm_hwm_kb_at_end": 208076,
+          "wall_s": 6982.901263713022
+        }
+      }
+    },
+    "conservador": {
+      "capital_brl": 100000.0,
+      "engines": {
+        "allocation": {
+          "ga": false,
+          "note": "ADR 0003: equal-weight allocation, no GA"
+        },
+        "fiis": {
+          "adaptive_mode": true,
+          "converged_early_runs": 40,
+          "ga": true,
+          "generations_configured": 400,
+          "generations_max": 58,
+          "generations_mean": 52.25,
+          "generations_min": 51,
+          "generations_total": 2090,
+          "min_runs": 40,
+          "n_runs_effective": 40,
+          "population_configured": 300,
+          "run_count_configured": 150,
+          "runs_observed": 40
+        },
+        "stocks": {
+          "adaptive_mode": true,
+          "converged_early_runs": 150,
+          "ga": true,
+          "generations_configured": 400,
+          "generations_max": 209,
+          "generations_mean": 81.96666666666667,
+          "generations_min": 51,
+          "generations_total": 12295,
+          "min_runs": 40,
+          "n_runs_effective": 150,
+          "population_configured": 300,
+          "run_count_configured": 150,
+          "runs_observed": 150
+        }
+      },
+      "output": {
+        "classes": {
+          "brazilian_stocks": 0.0725,
+          "crypto": 0.0725,
+          "fiis": 0.0725,
+          "fixed_income": 0.71,
+          "international": 0.0725
+        },
+        "fiis": [
+          "XPML11",
+          "KNRI11",
+          "KNCR11",
+          "MXRF11",
+          "BTLG11",
+          "HGLG11",
+          "GGRC11",
+          "CPTS11",
+          "TRXF11",
+          "HGRU11"
+        ],
+        "stocks": [
+          "BBSE3",
+          "BRAP4",
+          "BRSR6",
+          "CURY3",
+          "CYRE3",
+          "ISAE4",
+          "PETR4",
+          "RDOR3",
+          "SHUL4",
+          "TAEE3"
+        ]
+      },
+      "policy_sha256": "2e265e2bc3b9b785470d4b901f2c147afe532360f8890151d7e34ed705d8013b",
+      "profile": "conservador",
+      "rss": {
+        "interval_s": 1.0,
+        "max_gap_s": 1.1126770310220309,
+        "process_peak_kb": 199244,
+        "ratio": 1.0,
+        "reason": null,
+        "ru_maxrss_children_kb": 0,
+        "ru_maxrss_kb": 197924,
+        "sampled_peak_kb": 199244,
+        "samples": 4951,
+        "status": "ok",
+        "vm_hwm_kb": 199244
+      },
+      "seed": 42,
+      "stages": {
+        "allocation": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.44637303000000006,
+          "cpu_seconds": 0.4463710000000001,
+          "cpu_seconds_total": 0.4463710000000001,
+          "cpu_system_s": 0.0,
+          "cpu_user_s": 0.4463710000000001,
+          "cpu_utilization": 0.9999683032222098,
+          "executed": true,
+          "rss_peak_sampled_kb": 149860,
+          "rss_samples": 2,
+          "vm_hwm_kb_at_end": 149860,
+          "wall_s": 0.4463851489708759
+        },
+        "composition": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.0019962799997301772,
+          "cpu_seconds": 0.002005999999710184,
+          "cpu_seconds_total": 0.002005999999710184,
+          "cpu_system_s": 0.0010140000000002924,
+          "cpu_user_s": 0.0009919999993144302,
+          "cpu_utilization": 1.0026515310896935,
+          "derived": "total - engines",
+          "executed": true,
+          "rss_peak_sampled_kb": null,
+          "rss_samples": 0,
+          "vm_hwm_kb_at_end": null,
+          "wall_s": 0.0020006950944662094
+        },
+        "fiis": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 843.6850280580002,
+          "cpu_seconds": 843.6850260000002,
+          "cpu_seconds_total": 843.6850260000002,
+          "cpu_system_s": 0.159941,
+          "cpu_user_s": 843.5250850000002,
+          "cpu_utilization": 0.9874367717391643,
+          "executed": true,
+          "rss_peak_sampled_kb": 199124,
+          "rss_samples": 856,
+          "vm_hwm_kb_at_end": 199124,
+          "wall_s": 854.4192905779928
+        },
+        "snapshot_load": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.027290301999999933,
+          "cpu_seconds": 0.027290000000000036,
+          "cpu_seconds_total": 0.027290000000000036,
+          "cpu_system_s": 0.0029689999999999994,
+          "cpu_user_s": 0.024321000000000037,
+          "cpu_utilization": 0.9999932579204754,
+          "executed": true,
+          "rss_peak_sampled_kb": 149660,
+          "rss_samples": 2,
+          "vm_hwm_kb_at_end": 149664,
+          "wall_s": 0.027290183992590755
+        },
+        "stocks": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 4029.047856145,
+          "cpu_seconds": 4029.047853,
+          "cpu_seconds_total": 4029.047853,
+          "cpu_system_s": 0.8497959999999999,
+          "cpu_user_s": 4028.198057,
+          "cpu_utilization": 0.9848725209385526,
+          "executed": true,
+          "rss_peak_sampled_kb": 196844,
+          "rss_samples": 4087,
+          "vm_hwm_kb_at_end": 196844,
+          "wall_s": 4090.933361771982
+        },
+        "total": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 4873.208543815,
+          "cpu_seconds": 4873.208546,
+          "cpu_seconds_total": 4873.208546,
+          "cpu_system_s": 1.0137200000000002,
+          "cpu_user_s": 4872.194826,
+          "cpu_utilization": 0.9853169625881761,
+          "executed": true,
+          "rss_peak_sampled_kb": 199128,
+          "rss_samples": 4949,
+          "vm_hwm_kb_at_end": 199128,
+          "wall_s": 4945.828328378033
+        }
+      }
+    },
+    "moderado": {
+      "capital_brl": 100000.0,
+      "engines": {
+        "allocation": {
+          "ga": false,
+          "note": "ADR 0003: equal-weight allocation, no GA"
+        },
+        "fiis": {
+          "adaptive_mode": true,
+          "converged_early_runs": 150,
+          "ga": true,
+          "generations_configured": 400,
+          "generations_max": 232,
+          "generations_mean": 96.6,
+          "generations_min": 51,
+          "generations_total": 14490,
+          "min_runs": 40,
+          "n_runs_effective": 150,
+          "population_configured": 300,
+          "run_count_configured": 150,
+          "runs_observed": 150
+        },
+        "stocks": {
+          "adaptive_mode": true,
+          "converged_early_runs": 150,
+          "ga": true,
+          "generations_configured": 400,
+          "generations_max": 176,
+          "generations_mean": 89.83333333333333,
+          "generations_min": 51,
+          "generations_total": 13475,
+          "min_runs": 40,
+          "n_runs_effective": 150,
+          "population_configured": 300,
+          "run_count_configured": 150,
+          "runs_observed": 150
+        }
+      },
+      "output": {
+        "classes": {
+          "brazilian_stocks": 0.12,
+          "crypto": 0.12,
+          "fiis": 0.12,
+          "fixed_income": 0.52,
+          "international": 0.12
+        },
+        "fiis": [
+          "MXRF11",
+          "KNCR11",
+          "XPML11",
+          "BTLG11",
+          "BRCR11",
+          "IRIM11",
+          "GGRC11",
+          "ALZR11",
+          "KNRI11",
+          "CPTS11",
+          "HSML11",
+          "RBRF11"
+        ],
+        "stocks": [
+          "BBSE3",
+          "BMOB3",
+          "BRSR6",
+          "CXSE3",
+          "FESA4",
+          "FIQE3",
+          "GMAT3",
+          "ISAE4",
+          "LAVV3",
+          "LOGG3",
+          "RDOR3",
+          "VULC3"
+        ]
+      },
+      "policy_sha256": "80d75c1e43ac64e999503b0d0cd89e923de87c82b34d38164864d6108034f4cf",
+      "profile": "moderado",
+      "rss": {
+        "interval_s": 1.0,
+        "max_gap_s": 1.0795809249975719,
+        "process_peak_kb": 209080,
+        "ratio": 1.0,
+        "reason": null,
+        "ru_maxrss_children_kb": 0,
+        "ru_maxrss_kb": 208244,
+        "sampled_peak_kb": 209080,
+        "samples": 9455,
+        "status": "ok",
+        "vm_hwm_kb": 209080
+      },
+      "seed": 42,
+      "stages": {
+        "allocation": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.44454620899999997,
+          "cpu_seconds": 0.444543,
+          "cpu_seconds_total": 0.444543,
+          "cpu_system_s": 0.0005369999999999958,
+          "cpu_user_s": 0.444006,
+          "cpu_utilization": 0.9999519506944574,
+          "executed": true,
+          "rss_peak_sampled_kb": 149600,
+          "rss_samples": 2,
+          "vm_hwm_kb_at_end": 149600,
+          "wall_s": 0.44456436100881547
+        },
+        "composition": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.0028866619995824294,
+          "cpu_seconds": 0.0028989999991608784,
+          "cpu_seconds_total": 0.0028989999991608784,
+          "cpu_system_s": 7.300000000021178e-05,
+          "cpu_user_s": 0.0028260000017326092,
+          "cpu_utilization": 1.0027113423861505,
+          "derived": "total - engines",
+          "executed": true,
+          "rss_peak_sampled_kb": null,
+          "rss_samples": 0,
+          "vm_hwm_kb_at_end": null,
+          "wall_s": 0.002891161071602255
+        },
+        "fiis": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 5419.877351341,
+          "cpu_seconds": 5419.87735,
+          "cpu_seconds_total": 5419.87735,
+          "cpu_system_s": 0.741788,
+          "cpu_user_s": 5419.1355619999995,
+          "cpu_utilization": 0.9918770338415626,
+          "executed": true,
+          "rss_peak_sampled_kb": 208960,
+          "rss_samples": 5460,
+          "vm_hwm_kb_at_end": 208964,
+          "wall_s": 5464.263376488001
+        },
+        "snapshot_load": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 0.028504011999999967,
+          "cpu_seconds": 0.02849999999999997,
+          "cpu_seconds_total": 0.02849999999999997,
+          "cpu_system_s": 0.0,
+          "cpu_user_s": 0.02849999999999997,
+          "cpu_utilization": 0.999863422113234,
+          "executed": true,
+          "rss_peak_sampled_kb": 149432,
+          "rss_samples": 2,
+          "vm_hwm_kb_at_end": 149432,
+          "wall_s": 0.028503893001470715
+        },
+        "stocks": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 3949.015617379,
+          "cpu_seconds": 3949.0156150000003,
+          "cpu_seconds_total": 3949.0156150000003,
+          "cpu_system_s": 0.666677,
+          "cpu_user_s": 3948.348938,
+          "cpu_utilization": 0.9898751241881611,
+          "executed": true,
+          "rss_peak_sampled_kb": 196616,
+          "rss_samples": 3987,
+          "vm_hwm_kb_at_end": 196616,
+          "wall_s": 3989.4078742899583
+        },
+        "total": {
+          "cpu_children_seconds": 0.0,
+          "cpu_process_time_s": 9369.368905603,
+          "cpu_seconds": 9369.368907,
+          "cpu_seconds_total": 9369.368907,
+          "cpu_system_s": 1.409075,
+          "cpu_user_s": 9367.959832,
+          "cpu_utilization": 0.9910326863641771,
+          "executed": true,
+          "rss_peak_sampled_kb": 208964,
+          "rss_samples": 9453,
+          "vm_hwm_kb_at_end": 208964,
+          "wall_s": 9454.147210193041
+        }
+      }
+    }
+  },
+  "rss_interval_s": 1.0,
+  "schema": "premium-benchmark-v1",
+  "seed": 42,
+  "snapshot": {
+    "cutoff_date": "2026-10-28",
+    "manifest_id": "dev-2026-10-29-ibov",
+    "manifest_path": "/home/caio/Documents/projetos/TCC/snapshots/dev-2026-10-29-ibov.json",
+    "manifest_sha256": "b66a5764bdcb8d8a20cfc4e10f9ad4d7b14448e3c997fec8e597fdcaccd2d014",
+    "selector_paths": {
+      "fiis": "/home/caio/Documents/projetos/TCC/snapshots/fiis.csv",
+      "stocks": "/home/caio/Documents/projetos/TCC/snapshots/stocks.csv"
+    },
+    "sources": {
+      "allocation": "631ea74c5ae78b3b83cf08627e7a1e17f13f3289f5cc625ed0c8b0baf97e48bc",
+      "fii": "549af15bfc9a78013fc1fdf2bcc22ff02795e31856d7462dcb905ce9d565f10a",
+      "stock": "690e9ae99f9277cdf725977a2bcbd3a07b8cf532f48cb5423792b33868c710a5"
+    }
+  }
+}
