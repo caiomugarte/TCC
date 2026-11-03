@@ -1,4 +1,4 @@
-"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C44).
+"""Checks for `.specs/features/pit-oos-validation/checks.md` (C1-C45).
 
 Every test names the check it proves. Fixtures are synthetic weekday series
 whose level on a date depends only on the date, so two retrievals of one
@@ -1292,6 +1292,21 @@ class AuditTests(unittest.TestCase):
         self.assertIsNone(record["pairs"][0]["max_rel_diff_daily_factor"])
         record = self.classify([rfile("A", "2026-01-01T09:00:00-03:00", other), rfile("B", "2026-03-01T09:00:00-03:00", dict(snap))])
         self.assertEqual((record["status"], record["reasons"]), ("PIT_MISSING", ["values_revised"]))
+
+    def test_infinite_or_subnormal_level_is_revision(self):  # C45
+        dates = self.DATES
+        snap = series_levels(dates)
+        for level in (float("inf"), 5e-324):
+            other = dict(snap)
+            other[dates[100]] = level
+            for name, files in (
+                ("paired", [rfile("A", "2026-01-01T09:00:00-03:00", snap), rfile("B", "2026-03-01T09:00:00-03:00", other)]),
+                ("snapshot", [rfile("A", "2026-01-01T09:00:00-03:00", other), rfile("B", "2026-03-01T09:00:00-03:00", dict(snap))]),
+            ):
+                with self.subTest(level=level, retrieval=name):
+                    record = self.classify(files)
+                    self.assertEqual((record["status"], record["reasons"]), ("PIT_MISSING", ["values_revised"]))
+                    self.assertIsNone(record["pairs"][0]["max_rel_diff_daily_factor"])
 
     def test_real_audit(self):  # C28
         audit = real_audit()

@@ -292,12 +292,15 @@ def compare_levels(
     for previous, current in zip(shared, shared[1:]):
         f_snap = snapshot[current] / snapshot[previous]
         f_other = other[current] / other[previous]
+        if not all(math.isfinite(f) and f != 0.0 for f in (f_snap, f_other)):
+            finite = False
+            break
         diff = abs(f_snap / f_other - 1.0)
         if not math.isfinite(diff):
             finite = False
             break
         worst = max(worst, diff)
-    # A non-finite factor cannot show agreement: None reads as `values_revised`.
+    # A zero or non-finite factor cannot show agreement: None reads as `values_revised`.
     result["max_rel_diff_daily_factor"] = worst if len(shared) > 1 and finite else None
     return result
 

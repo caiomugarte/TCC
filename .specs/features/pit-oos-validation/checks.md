@@ -4,7 +4,7 @@ Mutations: 4
 Build: `python3 -m py_compile py/pit_validation.py tests/test_pit_validation.py`
 Plan: `.specs/features/pit-oos-validation/plan.md`
 
-44 checks in 8 slices · 4 one-way doors · 0 open
+45 checks in 8 slices · 4 one-way doors · 0 open
 
 Test module: `tests/test_pit_validation.py` (stdlib `unittest`, run from the repo root). The four
 mutations aim at the per-decision slice (C10-C12), the execution lag (C17), the verdict rule (C31)
@@ -112,6 +112,9 @@ Proof: `python3 -m unittest tests.test_pit_validation -k AuditTests.test_rule_ex
 **C43** - The door-3 rule on a NaN level: the paired retrieval (or the snapshot) identical except one interior level `nan` -> `PIT_MISSING` `values_revised`, with `max_rel_diff_daily_factor` null (AC 20; Verifier V-3)
 Proof: `python3 -m unittest tests.test_pit_validation -k AuditTests.test_non_finite_level_is_revision`
 
+**C45** - The door-3 rule on an `inf` or subnormal (`5e-324`) level: the paired retrieval (or the snapshot) identical except one interior level `inf` (resp. `5e-324`) -> `PIT_MISSING` `values_revised`, with `max_rel_diff_daily_factor` null, and no exception (AC 20; Verifier V-7)
+Proof: `python3 -m unittest tests.test_pit_validation -k AuditTests.test_infinite_or_subnormal_level_is_revision`
+
 **C28** - The real audit groups the three repo copies of `ibovespa.csv` with `retrieved_at` 2026-07-24 and each member's `same_bytes_as` listing the other two; the pair with `data/allocation_retrieval_2026-10-29` has `days_apart` 97 and 2413 shared dates; all six series are `PIT_QUALIFIED` with `unverified_dates` 70 from 2016-07-21 to 2016-10-28 (S&P TR 71, BTC 100) (AC 20)
 Proof: `python3 -m unittest tests.test_pit_validation -k AuditTests.test_real_audit`
 
@@ -171,7 +174,7 @@ Proof: `python3 -m unittest tests.test_pit_validation -k DataCopyTests.test_retr
 | invalid protocol examples, AC 3 (10) | no-ibov C3 · sp500-added C3 · cost-removed C3 · cost-string C3 · cost-negative C3 · cost-nan C3 · basis-removed C3 · taxes-empty C3 · kind-unknown C3 · cost-zero-accepted C3 | - |
 | missing paths, AC 4 (4) | `--protocol` C4 · `--audit` C4 · `snapshot_dir` C4 · retrieval C4 | - |
 | `series_kind` vocabulary (7) | `exchange_index_close` C27 · `official_rate` C27 · `official_fixing` C28 · `spot_close` C28 · `vendor_composite_close` C27 · `vendor_adjusted_close` C27 · unknown C3 | - |
-| `PIT_MISSING` reasons (7) | `series_absent` C27 · `kind_revisable` C27 · `provider_mismatch` C27 · `no_retrieval_pair_30d` C27 · `overlap_below_250` C27 · `overlap_incomplete` C27 · `values_revised` C27, C43 | - |
+| `PIT_MISSING` reasons (7) | `series_absent` C27 · `kind_revisable` C27 · `provider_mismatch` C27 · `no_retrieval_pair_30d` C27 · `overlap_below_250` C27 · `overlap_incomplete` C27 · `values_revised` C27, C43, C45 | - |
 | schedule examples, AC 5 (6) | fixture-offset-0 C5 · fixture-offset-11 C5 · real-offset-0 C6 · real-offset-4-clamp C6 · real-offset-4-j5 C6 · real-offset-9 C6 | - |
 | path ends, AC 6 (2) | offset-8 C7 · offset-9 C7 | - |
 | `insufficient_history` examples, AC 7 (3) | to-2020-08-31 C9 · to-2020-07-31 C9 · to-2020-07-21 C9 | - |
