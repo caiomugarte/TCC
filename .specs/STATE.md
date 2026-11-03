@@ -176,7 +176,7 @@
 - **Trade-off**: #46 is bound to these semantics or must re-run the zone simulation of `scripts/convergence_analysis.py` over the committed lots with its own function before using the recommended values; calibration is on seed noise of one snapshot only (phase 2 in #46 measures month-to-month).
 - **Scope**: `.specs/features/multirun-convergence/` (criteria 23, 24, 27), #46 (`py/core/` zone function, Premium policy K and δ).
 - **Date**: 2026-11-03
-- **Status**: proposed - awaiting human approval at the multirun-convergence plan checkpoint (issue #9)
+- **Status**: active - accepted by the human at plan approval, 2026-11-03 (AD-024)
 
 ### AD-023
 - **Decision**: Convergence evidence for the multi-run GA is gathered as pre-registered full lots analysed by prefix: the decision rules live in a committed JSON protocol (`docs/validation/multirun-convergence-protocol.json`) that `run` refuses to use unless it is committed and clean (exit 6, with the code paths clean too); every (profile, seed) runs the production pipeline (`run_premium_optimization`, default engines) with `adaptive_mode` false only in the experiment's policy copy; each lot (`docs/validation/multirun-convergence/lots/<profile_id>/seed-<seed>.json`, schema `multirun-lot-v1`) stores every run and the SCORE/SETOR of every picked ticker with no timings, paths or timestamps (those go in `seed-<seed>.cost.json`), so a rerun is byte-identical; a prefix of k stored runs stands for a k-run execution (per-run seeds come from `derive_run_seed(base, run_id, namespace)`), and the report is rebuilt byte for byte from the protocol and the committed lots. The tooling lives in `scripts/`, not `py/`, so the #8 performance gate's `code_fingerprint` is untouched.
@@ -184,7 +184,15 @@
 - **Trade-off**: about 1-2 MB of committed lots; the lots' recorded commits must stay reachable, so from the first measured lot on the branch is never rebased, amended or force-pushed (fixes land as new commits) and the PR is merged with a merge commit (the repository's practice), never squashed. Lots carry the #8 gate's `code_fingerprint` unchanged plus a separate `experiment_fingerprint` over the two experiment scripts; a lot is reused only when both match `HEAD`. The measured run starts only after an independent review of the tooling.
 - **Scope**: `docs/validation/`, `scripts/multirun_convergence.py`, `scripts/convergence_analysis.py`, #46 phase 2, future run_count or adaptive-stop experiments.
 - **Date**: 2026-11-03
-- **Status**: proposed - awaiting human approval at the multirun-convergence plan checkpoint (issue #9)
+- **Status**: active - accepted by the human at plan approval, 2026-11-03 (AD-024)
+
+### AD-024
+- **Decision**: Plan approval for `multirun-convergence` (issue #9): the human approved every recommended default of plan Q1-Q9 and the mutation budget. Q1 profiles `premium-2026-11-02` (13 + 13 assets, the 2026-11-02 run's profile) and `arrojado-anchor` (15 + 15); selector scores below about 0.70 stay unmeasured and the report states it as a limitation; Q2 seeds `[46641103, 42, 43, 44, 45]` for both profiles; Q3 the run_count rule with ε = 0.5 swaps on the mean and on the median, the leave-one-seed-out maximum (`"max"`), candidates 30/60/100/150; Q4 `keep` only when both the `target_jaccard` and the `target_cv` verdicts are `reachable` in every cell, otherwise `use_fixed_run_count`; Q5 K* and δ* at the inverted-CDF 0.95 quantile, δ exact from the run counts as `Fraction`s, rounded up to 0.01, the largest over profiles; Q6 the zone semantics of AD-022; Q7 the workflow's builder runs part (b) in the background with `--jobs 5`, only after every part-(a) check passes at a clean committed `HEAD` and the independent tooling review has closed its blocking findings at that `HEAD`, and no history rewrite after the first measured lot (AD-023); Q8 the lots are committed (about 1-2 MB); Q9 the tooling lives in `scripts/` and tests in `tests/`. Mutation budget 4 (zone rule, run_count rule, K/δ quantiles, stop cadence). The three non-blocking findings of spec review round 2 were folded into the plan's criteria 3, 25 and 34 and Q4's text (R2-1, R2-2, R2-3).
+- **Reason**: Human answer at the plan checkpoint on 2026-11-03, relayed by the orchestrator: the plan is approved with every recommended default.
+- **Trade-off**: See AD-022 and AD-023. Two profiles in the moderado-arrojado half of the selector score leave the lower half unmeasured while #46 applies the largest `k_offset` and δ to every profile; about 22 CPU-hours of local compute for part (b).
+- **Scope**: `.specs/features/multirun-convergence/`, `docs/validation/multirun-convergence-protocol.json`, #46.
+- **Date**: 2026-11-03
+- **Status**: active
 
 ## Handoff
 
