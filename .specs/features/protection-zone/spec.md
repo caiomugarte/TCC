@@ -213,7 +213,7 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-10 | P1: Zone selection function | Tasks T2 | Implemented |
 | PZ-11 | P1: Zone selection function | Tasks T1 | Implemented |
 | PZ-12 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-13 | P1: Zone selection function | Tasks T4 | In Tasks |
+| PZ-13 | P1: Zone selection function | Tasks T4 | Implemented |
 | PZ-14 | P1: HHI fallback | Tasks T3, T5, T7 | In Tasks (T3 done) |
 | PZ-15 | P1: HHI fallback | Tasks T3 | Implemented |
 | PZ-16 | P1: HHI fallback | Tasks T3, T8, T12 | In Tasks (T3 done) |

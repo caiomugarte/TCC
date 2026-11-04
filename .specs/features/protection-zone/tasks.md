@@ -232,6 +232,8 @@ T15 → T16 → T17
 
 #### T4: AD-022 equivalence over the committed lots
 
+**Status**: Complete
+
 **What**: Prove the new function reproduces `zone_portfolio` and #9's recommended-point turnover.
 **Where**: `tests/test_protection_zone_equivalence.py` (new)
 **Depends on**: T2
@@ -247,11 +249,11 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Seeded random grid: identical portfolio set and turnover to `zone_portfolio` for both selectors
-- [ ] Lots at prefix 150, recommended `K = n + k_offset` and `δ = 0.11`: mean / max turnover 0.40 / 1, 0.10 / 1, 0.70 / 2, 0.00 / 0 for the four cells
-- [ ] Lots and report files unchanged (`git status --porcelain docs/validation` empty after the run)
-- [ ] Gate check passes: Build (end of Phase 1)
-- [ ] Test count: root suite at least 472 + Phase 1 additions
+- [x] Seeded random grid: identical portfolio set and turnover to `zone_portfolio` for both selectors
+- [x] Lots at prefix 150, recommended `K = n + k_offset` and `δ = 0.11`: mean / max turnover 0.40 / 1, 0.10 / 1, 0.70 / 2, 0.00 / 0 for the four cells
+- [x] Lots and report files unchanged (`git status --porcelain docs/validation` empty after the run)
+- [x] Gate check passes: Build (end of Phase 1)
+- [x] Test count: root suite at least 472 + Phase 1 additions
 
 **Tests**: unit
 **Gate**: build
