@@ -1,0 +1,255 @@
+{
+  "cpu_hours_total": 24.21714478694444,
+  "experiment": {
+    "experiment_wall_s": 9416.423036526001,
+    "first_started_at": "2026-11-04T03:53:32.773007+00:00",
+    "jobs": 5,
+    "last_finished_at": "2026-11-04T06:30:29.196042+00:00"
+  },
+  "label": "measured",
+  "lots": [
+    {
+      "fiis": {
+        "cpu_s": 4922.332758999999,
+        "wall_s": 5287.69964152301
+      },
+      "finished_at": "2026-11-03T20:27:51.372833+00:00",
+      "jobs": 5,
+      "lot": "arrojado-anchor:46641103",
+      "machine_fingerprint": "7e180109c5fd263c7687373422045f6a29636375972351b195d017da41706955",
+      "profile_id": "arrojado-anchor",
+      "seed": 46641103,
+      "started_at": "2026-11-03T18:02:37.427075+00:00",
+      "stocks": {
+        "cpu_s": 3337.244311,
+        "wall_s": 3425.017117598036
+      },
+      "total": {
+        "cpu_s": 8260.925758,
+        "wall_s": 8713.945734043024
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 5166.504967,
+        "wall_s": 5523.353743648971
+      },
+      "finished_at": "2026-11-03T20:32:22.269101+00:00",
+      "jobs": 5,
+      "lot": "arrojado-anchor:42",
+      "machine_fingerprint": "7e180109c5fd263c7687373422045f6a29636375972351b195d017da41706955",
+      "profile_id": "arrojado-anchor",
+      "seed": 42,
+      "started_at": "2026-11-03T18:02:37.428217+00:00",
+      "stocks": {
+        "cpu_s": 3379.5639429999997,
+        "wall_s": 3460.279280297982
+      },
+      "total": {
+        "cpu_s": 8547.346395,
+        "wall_s": 8984.84087170905
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 4987.762288,
+        "wall_s": 5346.886516036
+      },
+      "finished_at": "2026-11-03T20:28:19.598121+00:00",
+      "jobs": 5,
+      "lot": "arrojado-anchor:43",
+      "machine_fingerprint": "7e180109c5fd263c7687373422045f6a29636375972351b195d017da41706955",
+      "profile_id": "arrojado-anchor",
+      "seed": 43,
+      "started_at": "2026-11-03T18:02:37.428942+00:00",
+      "stocks": {
+        "cpu_s": 3310.635013,
+        "wall_s": 3394.0420290469774
+      },
+      "total": {
+        "cpu_s": 8299.754186,
+        "wall_s": 8742.169164647057
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 4962.583261,
+        "wall_s": 5327.564387701976
+      },
+      "finished_at": "2026-11-03T20:29:59.232103+00:00",
+      "jobs": 5,
+      "lot": "arrojado-anchor:44",
+      "machine_fingerprint": "7e180109c5fd263c7687373422045f6a29636375972351b195d017da41706955",
+      "profile_id": "arrojado-anchor",
+      "seed": 44,
+      "started_at": "2026-11-03T18:02:37.430730+00:00",
+      "stocks": {
+        "cpu_s": 3434.090964,
+        "wall_s": 3512.996513352962
+      },
+      "total": {
+        "cpu_s": 8397.978445,
+        "wall_s": 8841.801360349986
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 4915.104117,
+        "wall_s": 5273.662786066008
+      },
+      "finished_at": "2026-11-03T20:29:44.912292+00:00",
+      "jobs": 5,
+      "lot": "arrojado-anchor:45",
+      "machine_fingerprint": "7e180109c5fd263c7687373422045f6a29636375972351b195d017da41706955",
+      "profile_id": "arrojado-anchor",
+      "seed": 45,
+      "started_at": "2026-11-03T18:02:37.429406+00:00",
+      "stocks": {
+        "cpu_s": 3468.386292,
+        "wall_s": 3552.651001074002
+      },
+      "total": {
+        "cpu_s": 8384.818177,
+        "wall_s": 8827.482869730971
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 5385.40936,
+        "wall_s": 5484.1615621989995
+      },
+      "finished_at": "2026-11-04T06:25:59.848840+00:00",
+      "jobs": 5,
+      "lot": "premium-2026-11-02:46641103",
+      "machine_fingerprint": "60c16cfaee4ccce84be963e0f1b7107a7f2969287ef7c3b2e4f56ad2f16cb753",
+      "profile_id": "premium-2026-11-02",
+      "seed": 46641103,
+      "started_at": "2026-11-04T03:53:32.807831+00:00",
+      "stocks": {
+        "cpu_s": 3574.99964,
+        "wall_s": 3661.1300872580005
+      },
+      "total": {
+        "cpu_s": 8961.639957999998,
+        "wall_s": 9147.040985787
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 5439.303264,
+        "wall_s": 5533.1004703240005
+      },
+      "finished_at": "2026-11-04T06:28:04.865109+00:00",
+      "jobs": 5,
+      "lot": "premium-2026-11-02:42",
+      "machine_fingerprint": "60c16cfaee4ccce84be963e0f1b7107a7f2969287ef7c3b2e4f56ad2f16cb753",
+      "profile_id": "premium-2026-11-02",
+      "seed": 42,
+      "started_at": "2026-11-04T03:53:32.807834+00:00",
+      "stocks": {
+        "cpu_s": 3654.610539,
+        "wall_s": 3737.2176326649997
+      },
+      "total": {
+        "cpu_s": 9095.160520000001,
+        "wall_s": 9272.05725459
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 5455.984654999999,
+        "wall_s": 5551.733616282999
+      },
+      "finished_at": "2026-11-04T06:30:28.197779+00:00",
+      "jobs": 5,
+      "lot": "premium-2026-11-02:43",
+      "machine_fingerprint": "60c16cfaee4ccce84be963e0f1b7107a7f2969287ef7c3b2e4f56ad2f16cb753",
+      "profile_id": "premium-2026-11-02",
+      "seed": 43,
+      "started_at": "2026-11-04T03:53:32.808017+00:00",
+      "stocks": {
+        "cpu_s": 3773.838483,
+        "wall_s": 3861.9162497449997
+      },
+      "total": {
+        "cpu_s": 9231.054391999998,
+        "wall_s": 9415.389751563
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 5481.773765000001,
+        "wall_s": 5580.5986951800005
+      },
+      "finished_at": "2026-11-04T06:27:25.509609+00:00",
+      "jobs": 5,
+      "lot": "premium-2026-11-02:44",
+      "machine_fingerprint": "60c16cfaee4ccce84be963e0f1b7107a7f2969287ef7c3b2e4f56ad2f16cb753",
+      "profile_id": "premium-2026-11-02",
+      "seed": 44,
+      "started_at": "2026-11-04T03:53:32.807832+00:00",
+      "stocks": {
+        "cpu_s": 3567.009828,
+        "wall_s": 3650.3487875549995
+      },
+      "total": {
+        "cpu_s": 9050.067181,
+        "wall_s": 9232.701755809
+      }
+    },
+    {
+      "fiis": {
+        "cpu_s": 5302.813761,
+        "wall_s": 5395.63780102
+      },
+      "finished_at": "2026-11-04T06:25:47.353065+00:00",
+      "jobs": 5,
+      "lot": "premium-2026-11-02:45",
+      "machine_fingerprint": "60c16cfaee4ccce84be963e0f1b7107a7f2969287ef7c3b2e4f56ad2f16cb753",
+      "profile_id": "premium-2026-11-02",
+      "seed": 45,
+      "started_at": "2026-11-04T03:53:32.808357+00:00",
+      "stocks": {
+        "cpu_s": 3648.9205389999997,
+        "wall_s": 3737.1666207539997
+      },
+      "total": {
+        "cpu_s": 8952.976220999999,
+        "wall_s": 9134.544695531
+      }
+    }
+  ],
+  "machines": [
+    {
+      "cpu_model": "AMD Ryzen 5 7600X 6-Core Processor",
+      "fingerprint": "60c16cfaee4ccce84be963e0f1b7107a7f2969287ef7c3b2e4f56ad2f16cb753",
+      "kernel": "7.0.0-42-generic",
+      "libraries": {
+        "numpy": "2.5.4",
+        "pandas": "3.0.6"
+      },
+      "logical_cpus": 12,
+      "mem_total_kb": 31358120,
+      "os": "Ubuntu 26.04.1 LTS",
+      "physical_cores": 6,
+      "python": "3.14.4"
+    },
+    {
+      "cpu_model": "AMD Ryzen 5 7600X 6-Core Processor",
+      "fingerprint": "7e180109c5fd263c7687373422045f6a29636375972351b195d017da41706955",
+      "kernel": "7.0.0-38-generic",
+      "libraries": {
+        "numpy": "2.5.4",
+        "pandas": "3.0.6"
+      },
+      "logical_cpus": 12,
+      "mem_total_kb": 31358128,
+      "os": "Ubuntu 26.04.1 LTS",
+      "physical_cores": 6,
+      "python": "3.14.4"
+    }
+  ],
+  "mode": "measured",
+  "protocol_id": "multirun-convergence-v1",
+  "schema": "multirun-convergence-cost-v1"
+}
