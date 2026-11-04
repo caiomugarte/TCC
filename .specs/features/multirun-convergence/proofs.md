@@ -1,8 +1,8 @@
 # multirun-convergence proofs
 
-**HEAD**: 1d377fc
+**HEAD**: d60cf04
 **Tree**: clean
-**Result**: 74 pass, 0 fail; mutations 58 killed, 0 not
+**Result**: 75 pass, 0 fail; mutations 58 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -79,6 +79,7 @@
 | C59 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RankGapTests` | 1 | - | pass |
 | C60 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReadmeTests.` | 1 | - | pass |
 | C61 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReadmeTests.` | 1 | - | pass |
+| C62 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReadmeTests.` | 1 | - | pass |
 | Build | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m py_compile scripts/multirun_convergence.py scripts/conve` | - | - | pass |
 
 ## Mutations
