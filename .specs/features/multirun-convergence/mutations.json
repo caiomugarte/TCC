@@ -376,5 +376,33 @@
     "old": "if info[\"score\"] is None and selector != \"stocks\":",
     "new": "if False:",
     "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardTests.test_null_fii_score_exits_1"
+  },
+  {
+    "label": "V-M1 door 3 / C23: weakest protected incumbent chosen by lowest count, not lowest rank in R",
+    "file": "scripts/convergence_analysis.py",
+    "old": "weakest = max(held, key=lambda t: rank[t])",
+    "new": "weakest = min(held, key=lambda t: counts.get(t, 0))",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests"
+  },
+  {
+    "label": "V-M2 C25: k_min compares the median curve against S(last) instead of M(last)",
+    "file": "scripts/convergence_analysis.py",
+    "old": "curves[stat][k] <= curves[stat][last] + epsilon + TOLERANCE",
+    "new": "curves[stat][k] <= S[last] + epsilon + TOLERANCE",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountTests"
+  },
+  {
+    "label": "V-M3 C28: production_run_match compares lists in order instead of sets",
+    "file": "scripts/convergence_analysis.py",
+    "old": "set(lot[\"selectors\"][selector][\"selected_tickers\"]) == set(declared[selector])",
+    "new": "list(lot[\"selectors\"][selector][\"selected_tickers\"]) == list(declared[selector])",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ProductionMatchTests"
+  },
+  {
+    "label": "V-M4 AC 22: median_frequency_by_rank takes the mean over seeds instead of the median",
+    "file": "scripts/convergence_analysis.py",
+    "old": "beyond[str(rank)] = median(values_at)",
+    "new": "beyond[str(rank)] = mean(values_at)",
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RankGapTests"
   }
 ]
