@@ -1,8 +1,8 @@
 # multirun-convergence proofs
 
-**HEAD**: 4d639ed
+**HEAD**: c82297b
 **Tree**: clean
-**Result**: 66 pass, 2 fail; mutations 54 killed, 0 not
+**Result**: 68 pass, 0 fail; mutations 54 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -45,8 +45,8 @@
 | C31 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReportTests.` | 1 | - | pass |
 | C32 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k CostTests.te` | 1 | - | pass |
 | C33 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReportTests.` | 1 | - | pass |
-| C29 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k CommittedRep` | 1 | - | **fail** |
-| C30 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k CommittedRep` | 1 | - | **fail** |
+| C29 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k CommittedRep` | 1 | - | pass |
+| C30 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k CommittedRep` | 1 | - | pass |
 | C36 | `git diff --quiet 751cafb HEAD -- py api/app scripts/benchmark_premium.py scripts/bench_measure.py` | count unknown | - | pass |
 | C37 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReportTests.` | 1 | - | pass |
 | C38 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountBoun` | 1 | - | pass |
