@@ -1,0 +1,7745 @@
+{
+  "code": {
+    "code_fingerprint": "cb98e7756cbc0f57d5f846965c5254491dbdcc691e02313f04c86aa695d2c566",
+    "code_trees": {
+      "api/app": "9cc956ffbef0d0cc3fd6a7756e6fb9f65040f8a2",
+      "py": "da52381b50942046b95a3c245f1dbdfe8a1659ba",
+      "scripts/bench_measure.py": "0aa2ebcd612310174ebc93a9a2c372a0ecd20c06",
+      "scripts/benchmark_premium.py": "e057bf339de1c2b5d536604631bb7116f349f5e0"
+    },
+    "commit": "9b3b375b2ec71266e28df890cafb5509eaf24ae0",
+    "experiment_fingerprint": "83b200d38a26748892a082c7f3d316a8a2b15a05b36014cefc3c0e526ead4b40",
+    "experiment_trees": {
+      "scripts/convergence_analysis.py": "33e292e994d4fe2ec1cc6509e4f3d9b5b16e3280",
+      "scripts/multirun_convergence.py": "e7ee3cc4c84f63a7cdd4a8d7285b71ee24c50376"
+    }
+  },
+  "mode": "measured",
+  "policy_sha256": "d475740946fb03f9e2c4fa57f2b60632ced84ab0736e2531970fdbdd4fbd0a05",
+  "profile_id": "premium-2026-11-02",
+  "protocol_commit": "19ead1526038ea2060d06d2bb42ca6f5055b3365",
+  "protocol_committed_at": "2026-11-03T12:42:17-03:00",
+  "protocol_id": "multirun-convergence-v1",
+  "protocol_sha256": "aface42da48da52b48f0465182f219ee1200e96ba7b0025f736cb35ba29f430f",
+  "schema": "multirun-lot-v1",
+  "seed": 46641103,
+  "selectors": {
+    "fiis": {
+      "candidates": {
+        "ALZR11": {
+          "score": 0.4451130134304905,
+          "sector": "Misto"
+        },
+        "BPML11": {
+          "score": 0.5039673172980932,
+          "sector": "Shoppings"
+        },
+        "BRCR11": {
+          "score": 0.3095656201675637,
+          "sector": "Lajes Corporativas"
+        },
+        "BROF11": {
+          "score": 0.09024433178086494,
+          "sector": "Lajes Corporativas"
+        },
+        "BTCI11": {
+          "score": -0.19184608923120908,
+          "sector": "Papéis"
+        },
+        "BTLG11": {
+          "score": 0.5858886913385352,
+          "sector": "Imóveis Industriais e Logísticos"
+        },
+        "BTRU11": {
+          "score": -0.017320413148031063,
+          "sector": "Misto"
+        },
+        "CPOF11": {
+          "score": 0.1343934477808146,
+          "sector": "Misto"
+        },
+        "CPSH11": {
+          "score": -0.20987369599389027,
+          "sector": "Indefinido"
+        },
+        "CPTS11": {
+          "score": 0.33120874707627235,
+          "sector": "Papéis"
+        },
+        "DEVA11": {
+          "score": -0.045436276244377266,
+          "sector": "Papéis"
+        },
+        "GARE11": {
+          "score": -0.027608516337259192,
+          "sector": "Imóveis Industriais e Logísticos"
+        },
+        "GGRC11": {
+          "score": 0.46094682819699234,
+          "sector": "Imóveis Industriais e Logísticos"
+        },
+        "GTWR11": {
+          "score": -0.1334145741601228,
+          "sector": "Lajes Corporativas"
+        },
+        "HABT11": {
+          "score": -0.015431493200419033,
+          "sector": "Papéis"
+        },
+        "HCTR11": {
+          "score": -0.002180178783406886,
+          "sector": "Papéis"
+        },
+        "HFOF11": {
+          "score": -0.14910576631031577,
+          "sector": "Fundo de Fundos"
+        },
+        "HGCR11": {
+          "score": -0.2364799895109316,
+          "sector": "Papéis"
+        },
+        "HGLG11": {
+          "score": 0.18372298298664072,
+          "sector": "Imóveis Industriais e Logísticos"
+        },
+        "HGRE11": {
+          "score": 0.13172620754235276,
+          "sector": "Lajes Corporativas"
+        },
+        "HGRU11": {
+          "score": 0.1487942395701235,
+          "sector": "Misto"
+        },
+        "HSLG11": {
+          "score": 0.05329594005963163,
+          "sector": "Imóveis Industriais e Logísticos"
+        },
+        "HSML11": {
+          "score": -0.04195845683325959,
+          "sector": "Shoppings"
+        },
+        "IRDM11": {
+          "score": -0.09552191484030854,
+          "sector": "Papéis"
+        },
+        "IRIM11": {
+          "score": 0.1747181429745454,
+          "sector": "Indefinido"
+        },
+        "JSAF11": {
+          "score": -0.2851349595712493,
+          "sector": "Fundo de Fundos"
+        },
+        "JSRE11": {
+          "score": -0.03703409680454368,
+          "sector": "Misto"
+        },
+        "KNCR11": {
+          "score": 0.8211413624776468,
+          "sector": "Papéis"
+        },
+        "KNHF11": {
+          "score": -0.004611614595665305,
+          "sector": "Indefinido"
+        },
+        "KNHY11": {
+          "score": -0.06296159416655593,
+          "sector": "Papéis"
+        },
+        "KNIP11": {
+          "score": 0.2024910955416334,
+          "sector": "Papéis"
+        },
+        "KNRI11": {
+          "score": 0.3684927470505403,
+          "sector": "Misto"
+        },
+        "KNSC11": {
+          "score": -0.016531237385539632,
+          "sector": "Papéis"
+        },
+        "KNUQ11": {
+          "score": 0.2553360653603363,
+          "sector": "Indefinido"
+        },
+        "MCCI11": {
+          "score": -0.07058034916686404,
+          "sector": "Papéis"
+        },
+        "MCRE11": {
+          "score": -0.1677367164085529,
+          "sector": "Papéis"
+        },
+        "MXRF11": {
+          "score": 0.8773180301205123,
+          "sector": "Papéis"
+        },
+        "PCIP11": {
+          "score": -0.1169031843492088,
+          "sector": "Papéis"
+        },
+        "PMLL11": {
+          "score": -0.05670078635911803,
+          "sector": "Shoppings"
+        },
+        "PSEC11": {
+          "score": 0.1656846461433277,
+          "sector": "Fundo de Fundos"
+        },
+        "PVBI11": {
+          "score": -0.14934719833447577,
+          "sector": "Lajes Corporativas"
+        },
+        "RBRF11": {
+          "score": 0.2685560797382359,
+          "sector": "Fundo de Fundos"
+        },
+        "RBRP11": {
+          "score": -0.12345841766489073,
+          "sector": "Lajes Corporativas"
+        },
+        "RBRR11": {
+          "score": -0.04869580803831983,
+          "sector": "Papéis"
+        },
+        "RBRY11": {
+          "score": -0.0240906948165151,
+          "sector": "Papéis"
+        },
+        "RBVA11": {
+          "score": 0.0,
+          "sector": "Varejo"
+        },
+        "RCRB11": {
+          "score": -0.28101634287978294,
+          "sector": "Lajes Corporativas"
+        },
+        "RECR11": {
+          "score": -0.06543278807109475,
+          "sector": "Papéis"
+        },
+        "RECT11": {
+          "score": 0.29662513245235533,
+          "sector": "Lajes Corporativas"
+        },
+        "RZAK11": {
+          "score": -0.21037427469373743,
+          "sector": "Papéis"
+        },
+        "RZTR11": {
+          "score": -0.06140317093367251,
+          "sector": "Misto"
+        },
+        "SNEL11": {
+          "score": 0.02539533333333327,
+          "sector": "Fundo de Desenvolvimento"
+        },
+        "TGAR11": {
+          "score": 0.11405966666666657,
+          "sector": "Fundo de Desenvolvimento"
+        },
+        "TRXF11": {
+          "score": 0.0,
+          "sector": "Imóveis Comerciais - Outros"
+        },
+        "TVRI11": {
+          "score": 0.0,
+          "sector": "Agências de Bancos"
+        },
+        "VCJR11": {
+          "score": 0.0001492909956396643,
+          "sector": "Papéis"
+        },
+        "VGHF11": {
+          "score": -0.28258202250820796,
+          "sector": "Misto"
+        },
+        "VGIP11": {
+          "score": -0.19562139793799194,
+          "sector": "Papéis"
+        },
+        "VGIR11": {
+          "score": 0.2700199328981986,
+          "sector": "Papéis"
+        },
+        "VILG11": {
+          "score": 0.12636614604033536,
+          "sector": "Imóveis Industriais e Logísticos"
+        },
+        "VINO11": {
+          "score": 0.02847570447323347,
+          "sector": "Lajes Corporativas"
+        },
+        "VRTA11": {
+          "score": -0.1905387058403097,
+          "sector": "Papéis"
+        },
+        "XPCI11": {
+          "score": -0.1957756047737358,
+          "sector": "Papéis"
+        },
+        "XPLG11": {
+          "score": -0.12435671354506343,
+          "sector": "Imóveis Industriais e Logísticos"
+        },
+        "XPML11": {
+          "score": 0.4139113082536281,
+          "sector": "Shoppings"
+        }
+      },
+      "n_assets": 13,
+      "run_count": 150,
+      "runs": [
+        {
+          "fitness": 4.195138798060761,
+          "generations_run": 120,
+          "hhi": 0.17159763313609472,
+          "run_id": 0,
+          "seed": 2579576470,
+          "tickers": [
+            "BRCR11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "HGLG11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PMLL11",
+            "RECT11",
+            "TGAR11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.39072170018981,
+          "generations_run": 179,
+          "hhi": 0.2071005917159764,
+          "run_id": 1,
+          "seed": 3288405275,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HSML11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PCIP11",
+            "TVRI11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.331465582215348,
+          "generations_run": 78,
+          "hhi": 0.18343195266272194,
+          "run_id": 2,
+          "seed": 2508216542,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "GTWR11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRR11",
+            "SNEL11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.226257842853156,
+          "generations_run": 58,
+          "hhi": 0.19526627218934917,
+          "run_id": 3,
+          "seed": 2377136625,
+          "tickers": [
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "HSLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNIP11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.328120320203273,
+          "generations_run": 89,
+          "hhi": 0.18343195266272194,
+          "run_id": 4,
+          "seed": 823400005,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "CPTS11",
+            "DEVA11",
+            "GGRC11",
+            "GTWR11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.427982916049566,
+          "generations_run": 58,
+          "hhi": 0.2071005917159764,
+          "run_id": 5,
+          "seed": 2398800288,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGRE11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "TVRI11",
+            "VILG11",
+            "XPLG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.2139693461961585,
+          "generations_run": 73,
+          "hhi": 0.17159763313609472,
+          "run_id": 6,
+          "seed": 2841405173,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HGRE11",
+            "JSRE11",
+            "KNCR11",
+            "KNHF11",
+            "KNRI11",
+            "MXRF11",
+            "RBRF11",
+            "XPCI11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.260220514957371,
+          "generations_run": 93,
+          "hhi": 0.18343195266272194,
+          "run_id": 7,
+          "seed": 1493511993,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "CPTS11",
+            "GGRC11",
+            "HGRE11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "TRXF11",
+            "VRTA11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.16875195080891,
+          "generations_run": 53,
+          "hhi": 0.14792899408284024,
+          "run_id": 8,
+          "seed": 462739795,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "GGRC11",
+            "HGLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRY11",
+            "RBVA11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.333040066913836,
+          "generations_run": 122,
+          "hhi": 0.14792899408284024,
+          "run_id": 9,
+          "seed": 1217744371,
+          "tickers": [
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGRE11",
+            "HGRU11",
+            "KNCR11",
+            "KNHF11",
+            "KNRI11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "TRXF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.360791697799528,
+          "generations_run": 67,
+          "hhi": 0.18343195266272194,
+          "run_id": 10,
+          "seed": 1099643814,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HGRU11",
+            "IRIM11",
+            "KNCR11",
+            "KNIP11",
+            "KNUQ11",
+            "MCCI11",
+            "MXRF11",
+            "RECT11",
+            "TGAR11"
+          ]
+        },
+        {
+          "fitness": 4.523159763176401,
+          "generations_run": 57,
+          "hhi": 0.18343195266272194,
+          "run_id": 11,
+          "seed": 824741585,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "VGIP11",
+            "VGIR11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.318227909257257,
+          "generations_run": 71,
+          "hhi": 0.2071005917159764,
+          "run_id": 12,
+          "seed": 3569259905,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HSLG11",
+            "HSML11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RBRR11"
+          ]
+        },
+        {
+          "fitness": 4.4418799960902655,
+          "generations_run": 116,
+          "hhi": 0.2071005917159764,
+          "run_id": 13,
+          "seed": 803058129,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "GGRC11",
+            "HGLG11",
+            "HGRE11",
+            "HSLG11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.167603085922371,
+          "generations_run": 102,
+          "hhi": 0.18343195266272194,
+          "run_id": 14,
+          "seed": 2969870118,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTCI11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RBRP11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.199986417795383,
+          "generations_run": 107,
+          "hhi": 0.19526627218934917,
+          "run_id": 15,
+          "seed": 916102166,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGLG11",
+            "KNCR11",
+            "KNHF11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RBRR11",
+            "SNEL11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.282546434522842,
+          "generations_run": 63,
+          "hhi": 0.1597633136094675,
+          "run_id": 16,
+          "seed": 2276943198,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GARE11",
+            "HGRE11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "RZTR11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.334515445429291,
+          "generations_run": 65,
+          "hhi": 0.18343195266272194,
+          "run_id": 17,
+          "seed": 2470080073,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HFOF11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRY11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.270259194625798,
+          "generations_run": 92,
+          "hhi": 0.24260355029585803,
+          "run_id": 18,
+          "seed": 763689814,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "DEVA11",
+            "GGRC11",
+            "HSLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "SNEL11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.27718059855538,
+          "generations_run": 88,
+          "hhi": 0.2071005917159764,
+          "run_id": 19,
+          "seed": 1149874058,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "JSRE11",
+            "KNCR11",
+            "KNHY11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.224589572840154,
+          "generations_run": 59,
+          "hhi": 0.21893491124260359,
+          "run_id": 20,
+          "seed": 940020588,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "CPTS11",
+            "GGRC11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RBVA11",
+            "RECT11",
+            "VGIR11",
+            "XPCI11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 3.9536314110644724,
+          "generations_run": 55,
+          "hhi": 0.21893491124260359,
+          "run_id": 21,
+          "seed": 2286148961,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HABT11",
+            "HGLG11",
+            "HGRU11",
+            "HSML11",
+            "IRIM11",
+            "KNCR11",
+            "MXRF11",
+            "RZTR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.495885657755943,
+          "generations_run": 89,
+          "hhi": 0.2071005917159764,
+          "run_id": 22,
+          "seed": 939169892,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "BTRU11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RECR11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.667336439176047,
+          "generations_run": 75,
+          "hhi": 0.17159763313609472,
+          "run_id": 23,
+          "seed": 4122713754,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "IRDM11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "SNEL11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.401360951871608,
+          "generations_run": 61,
+          "hhi": 0.13609467455621305,
+          "run_id": 24,
+          "seed": 741245781,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HSML11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "RBVA11",
+            "VINO11"
+          ]
+        },
+        {
+          "fitness": 4.582151269349439,
+          "generations_run": 108,
+          "hhi": 0.1597633136094675,
+          "run_id": 25,
+          "seed": 2699591009,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPSH11",
+            "GGRC11",
+            "KNCR11",
+            "KNHF11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11"
+          ]
+        },
+        {
+          "fitness": 4.542686176589731,
+          "generations_run": 71,
+          "hhi": 0.19526627218934917,
+          "run_id": 26,
+          "seed": 3163895087,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "HGLG11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RBRR11",
+            "RECT11",
+            "TVRI11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.318153781414198,
+          "generations_run": 83,
+          "hhi": 0.24260355029585803,
+          "run_id": 27,
+          "seed": 2698723261,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTCI11",
+            "BTLG11",
+            "GGRC11",
+            "HCTR11",
+            "HGLG11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.351877058715757,
+          "generations_run": 69,
+          "hhi": 0.2189349112426036,
+          "run_id": 28,
+          "seed": 2400536708,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "KNSC11",
+            "MXRF11",
+            "PMLL11",
+            "PVBI11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.533750730121087,
+          "generations_run": 90,
+          "hhi": 0.2307692307692308,
+          "run_id": 29,
+          "seed": 3437891963,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HSML11",
+            "IRIM11",
+            "JSRE11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.265383428144038,
+          "generations_run": 92,
+          "hhi": 0.18343195266272194,
+          "run_id": 30,
+          "seed": 2569226026,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GTWR11",
+            "HSLG11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBVA11",
+            "RECT11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.457951297557977,
+          "generations_run": 101,
+          "hhi": 0.18343195266272194,
+          "run_id": 31,
+          "seed": 416603347,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HSML11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RBRP11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.319500167825945,
+          "generations_run": 91,
+          "hhi": 0.17159763313609472,
+          "run_id": 32,
+          "seed": 3597399697,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HFOF11",
+            "HGLG11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "TVRI11"
+          ]
+        },
+        {
+          "fitness": 4.439071796267319,
+          "generations_run": 128,
+          "hhi": 0.18343195266272194,
+          "run_id": 33,
+          "seed": 2751979116,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "GTWR11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "KNSC11",
+            "MXRF11",
+            "PSEC11"
+          ]
+        },
+        {
+          "fitness": 4.306765926565114,
+          "generations_run": 73,
+          "hhi": 0.18343195266272194,
+          "run_id": 34,
+          "seed": 2367627640,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "HFOF11",
+            "HGCR11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.130843823508634,
+          "generations_run": 117,
+          "hhi": 0.2071005917159764,
+          "run_id": 35,
+          "seed": 1956493163,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "BTRU11",
+            "GGRC11",
+            "HSLG11",
+            "KNCR11",
+            "KNIP11",
+            "MXRF11",
+            "RBRF11",
+            "RBRP11",
+            "RECT11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.366620997839454,
+          "generations_run": 80,
+          "hhi": 0.19526627218934917,
+          "run_id": 36,
+          "seed": 66085530,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RBRF11",
+            "RZAK11",
+            "TGAR11",
+            "VGIR11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.496270852141196,
+          "generations_run": 74,
+          "hhi": 0.14792899408284024,
+          "run_id": 37,
+          "seed": 2503341042,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPOF11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "KNHF11",
+            "MXRF11",
+            "RBRF11",
+            "SNEL11",
+            "TRXF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.538942868567202,
+          "generations_run": 92,
+          "hhi": 0.1597633136094675,
+          "run_id": 38,
+          "seed": 4283427328,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBVA11",
+            "TGAR11",
+            "TVRI11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.496162747754085,
+          "generations_run": 96,
+          "hhi": 0.19526627218934917,
+          "run_id": 39,
+          "seed": 1277147868,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "BTRU11",
+            "GGRC11",
+            "HGRU11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "VGIR11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.31760597545303,
+          "generations_run": 97,
+          "hhi": 0.18343195266272194,
+          "run_id": 40,
+          "seed": 768924911,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "BTRU11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RECT11",
+            "SNEL11",
+            "TGAR11",
+            "VINO11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.269069818830451,
+          "generations_run": 92,
+          "hhi": 0.19526627218934917,
+          "run_id": 41,
+          "seed": 129084835,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GARE11",
+            "GGRC11",
+            "KNCR11",
+            "KNIP11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "SNEL11",
+            "VINO11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.389672940839878,
+          "generations_run": 56,
+          "hhi": 0.21893491124260359,
+          "run_id": 42,
+          "seed": 2022883637,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HABT11",
+            "IRIM11",
+            "KNCR11",
+            "KNIP11",
+            "MXRF11",
+            "RBRF11",
+            "VGIR11",
+            "VINO11"
+          ]
+        },
+        {
+          "fitness": 4.507587324965879,
+          "generations_run": 90,
+          "hhi": 0.21893491124260359,
+          "run_id": 43,
+          "seed": 916585407,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "HGRE11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RBRF11",
+            "RBRY11",
+            "RECT11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.228406403397215,
+          "generations_run": 55,
+          "hhi": 0.18343195266272194,
+          "run_id": 44,
+          "seed": 4267611528,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "GTWR11",
+            "HGRE11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "KNUQ11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.361731827285056,
+          "generations_run": 97,
+          "hhi": 0.1597633136094675,
+          "run_id": 45,
+          "seed": 3945438288,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "TRXF11",
+            "VCJR11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.142893719419028,
+          "generations_run": 53,
+          "hhi": 0.19526627218934917,
+          "run_id": 46,
+          "seed": 468735936,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "IRIM11",
+            "KNCR11",
+            "KNHF11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RBVA11",
+            "VCJR11"
+          ]
+        },
+        {
+          "fitness": 4.144630100100331,
+          "generations_run": 116,
+          "hhi": 0.17159763313609472,
+          "run_id": 47,
+          "seed": 420746351,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HSLG11",
+            "KNCR11",
+            "KNHY11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "RBVA11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.720971909830724,
+          "generations_run": 60,
+          "hhi": 0.1597633136094675,
+          "run_id": 48,
+          "seed": 1798745437,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "HGRE11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "TGAR11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.5507606202868045,
+          "generations_run": 139,
+          "hhi": 0.1597633136094675,
+          "run_id": 49,
+          "seed": 4276089530,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HGLG11",
+            "HGRE11",
+            "HGRU11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "PVBI11",
+            "RBRF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.559310157857873,
+          "generations_run": 57,
+          "hhi": 0.2071005917159764,
+          "run_id": 50,
+          "seed": 3207451878,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "DEVA11",
+            "GGRC11",
+            "HGLG11",
+            "HGRU11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.440171085072801,
+          "generations_run": 74,
+          "hhi": 0.1597633136094675,
+          "run_id": 51,
+          "seed": 1356890696,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "TGAR11",
+            "TVRI11",
+            "VINO11"
+          ]
+        },
+        {
+          "fitness": 4.463959064448502,
+          "generations_run": 98,
+          "hhi": 0.14792899408284024,
+          "run_id": 52,
+          "seed": 1868840266,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "JSRE11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "TRXF11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.193153762694942,
+          "generations_run": 90,
+          "hhi": 0.25443786982248523,
+          "run_id": 53,
+          "seed": 1223570827,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HABT11",
+            "HGLG11",
+            "KNCR11",
+            "KNIP11",
+            "MXRF11",
+            "RECT11",
+            "VGHF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.157676894886544,
+          "generations_run": 51,
+          "hhi": 0.19526627218934917,
+          "run_id": 54,
+          "seed": 285236320,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BTLG11",
+            "CPOF11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RZTR11",
+            "TGAR11",
+            "TRXF11"
+          ]
+        },
+        {
+          "fitness": 4.460044210111129,
+          "generations_run": 61,
+          "hhi": 0.2071005917159764,
+          "run_id": 55,
+          "seed": 2947321193,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "BTRU11",
+            "CPTS11",
+            "GGRC11",
+            "HSLG11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.138364723509468,
+          "generations_run": 56,
+          "hhi": 0.25443786982248523,
+          "run_id": 56,
+          "seed": 2643746253,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNIP11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "VGIR11",
+            "VILG11",
+            "VINO11"
+          ]
+        },
+        {
+          "fitness": 4.645185611082979,
+          "generations_run": 60,
+          "hhi": 0.14792899408284024,
+          "run_id": 57,
+          "seed": 2156042530,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "GTWR11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "TGAR11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.209192976911231,
+          "generations_run": 106,
+          "hhi": 0.17159763313609472,
+          "run_id": 58,
+          "seed": 974847499,
+          "tickers": [
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "BTRU11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PMLL11",
+            "PSEC11",
+            "RBRF11",
+            "RECT11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.535429499858584,
+          "generations_run": 53,
+          "hhi": 0.25443786982248523,
+          "run_id": 59,
+          "seed": 2023457764,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGLG11",
+            "KNCR11",
+            "KNHY11",
+            "MXRF11",
+            "RECT11",
+            "VCJR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.342643802622241,
+          "generations_run": 62,
+          "hhi": 0.18343195266272194,
+          "run_id": 60,
+          "seed": 1088916926,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "IRDM11",
+            "KNCR11",
+            "KNIP11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "VINO11"
+          ]
+        },
+        {
+          "fitness": 4.35585526302393,
+          "generations_run": 58,
+          "hhi": 0.2307692307692308,
+          "run_id": 61,
+          "seed": 582676609,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPOF11",
+            "CPTS11",
+            "IRIM11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "PMLL11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.61224468199527,
+          "generations_run": 96,
+          "hhi": 0.19526627218934917,
+          "run_id": 62,
+          "seed": 2107653114,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "CPTS11",
+            "GGRC11",
+            "HGRU11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.2319491970404854,
+          "generations_run": 95,
+          "hhi": 0.2071005917159764,
+          "run_id": 63,
+          "seed": 2967397026,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "HGRE11",
+            "HGRU11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "TRXF11"
+          ]
+        },
+        {
+          "fitness": 4.313256139718376,
+          "generations_run": 138,
+          "hhi": 0.17159763313609472,
+          "run_id": 64,
+          "seed": 3727274697,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPOF11",
+            "CPTS11",
+            "HGLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "PVBI11",
+            "RECT11"
+          ]
+        },
+        {
+          "fitness": 4.386061906259448,
+          "generations_run": 53,
+          "hhi": 0.21893491124260359,
+          "run_id": 65,
+          "seed": 246295714,
+          "tickers": [
+            "ALZR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "IRIM11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "RBRR11",
+            "RECT11",
+            "TRXF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.237155082369945,
+          "generations_run": 60,
+          "hhi": 0.18343195266272194,
+          "run_id": 66,
+          "seed": 2550681636,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "CPOF11",
+            "GGRC11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "TVRI11",
+            "VILG11",
+            "VINO11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.543413644182445,
+          "generations_run": 67,
+          "hhi": 0.14792899408284024,
+          "run_id": 67,
+          "seed": 152814519,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "GGRC11",
+            "HGRE11",
+            "IRIM11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "SNEL11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.582022282861416,
+          "generations_run": 120,
+          "hhi": 0.17159763313609472,
+          "run_id": 68,
+          "seed": 3767219081,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "HGLG11",
+            "HGRE11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "RZTR11"
+          ]
+        },
+        {
+          "fitness": 4.217950450982865,
+          "generations_run": 71,
+          "hhi": 0.19526627218934917,
+          "run_id": 69,
+          "seed": 2296971658,
+          "tickers": [
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "BTRU11",
+            "GGRC11",
+            "HABT11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "RECT11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.491414673155746,
+          "generations_run": 83,
+          "hhi": 0.14792899408284024,
+          "run_id": 70,
+          "seed": 3969162226,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HSML11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "TRXF11",
+            "TVRI11"
+          ]
+        },
+        {
+          "fitness": 4.350661801299482,
+          "generations_run": 164,
+          "hhi": 0.21893491124260359,
+          "run_id": 71,
+          "seed": 2324705992,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "CPTS11",
+            "GGRC11",
+            "IRIM11",
+            "JSAF11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.149299594007442,
+          "generations_run": 57,
+          "hhi": 0.19526627218934917,
+          "run_id": 72,
+          "seed": 910329383,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "BTRU11",
+            "CPTS11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBVA11",
+            "RECR11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.4984707071740955,
+          "generations_run": 67,
+          "hhi": 0.18343195266272194,
+          "run_id": 73,
+          "seed": 1244950555,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "IRDM11",
+            "KNCR11",
+            "KNHF11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.203952821937188,
+          "generations_run": 84,
+          "hhi": 0.2071005917159764,
+          "run_id": 74,
+          "seed": 1453727606,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "HABT11",
+            "HGLG11",
+            "KNCR11",
+            "MXRF11",
+            "PCIP11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.357880969574144,
+          "generations_run": 81,
+          "hhi": 0.21893491124260359,
+          "run_id": 75,
+          "seed": 3907432784,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "KNHY11",
+            "MCRE11",
+            "MXRF11",
+            "RBRF11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.4117355410332735,
+          "generations_run": 53,
+          "hhi": 0.17159763313609472,
+          "run_id": 76,
+          "seed": 1422867082,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "HGLG11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRP11",
+            "RECT11",
+            "VILG11"
+          ]
+        },
+        {
+          "fitness": 4.336862045064484,
+          "generations_run": 124,
+          "hhi": 0.19526627218934917,
+          "run_id": 77,
+          "seed": 2155671670,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "HGRE11",
+            "KNCR11",
+            "KNIP11",
+            "MXRF11",
+            "PMLL11",
+            "RBRF11",
+            "RBVA11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.676488563351421,
+          "generations_run": 81,
+          "hhi": 0.14792899408284024,
+          "run_id": 78,
+          "seed": 1341126103,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HABT11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "TRXF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.686088755824289,
+          "generations_run": 58,
+          "hhi": 0.18343195266272194,
+          "run_id": 79,
+          "seed": 3759143936,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RBRY11",
+            "RECT11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.586486720255813,
+          "generations_run": 67,
+          "hhi": 0.1597633136094675,
+          "run_id": 80,
+          "seed": 2816137871,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "GGRC11",
+            "HGLG11",
+            "HGRU11",
+            "KNCR11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "TGAR11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.46869893115165,
+          "generations_run": 54,
+          "hhi": 0.24260355029585803,
+          "run_id": 81,
+          "seed": 670467426,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HSLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.436946799940584,
+          "generations_run": 139,
+          "hhi": 0.18343195266272194,
+          "run_id": 82,
+          "seed": 3118776234,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPOF11",
+            "CPTS11",
+            "GGRC11",
+            "HFOF11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "PMLL11",
+            "RBRF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.028991101892907,
+          "generations_run": 51,
+          "hhi": 0.24260355029585803,
+          "run_id": 83,
+          "seed": 23366049,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "GGRC11",
+            "HABT11",
+            "HGLG11",
+            "KNCR11",
+            "KNIP11",
+            "MXRF11",
+            "PSEC11",
+            "VCJR11"
+          ]
+        },
+        {
+          "fitness": 4.5067303955099405,
+          "generations_run": 52,
+          "hhi": 0.17159763313609472,
+          "run_id": 84,
+          "seed": 1932465573,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "CPOF11",
+            "CPTS11",
+            "GARE11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RBRF11",
+            "SNEL11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.295707787478422,
+          "generations_run": 63,
+          "hhi": 0.17159763313609472,
+          "run_id": 85,
+          "seed": 2093527058,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "IRIM11",
+            "JSRE11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "TRXF11",
+            "XPLG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.156087115520032,
+          "generations_run": 72,
+          "hhi": 0.19526627218934917,
+          "run_id": 86,
+          "seed": 3327578993,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RECR11",
+            "TVRI11",
+            "XPLG11"
+          ]
+        },
+        {
+          "fitness": 4.198403963852909,
+          "generations_run": 59,
+          "hhi": 0.17159763313609472,
+          "run_id": 87,
+          "seed": 4075390546,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HGLG11",
+            "HGRE11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RZTR11",
+            "SNEL11",
+            "VILG11"
+          ]
+        },
+        {
+          "fitness": 4.4929139202795385,
+          "generations_run": 128,
+          "hhi": 0.18343195266272194,
+          "run_id": 88,
+          "seed": 2463885332,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HGLG11",
+            "KNCR11",
+            "KNHF11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "TVRI11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.380802237315363,
+          "generations_run": 61,
+          "hhi": 0.2307692307692308,
+          "run_id": 89,
+          "seed": 799536184,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HCTR11",
+            "HGRU11",
+            "IRIM11",
+            "KNCR11",
+            "MXRF11",
+            "RECT11",
+            "VCJR11"
+          ]
+        },
+        {
+          "fitness": 4.184349607208228,
+          "generations_run": 73,
+          "hhi": 0.18343195266272194,
+          "run_id": 90,
+          "seed": 2959188980,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "HGRE11",
+            "HGRU11",
+            "HSLG11",
+            "JSRE11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.34156823088878,
+          "generations_run": 86,
+          "hhi": 0.2781065088757397,
+          "run_id": 91,
+          "seed": 997420695,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "PMLL11",
+            "RBRR11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.469624737266523,
+          "generations_run": 104,
+          "hhi": 0.17159763313609472,
+          "run_id": 92,
+          "seed": 2971130529,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "CPTS11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PMLL11",
+            "RBRF11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.272431067680059,
+          "generations_run": 63,
+          "hhi": 0.2071005917159764,
+          "run_id": 93,
+          "seed": 602024766,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "BTRU11",
+            "CPTS11",
+            "GGRC11",
+            "HGLG11",
+            "HGRE11",
+            "KNCR11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "VCJR11"
+          ]
+        },
+        {
+          "fitness": 4.745176010722578,
+          "generations_run": 64,
+          "hhi": 0.1597633136094675,
+          "run_id": 94,
+          "seed": 2656461869,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "VCJR11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.189307736519765,
+          "generations_run": 82,
+          "hhi": 0.18343195266272194,
+          "run_id": 95,
+          "seed": 209376545,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTCI11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "GTWR11",
+            "HGRU11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.18047524524991,
+          "generations_run": 69,
+          "hhi": 0.1597633136094675,
+          "run_id": 96,
+          "seed": 2855967260,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "HSML11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "XPLG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.351753182612446,
+          "generations_run": 72,
+          "hhi": 0.2071005917159764,
+          "run_id": 97,
+          "seed": 1930632699,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGRU11",
+            "IRDM11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PMLL11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.038226988315909,
+          "generations_run": 72,
+          "hhi": 0.18343195266272194,
+          "run_id": 98,
+          "seed": 93342897,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HSLG11",
+            "KNCR11",
+            "KNHF11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBVA11",
+            "TVRI11",
+            "VILG11"
+          ]
+        },
+        {
+          "fitness": 4.37264418539281,
+          "generations_run": 73,
+          "hhi": 0.14792899408284024,
+          "run_id": 99,
+          "seed": 3920887668,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "DEVA11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBVA11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.036321681441866,
+          "generations_run": 58,
+          "hhi": 0.17159763313609472,
+          "run_id": 100,
+          "seed": 3565480470,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "BTRU11",
+            "GGRC11",
+            "HGLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "TGAR11",
+            "VRTA11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.391419745665139,
+          "generations_run": 111,
+          "hhi": 0.1597633136094675,
+          "run_id": 101,
+          "seed": 2832038677,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "DEVA11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "RZTR11",
+            "TGAR11"
+          ]
+        },
+        {
+          "fitness": 4.423513053399072,
+          "generations_run": 51,
+          "hhi": 0.2307692307692308,
+          "run_id": 102,
+          "seed": 2682575955,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HGLG11",
+            "HGRU11",
+            "IRIM11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "VRTA11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.7161482910847505,
+          "generations_run": 151,
+          "hhi": 0.1597633136094675,
+          "run_id": 103,
+          "seed": 3311670638,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HGLG11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "RECT11",
+            "RZTR11"
+          ]
+        },
+        {
+          "fitness": 4.143282467666424,
+          "generations_run": 106,
+          "hhi": 0.17159763313609472,
+          "run_id": 104,
+          "seed": 116378754,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "HGLG11",
+            "KNCR11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "SNEL11",
+            "TGAR11"
+          ]
+        },
+        {
+          "fitness": 4.596877916927929,
+          "generations_run": 114,
+          "hhi": 0.2071005917159764,
+          "run_id": 105,
+          "seed": 3034824312,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HCTR11",
+            "HGRE11",
+            "HSLG11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.235357970168437,
+          "generations_run": 67,
+          "hhi": 0.17159763313609472,
+          "run_id": 106,
+          "seed": 3230071266,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "CPOF11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "RECR11",
+            "RECT11",
+            "SNEL11"
+          ]
+        },
+        {
+          "fitness": 4.413960963328983,
+          "generations_run": 97,
+          "hhi": 0.18343195266272194,
+          "run_id": 107,
+          "seed": 2667171827,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "IRDM11",
+            "KNCR11",
+            "MXRF11",
+            "RECT11",
+            "SNEL11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.69389764482256,
+          "generations_run": 64,
+          "hhi": 0.1597633136094675,
+          "run_id": 108,
+          "seed": 1864304484,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "HGRE11",
+            "IRIM11",
+            "JSRE11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.4696243916597025,
+          "generations_run": 55,
+          "hhi": 0.1597633136094675,
+          "run_id": 109,
+          "seed": 2336019306,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "HGLG11",
+            "HGRU11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RBVA11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.496153976987229,
+          "generations_run": 161,
+          "hhi": 0.14792899408284024,
+          "run_id": 110,
+          "seed": 3213705061,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RBRP11",
+            "TRXF11"
+          ]
+        },
+        {
+          "fitness": 4.420665881427278,
+          "generations_run": 162,
+          "hhi": 0.18343195266272194,
+          "run_id": 111,
+          "seed": 3852874962,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HSML11",
+            "KNCR11",
+            "KNIP11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "RBVA11"
+          ]
+        },
+        {
+          "fitness": 4.431058172897977,
+          "generations_run": 124,
+          "hhi": 0.1597633136094675,
+          "run_id": 112,
+          "seed": 1527955400,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "GARE11",
+            "HGLG11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "TRXF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.224064850704371,
+          "generations_run": 74,
+          "hhi": 0.17159763313609472,
+          "run_id": 113,
+          "seed": 2021909116,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HSLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PMLL11",
+            "PVBI11"
+          ]
+        },
+        {
+          "fitness": 4.394697945648601,
+          "generations_run": 127,
+          "hhi": 0.2071005917159764,
+          "run_id": 114,
+          "seed": 1348007851,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "CPTS11",
+            "GGRC11",
+            "HFOF11",
+            "HGLG11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "VGIR11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.360421821306924,
+          "generations_run": 107,
+          "hhi": 0.1597633136094675,
+          "run_id": 115,
+          "seed": 98761020,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "HGRU11",
+            "JSRE11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "TGAR11",
+            "VINO11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.384950166999424,
+          "generations_run": 77,
+          "hhi": 0.2071005917159764,
+          "run_id": 116,
+          "seed": 1489671872,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "HGLG11",
+            "HGRU11",
+            "HSML11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.2347188209233275,
+          "generations_run": 59,
+          "hhi": 0.19526627218934917,
+          "run_id": 117,
+          "seed": 3585591737,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GARE11",
+            "GGRC11",
+            "HGLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "RBVA11",
+            "SNEL11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.3680523459129565,
+          "generations_run": 112,
+          "hhi": 0.21893491124260359,
+          "run_id": 118,
+          "seed": 464226767,
+          "tickers": [
+            "ALZR11",
+            "BROF11",
+            "BTLG11",
+            "CPTS11",
+            "HSLG11",
+            "KNCR11",
+            "KNIP11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.552216886257376,
+          "generations_run": 149,
+          "hhi": 0.19526627218934917,
+          "run_id": 119,
+          "seed": 3214926321,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "HGRE11",
+            "IRIM11",
+            "KNCR11",
+            "KNRI11",
+            "KNSC11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "VGIR11"
+          ]
+        },
+        {
+          "fitness": 4.3256297795734735,
+          "generations_run": 125,
+          "hhi": 0.1597633136094675,
+          "run_id": 120,
+          "seed": 3669125078,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "GTWR11",
+            "HSLG11",
+            "KNCR11",
+            "KNHF11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11"
+          ]
+        },
+        {
+          "fitness": 4.235217218031538,
+          "generations_run": 112,
+          "hhi": 0.2307692307692308,
+          "run_id": 121,
+          "seed": 3652195737,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "HGRU11",
+            "JSRE11",
+            "KNCR11",
+            "KNHF11",
+            "KNIP11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11"
+          ]
+        },
+        {
+          "fitness": 4.736459253050253,
+          "generations_run": 102,
+          "hhi": 0.17159763313609472,
+          "run_id": 122,
+          "seed": 1512188877,
+          "tickers": [
+            "ALZR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGRE11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "TRXF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.18609579534092,
+          "generations_run": 56,
+          "hhi": 0.2189349112426036,
+          "run_id": 123,
+          "seed": 1228241379,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HCTR11",
+            "KNCR11",
+            "KNRI11",
+            "MCCI11",
+            "MXRF11",
+            "RCRB11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.623703681838231,
+          "generations_run": 123,
+          "hhi": 0.17159763313609472,
+          "run_id": 124,
+          "seed": 3938320878,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "RECT11",
+            "TGAR11",
+            "VCJR11"
+          ]
+        },
+        {
+          "fitness": 4.423597985808262,
+          "generations_run": 125,
+          "hhi": 0.14792899408284024,
+          "run_id": 125,
+          "seed": 1218115128,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRP11",
+            "SNEL11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.34076592959245,
+          "generations_run": 164,
+          "hhi": 0.17159763313609472,
+          "run_id": 126,
+          "seed": 2030693455,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "CPOF11",
+            "GGRC11",
+            "HGLG11",
+            "IRIM11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "SNEL11",
+            "VGIR11",
+            "VINO11"
+          ]
+        },
+        {
+          "fitness": 4.395944736855015,
+          "generations_run": 142,
+          "hhi": 0.18343195266272194,
+          "run_id": 127,
+          "seed": 2231085811,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HGRU11",
+            "IRIM11",
+            "KNCR11",
+            "KNSC11",
+            "MXRF11",
+            "PSEC11",
+            "RBVA11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.33725784488463,
+          "generations_run": 86,
+          "hhi": 0.19526627218934917,
+          "run_id": 128,
+          "seed": 4161273485,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "DEVA11",
+            "GGRC11",
+            "IRIM11",
+            "KNCR11",
+            "MXRF11",
+            "PMLL11",
+            "TRXF11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.327720440877388,
+          "generations_run": 98,
+          "hhi": 0.21893491124260359,
+          "run_id": 129,
+          "seed": 815678044,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "HGLG11",
+            "KNCR11",
+            "KNHY11",
+            "KNRI11",
+            "KNSC11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11"
+          ]
+        },
+        {
+          "fitness": 4.304869770458598,
+          "generations_run": 55,
+          "hhi": 0.25443786982248523,
+          "run_id": 130,
+          "seed": 2435876715,
+          "tickers": [
+            "BPML11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGLG11",
+            "HGRE11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "VGIR11",
+            "XPCI11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.353682625858313,
+          "generations_run": 162,
+          "hhi": 0.1597633136094675,
+          "run_id": 131,
+          "seed": 2250691536,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GARE11",
+            "GGRC11",
+            "GTWR11",
+            "KNCR11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "RBVA11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.270843742508718,
+          "generations_run": 64,
+          "hhi": 0.14792899408284024,
+          "run_id": 132,
+          "seed": 2169942217,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "GGRC11",
+            "HFOF11",
+            "HSLG11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "TGAR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.367672562133912,
+          "generations_run": 89,
+          "hhi": 0.17159763313609472,
+          "run_id": 133,
+          "seed": 2080937610,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGRE11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRP11",
+            "RBVA11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.323980126628472,
+          "generations_run": 113,
+          "hhi": 0.18343195266272194,
+          "run_id": 134,
+          "seed": 1563143052,
+          "tickers": [
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "HGRU11",
+            "IRIM11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "RECT11",
+            "SNEL11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.779740978777363,
+          "generations_run": 57,
+          "hhi": 0.19526627218934917,
+          "run_id": 135,
+          "seed": 1816585542,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HGRE11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RECT11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.686343912189855,
+          "generations_run": 173,
+          "hhi": 0.17159763313609472,
+          "run_id": 136,
+          "seed": 2286724214,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "HGLG11",
+            "HGRE11",
+            "IRIM11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "VGIR11",
+            "VILG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.487692392974316,
+          "generations_run": 109,
+          "hhi": 0.18343195266272194,
+          "run_id": 137,
+          "seed": 2272054136,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BTLG11",
+            "GGRC11",
+            "HFOF11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "TGAR11",
+            "VGIR11",
+            "VINO11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.435753110706222,
+          "generations_run": 106,
+          "hhi": 0.14792899408284024,
+          "run_id": 138,
+          "seed": 4172164881,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HFOF11",
+            "KNCR11",
+            "KNHF11",
+            "MXRF11",
+            "RBRF11",
+            "RBVA11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.222193219124942,
+          "generations_run": 55,
+          "hhi": 0.2071005917159764,
+          "run_id": 139,
+          "seed": 2729158302,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BROF11",
+            "BTCI11",
+            "BTLG11",
+            "HGLG11",
+            "HGRE11",
+            "KNCR11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.3774959590555,
+          "generations_run": 63,
+          "hhi": 0.17159763313609472,
+          "run_id": 140,
+          "seed": 1737193500,
+          "tickers": [
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MCRE11",
+            "MXRF11",
+            "RBRF11",
+            "RECT11",
+            "VINO11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.369302199755923,
+          "generations_run": 87,
+          "hhi": 0.19526627218934917,
+          "run_id": 141,
+          "seed": 1791746552,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HSLG11",
+            "KNCR11",
+            "KNIP11",
+            "MXRF11",
+            "RBRF11",
+            "SNEL11",
+            "TVRI11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.178814852774072,
+          "generations_run": 114,
+          "hhi": 0.2071005917159764,
+          "run_id": 142,
+          "seed": 2291100678,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "GGRC11",
+            "HGLG11",
+            "HSML11",
+            "IRIM11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "XPLG11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.257816225267985,
+          "generations_run": 60,
+          "hhi": 0.18343195266272194,
+          "run_id": 143,
+          "seed": 3802845827,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BROF11",
+            "BTLG11",
+            "CPTS11",
+            "IRIM11",
+            "JSRE11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRF11",
+            "VGIR11",
+            "VILG11"
+          ]
+        },
+        {
+          "fitness": 4.407061657984165,
+          "generations_run": 61,
+          "hhi": 0.2071005917159764,
+          "run_id": 144,
+          "seed": 358695870,
+          "tickers": [
+            "ALZR11",
+            "BRCR11",
+            "BROF11",
+            "BTLG11",
+            "GGRC11",
+            "HGRE11",
+            "JSRE11",
+            "KNCR11",
+            "KNUQ11",
+            "MXRF11",
+            "RECT11",
+            "VGIR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.021906044123421,
+          "generations_run": 58,
+          "hhi": 0.24260355029585803,
+          "run_id": 145,
+          "seed": 3290562243,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "HGRE11",
+            "KNCR11",
+            "KNHY11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "RBRY11",
+            "VGIR11",
+            "VILG11"
+          ]
+        },
+        {
+          "fitness": 4.306679770723673,
+          "generations_run": 105,
+          "hhi": 0.13609467455621305,
+          "run_id": 146,
+          "seed": 2047124711,
+          "tickers": [
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "HGRE11",
+            "KNCR11",
+            "KNRI11",
+            "KNUQ11",
+            "MXRF11",
+            "PSEC11",
+            "RBRF11",
+            "RBVA11",
+            "SNEL11"
+          ]
+        },
+        {
+          "fitness": 4.4173693858476755,
+          "generations_run": 51,
+          "hhi": 0.2071005917159764,
+          "run_id": 147,
+          "seed": 2446634829,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "CPTS11",
+            "DEVA11",
+            "GGRC11",
+            "HGRU11",
+            "HSLG11",
+            "KNCR11",
+            "MXRF11",
+            "SNEL11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.4584045171652615,
+          "generations_run": 160,
+          "hhi": 0.13609467455621305,
+          "run_id": 148,
+          "seed": 2793282687,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNHF11",
+            "MXRF11",
+            "RBRF11",
+            "TGAR11",
+            "TRXF11",
+            "VCJR11",
+            "XPML11"
+          ]
+        },
+        {
+          "fitness": 4.695672125243332,
+          "generations_run": 116,
+          "hhi": 0.14792899408284024,
+          "run_id": 149,
+          "seed": 3810554442,
+          "tickers": [
+            "ALZR11",
+            "BPML11",
+            "BRCR11",
+            "BTLG11",
+            "GGRC11",
+            "KNCR11",
+            "KNIP11",
+            "KNRI11",
+            "MXRF11",
+            "PSEC11",
+            "RBVA11",
+            "RECT11",
+            "SNEL11"
+          ]
+        }
+      ],
+      "selected_tickers": [
+        "KNCR11",
+        "MXRF11",
+        "BTLG11",
+        "BPML11",
+        "ALZR11",
+        "GGRC11",
+        "XPML11",
+        "KNRI11",
+        "BRCR11",
+        "KNUQ11",
+        "CPTS11",
+        "RECT11",
+        "RBRF11"
+      ],
+      "selection_config": {
+        "factor_weights": {
+          "dividend": 0.1,
+          "growth": 0.27891,
+          "liquidity": 0.160546,
+          "size_cash": 0.230272,
+          "value": 0.230272
+        },
+        "lambda_hhi": 0.190818,
+        "liquidity_and_size_filters": {
+          "enforce_liquidity_and_size": false,
+          "liq_min": 322452.5,
+          "size_min": 684360000.0
+        },
+        "n_assets": 13,
+        "selection_preset": "moderado",
+        "system_ga_config": {
+          "adaptive_mode": false,
+          "crossover_rate": 0.8,
+          "generations": 400,
+          "lambda": 0.190818,
+          "min_runs": 40,
+          "mutation_rate": 0.02,
+          "n_assets": 13,
+          "pop_size": 300,
+          "population": 300,
+          "run_count": 150,
+          "target_cv": 0.02,
+          "target_jaccard": 0.75
+        }
+      }
+    },
+    "stocks": {
+      "candidates": {
+        "ABCB4": {
+          "score": 0.18975840244539594,
+          "sector": "Financeiro e Outros"
+        },
+        "ABEV3": {
+          "score": 0.3624811905869537,
+          "sector": "Consumo não Cíclico"
+        },
+        "AESB3": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "AGRO3": {
+          "score": -0.30330757908946787,
+          "sector": "Consumo não Cíclico"
+        },
+        "ALOS3": {
+          "score": 0.2167938929732458,
+          "sector": "Financeiro e Outros"
+        },
+        "ALPA4": {
+          "score": -0.04012535853801586,
+          "sector": "Consumo Cíclico"
+        },
+        "ALUP11": {
+          "score": 0.1359379171051053,
+          "sector": "Utilidade Pública"
+        },
+        "AMER3": {
+          "score": null,
+          "sector": "Consumo Cíclico"
+        },
+        "ANIM3": {
+          "score": 0.12654453870412496,
+          "sector": "Consumo Cíclico"
+        },
+        "ARML3": {
+          "score": 0.2864150103726314,
+          "sector": "Bens Industriais"
+        },
+        "ASAI3": {
+          "score": 0.3269898301479464,
+          "sector": "Consumo não Cíclico"
+        },
+        "AURE3": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "AXIA3": {
+          "score": -0.07641298197286425,
+          "sector": "Utilidade Pública"
+        },
+        "AXIA6": {
+          "score": -0.14097428722452188,
+          "sector": "Utilidade Pública"
+        },
+        "AXIA7": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "AZZA3": {
+          "score": 0.11605259864603137,
+          "sector": "Consumo Cíclico"
+        },
+        "B3SA3": {
+          "score": -0.25722428674829545,
+          "sector": "Financeiro e Outros"
+        },
+        "BAZA3": {
+          "score": null,
+          "sector": "Financeiro e Outros"
+        },
+        "BBAS3": {
+          "score": -0.17585012912600967,
+          "sector": "Financeiro e Outros"
+        },
+        "BBDC3": {
+          "score": -0.04035152416621812,
+          "sector": "Financeiro e Outros"
+        },
+        "BBDC4": {
+          "score": -0.04391278218812246,
+          "sector": "Financeiro e Outros"
+        },
+        "BBSE3": {
+          "score": 0.8392824878397079,
+          "sector": "Financeiro e Outros"
+        },
+        "BEEF3": {
+          "score": 0.21666896941004227,
+          "sector": "Consumo não Cíclico"
+        },
+        "BHIA3": {
+          "score": null,
+          "sector": "Consumo Cíclico"
+        },
+        "BIOM3": {
+          "score": null,
+          "sector": "Saúde"
+        },
+        "BMEB4": {
+          "score": null,
+          "sector": "Financeiro e Outros"
+        },
+        "BMGB4": {
+          "score": -0.09318932977993907,
+          "sector": "Financeiro e Outros"
+        },
+        "BMOB3": {
+          "score": 0.5503745712675883,
+          "sector": "Tecnologia da Informação"
+        },
+        "BPAC11": {
+          "score": -0.01895373529288584,
+          "sector": "Financeiro e Outros"
+        },
+        "BPAC3": {
+          "score": -0.061258744572896165,
+          "sector": "Financeiro e Outros"
+        },
+        "BPAC5": {
+          "score": -0.038716117978306416,
+          "sector": "Financeiro e Outros"
+        },
+        "BPAN4": {
+          "score": null,
+          "sector": "Financeiro e Outros"
+        },
+        "BRAP3": {
+          "score": 0.2878020505085942,
+          "sector": "Materiais Básicos"
+        },
+        "BRAP4": {
+          "score": 0.2875021001151189,
+          "sector": "Materiais Básicos"
+        },
+        "BRBI11": {
+          "score": -0.3312217940658244,
+          "sector": "Financeiro e Outros"
+        },
+        "BRFS3": {
+          "score": 0.16864197057526875,
+          "sector": "Consumo não Cíclico"
+        },
+        "BRKM5": {
+          "score": null,
+          "sector": "Materiais Básicos"
+        },
+        "BRSR3": {
+          "score": 0.6466725047740611,
+          "sector": "Financeiro e Outros"
+        },
+        "BRSR6": {
+          "score": 0.7238383648186081,
+          "sector": "Financeiro e Outros"
+        },
+        "BRST3": {
+          "score": 0.2074489768590676,
+          "sector": "Comunicações"
+        },
+        "CBAV3": {
+          "score": 0.08759878010679181,
+          "sector": "Materiais Básicos"
+        },
+        "CEAB3": {
+          "score": -0.07619918910029937,
+          "sector": "Consumo Cíclico"
+        },
+        "CLSC4": {
+          "score": 0.04312633690889575,
+          "sector": "Utilidade Pública"
+        },
+        "CMIG3": {
+          "score": -0.005218462801278214,
+          "sector": "Utilidade Pública"
+        },
+        "CMIG4": {
+          "score": 0.22529870267983304,
+          "sector": "Utilidade Pública"
+        },
+        "CMIN3": {
+          "score": 0.23877836177748418,
+          "sector": "Materiais Básicos"
+        },
+        "COCE5": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "CPFE3": {
+          "score": 0.27936108599604104,
+          "sector": "Utilidade Pública"
+        },
+        "CPLE3": {
+          "score": 0.13104570181185732,
+          "sector": "Utilidade Pública"
+        },
+        "CPLE5": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "CPLE6": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "CSAN3": {
+          "score": null,
+          "sector": "Petróleo, Gás e Biocombustíveis"
+        },
+        "CSMG3": {
+          "score": -0.1915424356165856,
+          "sector": "Utilidade Pública"
+        },
+        "CSNA3": {
+          "score": null,
+          "sector": "Materiais Básicos"
+        },
+        "CURY3": {
+          "score": 0.4977092589859253,
+          "sector": "Consumo Cíclico"
+        },
+        "CXSE3": {
+          "score": 0.5969711415142323,
+          "sector": "Financeiro e Outros"
+        },
+        "CYRE4": {
+          "score": null,
+          "sector": "Consumo Cíclico"
+        },
+        "DASA3": {
+          "score": null,
+          "sector": "Saúde"
+        },
+        "DESK3": {
+          "score": -0.25527956811184016,
+          "sector": "Comunicações"
+        },
+        "DEXP3": {
+          "score": 0.45035599251451747,
+          "sector": "Materiais Básicos"
+        },
+        "DIRR3": {
+          "score": 0.405065515366708,
+          "sector": "Consumo Cíclico"
+        },
+        "DXCO3": {
+          "score": null,
+          "sector": "Materiais Básicos"
+        },
+        "ECOR3": {
+          "score": 0.3005215960958592,
+          "sector": "Bens Industriais"
+        },
+        "EGIE3": {
+          "score": 0.013970003664764807,
+          "sector": "Utilidade Pública"
+        },
+        "EMBJ3": {
+          "score": -0.03154184951463662,
+          "sector": "Bens Industriais"
+        },
+        "ENAT3": {
+          "score": null,
+          "sector": "Petróleo, Gás e Biocombustíveis"
+        },
+        "ENEV3": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "EQTL3": {
+          "score": -0.1783284363253576,
+          "sector": "Utilidade Pública"
+        },
+        "EUCA4": {
+          "score": 0.5193526031007409,
+          "sector": "Materiais Básicos"
+        },
+        "EVEN3": {
+          "score": 0.22584810765238422,
+          "sector": "Consumo Cíclico"
+        },
+        "EZTC3": {
+          "score": 0.047198249330482625,
+          "sector": "Consumo Cíclico"
+        },
+        "FESA4": {
+          "score": 0.5866934064747913,
+          "sector": "Materiais Básicos"
+        },
+        "FIQE3": {
+          "score": 0.6334958997558523,
+          "sector": "Comunicações"
+        },
+        "FLRY3": {
+          "score": 0.13549217366112856,
+          "sector": "Saúde"
+        },
+        "FRAS3": {
+          "score": -0.036058199196061624,
+          "sector": "Bens Industriais"
+        },
+        "GGBR3": {
+          "score": -0.014019117786503763,
+          "sector": "Materiais Básicos"
+        },
+        "GGBR4": {
+          "score": -0.05821917307616715,
+          "sector": "Materiais Básicos"
+        },
+        "GGPS3": {
+          "score": 0.20581503252857639,
+          "sector": "Bens Industriais"
+        },
+        "GMAT3": {
+          "score": 0.4223905221817029,
+          "sector": "Consumo não Cíclico"
+        },
+        "GOAU3": {
+          "score": 0.011723533894835464,
+          "sector": "Materiais Básicos"
+        },
+        "GOAU4": {
+          "score": -0.009111795672609738,
+          "sector": "Materiais Básicos"
+        },
+        "GRND3": {
+          "score": 0.2333399974630128,
+          "sector": "Consumo Cíclico"
+        },
+        "HAPV3": {
+          "score": null,
+          "sector": "Saúde"
+        },
+        "HBSA3": {
+          "score": null,
+          "sector": "Bens Industriais"
+        },
+        "HYPE3": {
+          "score": -0.14878652500366446,
+          "sector": "Saúde"
+        },
+        "IGTI11": {
+          "score": 0.12250638449218286,
+          "sector": "Financeiro e Outros"
+        },
+        "INTB3": {
+          "score": 0.3340699927456715,
+          "sector": "Tecnologia da Informação"
+        },
+        "ISAE4": {
+          "score": 0.5160629558435389,
+          "sector": "Utilidade Pública"
+        },
+        "ITSA3": {
+          "score": 0.06811073972300717,
+          "sector": "Financeiro e Outros"
+        },
+        "ITSA4": {
+          "score": 0.08237307628091158,
+          "sector": "Financeiro e Outros"
+        },
+        "ITUB3": {
+          "score": -0.04573791093227479,
+          "sector": "Financeiro e Outros"
+        },
+        "ITUB4": {
+          "score": -0.038448282674779226,
+          "sector": "Financeiro e Outros"
+        },
+        "JBSS3": {
+          "score": null,
+          "sector": "Consumo não Cíclico"
+        },
+        "JHSF3": {
+          "score": 0.3789851468893917,
+          "sector": "Consumo Cíclico"
+        },
+        "JSLG3": {
+          "score": 0.41901811219289603,
+          "sector": "Bens Industriais"
+        },
+        "KEPL3": {
+          "score": 0.028099943548242523,
+          "sector": "Bens Industriais"
+        },
+        "KLBN3": {
+          "score": -0.1061745950148953,
+          "sector": "Materiais Básicos"
+        },
+        "KLBN4": {
+          "score": -0.09181385297588007,
+          "sector": "Materiais Básicos"
+        },
+        "LAND3": {
+          "score": null,
+          "sector": "Consumo não Cíclico"
+        },
+        "LAVV3": {
+          "score": 0.49460626248433137,
+          "sector": "Consumo Cíclico"
+        },
+        "LEVE3": {
+          "score": 0.27925604490354455,
+          "sector": "Consumo Cíclico"
+        },
+        "LIGT3": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "LOGG3": {
+          "score": 0.8309502679015386,
+          "sector": "Financeiro e Outros"
+        },
+        "LOGN3": {
+          "score": null,
+          "sector": "Bens Industriais"
+        },
+        "LREN3": {
+          "score": -0.08118797149029647,
+          "sector": "Consumo Cíclico"
+        },
+        "MATD3": {
+          "score": 0.24520610909634794,
+          "sector": "Saúde"
+        },
+        "MBRF3": {
+          "score": -0.18283620262101125,
+          "sector": "Consumo não Cíclico"
+        },
+        "MDIA3": {
+          "score": 0.27648901918817637,
+          "sector": "Consumo não Cíclico"
+        },
+        "MDNE3": {
+          "score": 0.3840033442876176,
+          "sector": "Consumo Cíclico"
+        },
+        "MILS3": {
+          "score": 0.4679678717929275,
+          "sector": "Bens Industriais"
+        },
+        "MLAS3": {
+          "score": -0.17151420496617942,
+          "sector": "Tecnologia da Informação"
+        },
+        "MOTV3": {
+          "score": 0.2829665371339781,
+          "sector": "Bens Industriais"
+        },
+        "MOVI3": {
+          "score": 0.19775583741517333,
+          "sector": "Consumo Cíclico"
+        },
+        "MRVE3": {
+          "score": null,
+          "sector": "Consumo Cíclico"
+        },
+        "MULT3": {
+          "score": 0.05355113642569236,
+          "sector": "Financeiro e Outros"
+        },
+        "MYPK3": {
+          "score": null,
+          "sector": "Consumo Cíclico"
+        },
+        "NATU3": {
+          "score": null,
+          "sector": "Consumo não Cíclico"
+        },
+        "NEOE3": {
+          "score": 0.1159948035118395,
+          "sector": "Utilidade Pública"
+        },
+        "NTCO3": {
+          "score": null,
+          "sector": "Consumo não Cíclico"
+        },
+        "ONCO3": {
+          "score": null,
+          "sector": "Saúde"
+        },
+        "OPCT3": {
+          "score": 0.03598846452417866,
+          "sector": "Bens Industriais"
+        },
+        "ORVR3": {
+          "score": null,
+          "sector": "Utilidade Pública"
+        },
+        "PASS3": {
+          "score": 0.010681373497168675,
+          "sector": "Utilidade Pública"
+        },
+        "PCAR3": {
+          "score": null,
+          "sector": "Consumo não Cíclico"
+        },
+        "PETR3": {
+          "score": 0.1932873000141287,
+          "sector": "Petróleo, Gás e Biocombustíveis"
+        },
+        "PETR4": {
+          "score": 0.26051971124669415,
+          "sector": "Petróleo, Gás e Biocombustíveis"
+        },
+        "PETZ3": {
+          "score": null,
+          "sector": "Consumo Cíclico"
+        },
+        "PFRM3": {
+          "score": -0.036590420625002576,
+          "sector": "Saúde"
+        },
+        "PGMN3": {
+          "score": 0.1396303159212067,
+          "sector": "Saúde"
+        },
+        "PINE4": {
+          "score": 0.11274279899474896,
+          "sector": "Financeiro e Outros"
+        },
+        "PLPL3": {
+          "score": 0.08189072276313679,
+          "sector": "Consumo Cíclico"
+        },
+        "PNVL3": {
+          "score": -0.0033679813133376396,
+          "sector": "Saúde"
+        },
+        "POMO3": {
+          "score": 0.21508935777868582,
+          "sector": "Bens Industriais"
+        },
+        "POMO4": {
+          "score": 0.17827633418495592,
+          "sector": "Bens Industriais"
+        },
+        "PORT3": {
+          "score": null,
+          "sector": "Bens Industriais"
+        },
+        "PRIO3": {
+          "score": null,
+          "sector": "Petróleo, Gás e Biocombustíveis"
+        },
+        "PRNR3": {
+          "score": null,
+          "sector": "Bens Industriais"
+        },
+        "PSSA3": {
+          "score": -0.07647351102416988,
+          "sector": "Financeiro e Outros"
+        },
+        "RADL3": {
+          "score": 0.22086495240735138,
+          "sector": "Saúde"
+        },
+        "RAIZ4": {
+          "score": null,
+          "sector": "Petróleo, Gás e Biocombustíveis"
+        },
+        "RANI3": {
+          "score": 0.1488828356100631,
+          "sector": "Materiais Básicos"
+        },
+        "RAPT3": {
+          "score": null,
+          "sector": "Bens Industriais"
+        },
+        "RAPT4": {
+          "score": null,
+          "sector": "Bens Industriais"
+        },
+        "RDOR3": {
+          "score": 0.714694779401947,
+          "sector": "Saúde"
+        },
+        "RECV3": {
+          "score": 0.2975476790508923,
+          "sector": "Petróleo, Gás e Biocombustíveis"
+        },
+        "RENT3": {
+          "score": 0.05079145276127217,
+          "sector": "Consumo Cíclico"
+        },
+        "RENT4": {
+          "score": 0.05323443323234955,
+          "sector": "Consumo Cíclico"
+        },
+        "RIAA3": {
+          "score": 0.3226026255672748,
+          "sector": "Consumo Cíclico"
+        },
+        "SANB11": {
+          "score": -0.15820846425621757,
+          "sector": "Financeiro e Outros"
+        },
+        "SANB3": {
+          "score": -0.16385654639732541,
+          "sector": "Financeiro e Outros"
+        },
+        "SAPR11": {
+          "score": -0.27229633824586885,
+          "sector": "Utilidade Pública"
+        },
+        "SAPR4": {
+          "score": -0.2716100018814863,
+          "sector": "Utilidade Pública"
+        },
+        "SAUD3": {
+          "score": -0.056028453271591824,
+          "sector": "Saúde"
+        },
+        "SBFG3": {
+          "score": 0.026544521192462464,
+          "sector": "Consumo Cíclico"
+        },
+        "SBSP3": {
+          "score": 0.27562919547177184,
+          "sector": "Utilidade Pública"
+        },
+        "SEER3": {
+          "score": -0.06415717061331029,
+          "sector": "Consumo Cíclico"
+        },
+        "SHUL4": {
+          "score": 0.24653305275127618,
+          "sector": "Bens Industriais"
+        },
+        "SIMH3": {
+          "score": 0.3584919817313329,
+          "sector": "Financeiro e Outros"
+        },
+        "SLCE3": {
+          "score": 0.0820655863455332,
+          "sector": "Consumo não Cíclico"
+        },
+        "SMFT3": {
+          "score": 0.23299227118102153,
+          "sector": "Consumo Cíclico"
+        },
+        "SMTO3": {
+          "score": 0.23508110418261646,
+          "sector": "Consumo não Cíclico"
+        },
+        "SOJA3": {
+          "score": 0.06460912468437119,
+          "sector": "Consumo não Cíclico"
+        },
+        "STBP3": {
+          "score": null,
+          "sector": "Bens Industriais"
+        },
+        "SULA11": {
+          "score": null,
+          "sector": "Financeiro e Outros"
+        },
+        "SUZB3": {
+          "score": 0.6088868135929293,
+          "sector": "Materiais Básicos"
+        },
+        "TAEE11": {
+          "score": 0.32186304822435274,
+          "sector": "Utilidade Pública"
+        },
+        "TAEE3": {
+          "score": 0.32595864958481857,
+          "sector": "Utilidade Pública"
+        },
+        "TAEE4": {
+          "score": 0.30497862060222514,
+          "sector": "Utilidade Pública"
+        },
+        "TEND3": {
+          "score": 0.043260230987938714,
+          "sector": "Consumo Cíclico"
+        },
+        "TFCO4": {
+          "score": 0.07523148756191289,
+          "sector": "Consumo Cíclico"
+        },
+        "TGMA3": {
+          "score": 0.152195558409625,
+          "sector": "Bens Industriais"
+        },
+        "TOTS3": {
+          "score": 0.1236169226746617,
+          "sector": "Tecnologia da Informação"
+        },
+        "TTEN3": {
+          "score": 0.30006764010001047,
+          "sector": "Consumo não Cíclico"
+        },
+        "TUPY3": {
+          "score": null,
+          "sector": "Bens Industriais"
+        },
+        "UGPA3": {
+          "score": 0.050666118111306696,
+          "sector": "Petróleo, Gás e Biocombustíveis"
+        },
+        "UNIP3": {
+          "score": -0.09559108848472031,
+          "sector": "Materiais Básicos"
+        },
+        "UNIP6": {
+          "score": -0.07998445111775956,
+          "sector": "Materiais Básicos"
+        },
+        "USIM3": {
+          "score": null,
+          "sector": "Materiais Básicos"
+        },
+        "USIM5": {
+          "score": null,
+          "sector": "Materiais Básicos"
+        },
+        "VAMO3": {
+          "score": 0.18134322615714032,
+          "sector": "Bens Industriais"
+        },
+        "VIVA3": {
+          "score": 0.20441950934990055,
+          "sector": "Consumo Cíclico"
+        },
+        "VIVT3": {
+          "score": -0.09137598804429055,
+          "sector": "Comunicações"
+        },
+        "VLID3": {
+          "score": -0.014930313406715606,
+          "sector": "Bens Industriais"
+        },
+        "VULC3": {
+          "score": 0.7097084502948483,
+          "sector": "Consumo Cíclico"
+        },
+        "WIZC3": {
+          "score": -0.0020202758291326603,
+          "sector": "Financeiro e Outros"
+        }
+      },
+      "n_assets": 13,
+      "run_count": 150,
+      "runs": [
+        {
+          "fitness": 5.0460158882873705,
+          "generations_run": 75,
+          "hhi": 0.18343195266272194,
+          "run_id": 0,
+          "seed": 1865953781,
+          "tickers": [
+            "BBSE3",
+            "BRSR3",
+            "DEXP3",
+            "EUCA4",
+            "GMAT3",
+            "ISAE4",
+            "LOGG3",
+            "LOGN3",
+            "PLPL3",
+            "RDOR3",
+            "TTEN3",
+            "VAMO3",
+            "WIZC3"
+          ]
+        },
+        {
+          "fitness": 4.669734466403375,
+          "generations_run": 71,
+          "hhi": 0.17159763313609472,
+          "run_id": 1,
+          "seed": 4184284798,
+          "tickers": [
+            "B3SA3",
+            "BBSE3",
+            "BRAP3",
+            "CXSE3",
+            "EUCA4",
+            "FESA4",
+            "FIQE3",
+            "MDIA3",
+            "PETR3",
+            "PLPL3",
+            "RDOR3",
+            "RIAA3",
+            "TTEN3"
+          ]
+        },
+        {
+          "fitness": 4.62613822057373,
+          "generations_run": 82,
+          "hhi": 0.19526627218934917,
+          "run_id": 2,
+          "seed": 1726584459,
+          "tickers": [
+            "ASAI3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR6",
+            "CXSE3",
+            "EGIE3",
+            "EZTC3",
+            "GMAT3",
+            "LOGG3",
+            "PETZ3",
+            "POMO3",
+            "RADL3",
+            "RIAA3"
+          ]
+        },
+        {
+          "fitness": 4.45906864007068,
+          "generations_run": 85,
+          "hhi": 0.14792899408284024,
+          "run_id": 3,
+          "seed": 3697370859,
+          "tickers": [
+            "BRSR3",
+            "EUCA4",
+            "EVEN3",
+            "GMAT3",
+            "LOGG3",
+            "MATD3",
+            "MILS3",
+            "MYPK3",
+            "PETR4",
+            "PORT3",
+            "RIAA3",
+            "SBSP3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.562037984046491,
+          "generations_run": 55,
+          "hhi": 0.17159763313609472,
+          "run_id": 4,
+          "seed": 3479952356,
+          "tickers": [
+            "ALOS3",
+            "BMOB3",
+            "BRAP4",
+            "CXSE3",
+            "FESA4",
+            "FLRY3",
+            "HYPE3",
+            "ISAE4",
+            "LOGG3",
+            "MILS3",
+            "RAPT3",
+            "RDOR3",
+            "SMFT3"
+          ]
+        },
+        {
+          "fitness": 4.343598013994408,
+          "generations_run": 71,
+          "hhi": 0.18343195266272194,
+          "run_id": 5,
+          "seed": 1720814542,
+          "tickers": [
+            "CXSE3",
+            "ECOR3",
+            "EUCA4",
+            "FIQE3",
+            "GGBR4",
+            "IGTI11",
+            "ISAE4",
+            "ITUB4",
+            "LAND3",
+            "LOGG3",
+            "MILS3",
+            "MOVI3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.876796656992342,
+          "generations_run": 65,
+          "hhi": 0.1124260355029586,
+          "run_id": 6,
+          "seed": 1557645458,
+          "tickers": [
+            "BMOB3",
+            "BRSR6",
+            "CURY3",
+            "FESA4",
+            "FIQE3",
+            "GMAT3",
+            "RAPT3",
+            "RDOR3",
+            "RECV3",
+            "RIAA3",
+            "TAEE4",
+            "UNIP6",
+            "VAMO3"
+          ]
+        },
+        {
+          "fitness": 4.667465853568006,
+          "generations_run": 51,
+          "hhi": 0.17159763313609472,
+          "run_id": 7,
+          "seed": 169998719,
+          "tickers": [
+            "ALPA4",
+            "BRSR6",
+            "CSAN3",
+            "CURY3",
+            "EUCA4",
+            "LAVV3",
+            "LOGG3",
+            "MDNE3",
+            "MILS3",
+            "NATU3",
+            "POMO4",
+            "RDOR3",
+            "TAEE11"
+          ]
+        },
+        {
+          "fitness": 5.142653752432061,
+          "generations_run": 51,
+          "hhi": 0.30177514792899407,
+          "run_id": 8,
+          "seed": 1375773830,
+          "tickers": [
+            "BBSE3",
+            "BRFS3",
+            "BRSR6",
+            "EVEN3",
+            "GRND3",
+            "ISAE4",
+            "JHSF3",
+            "LEVE3",
+            "LOGG3",
+            "SIMH3",
+            "TAEE11",
+            "TAEE4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.820471334863376,
+          "generations_run": 51,
+          "hhi": 0.19526627218934917,
+          "run_id": 9,
+          "seed": 173200516,
+          "tickers": [
+            "BBSE3",
+            "BRSR3",
+            "CSNA3",
+            "CURY3",
+            "DEXP3",
+            "FIQE3",
+            "GMAT3",
+            "JHSF3",
+            "LAVV3",
+            "LEVE3",
+            "SBSP3",
+            "SOJA3",
+            "TAEE11"
+          ]
+        },
+        {
+          "fitness": 4.80153023316802,
+          "generations_run": 51,
+          "hhi": 0.2071005917159764,
+          "run_id": 10,
+          "seed": 2871393139,
+          "tickers": [
+            "BRSR3",
+            "CMIN3",
+            "CYRE4",
+            "EUCA4",
+            "FESA4",
+            "FIQE3",
+            "FRAS3",
+            "LAVV3",
+            "LEVE3",
+            "LOGG3",
+            "POMO3",
+            "RECV3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 5.712577423774099,
+          "generations_run": 89,
+          "hhi": 0.14792899408284024,
+          "run_id": 11,
+          "seed": 116897173,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "BRAP4",
+            "BRST3",
+            "CSAN3",
+            "CXSE3",
+            "EUCA4",
+            "FESA4",
+            "FIQE3",
+            "JSLG3",
+            "LAVV3",
+            "SMTO3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.826408667490488,
+          "generations_run": 98,
+          "hhi": 0.2189349112426036,
+          "run_id": 12,
+          "seed": 85120752,
+          "tickers": [
+            "BRSR3",
+            "BRSR6",
+            "CPLE3",
+            "CXSE3",
+            "FESA4",
+            "LAVV3",
+            "LOGG3",
+            "LREN3",
+            "MDNE3",
+            "MILS3",
+            "MOTV3",
+            "TAEE4",
+            "USIM5"
+          ]
+        },
+        {
+          "fitness": 5.245443644835452,
+          "generations_run": 53,
+          "hhi": 0.21893491124260359,
+          "run_id": 13,
+          "seed": 4183274556,
+          "tickers": [
+            "BBSE3",
+            "BRSR6",
+            "CMIG4",
+            "CURY3",
+            "CXSE3",
+            "FESA4",
+            "FIQE3",
+            "ITSA4",
+            "PNVL3",
+            "RDOR3",
+            "SIMH3",
+            "SMFT3",
+            "TTEN3"
+          ]
+        },
+        {
+          "fitness": 5.068572635037166,
+          "generations_run": 68,
+          "hhi": 0.2071005917159764,
+          "run_id": 14,
+          "seed": 1234048932,
+          "tickers": [
+            "ARML3",
+            "ASAI3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR3",
+            "CURY3",
+            "GGPS3",
+            "LOGG3",
+            "NATU3",
+            "PETR4",
+            "SHUL4",
+            "VAMO3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.869467558875149,
+          "generations_run": 91,
+          "hhi": 0.25443786982248523,
+          "run_id": 15,
+          "seed": 168659831,
+          "tickers": [
+            "BBSE3",
+            "BMEB4",
+            "BRSR3",
+            "BRSR6",
+            "CMIN3",
+            "CYRE4",
+            "EUCA4",
+            "FESA4",
+            "FIQE3",
+            "MDNE3",
+            "MOTV3",
+            "SEER3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.5828252553024225,
+          "generations_run": 63,
+          "hhi": 0.2071005917159764,
+          "run_id": 16,
+          "seed": 528282759,
+          "tickers": [
+            "BBSE3",
+            "BHIA3",
+            "CMIG4",
+            "EUCA4",
+            "FESA4",
+            "FLRY3",
+            "GOAU3",
+            "JBSS3",
+            "JHSF3",
+            "LOGG3",
+            "MATD3",
+            "RDOR3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.824272828662886,
+          "generations_run": 127,
+          "hhi": 0.19526627218934917,
+          "run_id": 17,
+          "seed": 2270610,
+          "tickers": [
+            "BBSE3",
+            "BRSR3",
+            "CSNA3",
+            "CXSE3",
+            "DASA3",
+            "FIQE3",
+            "JSLG3",
+            "LEVE3",
+            "LOGG3",
+            "PRNR3",
+            "RENT4",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.7232072118346995,
+          "generations_run": 79,
+          "hhi": 0.2307692307692308,
+          "run_id": 18,
+          "seed": 3054507501,
+          "tickers": [
+            "ALOS3",
+            "BBSE3",
+            "BIOM3",
+            "BMOB3",
+            "BPAC11",
+            "BRSR3",
+            "DEXP3",
+            "MATD3",
+            "MOTV3",
+            "RDOR3",
+            "SIMH3",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.454986239382576,
+          "generations_run": 101,
+          "hhi": 0.18343195266272194,
+          "run_id": 19,
+          "seed": 4081962940,
+          "tickers": [
+            "ABEV3",
+            "ASAI3",
+            "BBSE3",
+            "BHIA3",
+            "BMOB3",
+            "CMIN3",
+            "CXSE3",
+            "ISAE4",
+            "NEOE3",
+            "RANI3",
+            "TTEN3",
+            "VIVA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.993884663167322,
+          "generations_run": 51,
+          "hhi": 0.1597633136094675,
+          "run_id": 20,
+          "seed": 2326535431,
+          "tickers": [
+            "AESB3",
+            "BRSR3",
+            "DEXP3",
+            "EUCA4",
+            "ISAE4",
+            "ITSA3",
+            "LOGG3",
+            "MDIA3",
+            "POMO4",
+            "RDOR3",
+            "SHUL4",
+            "SMFT3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.911647979703076,
+          "generations_run": 107,
+          "hhi": 0.2307692307692308,
+          "run_id": 21,
+          "seed": 2015474267,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "BMGB4",
+            "BMOB3",
+            "BRSR3",
+            "CEAB3",
+            "ECOR3",
+            "FESA4",
+            "LOGG3",
+            "RIAA3",
+            "SHUL4",
+            "SIMH3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.759380417941092,
+          "generations_run": 59,
+          "hhi": 0.17159763313609472,
+          "run_id": 22,
+          "seed": 1536651597,
+          "tickers": [
+            "BBSE3",
+            "BIOM3",
+            "BMOB3",
+            "BRSR6",
+            "CMIG3",
+            "CURY3",
+            "ITUB4",
+            "LOGG3",
+            "MILS3",
+            "RAIZ4",
+            "SUZB3",
+            "USIM5",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.279708961774725,
+          "generations_run": 54,
+          "hhi": 0.17159763313609472,
+          "run_id": 23,
+          "seed": 2528092957,
+          "tickers": [
+            "BBSE3",
+            "BRAP3",
+            "BRSR6",
+            "EZTC3",
+            "FESA4",
+            "LAVV3",
+            "LOGG3",
+            "MILS3",
+            "MOTV3",
+            "PASS3",
+            "TOTS3",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.870809377209723,
+          "generations_run": 52,
+          "hhi": 0.1597633136094675,
+          "run_id": 24,
+          "seed": 3123762422,
+          "tickers": [
+            "BRSR3",
+            "CEAB3",
+            "CXSE3",
+            "EUCA4",
+            "FIQE3",
+            "GMAT3",
+            "GRND3",
+            "LOGG3",
+            "MATD3",
+            "RANI3",
+            "SUZB3",
+            "TAEE4",
+            "TGMA3"
+          ]
+        },
+        {
+          "fitness": 4.661956320369924,
+          "generations_run": 142,
+          "hhi": 0.2071005917159764,
+          "run_id": 25,
+          "seed": 3432528329,
+          "tickers": [
+            "ABEV3",
+            "AURE3",
+            "BBSE3",
+            "BRSR6",
+            "CPFE3",
+            "CURY3",
+            "DEXP3",
+            "FESA4",
+            "LAND3",
+            "LOGG3",
+            "SHUL4",
+            "SIMH3",
+            "USIM3"
+          ]
+        },
+        {
+          "fitness": 4.70865285716928,
+          "generations_run": 52,
+          "hhi": 0.1597633136094675,
+          "run_id": 26,
+          "seed": 2073119849,
+          "tickers": [
+            "ASAI3",
+            "BPAC5",
+            "BRSR6",
+            "CURY3",
+            "CYRE4",
+            "DXCO3",
+            "FESA4",
+            "FIQE3",
+            "ISAE4",
+            "JSLG3",
+            "LOGG3",
+            "MOTV3",
+            "TAEE3"
+          ]
+        },
+        {
+          "fitness": 4.644685073623772,
+          "generations_run": 103,
+          "hhi": 0.2071005917159764,
+          "run_id": 27,
+          "seed": 1543059557,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "BMGB4",
+            "BRSR6",
+            "DIRR3",
+            "GGBR3",
+            "LOGG3",
+            "MDIA3",
+            "MYPK3",
+            "RDOR3",
+            "RIAA3",
+            "SUZB3",
+            "VAMO3"
+          ]
+        },
+        {
+          "fitness": 4.764016668516752,
+          "generations_run": 77,
+          "hhi": 0.2071005917159764,
+          "run_id": 28,
+          "seed": 3636346190,
+          "tickers": [
+            "ALOS3",
+            "BBSE3",
+            "BEEF3",
+            "BRAP3",
+            "BRAP4",
+            "BRSR6",
+            "DIRR3",
+            "JSLG3",
+            "LOGG3",
+            "POMO4",
+            "SHUL4",
+            "TAEE3",
+            "TTEN3"
+          ]
+        },
+        {
+          "fitness": 5.048404191671191,
+          "generations_run": 141,
+          "hhi": 0.2071005917159764,
+          "run_id": 29,
+          "seed": 745107591,
+          "tickers": [
+            "AESB3",
+            "BBDC4",
+            "BBSE3",
+            "BMOB3",
+            "BRSR3",
+            "CURY3",
+            "DXCO3",
+            "FESA4",
+            "GRND3",
+            "LOGG3",
+            "PNVL3",
+            "RDOR3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.9535238151140035,
+          "generations_run": 74,
+          "hhi": 0.2071005917159764,
+          "run_id": 30,
+          "seed": 3311297689,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "CYRE4",
+            "FIQE3",
+            "ISAE4",
+            "LIGT3",
+            "LOGG3",
+            "SMTO3",
+            "TAEE11",
+            "TAEE3",
+            "TTEN3",
+            "VIVA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.5403852196738095,
+          "generations_run": 51,
+          "hhi": 0.2662721893491124,
+          "run_id": 31,
+          "seed": 2073102709,
+          "tickers": [
+            "BBSE3",
+            "BRSR3",
+            "BRSR6",
+            "EVEN3",
+            "FIQE3",
+            "GMAT3",
+            "GRND3",
+            "LAVV3",
+            "MOVI3",
+            "PINE4",
+            "RDOR3",
+            "SHUL4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.645939469445578,
+          "generations_run": 89,
+          "hhi": 0.17159763313609472,
+          "run_id": 32,
+          "seed": 2735723013,
+          "tickers": [
+            "ARML3",
+            "BBSE3",
+            "BRSR3",
+            "CPFE3",
+            "CPLE5",
+            "GRND3",
+            "LAVV3",
+            "LOGG3",
+            "NTCO3",
+            "RDOR3",
+            "SMFT3",
+            "SUZB3",
+            "UNIP3"
+          ]
+        },
+        {
+          "fitness": 4.692580091855893,
+          "generations_run": 53,
+          "hhi": 0.17159763313609472,
+          "run_id": 33,
+          "seed": 1204265370,
+          "tickers": [
+            "BBSE3",
+            "BHIA3",
+            "BMOB3",
+            "CMIN3",
+            "DEXP3",
+            "EUCA4",
+            "FIQE3",
+            "INTB3",
+            "MILS3",
+            "OPCT3",
+            "PGMN3",
+            "SUZB3",
+            "TTEN3"
+          ]
+        },
+        {
+          "fitness": 4.6207084169926365,
+          "generations_run": 52,
+          "hhi": 0.14792899408284024,
+          "run_id": 34,
+          "seed": 3717164312,
+          "tickers": [
+            "ANIM3",
+            "BMOB3",
+            "BRST3",
+            "CXSE3",
+            "HBSA3",
+            "JSLG3",
+            "LOGG3",
+            "MBRF3",
+            "MILS3",
+            "RADL3",
+            "RDOR3",
+            "TAEE3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.622488041285333,
+          "generations_run": 106,
+          "hhi": 0.17159763313609472,
+          "run_id": 35,
+          "seed": 1078800043,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "DEXP3",
+            "FESA4",
+            "FIQE3",
+            "ISAE4",
+            "ITSA3",
+            "ITUB3",
+            "LAVV3",
+            "MATD3",
+            "NATU3",
+            "SULA11",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.744901730516651,
+          "generations_run": 55,
+          "hhi": 0.1597633136094675,
+          "run_id": 36,
+          "seed": 3716523053,
+          "tickers": [
+            "ARML3",
+            "BHIA3",
+            "BMOB3",
+            "BRSR6",
+            "ECOR3",
+            "EUCA4",
+            "FESA4",
+            "FIQE3",
+            "INTB3",
+            "MDNE3",
+            "PCAR3",
+            "PINE4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.728398569519593,
+          "generations_run": 51,
+          "hhi": 0.1597633136094675,
+          "run_id": 37,
+          "seed": 3633928656,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "DESK3",
+            "DEXP3",
+            "DIRR3",
+            "DXCO3",
+            "FESA4",
+            "FIQE3",
+            "MDNE3",
+            "MOTV3",
+            "RDOR3",
+            "SMFT3",
+            "TTEN3"
+          ]
+        },
+        {
+          "fitness": 4.686844222460746,
+          "generations_run": 59,
+          "hhi": 0.2071005917159764,
+          "run_id": 38,
+          "seed": 3219210655,
+          "tickers": [
+            "ALUP11",
+            "ASAI3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR3",
+            "FRAS3",
+            "ITUB4",
+            "LOGG3",
+            "MDIA3",
+            "MILS3",
+            "POMO3",
+            "SBSP3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.7397239580483905,
+          "generations_run": 103,
+          "hhi": 0.2307692307692308,
+          "run_id": 39,
+          "seed": 3829863548,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "BMEB4",
+            "BRKM5",
+            "BRSR3",
+            "DIRR3",
+            "FESA4",
+            "LAVV3",
+            "LOGG3",
+            "MDNE3",
+            "PETR3",
+            "RIAA3",
+            "SHUL4"
+          ]
+        },
+        {
+          "fitness": 4.885978115068955,
+          "generations_run": 99,
+          "hhi": 0.14792899408284027,
+          "run_id": 40,
+          "seed": 170739320,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR3",
+            "BRSR6",
+            "CBAV3",
+            "CEAB3",
+            "CMIG4",
+            "CSAN3",
+            "FIQE3",
+            "LAVV3",
+            "RDOR3",
+            "RENT3"
+          ]
+        },
+        {
+          "fitness": 5.175394711927572,
+          "generations_run": 172,
+          "hhi": 0.2071005917159764,
+          "run_id": 41,
+          "seed": 1258054535,
+          "tickers": [
+            "ANIM3",
+            "ASAI3",
+            "BBSE3",
+            "BPAC3",
+            "BRSR3",
+            "BRSR6",
+            "CPFE3",
+            "GMAT3",
+            "INTB3",
+            "RDOR3",
+            "TAEE11",
+            "TAEE4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.7316576134684665,
+          "generations_run": 65,
+          "hhi": 0.2071005917159764,
+          "run_id": 42,
+          "seed": 2891730806,
+          "tickers": [
+            "BAZA3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR3",
+            "FIQE3",
+            "JHSF3",
+            "LAVV3",
+            "MOTV3",
+            "PNVL3",
+            "PRNR3",
+            "RDOR3",
+            "VULC3",
+            "WIZC3"
+          ]
+        },
+        {
+          "fitness": 4.893246622884419,
+          "generations_run": 102,
+          "hhi": 0.1597633136094675,
+          "run_id": 43,
+          "seed": 1030796903,
+          "tickers": [
+            "BBSE3",
+            "CPFE3",
+            "ECOR3",
+            "FIQE3",
+            "GRND3",
+            "MYPK3",
+            "RDOR3",
+            "RECV3",
+            "RENT3",
+            "SUZB3",
+            "TAEE11",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.212839332148443,
+          "generations_run": 56,
+          "hhi": 0.21893491124260359,
+          "run_id": 44,
+          "seed": 1753176970,
+          "tickers": [
+            "ABCB4",
+            "BBSE3",
+            "CMIN3",
+            "EUCA4",
+            "GGPS3",
+            "GOAU3",
+            "JSLG3",
+            "LOGG3",
+            "MILS3",
+            "ORVR3",
+            "RDOR3",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.550201791813562,
+          "generations_run": 51,
+          "hhi": 0.19526627218934917,
+          "run_id": 45,
+          "seed": 1210387796,
+          "tickers": [
+            "BEEF3",
+            "BRSR3",
+            "BRSR6",
+            "CMIG4",
+            "EUCA4",
+            "FESA4",
+            "ISAE4",
+            "PNVL3",
+            "SBFG3",
+            "SBSP3",
+            "SIMH3",
+            "SMFT3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.618417316636983,
+          "generations_run": 52,
+          "hhi": 0.18343195266272194,
+          "run_id": 46,
+          "seed": 693077269,
+          "tickers": [
+            "BBSE3",
+            "BMEB4",
+            "BRKM5",
+            "BRSR6",
+            "DEXP3",
+            "DIRR3",
+            "EUCA4",
+            "FIQE3",
+            "INTB3",
+            "MOVI3",
+            "PETR4",
+            "TUPY3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.878007305847209,
+          "generations_run": 124,
+          "hhi": 0.1597633136094675,
+          "run_id": 47,
+          "seed": 3900916648,
+          "tickers": [
+            "BIOM3",
+            "BRSR3",
+            "CURY3",
+            "CXSE3",
+            "ENAT3",
+            "EVEN3",
+            "FIQE3",
+            "GOAU4",
+            "INTB3",
+            "JSLG3",
+            "LOGG3",
+            "MDNE3",
+            "RDOR3"
+          ]
+        },
+        {
+          "fitness": 4.732736536392575,
+          "generations_run": 90,
+          "hhi": 0.13609467455621305,
+          "run_id": 48,
+          "seed": 1091301695,
+          "tickers": [
+            "BMOB3",
+            "BRSR6",
+            "CPFE3",
+            "ISAE4",
+            "LAVV3",
+            "LEVE3",
+            "LOGG3",
+            "MBRF3",
+            "RDOR3",
+            "SUZB3",
+            "TTEN3",
+            "UGPA3",
+            "UNIP3"
+          ]
+        },
+        {
+          "fitness": 5.133441188630488,
+          "generations_run": 115,
+          "hhi": 0.2071005917159764,
+          "run_id": 49,
+          "seed": 580454457,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "BRAP3",
+            "BRSR3",
+            "CMIG4",
+            "CURY3",
+            "FESA4",
+            "ISAE4",
+            "ITSA4",
+            "LOGG3",
+            "MILS3",
+            "NEOE3",
+            "STBP3"
+          ]
+        },
+        {
+          "fitness": 5.087213249982659,
+          "generations_run": 64,
+          "hhi": 0.1597633136094675,
+          "run_id": 50,
+          "seed": 3534646703,
+          "tickers": [
+            "BMOB3",
+            "BRSR3",
+            "BRSR6",
+            "CXSE3",
+            "FESA4",
+            "INTB3",
+            "LAVV3",
+            "MILS3",
+            "NEOE3",
+            "RDOR3",
+            "RIAA3",
+            "SAUD3",
+            "VLID3"
+          ]
+        },
+        {
+          "fitness": 4.698986891662981,
+          "generations_run": 54,
+          "hhi": 0.19526627218934917,
+          "run_id": 51,
+          "seed": 1011584938,
+          "tickers": [
+            "BBSE3",
+            "BRSR3",
+            "EUCA4",
+            "GGPS3",
+            "JHSF3",
+            "KLBN3",
+            "LAVV3",
+            "LOGG3",
+            "MOTV3",
+            "PFRM3",
+            "PINE4",
+            "RDOR3",
+            "TTEN3"
+          ]
+        },
+        {
+          "fitness": 4.877161209263952,
+          "generations_run": 94,
+          "hhi": 0.14792899408284024,
+          "run_id": 52,
+          "seed": 3168391482,
+          "tickers": [
+            "BRSR6",
+            "CXSE3",
+            "DIRR3",
+            "FIQE3",
+            "ISAE4",
+            "LIGT3",
+            "LOGG3",
+            "PETR4",
+            "PGMN3",
+            "SHUL4",
+            "USIM3",
+            "VAMO3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.589444149823075,
+          "generations_run": 105,
+          "hhi": 0.17159763313609472,
+          "run_id": 53,
+          "seed": 714717348,
+          "tickers": [
+            "ASAI3",
+            "BRSR6",
+            "CMIG3",
+            "CURY3",
+            "EUCA4",
+            "FESA4",
+            "GGBR4",
+            "ISAE4",
+            "MOVI3",
+            "RDOR3",
+            "SMTO3",
+            "UGPA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.832468298096938,
+          "generations_run": 83,
+          "hhi": 0.14792899408284024,
+          "run_id": 54,
+          "seed": 3846777672,
+          "tickers": [
+            "BBDC4",
+            "BBSE3",
+            "BMOB3",
+            "BRST3",
+            "CPLE6",
+            "DEXP3",
+            "FIQE3",
+            "LEVE3",
+            "LOGG3",
+            "RDOR3",
+            "SAPR11",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.877495235154603,
+          "generations_run": 53,
+          "hhi": 0.13609467455621305,
+          "run_id": 55,
+          "seed": 147058079,
+          "tickers": [
+            "ASAI3",
+            "BBAS3",
+            "BBSE3",
+            "EUCA4",
+            "FIQE3",
+            "LOGG3",
+            "MOTV3",
+            "RAIZ4",
+            "RDOR3",
+            "SBSP3",
+            "SMTO3",
+            "SUZB3",
+            "TOTS3"
+          ]
+        },
+        {
+          "fitness": 5.041977207413703,
+          "generations_run": 90,
+          "hhi": 0.17159763313609472,
+          "run_id": 56,
+          "seed": 2346589129,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "BMOB3",
+            "COCE5",
+            "CPFE3",
+            "CPLE5",
+            "CURY3",
+            "EUCA4",
+            "FIQE3",
+            "ISAE4",
+            "LAVV3",
+            "LOGG3",
+            "SAUD3"
+          ]
+        },
+        {
+          "fitness": 4.563742045879714,
+          "generations_run": 106,
+          "hhi": 0.17159763313609472,
+          "run_id": 57,
+          "seed": 2467822206,
+          "tickers": [
+            "AXIA6",
+            "BBSE3",
+            "BRSR6",
+            "COCE5",
+            "CXSE3",
+            "FESA4",
+            "GMAT3",
+            "MILS3",
+            "NATU3",
+            "RADL3",
+            "RDOR3",
+            "RIAA3",
+            "SMTO3"
+          ]
+        },
+        {
+          "fitness": 4.903109414623251,
+          "generations_run": 91,
+          "hhi": 0.1597633136094675,
+          "run_id": 58,
+          "seed": 3786690284,
+          "tickers": [
+            "ARML3",
+            "BRSR6",
+            "DEXP3",
+            "FESA4",
+            "FIQE3",
+            "HBSA3",
+            "INTB3",
+            "LOGG3",
+            "MILS3",
+            "RAIZ4",
+            "RENT3",
+            "SUZB3",
+            "TAEE3"
+          ]
+        },
+        {
+          "fitness": 5.1166668435760645,
+          "generations_run": 76,
+          "hhi": 0.14792899408284024,
+          "run_id": 59,
+          "seed": 2242845770,
+          "tickers": [
+            "BMOB3",
+            "BRAP3",
+            "BRSR6",
+            "CMIN3",
+            "CPFE3",
+            "CXSE3",
+            "LOGG3",
+            "ONCO3",
+            "OPCT3",
+            "POMO3",
+            "RDOR3",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.652433300442923,
+          "generations_run": 69,
+          "hhi": 0.18343195266272194,
+          "run_id": 60,
+          "seed": 70904748,
+          "tickers": [
+            "BIOM3",
+            "BMOB3",
+            "BRSR6",
+            "EUCA4",
+            "FIQE3",
+            "GRND3",
+            "LOGG3",
+            "MDNE3",
+            "ONCO3",
+            "PINE4",
+            "RDOR3",
+            "RIAA3",
+            "SLCE3"
+          ]
+        },
+        {
+          "fitness": 4.868284190303687,
+          "generations_run": 69,
+          "hhi": 0.18343195266272194,
+          "run_id": 61,
+          "seed": 2421738002,
+          "tickers": [
+            "BBSE3",
+            "BEEF3",
+            "BRSR6",
+            "BRST3",
+            "FESA4",
+            "FRAS3",
+            "JHSF3",
+            "LOGG3",
+            "NATU3",
+            "SIMH3",
+            "TAEE3",
+            "VAMO3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.58910461382436,
+          "generations_run": 57,
+          "hhi": 0.14792899408284024,
+          "run_id": 62,
+          "seed": 4117026508,
+          "tickers": [
+            "ABEV3",
+            "BRSR3",
+            "CSNA3",
+            "DIRR3",
+            "FIQE3",
+            "GGBR3",
+            "INTB3",
+            "ISAE4",
+            "LOGG3",
+            "MDIA3",
+            "UGPA3",
+            "VIVA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.495944102350676,
+          "generations_run": 72,
+          "hhi": 0.2071005917159764,
+          "run_id": 63,
+          "seed": 3946071711,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "CMIN3",
+            "FRAS3",
+            "ISAE4",
+            "LAVV3",
+            "LEVE3",
+            "LOGG3",
+            "MDIA3",
+            "NEOE3",
+            "SLCE3",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.148161767738404,
+          "generations_run": 54,
+          "hhi": 0.19526627218934917,
+          "run_id": 64,
+          "seed": 2583409266,
+          "tickers": [
+            "AXIA3",
+            "BBSE3",
+            "BMOB3",
+            "DIRR3",
+            "FESA4",
+            "ITSA3",
+            "JHSF3",
+            "JSLG3",
+            "LEVE3",
+            "RANI3",
+            "RDOR3",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.965409862893155,
+          "generations_run": 70,
+          "hhi": 0.17159763313609472,
+          "run_id": 65,
+          "seed": 2421479999,
+          "tickers": [
+            "BBSE3",
+            "CXSE3",
+            "EGIE3",
+            "FESA4",
+            "FIQE3",
+            "JSLG3",
+            "MDNE3",
+            "RECV3",
+            "SUZB3",
+            "TAEE11",
+            "TFCO4",
+            "UNIP3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.834935114248687,
+          "generations_run": 51,
+          "hhi": 0.2307692307692308,
+          "run_id": 66,
+          "seed": 2626388672,
+          "tickers": [
+            "BBSE3",
+            "BPAN4",
+            "BRSR3",
+            "BRSR6",
+            "CLSC4",
+            "CMIN3",
+            "CURY3",
+            "EUCA4",
+            "FESA4",
+            "MILS3",
+            "SMTO3",
+            "SUZB3",
+            "TUPY3"
+          ]
+        },
+        {
+          "fitness": 5.5570109212621475,
+          "generations_run": 93,
+          "hhi": 0.2071005917159764,
+          "run_id": 67,
+          "seed": 2130244257,
+          "tickers": [
+            "BEEF3",
+            "BRSR6",
+            "BRST3",
+            "CURY3",
+            "DEXP3",
+            "FIQE3",
+            "IGTI11",
+            "LEVE3",
+            "LOGG3",
+            "RDOR3",
+            "SUZB3",
+            "TFCO4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.869133324824791,
+          "generations_run": 70,
+          "hhi": 0.1597633136094675,
+          "run_id": 68,
+          "seed": 2572334741,
+          "tickers": [
+            "BMOB3",
+            "BRSR3",
+            "CSAN3",
+            "CXSE3",
+            "EQTL3",
+            "FIQE3",
+            "GOAU4",
+            "LAVV3",
+            "LEVE3",
+            "LOGG3",
+            "MDNE3",
+            "RDOR3",
+            "TAEE11"
+          ]
+        },
+        {
+          "fitness": 5.447214687395375,
+          "generations_run": 52,
+          "hhi": 0.17159763313609472,
+          "run_id": 69,
+          "seed": 55889615,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR6",
+            "CMIN3",
+            "DIRR3",
+            "ECOR3",
+            "EGIE3",
+            "JSLG3",
+            "MILS3",
+            "SMFT3",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.9421795093968885,
+          "generations_run": 76,
+          "hhi": 0.19526627218934917,
+          "run_id": 70,
+          "seed": 3153810445,
+          "tickers": [
+            "BBSE3",
+            "BRSR3",
+            "GGBR4",
+            "GRND3",
+            "LOGG3",
+            "MATD3",
+            "MILS3",
+            "MOTV3",
+            "RIAA3",
+            "SHUL4",
+            "SUZB3",
+            "UGPA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.470061577280093,
+          "generations_run": 79,
+          "hhi": 0.18343195266272194,
+          "run_id": 71,
+          "seed": 2713692623,
+          "tickers": [
+            "ASAI3",
+            "BBSE3",
+            "BEEF3",
+            "BRAP4",
+            "BRFS3",
+            "ISAE4",
+            "ITUB4",
+            "LOGG3",
+            "MRVE3",
+            "RADL3",
+            "RDOR3",
+            "SMFT3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.604147939425125,
+          "generations_run": 72,
+          "hhi": 0.1597633136094675,
+          "run_id": 72,
+          "seed": 2354870101,
+          "tickers": [
+            "BRSR3",
+            "BRSR6",
+            "CXSE3",
+            "ENAT3",
+            "ISAE4",
+            "JSLG3",
+            "LIGT3",
+            "RDOR3",
+            "SOJA3",
+            "STBP3",
+            "SUZB3",
+            "TUPY3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.648758821170477,
+          "generations_run": 94,
+          "hhi": 0.14792899408284024,
+          "run_id": 73,
+          "seed": 2134934360,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "CSNA3",
+            "DEXP3",
+            "JSLG3",
+            "LAVV3",
+            "LEVE3",
+            "LOGG3",
+            "ONCO3",
+            "PCAR3",
+            "PGMN3",
+            "RDOR3",
+            "RECV3"
+          ]
+        },
+        {
+          "fitness": 4.894231825529525,
+          "generations_run": 114,
+          "hhi": 0.18343195266272194,
+          "run_id": 74,
+          "seed": 95703243,
+          "tickers": [
+            "ABEV3",
+            "ALOS3",
+            "AURE3",
+            "BBSE3",
+            "CURY3",
+            "CXSE3",
+            "EMBJ3",
+            "FESA4",
+            "GOAU3",
+            "LOGG3",
+            "MILS3",
+            "PETR4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.8040729546088485,
+          "generations_run": 51,
+          "hhi": 0.1597633136094675,
+          "run_id": 75,
+          "seed": 2090058471,
+          "tickers": [
+            "ARML3",
+            "BBSE3",
+            "BMGB4",
+            "BMOB3",
+            "BRSR3",
+            "CBAV3",
+            "CPFE3",
+            "FIQE3",
+            "ISAE4",
+            "LAVV3",
+            "MATD3",
+            "MILS3",
+            "SHUL4"
+          ]
+        },
+        {
+          "fitness": 5.155794833199059,
+          "generations_run": 71,
+          "hhi": 0.2071005917159764,
+          "run_id": 76,
+          "seed": 3900414617,
+          "tickers": [
+            "BBSE3",
+            "BIOM3",
+            "BRSR6",
+            "CXSE3",
+            "DEXP3",
+            "FESA4",
+            "FIQE3",
+            "HYPE3",
+            "ITSA4",
+            "MDIA3",
+            "RDOR3",
+            "VIVA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.3567733106602216,
+          "generations_run": 124,
+          "hhi": 0.1597633136094675,
+          "run_id": 77,
+          "seed": 3672180189,
+          "tickers": [
+            "ABEV3",
+            "ALPA4",
+            "BBSE3",
+            "BEEF3",
+            "BMOB3",
+            "BRSR3",
+            "CURY3",
+            "DEXP3",
+            "LOGG3",
+            "LOGN3",
+            "MILS3",
+            "SUZB3",
+            "TAEE11"
+          ]
+        },
+        {
+          "fitness": 4.353933776732464,
+          "generations_run": 51,
+          "hhi": 0.2071005917159764,
+          "run_id": 78,
+          "seed": 30196092,
+          "tickers": [
+            "BBSE3",
+            "BRBI11",
+            "DEXP3",
+            "EUCA4",
+            "FESA4",
+            "FIQE3",
+            "HAPV3",
+            "JHSF3",
+            "LAVV3",
+            "LEVE3",
+            "RDOR3",
+            "SBFG3",
+            "SBSP3"
+          ]
+        },
+        {
+          "fitness": 4.971126266492389,
+          "generations_run": 51,
+          "hhi": 0.17159763313609472,
+          "run_id": 79,
+          "seed": 1422795282,
+          "tickers": [
+            "ALUP11",
+            "AMER3",
+            "BBSE3",
+            "BMOB3",
+            "EUCA4",
+            "FESA4",
+            "INTB3",
+            "JSLG3",
+            "NEOE3",
+            "RDOR3",
+            "SHUL4",
+            "SUZB3",
+            "TAEE3"
+          ]
+        },
+        {
+          "fitness": 5.208253703644471,
+          "generations_run": 85,
+          "hhi": 0.2662721893491124,
+          "run_id": 80,
+          "seed": 1837714360,
+          "tickers": [
+            "ABCB4",
+            "ALOS3",
+            "BBSE3",
+            "BPAC3",
+            "BRSR3",
+            "FESA4",
+            "FIQE3",
+            "GGPS3",
+            "GMAT3",
+            "LAVV3",
+            "LOGG3",
+            "RANI3",
+            "RDOR3"
+          ]
+        },
+        {
+          "fitness": 4.88229724759456,
+          "generations_run": 55,
+          "hhi": 0.14792899408284024,
+          "run_id": 81,
+          "seed": 1511507636,
+          "tickers": [
+            "ALOS3",
+            "ASAI3",
+            "CMIN3",
+            "CURY3",
+            "CXSE3",
+            "EVEN3",
+            "FIQE3",
+            "LEVE3",
+            "MILS3",
+            "PETR4",
+            "RDOR3",
+            "SUZB3",
+            "VAMO3"
+          ]
+        },
+        {
+          "fitness": 4.406558888639713,
+          "generations_run": 61,
+          "hhi": 0.17159763313609472,
+          "run_id": 82,
+          "seed": 3028545841,
+          "tickers": [
+            "ALOS3",
+            "BIOM3",
+            "BRSR3",
+            "BRST3",
+            "CPLE3",
+            "FESA4",
+            "JHSF3",
+            "LOGG3",
+            "PNVL3",
+            "RADL3",
+            "RECV3",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.670178477729577,
+          "generations_run": 53,
+          "hhi": 0.18343195266272194,
+          "run_id": 83,
+          "seed": 3460418217,
+          "tickers": [
+            "ASAI3",
+            "BBSE3",
+            "BEEF3",
+            "BMOB3",
+            "BRSR3",
+            "CURY3",
+            "CYRE4",
+            "DEXP3",
+            "EVEN3",
+            "FIQE3",
+            "KEPL3",
+            "USIM3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.859323583602,
+          "generations_run": 131,
+          "hhi": 0.2071005917159764,
+          "run_id": 84,
+          "seed": 877392843,
+          "tickers": [
+            "ABCB4",
+            "ALPA4",
+            "BBSE3",
+            "BRSR6",
+            "CBAV3",
+            "EUCA4",
+            "FIQE3",
+            "GGPS3",
+            "IGTI11",
+            "MILS3",
+            "SUZB3",
+            "TAEE4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.860345308253937,
+          "generations_run": 78,
+          "hhi": 0.12426035502958582,
+          "run_id": 85,
+          "seed": 2121956997,
+          "tickers": [
+            "ABEV3",
+            "ASAI3",
+            "BBSE3",
+            "BRAP4",
+            "BRSR6",
+            "DEXP3",
+            "FIQE3",
+            "FRAS3",
+            "RDOR3",
+            "SMFT3",
+            "TAEE4",
+            "TOTS3",
+            "VIVA3"
+          ]
+        },
+        {
+          "fitness": 4.767342057038031,
+          "generations_run": 100,
+          "hhi": 0.14792899408284024,
+          "run_id": 86,
+          "seed": 2664093945,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "DEXP3",
+            "EMBJ3",
+            "EUCA4",
+            "FIQE3",
+            "KEPL3",
+            "MULT3",
+            "OPCT3",
+            "RDOR3",
+            "TAEE3",
+            "TAEE4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.942529069179965,
+          "generations_run": 84,
+          "hhi": 0.17159763313609472,
+          "run_id": 87,
+          "seed": 884133570,
+          "tickers": [
+            "ALOS3",
+            "BBSE3",
+            "BRKM5",
+            "CMIN3",
+            "CPFE3",
+            "CXSE3",
+            "FIQE3",
+            "GGPS3",
+            "GMAT3",
+            "JHSF3",
+            "LOGG3",
+            "PASS3",
+            "RDOR3"
+          ]
+        },
+        {
+          "fitness": 4.859224029268555,
+          "generations_run": 76,
+          "hhi": 0.17159763313609472,
+          "run_id": 88,
+          "seed": 3086220380,
+          "tickers": [
+            "BBSE3",
+            "CBAV3",
+            "CSMG3",
+            "CSNA3",
+            "CXSE3",
+            "FIQE3",
+            "INTB3",
+            "ISAE4",
+            "LOGG3",
+            "RDOR3",
+            "TAEE4",
+            "VIVT3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.532643853523398,
+          "generations_run": 53,
+          "hhi": 0.14792899408284024,
+          "run_id": 89,
+          "seed": 1518530616,
+          "tickers": [
+            "ASAI3",
+            "BRFS3",
+            "ISAE4",
+            "LOGG3",
+            "MILS3",
+            "PETR4",
+            "PORT3",
+            "RDOR3",
+            "SHUL4",
+            "SUZB3",
+            "UGPA3",
+            "VULC3",
+            "WIZC3"
+          ]
+        },
+        {
+          "fitness": 4.887082034289184,
+          "generations_run": 94,
+          "hhi": 0.20710059171597636,
+          "run_id": 90,
+          "seed": 2121771887,
+          "tickers": [
+            "ABCB4",
+            "BBSE3",
+            "BMOB3",
+            "BRSR3",
+            "BRSR6",
+            "CPLE6",
+            "CURY3",
+            "CXSE3",
+            "FESA4",
+            "GGBR3",
+            "MDIA3",
+            "PETR4",
+            "SHUL4"
+          ]
+        },
+        {
+          "fitness": 5.220363624986022,
+          "generations_run": 61,
+          "hhi": 0.21893491124260359,
+          "run_id": 91,
+          "seed": 4009918581,
+          "tickers": [
+            "AZZA3",
+            "BBSE3",
+            "BPAN4",
+            "BRSR6",
+            "DEXP3",
+            "LOGG3",
+            "MDIA3",
+            "MILS3",
+            "PCAR3",
+            "RDOR3",
+            "SBSP3",
+            "SIMH3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.556996912886203,
+          "generations_run": 70,
+          "hhi": 0.18343195266272194,
+          "run_id": 92,
+          "seed": 2742803797,
+          "tickers": [
+            "BBSE3",
+            "BRFS3",
+            "BRSR3",
+            "BRSR6",
+            "FESA4",
+            "INTB3",
+            "ITSA4",
+            "JBSS3",
+            "KLBN3",
+            "MILS3",
+            "SMFT3",
+            "TAEE3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.851356380801329,
+          "generations_run": 51,
+          "hhi": 0.19526627218934917,
+          "run_id": 93,
+          "seed": 2258728646,
+          "tickers": [
+            "AGRO3",
+            "BMOB3",
+            "BRSR3",
+            "CXSE3",
+            "DIRR3",
+            "FESA4",
+            "FIQE3",
+            "LEVE3",
+            "RDOR3",
+            "RIAA3",
+            "SEER3",
+            "SIMH3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.979999480002011,
+          "generations_run": 130,
+          "hhi": 0.25443786982248523,
+          "run_id": 94,
+          "seed": 3343765071,
+          "tickers": [
+            "BBSE3",
+            "BRAP4",
+            "BRSR6",
+            "CXSE3",
+            "CYRE4",
+            "DEXP3",
+            "FESA4",
+            "INTB3",
+            "MDNE3",
+            "MILS3",
+            "PLPL3",
+            "RANI3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.936376446601393,
+          "generations_run": 57,
+          "hhi": 0.13609467455621305,
+          "run_id": 95,
+          "seed": 1774054422,
+          "tickers": [
+            "ABEV3",
+            "BEEF3",
+            "BMOB3",
+            "BRSR3",
+            "CXSE3",
+            "EGIE3",
+            "FESA4",
+            "HBSA3",
+            "MATD3",
+            "MDNE3",
+            "RDOR3",
+            "SHUL4",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.5650726516024465,
+          "generations_run": 51,
+          "hhi": 0.2662721893491124,
+          "run_id": 96,
+          "seed": 1354191348,
+          "tickers": [
+            "ABCB4",
+            "BBSE3",
+            "BRSR3",
+            "BRSR6",
+            "EUCA4",
+            "IGTI11",
+            "INTB3",
+            "ISAE4",
+            "LOGG3",
+            "MATD3",
+            "NATU3",
+            "PETR3",
+            "SOJA3"
+          ]
+        },
+        {
+          "fitness": 4.79497673926017,
+          "generations_run": 51,
+          "hhi": 0.14792899408284024,
+          "run_id": 97,
+          "seed": 2144119890,
+          "tickers": [
+            "ABEV3",
+            "ARML3",
+            "BMOB3",
+            "DIRR3",
+            "EUCA4",
+            "GOAU4",
+            "MDNE3",
+            "MOTV3",
+            "RDOR3",
+            "SBSP3",
+            "SIMH3",
+            "TAEE11",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.119594369689066,
+          "generations_run": 79,
+          "hhi": 0.17159763313609472,
+          "run_id": 98,
+          "seed": 1353898434,
+          "tickers": [
+            "AXIA7",
+            "BMOB3",
+            "BRSR6",
+            "DEXP3",
+            "ECOR3",
+            "HAPV3",
+            "ISAE4",
+            "LAVV3",
+            "LOGG3",
+            "MILS3",
+            "POMO4",
+            "RIAA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.757702584827149,
+          "generations_run": 51,
+          "hhi": 0.2071005917159764,
+          "run_id": 99,
+          "seed": 3048014084,
+          "tickers": [
+            "BRSR3",
+            "CURY3",
+            "FIQE3",
+            "GGBR4",
+            "GGPS3",
+            "IGTI11",
+            "JSLG3",
+            "LOGG3",
+            "MDNE3",
+            "MILS3",
+            "POMO3",
+            "RECV3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.552096569768422,
+          "generations_run": 143,
+          "hhi": 0.19526627218934917,
+          "run_id": 100,
+          "seed": 3507015411,
+          "tickers": [
+            "ALPA4",
+            "AXIA7",
+            "BBSE3",
+            "BRAP4",
+            "BRSR3",
+            "BRSR6",
+            "ISAE4",
+            "LOGG3",
+            "OPCT3",
+            "PRNR3",
+            "RDOR3",
+            "SHUL4",
+            "SMTO3"
+          ]
+        },
+        {
+          "fitness": 4.548612475356244,
+          "generations_run": 54,
+          "hhi": 0.14792899408284024,
+          "run_id": 101,
+          "seed": 1117201487,
+          "tickers": [
+            "BEEF3",
+            "BMOB3",
+            "BRAP4",
+            "BRSR3",
+            "CMIG4",
+            "CXSE3",
+            "DEXP3",
+            "FIQE3",
+            "GMAT3",
+            "LEVE3",
+            "MILS3",
+            "POMO3",
+            "PSSA3"
+          ]
+        },
+        {
+          "fitness": 5.109359485025239,
+          "generations_run": 91,
+          "hhi": 0.2307692307692308,
+          "run_id": 102,
+          "seed": 3274269805,
+          "tickers": [
+            "AXIA3",
+            "BBSE3",
+            "BRSR6",
+            "DXCO3",
+            "EUCA4",
+            "GMAT3",
+            "LEVE3",
+            "LOGG3",
+            "MDNE3",
+            "SIMH3",
+            "SLCE3",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.576191275810027,
+          "generations_run": 115,
+          "hhi": 0.1597633136094675,
+          "run_id": 103,
+          "seed": 3403676973,
+          "tickers": [
+            "ARML3",
+            "BBSE3",
+            "BMOB3",
+            "BRKM5",
+            "BRSR6",
+            "CPLE3",
+            "FIQE3",
+            "GMAT3",
+            "GRND3",
+            "LOGG3",
+            "MOVI3",
+            "MYPK3",
+            "TOTS3"
+          ]
+        },
+        {
+          "fitness": 4.957216255573678,
+          "generations_run": 52,
+          "hhi": 0.2071005917159764,
+          "run_id": 104,
+          "seed": 416780523,
+          "tickers": [
+            "BRSR6",
+            "CPFE3",
+            "EGIE3",
+            "EUCA4",
+            "FESA4",
+            "FIQE3",
+            "LAVV3",
+            "LEVE3",
+            "MDNE3",
+            "MILS3",
+            "SHUL4",
+            "SMFT3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.85552044793728,
+          "generations_run": 51,
+          "hhi": 0.17159763313609472,
+          "run_id": 105,
+          "seed": 3978278620,
+          "tickers": [
+            "BBSE3",
+            "BEEF3",
+            "BRAP3",
+            "BRSR3",
+            "FESA4",
+            "FIQE3",
+            "JHSF3",
+            "LOGG3",
+            "PCAR3",
+            "POMO3",
+            "PRIO3",
+            "SEER3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.226300185399847,
+          "generations_run": 76,
+          "hhi": 0.2189349112426036,
+          "run_id": 106,
+          "seed": 2718524594,
+          "tickers": [
+            "BBSE3",
+            "BRSR6",
+            "CURY3",
+            "FESA4",
+            "INTB3",
+            "ISAE4",
+            "KLBN4",
+            "LAVV3",
+            "LOGG3",
+            "MDNE3",
+            "TAEE3",
+            "TOTS3",
+            "VIVA3"
+          ]
+        },
+        {
+          "fitness": 5.646267561180605,
+          "generations_run": 52,
+          "hhi": 0.19526627218934917,
+          "run_id": 107,
+          "seed": 3000027070,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "BRKM5",
+            "BRSR3",
+            "BRSR6",
+            "CPFE3",
+            "CURY3",
+            "CXSE3",
+            "JHSF3",
+            "LEVE3",
+            "RDOR3",
+            "RECV3",
+            "TAEE3"
+          ]
+        },
+        {
+          "fitness": 4.839929863191456,
+          "generations_run": 62,
+          "hhi": 0.17159763313609472,
+          "run_id": 108,
+          "seed": 3518472833,
+          "tickers": [
+            "BBSE3",
+            "BEEF3",
+            "CMIN3",
+            "CURY3",
+            "LAND3",
+            "LOGG3",
+            "MATD3",
+            "MOVI3",
+            "SBSP3",
+            "SHUL4",
+            "SIMH3",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.782339581969421,
+          "generations_run": 92,
+          "hhi": 0.19526627218934917,
+          "run_id": 109,
+          "seed": 3764569175,
+          "tickers": [
+            "ALUP11",
+            "ARML3",
+            "BBSE3",
+            "BRSR6",
+            "DIRR3",
+            "FIQE3",
+            "ITUB3",
+            "LEVE3",
+            "MATD3",
+            "PLPL3",
+            "RDOR3",
+            "SIMH3",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.6229070725708565,
+          "generations_run": 89,
+          "hhi": 0.1597633136094675,
+          "run_id": 110,
+          "seed": 2553277938,
+          "tickers": [
+            "BBSE3",
+            "BEEF3",
+            "BRFS3",
+            "BRSR6",
+            "EMBJ3",
+            "FESA4",
+            "INTB3",
+            "ISAE4",
+            "JHSF3",
+            "RENT3",
+            "SUZB3",
+            "TAEE11",
+            "TAEE4"
+          ]
+        },
+        {
+          "fitness": 4.99607347052084,
+          "generations_run": 60,
+          "hhi": 0.19526627218934917,
+          "run_id": 111,
+          "seed": 2327739300,
+          "tickers": [
+            "BBSE3",
+            "CMIN3",
+            "CXSE3",
+            "ECOR3",
+            "EMBJ3",
+            "FESA4",
+            "FIQE3",
+            "MOTV3",
+            "NTCO3",
+            "RDOR3",
+            "SUZB3",
+            "USIM3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.110663107216633,
+          "generations_run": 128,
+          "hhi": 0.19526627218934917,
+          "run_id": 112,
+          "seed": 3101685344,
+          "tickers": [
+            "BAZA3",
+            "BBSE3",
+            "CURY3",
+            "CXSE3",
+            "FESA4",
+            "LOGG3",
+            "MDIA3",
+            "MILS3",
+            "RADL3",
+            "RDOR3",
+            "RIAA3",
+            "SEER3",
+            "TAEE4"
+          ]
+        },
+        {
+          "fitness": 4.524094637263722,
+          "generations_run": 53,
+          "hhi": 0.30177514792899407,
+          "run_id": 113,
+          "seed": 1363106743,
+          "tickers": [
+            "ABEV3",
+            "ALOS3",
+            "ASAI3",
+            "BBSE3",
+            "BRSR6",
+            "LOGG3",
+            "MDIA3",
+            "PETR4",
+            "RAIZ4",
+            "RDOR3",
+            "RECV3",
+            "SIMH3",
+            "SOJA3"
+          ]
+        },
+        {
+          "fitness": 5.017017721700559,
+          "generations_run": 59,
+          "hhi": 0.18343195266272194,
+          "run_id": 114,
+          "seed": 1007135520,
+          "tickers": [
+            "ARML3",
+            "BBSE3",
+            "BMOB3",
+            "GOAU3",
+            "JSLG3",
+            "LOGG3",
+            "MILS3",
+            "PETZ3",
+            "POMO3",
+            "RECV3",
+            "SMTO3",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.657311327049692,
+          "generations_run": 61,
+          "hhi": 0.14792899408284024,
+          "run_id": 115,
+          "seed": 4035266847,
+          "tickers": [
+            "ASAI3",
+            "BBSE3",
+            "BRKM5",
+            "BRST3",
+            "CURY3",
+            "CXSE3",
+            "DIRR3",
+            "FESA4",
+            "HYPE3",
+            "ISAE4",
+            "MOTV3",
+            "SUZB3",
+            "TAEE4"
+          ]
+        },
+        {
+          "fitness": 4.73783667843823,
+          "generations_run": 54,
+          "hhi": 0.17159763313609472,
+          "run_id": 116,
+          "seed": 1402720480,
+          "tickers": [
+            "BBSE3",
+            "BRAP4",
+            "COCE5",
+            "CXSE3",
+            "LEVE3",
+            "LOGG3",
+            "PETR4",
+            "RAIZ4",
+            "RDOR3",
+            "SUZB3",
+            "UGPA3",
+            "VLID3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.5934680878868965,
+          "generations_run": 122,
+          "hhi": 0.1597633136094675,
+          "run_id": 117,
+          "seed": 1191777802,
+          "tickers": [
+            "ARML3",
+            "BBSE3",
+            "BMOB3",
+            "FESA4",
+            "FIQE3",
+            "GGBR4",
+            "JHSF3",
+            "LAVV3",
+            "LOGG3",
+            "PRNR3",
+            "RDOR3",
+            "SUZB3",
+            "TOTS3"
+          ]
+        },
+        {
+          "fitness": 4.409418792435591,
+          "generations_run": 52,
+          "hhi": 0.14792899408284024,
+          "run_id": 118,
+          "seed": 2361356390,
+          "tickers": [
+            "CBAV3",
+            "CXSE3",
+            "ECOR3",
+            "FIQE3",
+            "GMAT3",
+            "LEVE3",
+            "LOGG3",
+            "ONCO3",
+            "PNVL3",
+            "PRNR3",
+            "RDOR3",
+            "SUZB3",
+            "TAEE4"
+          ]
+        },
+        {
+          "fitness": 4.66536772830331,
+          "generations_run": 56,
+          "hhi": 0.19526627218934917,
+          "run_id": 119,
+          "seed": 2481064799,
+          "tickers": [
+            "AZZA3",
+            "BBSE3",
+            "BMOB3",
+            "DEXP3",
+            "ENEV3",
+            "EUCA4",
+            "ITUB3",
+            "JHSF3",
+            "LOGG3",
+            "MDNE3",
+            "SMTO3",
+            "VAMO3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.841375922020259,
+          "generations_run": 87,
+          "hhi": 0.19526627218934917,
+          "run_id": 120,
+          "seed": 3240000859,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "BPAC3",
+            "CURY3",
+            "CXSE3",
+            "GMAT3",
+            "GRND3",
+            "IGTI11",
+            "JSLG3",
+            "PETR3",
+            "RDOR3",
+            "SBSP3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.9113668262384165,
+          "generations_run": 89,
+          "hhi": 0.14792899408284024,
+          "run_id": 121,
+          "seed": 1759668174,
+          "tickers": [
+            "ANIM3",
+            "AXIA3",
+            "BBSE3",
+            "BRSR3",
+            "BRSR6",
+            "BRST3",
+            "CURY3",
+            "FIQE3",
+            "GGPS3",
+            "MLAS3",
+            "RDOR3",
+            "SUZB3",
+            "TAEE11"
+          ]
+        },
+        {
+          "fitness": 5.249131170257519,
+          "generations_run": 65,
+          "hhi": 0.21893491124260359,
+          "run_id": 122,
+          "seed": 4063990414,
+          "tickers": [
+            "ALOS3",
+            "BBSE3",
+            "BEEF3",
+            "BRAP4",
+            "BRSR3",
+            "BRSR6",
+            "LOGG3",
+            "MOVI3",
+            "RDOR3",
+            "SBSP3",
+            "SLCE3",
+            "UGPA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.74347520641485,
+          "generations_run": 52,
+          "hhi": 0.17159763313609472,
+          "run_id": 123,
+          "seed": 2400735452,
+          "tickers": [
+            "BRSR6",
+            "CURY3",
+            "DEXP3",
+            "DIRR3",
+            "ISAE4",
+            "JSLG3",
+            "NATU3",
+            "RANI3",
+            "RDOR3",
+            "SAPR4",
+            "SHUL4",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.93127054986543,
+          "generations_run": 51,
+          "hhi": 0.2071005917159764,
+          "run_id": 124,
+          "seed": 3124947691,
+          "tickers": [
+            "ABEV3",
+            "ARML3",
+            "BRSR3",
+            "CURY3",
+            "CXSE3",
+            "MILS3",
+            "MOTV3",
+            "PETZ3",
+            "RADL3",
+            "RDOR3",
+            "SIMH3",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.910470708683352,
+          "generations_run": 51,
+          "hhi": 0.18343195266272194,
+          "run_id": 125,
+          "seed": 251098770,
+          "tickers": [
+            "BRSR3",
+            "BRSR6",
+            "CBAV3",
+            "CURY3",
+            "DEXP3",
+            "FESA4",
+            "IGTI11",
+            "MATD3",
+            "MOTV3",
+            "PRIO3",
+            "RDOR3",
+            "RECV3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.576766584492004,
+          "generations_run": 74,
+          "hhi": 0.14792899408284024,
+          "run_id": 126,
+          "seed": 3155107147,
+          "tickers": [
+            "ALUP11",
+            "CBAV3",
+            "CXSE3",
+            "FESA4",
+            "FIQE3",
+            "GRND3",
+            "HYPE3",
+            "LAVV3",
+            "LOGG3",
+            "MILS3",
+            "NEOE3",
+            "SUZB3",
+            "TTEN3"
+          ]
+        },
+        {
+          "fitness": 5.370124972021948,
+          "generations_run": 52,
+          "hhi": 0.1597633136094675,
+          "run_id": 127,
+          "seed": 3530044362,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "ECOR3",
+            "EUCA4",
+            "EVEN3",
+            "FESA4",
+            "FIQE3",
+            "GOAU4",
+            "LEVE3",
+            "LOGG3",
+            "PRIO3",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.097441321169218,
+          "generations_run": 86,
+          "hhi": 0.1597633136094675,
+          "run_id": 128,
+          "seed": 2973577405,
+          "tickers": [
+            "BBSE3",
+            "BMOB3",
+            "CMIG4",
+            "CMIN3",
+            "CXSE3",
+            "DIRR3",
+            "MDIA3",
+            "RANI3",
+            "RDOR3",
+            "SUZB3",
+            "VAMO3",
+            "VULC3",
+            "WIZC3"
+          ]
+        },
+        {
+          "fitness": 4.924383101503345,
+          "generations_run": 51,
+          "hhi": 0.18343195266272194,
+          "run_id": 129,
+          "seed": 3785268715,
+          "tickers": [
+            "ALOS3",
+            "BBSE3",
+            "BRAP4",
+            "CXSE3",
+            "FESA4",
+            "GRND3",
+            "LEVE3",
+            "LOGG3",
+            "MILS3",
+            "NATU3",
+            "RAPT4",
+            "RDOR3",
+            "TAEE3"
+          ]
+        },
+        {
+          "fitness": 4.980394210772545,
+          "generations_run": 102,
+          "hhi": 0.14792899408284024,
+          "run_id": 130,
+          "seed": 477090424,
+          "tickers": [
+            "BBDC3",
+            "BBSE3",
+            "BMOB3",
+            "CURY3",
+            "DEXP3",
+            "DIRR3",
+            "FLRY3",
+            "INTB3",
+            "ISAE4",
+            "MILS3",
+            "SHUL4",
+            "SMTO3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.17365772005497,
+          "generations_run": 56,
+          "hhi": 0.18343195266272194,
+          "run_id": 131,
+          "seed": 3401972340,
+          "tickers": [
+            "ARML3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR6",
+            "CXSE3",
+            "EUCA4",
+            "IGTI11",
+            "INTB3",
+            "LAND3",
+            "MATD3",
+            "MILS3",
+            "SMFT3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.901650764324838,
+          "generations_run": 113,
+          "hhi": 0.14792899408284024,
+          "run_id": 132,
+          "seed": 3939281527,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR6",
+            "FIQE3",
+            "ITSA3",
+            "MDIA3",
+            "MDNE3",
+            "MOTV3",
+            "NEOE3",
+            "TAEE11",
+            "USIM3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.079180173452348,
+          "generations_run": 70,
+          "hhi": 0.19526627218934917,
+          "run_id": 133,
+          "seed": 305198019,
+          "tickers": [
+            "AZZA3",
+            "BBSE3",
+            "BRSR3",
+            "CMIN3",
+            "CPLE5",
+            "DIRR3",
+            "FIQE3",
+            "LAVV3",
+            "LOGG3",
+            "PETR3",
+            "RDOR3",
+            "SANB11",
+            "SUZB3"
+          ]
+        },
+        {
+          "fitness": 4.919677468319929,
+          "generations_run": 52,
+          "hhi": 0.2071005917159764,
+          "run_id": 134,
+          "seed": 3751041065,
+          "tickers": [
+            "ABEV3",
+            "ALOS3",
+            "BBSE3",
+            "BRAP4",
+            "BRSR6",
+            "CMIG4",
+            "CYRE4",
+            "DIRR3",
+            "EUCA4",
+            "LEVE3",
+            "LOGG3",
+            "MILS3",
+            "SBSP3"
+          ]
+        },
+        {
+          "fitness": 5.406954926461425,
+          "generations_run": 67,
+          "hhi": 0.18343195266272194,
+          "run_id": 135,
+          "seed": 1766861670,
+          "tickers": [
+            "ASAI3",
+            "BBSE3",
+            "BRSR3",
+            "CURY3",
+            "EUCA4",
+            "HBSA3",
+            "ISAE4",
+            "LAVV3",
+            "MDIA3",
+            "NEOE3",
+            "RDOR3",
+            "VIVA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.3284263519655415,
+          "generations_run": 53,
+          "hhi": 0.2307692307692308,
+          "run_id": 136,
+          "seed": 106965491,
+          "tickers": [
+            "BMOB3",
+            "BRSR6",
+            "CPLE6",
+            "FESA4",
+            "GRND3",
+            "ITSA4",
+            "ITUB4",
+            "JHSF3",
+            "LOGG3",
+            "MILS3",
+            "RENT4",
+            "TAEE11",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.131538199753305,
+          "generations_run": 105,
+          "hhi": 0.21893491124260359,
+          "run_id": 137,
+          "seed": 804252055,
+          "tickers": [
+            "B3SA3",
+            "BBSE3",
+            "BEEF3",
+            "BMOB3",
+            "BRSR3",
+            "BRSR6",
+            "DEXP3",
+            "EMBJ3",
+            "EUCA4",
+            "EVEN3",
+            "FESA4",
+            "LAVV3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 5.248910609146522,
+          "generations_run": 133,
+          "hhi": 0.13609467455621305,
+          "run_id": 138,
+          "seed": 55943895,
+          "tickers": [
+            "ANIM3",
+            "BBSE3",
+            "BRSR3",
+            "EUCA4",
+            "FESA4",
+            "FIQE3",
+            "HAPV3",
+            "ISAE4",
+            "LOGG3",
+            "MATD3",
+            "MILS3",
+            "TOTS3",
+            "UGPA3"
+          ]
+        },
+        {
+          "fitness": 4.76326441517357,
+          "generations_run": 57,
+          "hhi": 0.1597633136094675,
+          "run_id": 139,
+          "seed": 3175499959,
+          "tickers": [
+            "ALUP11",
+            "BEEF3",
+            "BRSR3",
+            "CXSE3",
+            "DIRR3",
+            "EMBJ3",
+            "FIQE3",
+            "LAVV3",
+            "MILS3",
+            "PETR4",
+            "RECV3",
+            "TAEE3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.830899255390214,
+          "generations_run": 55,
+          "hhi": 0.2307692307692308,
+          "run_id": 140,
+          "seed": 2537456114,
+          "tickers": [
+            "ABCB4",
+            "AZZA3",
+            "BBSE3",
+            "BRAP3",
+            "BRSR6",
+            "CLSC4",
+            "CPFE3",
+            "JHSF3",
+            "LOGG3",
+            "RDOR3",
+            "SHUL4",
+            "TEND3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.831782786104195,
+          "generations_run": 53,
+          "hhi": 0.1597633136094675,
+          "run_id": 141,
+          "seed": 85963813,
+          "tickers": [
+            "ARML3",
+            "BMOB3",
+            "BPAC11",
+            "BRSR3",
+            "BRSR6",
+            "CURY3",
+            "DASA3",
+            "FIQE3",
+            "GMAT3",
+            "LOGG3",
+            "MDNE3",
+            "PASS3",
+            "PETR4"
+          ]
+        },
+        {
+          "fitness": 4.608565128321381,
+          "generations_run": 51,
+          "hhi": 0.17159763313609472,
+          "run_id": 142,
+          "seed": 2979458463,
+          "tickers": [
+            "ABEV3",
+            "BBSE3",
+            "CURY3",
+            "HYPE3",
+            "INTB3",
+            "ISAE4",
+            "JSLG3",
+            "MDNE3",
+            "PINE4",
+            "RDOR3",
+            "RIAA3",
+            "SIMH3",
+            "TAEE11"
+          ]
+        },
+        {
+          "fitness": 4.387749697159617,
+          "generations_run": 51,
+          "hhi": 0.1597633136094675,
+          "run_id": 143,
+          "seed": 1670629321,
+          "tickers": [
+            "AURE3",
+            "BBSE3",
+            "BRSR3",
+            "CBAV3",
+            "CMIG4",
+            "EVEN3",
+            "LAVV3",
+            "MDNE3",
+            "MILS3",
+            "MOTV3",
+            "RADL3",
+            "SUZB3",
+            "TTEN3"
+          ]
+        },
+        {
+          "fitness": 4.834622762273917,
+          "generations_run": 92,
+          "hhi": 0.18343195266272194,
+          "run_id": 144,
+          "seed": 4249448121,
+          "tickers": [
+            "ABEV3",
+            "ANIM3",
+            "BRAP4",
+            "BRSR3",
+            "CXSE3",
+            "DEXP3",
+            "FLRY3",
+            "PGMN3",
+            "RDOR3",
+            "SBSP3",
+            "SMTO3",
+            "SUZB3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.693421415145146,
+          "generations_run": 52,
+          "hhi": 0.17159763313609472,
+          "run_id": 145,
+          "seed": 3977362918,
+          "tickers": [
+            "AXIA7",
+            "BMOB3",
+            "BRSR6",
+            "CMIG4",
+            "CMIN3",
+            "DIRR3",
+            "FIQE3",
+            "LEVE3",
+            "LOGG3",
+            "PGMN3",
+            "POMO4",
+            "VIVA3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.5523161920052955,
+          "generations_run": 76,
+          "hhi": 0.18343195266272194,
+          "run_id": 146,
+          "seed": 3600560451,
+          "tickers": [
+            "BRSR3",
+            "BRSR6",
+            "CMIG4",
+            "CURY3",
+            "CXSE3",
+            "EMBJ3",
+            "FIQE3",
+            "ISAE4",
+            "KLBN4",
+            "LAVV3",
+            "MATD3",
+            "RDOR3",
+            "SANB3"
+          ]
+        },
+        {
+          "fitness": 4.887188651496113,
+          "generations_run": 86,
+          "hhi": 0.18343195266272194,
+          "run_id": 147,
+          "seed": 2524297711,
+          "tickers": [
+            "BBSE3",
+            "BRSR6",
+            "CMIG4",
+            "CXSE3",
+            "ISAE4",
+            "PLPL3",
+            "RDOR3",
+            "RECV3",
+            "SLCE3",
+            "SMFT3",
+            "TAEE11",
+            "USIM3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.445494789903736,
+          "generations_run": 138,
+          "hhi": 0.19526627218934917,
+          "run_id": 148,
+          "seed": 4135265920,
+          "tickers": [
+            "BRAP4",
+            "BRSR3",
+            "BRSR6",
+            "CMIG3",
+            "CXSE3",
+            "EUCA4",
+            "GOAU3",
+            "GRND3",
+            "NEOE3",
+            "RDOR3",
+            "TFCO4",
+            "TTEN3",
+            "VULC3"
+          ]
+        },
+        {
+          "fitness": 4.594224907799678,
+          "generations_run": 53,
+          "hhi": 0.18343195266272194,
+          "run_id": 149,
+          "seed": 1397606599,
+          "tickers": [
+            "AXIA3",
+            "BBSE3",
+            "BMOB3",
+            "BRSR6",
+            "CXSE3",
+            "EVEN3",
+            "GGPS3",
+            "JHSF3",
+            "JSLG3",
+            "ONCO3",
+            "POMO4",
+            "RECV3",
+            "VULC3"
+          ]
+        }
+      ],
+      "selected_tickers": [
+        "BBSE3",
+        "BMOB3",
+        "BRSR6",
+        "CURY3",
+        "CXSE3",
+        "EUCA4",
+        "FESA4",
+        "FIQE3",
+        "LOGG3",
+        "MILS3",
+        "RDOR3",
+        "SUZB3",
+        "VULC3"
+      ],
+      "selection_config": {
+        "factor_weights": {
+          "div": 0.1,
+          "growth": 0.27891,
+          "liquidez": 0.160546,
+          "rent": 0.230272,
+          "value": 0.230272
+        },
+        "lambda_hhi": 0.190818,
+        "liquidity_and_size_filters": {
+          "cap_min": 684360000.0,
+          "enforce_liquidity_and_size": false,
+          "liq_min": 322452.5
+        },
+        "n_assets": 13,
+        "selection_preset": "moderado",
+        "system_ga_config": {
+          "adaptive_mode": false,
+          "crossover_rate": 0.8,
+          "generations": 400,
+          "lambda": 0.190818,
+          "min_runs": 40,
+          "mutation_rate": 0.02,
+          "n_assets": 13,
+          "pop_size": 300,
+          "population": 300,
+          "run_count": 150,
+          "target_cv": 0.02,
+          "target_jaccard": 0.75
+        }
+      }
+    }
+  },
+  "snapshot": {
+    "manifest_id": "dev-2026-10-29-ibov",
+    "manifest_sha256": "b66a5764bdcb8d8a20cfc4e10f9ad4d7b14448e3c997fec8e597fdcaccd2d014",
+    "sources": {
+      "allocation": "631ea74c5ae78b3b83cf08627e7a1e17f13f3289f5cc625ed0c8b0baf97e48bc",
+      "fii": "549af15bfc9a78013fc1fdf2bcc22ff02795e31856d7462dcb905ce9d565f10a",
+      "stock": "690e9ae99f9277cdf725977a2bcbd3a07b8cf532f48cb5423792b33868c710a5"
+    }
+  }
+}

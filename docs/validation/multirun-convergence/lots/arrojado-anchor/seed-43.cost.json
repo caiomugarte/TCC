@@ -1,0 +1,137 @@
+{
+  "cpu_s": 8299.754186,
+  "finished_at": "2026-11-03T20:28:19.598121+00:00",
+  "jobs": 5,
+  "load_avg_end": [
+    13.89013671875,
+    21.95068359375,
+    22.0087890625
+  ],
+  "load_avg_start": [
+    1.74853515625,
+    3.171875,
+    4.466796875
+  ],
+  "lot": "arrojado-anchor:43",
+  "machine": {
+    "arch": "x86_64",
+    "cpu_model": "AMD Ryzen 5 7600X 6-Core Processor",
+    "fingerprint": "7e180109c5fd263c7687373422045f6a29636375972351b195d017da41706955",
+    "kernel": "7.0.0-38-generic",
+    "libraries": {
+      "numpy": "2.5.4",
+      "pandas": "3.0.6"
+    },
+    "logical_cpus": 12,
+    "mem_total_kb": 31358128,
+    "os": "Ubuntu 26.04.1 LTS",
+    "physical_cores": 6,
+    "python": "3.14.4",
+    "python_implementation": "CPython"
+  },
+  "mode": "measured",
+  "rss_peak_kb": {
+    "process_peak_kb": 211104,
+    "ratio": 1.0,
+    "reason": null,
+    "ru_maxrss": 210160,
+    "sampled": 211104,
+    "status": "ok",
+    "vm_hwm": 211104
+  },
+  "stages": {
+    "allocation": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.51681313,
+      "cpu_s": 0.51681,
+      "cpu_seconds": 0.51681,
+      "cpu_seconds_total": 0.51681,
+      "cpu_system_s": 0.0,
+      "cpu_user_s": 0.51681,
+      "cpu_utilization": 0.9998793647280192,
+      "executed": true,
+      "rss_peak_sampled_kb": 182136,
+      "rss_samples": 2,
+      "vm_hwm_kb_at_end": 182136,
+      "wall_s": 0.5168723530368879
+    },
+    "composition": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.002433120998830418,
+      "cpu_s": 0.0024430000016808506,
+      "cpu_seconds": 0.0024430000012216624,
+      "cpu_seconds_total": 0.0024430000012216624,
+      "cpu_system_s": 4.699999999946414e-05,
+      "cpu_user_s": 0.0023960000016813865,
+      "cpu_utilization": 1.0029262700415376,
+      "derived": "total - engines",
+      "executed": true,
+      "rss_peak_sampled_kb": null,
+      "rss_samples": 0,
+      "vm_hwm_kb_at_end": null,
+      "wall_s": 0.0024358719820156693
+    },
+    "fiis": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 4987.7622891089995,
+      "cpu_s": 4987.762288,
+      "cpu_seconds": 4987.762288,
+      "cpu_seconds_total": 4987.762288,
+      "cpu_system_s": 3.521778,
+      "cpu_user_s": 4984.24051,
+      "cpu_utilization": 0.9328348886854171,
+      "executed": true,
+      "rss_peak_sampled_kb": 210980,
+      "rss_samples": 5337,
+      "vm_hwm_kb_at_end": 210980,
+      "wall_s": 5346.886516036
+    },
+    "snapshot_load": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.03508512499999994,
+      "cpu_s": 0.03508400000000007,
+      "cpu_seconds": 0.03508400000000007,
+      "cpu_seconds_total": 0.03508400000000007,
+      "cpu_system_s": 0.0009779999999999928,
+      "cpu_user_s": 0.03410600000000008,
+      "cpu_utilization": 0.9999719827511484,
+      "executed": true,
+      "rss_peak_sampled_kb": 181936,
+      "rss_samples": 2,
+      "vm_hwm_kb_at_end": 181936,
+      "wall_s": 0.03508498298469931
+    },
+    "stocks": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 3310.635015501,
+      "cpu_s": 3310.635013,
+      "cpu_seconds": 3310.635013,
+      "cpu_seconds_total": 3310.635013,
+      "cpu_system_s": 0.569082,
+      "cpu_user_s": 3310.065931,
+      "cpu_utilization": 0.9754254616374337,
+      "executed": true,
+      "rss_peak_sampled_kb": 198180,
+      "rss_samples": 3392,
+      "vm_hwm_kb_at_end": 198180,
+      "wall_s": 3394.0420290469774
+    },
+    "total": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 8298.951635985999,
+      "cpu_s": 8298.951638,
+      "cpu_seconds": 8298.951638,
+      "cpu_seconds_total": 8298.951638,
+      "cpu_system_s": 4.0918849999999996,
+      "cpu_user_s": 8294.859753,
+      "cpu_utilization": 0.9493757176654173,
+      "executed": true,
+      "rss_peak_sampled_kb": 210980,
+      "rss_samples": 8735,
+      "vm_hwm_kb_at_end": 210980,
+      "wall_s": 8741.482938290981
+    }
+  },
+  "started_at": "2026-11-03T18:02:37.428942+00:00",
+  "wall_s": 8742.169164647057
+}

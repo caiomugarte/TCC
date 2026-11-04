@@ -1,0 +1,137 @@
+{
+  "cpu_s": 8961.639957999998,
+  "finished_at": "2026-11-04T06:25:59.848840+00:00",
+  "jobs": 5,
+  "load_avg_end": [
+    5.86474609375,
+    6.08154296875,
+    6.119140625
+  ],
+  "load_avg_start": [
+    0.82421875,
+    0.56591796875,
+    0.33984375
+  ],
+  "lot": "premium-2026-11-02:46641103",
+  "machine": {
+    "arch": "x86_64",
+    "cpu_model": "AMD Ryzen 5 7600X 6-Core Processor",
+    "fingerprint": "60c16cfaee4ccce84be963e0f1b7107a7f2969287ef7c3b2e4f56ad2f16cb753",
+    "kernel": "7.0.0-42-generic",
+    "libraries": {
+      "numpy": "2.5.4",
+      "pandas": "3.0.6"
+    },
+    "logical_cpus": 12,
+    "mem_total_kb": 31358120,
+    "os": "Ubuntu 26.04.1 LTS",
+    "physical_cores": 6,
+    "python": "3.14.4",
+    "python_implementation": "CPython"
+  },
+  "mode": "measured",
+  "rss_peak_kb": {
+    "process_peak_kb": 208332,
+    "ratio": 0.9999,
+    "reason": null,
+    "ru_maxrss": 207360,
+    "sampled": 208308,
+    "status": "ok",
+    "vm_hwm": 208332
+  },
+  "stages": {
+    "allocation": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.4670225,
+      "cpu_s": 0.4670200000000001,
+      "cpu_seconds": 0.4670200000000001,
+      "cpu_seconds_total": 0.4670200000000001,
+      "cpu_system_s": 0.0,
+      "cpu_user_s": 0.4670200000000001,
+      "cpu_utilization": 0.99995871011152,
+      "executed": true,
+      "rss_peak_sampled_kb": 177972,
+      "rss_samples": 2,
+      "vm_hwm_kb_at_end": 177972,
+      "wall_s": 0.4670392839999522
+    },
+    "composition": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.0028710290025628638,
+      "cpu_s": 0.002882000000681728,
+      "cpu_seconds": 0.002882000000681728,
+      "cpu_seconds_total": 0.002882000000681728,
+      "cpu_system_s": 0.0,
+      "cpu_user_s": 0.002882000000681728,
+      "cpu_utilization": 0.9817748260518031,
+      "derived": "total - engines",
+      "executed": true,
+      "rss_peak_sampled_kb": null,
+      "rss_samples": 0,
+      "vm_hwm_kb_at_end": null,
+      "wall_s": 0.0029354999987845076
+    },
+    "fiis": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 5385.409362437999,
+      "cpu_s": 5385.40936,
+      "cpu_seconds": 5385.40936,
+      "cpu_seconds_total": 5385.40936,
+      "cpu_system_s": 0.7583349999999999,
+      "cpu_user_s": 5384.651024999999,
+      "cpu_utilization": 0.981993199675284,
+      "executed": true,
+      "rss_peak_sampled_kb": 208184,
+      "rss_samples": 5480,
+      "vm_hwm_kb_at_end": 208184,
+      "wall_s": 5484.1615621989995
+    },
+    "snapshot_load": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.028010579000000035,
+      "cpu_s": 0.02800899999999995,
+      "cpu_seconds": 0.02800899999999995,
+      "cpu_seconds_total": 0.02800899999999995,
+      "cpu_system_s": 0.0,
+      "cpu_user_s": 0.02800899999999995,
+      "cpu_utilization": 0.9761403746239604,
+      "executed": true,
+      "rss_peak_sampled_kb": 177792,
+      "rss_samples": 2,
+      "vm_hwm_kb_at_end": 177792,
+      "wall_s": 0.028693619000023318
+    },
+    "stocks": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 3574.999642409,
+      "cpu_s": 3574.99964,
+      "cpu_seconds": 3574.99964,
+      "cpu_seconds_total": 3574.99964,
+      "cpu_system_s": 0.6909489999999999,
+      "cpu_user_s": 3574.308691,
+      "cpu_utilization": 0.976474354856233,
+      "executed": true,
+      "rss_peak_sampled_kb": 194364,
+      "rss_samples": 3658,
+      "vm_hwm_kb_at_end": 194364,
+      "wall_s": 3661.1300872580005
+    },
+    "total": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 8960.906908955001,
+      "cpu_s": 8960.906911,
+      "cpu_seconds": 8960.906911,
+      "cpu_seconds_total": 8960.906911,
+      "cpu_system_s": 1.4492839999999998,
+      "cpu_user_s": 8959.457627,
+      "cpu_utilization": 0.9797848627144932,
+      "executed": true,
+      "rss_peak_sampled_kb": 208184,
+      "rss_samples": 9144,
+      "vm_hwm_kb_at_end": 208184,
+      "wall_s": 9145.790317859999
+    }
+  },
+  "started_at": "2026-11-04T03:53:32.807831+00:00",
+  "wall_s": 9147.040985787
+}
