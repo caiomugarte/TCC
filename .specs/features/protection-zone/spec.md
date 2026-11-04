@@ -201,8 +201,8 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| PZ-01 | P1: Zone selection function | Tasks T1-T2 | In Tasks |
-| PZ-02 | P1: Zone selection function | Tasks T1 | In Tasks |
+| PZ-01 | P1: Zone selection function | Tasks T1-T2 | In Tasks (T1 done) |
+| PZ-02 | P1: Zone selection function | Tasks T1 | Implemented |
 | PZ-03 | P1: Zone selection function | Tasks T2 | In Tasks |
 | PZ-04 | P1: Zone selection function | Tasks T2 | In Tasks |
 | PZ-05 | P1: Zone selection function | Tasks T2 | In Tasks |
@@ -211,7 +211,7 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-08 | P1: Zone selection function | Tasks T2 | In Tasks |
 | PZ-09 | P1: Zone selection function | Tasks T2 | In Tasks |
 | PZ-10 | P1: Zone selection function | Tasks T2 | In Tasks |
-| PZ-11 | P1: Zone selection function | Tasks T1 | In Tasks |
+| PZ-11 | P1: Zone selection function | Tasks T1 | Implemented |
 | PZ-12 | P1: Zone selection function | Tasks T2 | In Tasks |
 | PZ-13 | P1: Zone selection function | Tasks T4 | In Tasks |
 | PZ-14 | P1: HHI fallback | Tasks T3, T5, T7 | In Tasks |

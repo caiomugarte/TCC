@@ -140,6 +140,8 @@ T15 → T16 → T17
 
 #### T1: Ranking, base company and input validation
 
+**Status**: Complete
+
 **What**: Create `py/core/protection_zone.py` with `base_company`, `rank_candidates`, the `ZoneSelection` dataclass and the input validator used by `apply_protection_zone`.
 **Where**: `py/core/protection_zone.py` (new)
 **Depends on**: None
@@ -155,11 +157,11 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] `rank_candidates` sorts by `(-frequency, -score, ticker)` over the mapping's order and dedups by base company only when asked; a NaN-score fixture reproduces the order `build_consensus_portfolio` gives on the same counts
-- [ ] `base_company` strips the first matching suffix of `("11", "3", "4", "5", "6")` (`TAEE11` → `TAEE`, `POMO4` → `POMO`, `ABC` → `ABC`)
-- [ ] Invalid `K`, `δ`, `n_assets`, frequency raise `ValueError` naming the field
-- [ ] Gate check passes: Quick
-- [ ] Test count: at least 8 new tests in `tests/test_protection_zone.py`, all pass
+- [x] `rank_candidates` sorts by `(-frequency, -score, ticker)` over the mapping's order and dedups by base company only when asked; a NaN-score fixture reproduces the order `build_consensus_portfolio` gives on the same counts
+- [x] `base_company` strips the first matching suffix of `("11", "3", "4", "5", "6")` (`TAEE11` → `TAEE`, `POMO4` → `POMO`, `ABC` → `ABC`)
+- [x] Invalid `K`, `δ`, `n_assets`, frequency raise `ValueError` naming the field
+- [x] Gate check passes: Quick
+- [x] Test count: at least 8 new tests in `tests/test_protection_zone.py`, all pass
 
 **Tests**: unit
 **Gate**: quick
