@@ -911,6 +911,7 @@ def run_multi_execution_profile(
     random_seed: int = 42,
     seed: Optional[int] = None,
     input_path: Optional[Path] = None,
+    incumbents: Optional[Sequence[str]] = None,
 ) -> Dict:
     """
     Executa múltiplas rodadas do GA para um perfil.
@@ -937,6 +938,9 @@ def run_multi_execution_profile(
         Jaccard médio alvo para convergência (default: 0.70 = 70%).
     exclude_tickers : Sequence[str], optional
         Tickers removed before scoring and genetic optimization.
+    incumbents : Sequence[str], optional
+        Tickers of the previous Premium portfolio. The zone applies in explicit
+        mode when ``config`` or ``selection_config`` carries ``protection_zone``.
 
     Returns
     -------
@@ -1175,6 +1179,7 @@ def run_multi_execution_profile(
         df_ranked,
         profile,
         selection_config=explicit_config,
+        incumbents=incumbents,
     )
 
     # Melhor indivíduo (maior fitness)
@@ -1211,7 +1216,7 @@ def run_multi_execution_profile(
             ticker: 1.0 / len(selected_tickers)
             for ticker in selected_tickers
         }
-        return {
+        result = {
             "profile": "explicit",
             "n_runs": len(results),
             "selected_tickers": selected_tickers,
@@ -1232,6 +1237,9 @@ def run_multi_execution_profile(
             "workspace": str(workspace_path) if workspace_path is not None else None,
             "all_runs": results,
         }
+        if "protection_zone" in consensus.attrs:
+            result["protection_zone"] = consensus.attrs["protection_zone"]
+        return result
 
     # Comparação entre carteiras
     comparison = compare_portfolios(consensus, best_individual, profile)

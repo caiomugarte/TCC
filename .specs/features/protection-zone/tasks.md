@@ -296,6 +296,8 @@ T15 → T16 → T17
 
 #### T6: Stock pipeline forwards incumbents
 
+**Status**: Complete
+
 **What**: Add `incumbents` to `run_multi_execution_profile` and expose `protection_zone` in the explicit-mode result.
 **Where**: `py/pipelines/multi_run.py` (modify `run_multi_execution_profile` only)
 **Depends on**: T5
@@ -311,10 +313,10 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Explicit-mode result has `protection_zone` only when incumbents were applied; no key otherwise
-- [ ] Test runs 2 GA runs on the existing small fixture (as `tests/test_multi_run_backtest.py`), not a long GA
-- [ ] Gate check passes: Selector
-- [ ] Test count: at least 2 new tests
+- [x] Explicit-mode result has `protection_zone` only when incumbents were applied; no key otherwise
+- [x] Test runs 2 GA runs on a small fixture (the one of `tests/test_missing_score_exclusion.py`, which calls this function; `tests/test_multi_run_backtest.py` does not), not a long GA
+- [x] Gate check passes: Selector
+- [x] Test count: at least 2 new tests (3 new, all pass)
 
 **Tests**: unit
 **Gate**: selector

@@ -11,8 +11,10 @@ import io
 import math
 from pathlib import Path
 import sys
+import tempfile
 from typing import Dict, List, Mapping, Optional
 import unittest
+from unittest.mock import patch
 
 import pandas as pd
 from pandas.testing import assert_frame_equal
@@ -20,8 +22,14 @@ from pandas.testing import assert_frame_equal
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 
+from config import PROFILE_WEIGHTS  # noqa: E402
 from core.metrics import hhi_sector  # noqa: E402
-from pipelines.multi_run import GA_CONFIG, build_consensus_portfolio  # noqa: E402
+from fetch_status_invest import SOURCE_COLUMNS as STOCK_COLUMNS  # noqa: E402
+from pipelines.multi_run import (  # noqa: E402
+    GA_CONFIG,
+    build_consensus_portfolio,
+    run_multi_execution_profile,
+)
 
 
 # build_consensus_portfolio at 76a6d70 (py/pipelines/multi_run.py:187-295), copied verbatim.
@@ -327,6 +335,79 @@ class StockZoneTests(unittest.TestCase):
         )
         self.assertEqual(sorted(zone["TICKER"]), sorted(production["TICKER"]))
         self.assertEqual(zone.attrs["protection_zone"]["status"], "applied")
+
+
+def _stock_frame() -> pd.DataFrame:
+    """Six stocks in one sector with every metric present (the fixture of test_missing_score_exclusion)."""
+
+    rows = []
+    for index, ticker in enumerate(("AAA3", "BBB3", "CCC3", "DDD3", "EEE3", "FFF3"), start=1):
+        row = {column: float(index) + 0.1 * index * index for column in STOCK_COLUMNS}
+        row.update(
+            {
+                "TICKER": ticker,
+                "PRECO": 100.0,
+                "DY": float(index),
+                "VALOR DE MERCADO": 1000.0,
+                "LIQUIDEZ MEDIA DIARIA": 1000.0,
+                "SETOR": "Sector A",
+            }
+        )
+        rows.append(row)
+    return pd.DataFrame(rows, columns=[*STOCK_COLUMNS, "SETOR"])
+
+
+def _pipeline_config(with_zone: bool) -> dict:
+    config = {
+        "selection_preset": "fixture",
+        "factor_weights": dict(PROFILE_WEIGHTS["caio_new"]),
+        "liquidity_and_size_filters": {"cap_min": 100.0, "liq_min": 100.0},
+        "system_ga_config": {"n_assets": 2, "lambda": 0.0, "generations": 3, "pop_size": 4},
+    }
+    if with_zone:
+        config["protection_zone"] = {"K": 8, "delta": 0.11, "k_offset": 6}
+    return config
+
+
+class PipelineForwardsIncumbentsTests(unittest.TestCase):
+    """Explicit mode with two GA runs on the small fixture (PZ-20)."""
+
+    def _run(self, *, with_zone: bool = True, **kwargs) -> dict:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_path = root / "stocks.csv"
+            _stock_frame().to_csv(input_path, index=False)
+            with patch("builtins.input", side_effect=AssertionError("unexpected prompt")):
+                return _quiet(
+                    run_multi_execution_profile,
+                    input_path=input_path,
+                    config=_pipeline_config(with_zone),
+                    n_runs=2,
+                    parallel=False,
+                    use_cache=False,
+                    save_interval=1,
+                    workspace=root / "workspace",
+                    seed=7,
+                    **kwargs,
+                )
+
+    def test_explicit_result_records_the_zone_for_the_incumbents(self):  # PZ-20
+        result = self._run(incumbents=["aaa3", "FFF3"])
+        record = result["protection_zone"]
+        self.assertEqual(record["status"], "applied")
+        self.assertEqual(record["incumbents"], ["AAA3", "FFF3"])
+        self.assertEqual(record["K"], 8)
+        self.assertEqual(sorted(record["kept"] + record["entered"]), result["selected_tickers"])
+
+    def test_explicit_result_has_no_zone_without_incumbents(self):  # PZ-20
+        cases = {"omitted": {}, "none": {"incumbents": None}, "empty": {"incumbents": []}}
+        for label, kwargs in cases.items():
+            with self.subTest(incumbents=label):
+                self.assertNotIn("protection_zone", self._run(**kwargs))
+
+    def test_explicit_result_has_no_zone_when_the_config_declares_none(self):  # PZ-20
+        result = self._run(with_zone=False, incumbents=["AAA3"])
+        self.assertNotIn("protection_zone", result)
 
 
 if __name__ == "__main__":
