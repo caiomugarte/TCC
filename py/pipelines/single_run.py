@@ -136,7 +136,7 @@ def run_stock_selection(
             "score_mean": float(portfolio["SCORE"].mean()),
             "score_median": float(portfolio["SCORE"].median()),
         },
-        "exclusion_reasons": dict(clean.attrs.get("exclusion_reasons", {})),
+        "exclusion_reasons": dict(ranked.attrs.get("exclusion_reasons", {})),
         "config": resolved,
         "seed": int(seed),
         "workspace": str(workspace_path) if workspace_path is not None else None,
