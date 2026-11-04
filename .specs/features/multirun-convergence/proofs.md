@@ -1,6 +1,6 @@
 # multirun-convergence proofs
 
-**HEAD**: e1f447c
+**HEAD**: 1d377fc
 **Tree**: clean
 **Result**: 74 pass, 0 fail; mutations 58 killed, 0 not
 
