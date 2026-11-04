@@ -1,0 +1,140 @@
+{
+  "capital_brl": 100000,
+  "curve_step": 10,
+  "decision": {
+    "run_count": {
+      "candidates": [
+        30,
+        60,
+        100,
+        150
+      ],
+      "epsilon_swaps": 0.5,
+      "leave_one_seed_out": "max",
+      "statistics": [
+        "mean",
+        "median"
+      ]
+    },
+    "target": {
+      "prefix": 150,
+      "targets": [
+        "target_jaccard",
+        "target_cv"
+      ]
+    },
+    "zone": {
+      "delta_arithmetic": "fraction_from_counts",
+      "delta_grid": [
+        0.0,
+        0.01,
+        0.02,
+        0.03,
+        0.05,
+        0.075,
+        0.1,
+        0.15,
+        0.2
+      ],
+      "delta_round_up": 0.01,
+      "quantile": 0.95,
+      "quantile_method": "inverted_cdf"
+    }
+  },
+  "ga_override": {
+    "adaptive_mode": false,
+    "run_count": 150
+  },
+  "issue": 9,
+  "prefixes": [
+    30,
+    60,
+    100,
+    150
+  ],
+  "production_run": {
+    "fiis": [
+      "MXRF11",
+      "KNCR11",
+      "BTLG11",
+      "BPML11",
+      "ALZR11",
+      "GGRC11",
+      "KNRI11",
+      "XPML11",
+      "RECT11",
+      "BRCR11",
+      "RBRF11",
+      "KNUQ11",
+      "VGIR11"
+    ],
+    "id": "9e22cc16-cfda-495e-a8c9-c0d202ef32b6",
+    "profile": "premium-2026-11-02",
+    "seed": 46641103,
+    "stocks": [
+      "BBSE3",
+      "BMOB3",
+      "BRSR6",
+      "CXSE3",
+      "FESA4",
+      "FIQE3",
+      "GMAT3",
+      "ISAE4",
+      "LAVV3",
+      "LOGG3",
+      "MILS3",
+      "RDOR3",
+      "VULC3"
+    ]
+  },
+  "production_stop_rule": {
+    "check_every": {
+      "fiis": 1,
+      "stocks": 10
+    },
+    "min_runs": 40,
+    "target_cv": 0.02,
+    "target_jaccard": 0.75
+  },
+  "profiles": {
+    "arrojado-anchor": {
+      "expected_n_assets": {
+        "fiis": 15,
+        "stocks": 15
+      },
+      "record": {
+        "anchor": "arrojado"
+      }
+    },
+    "premium-2026-11-02": {
+      "expected_n_assets": {
+        "fiis": 13,
+        "stocks": 13
+      },
+      "record": {
+        "dimensions": {
+          "apetite": 0.952,
+          "capacidade": 0.582,
+          "conhecimento": 0.5625,
+          "liquidez": 1.0
+        },
+        "generic_profile": "moderado",
+        "raw_score": 0.952,
+        "restrictions": [
+          "nenhuma"
+        ],
+        "suitability_score": 0.582
+      }
+    }
+  },
+  "protocol_id": "multirun-convergence-v1",
+  "rank_window_max": 30,
+  "seeds": [
+    46641103,
+    42,
+    43,
+    44,
+    45
+  ],
+  "snapshot_declaration": "docs/validation/premium-performance-snapshot.json"
+}

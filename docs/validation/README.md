@@ -122,3 +122,179 @@ inválidos, 3 caminho inexistente, 4 violação de integridade (vazamento de
 data, sobreposição, buraco ou janela perdida, corte do snapshot divergente ou
 auditoria que difere de uma nova auditoria das captações, que o `report`
 refaz antes de rodar). Uma falha não escreve nada.
+
+# Convergência do multi-run (issue #9, fase 1)
+
+Experimento `multirun-convergence-v1`: o Premium escolhe ações e FIIs como o
+consenso por frequência de até 150 execuções do GA por seletor. O experimento
+mede, no snapshot `dev-2026-10-29-ibov`, quanto esse consenso muda com 30, 60,
+100 e 150 execuções e entre seeds, e recomenda `run_count`, os alvos do critério
+adaptativo e a zona de proteção (K, δ) do #46 por regras registradas **antes**
+da execução. As decisões estão em `.specs/STATE.md` (AD-022, AD-023 e AD-024).
+
+| Arquivo | O que é |
+| --- | --- |
+| `multirun-convergence-protocol.json` | o protocolo pré-registrado: perfis, seeds, prefixos, regra de parada da produção e as três regras de decisão; commitado antes de qualquer lote medido |
+| `multirun-convergence/lots/<perfil>/seed-<seed>.json` | um lote: as 150 execuções de cada seletor (tickers, fitness, HHI, gerações) e o SCORE e o SETOR de cada ticker escolhido, sem tempos nem caminhos |
+| `multirun-convergence/lots/<perfil>/seed-<seed>.cost.json` | o custo medido do lote (wall, CPU, RSS, máquina) |
+| `multirun-convergence/lots/run-summary.json` | o tempo de parede do experimento e `jobs` |
+| `multirun-convergence.json` | o relatório gerado: curvas, frequências, giro, folga de ranking, zona e as recomendações |
+| `multirun-convergence-cost.json` | o custo por lote, copiado dos arquivos de custo |
+| `multirun-convergence.md` | o mesmo relatório em texto (a frase da linha 57 sobre a execução de produção está errada: ver a Errata no fim desta seção) |
+
+**Giro entre seeds** é a diferença entre os consensos de seeds diferentes no
+mesmo snapshot: `trocados = n - |C_i ∩ C_j|` para cada par de seeds. Não é o
+giro mês a mês (entre snapshots consecutivos), que a fase 2 mede no #46: com
+os dados fixos, todo giro entre seeds é ruído do GA, o piso da instabilidade.
+O giro dentro da seed (o consenso de uma seed com k execuções contra o mesmo
+com 150) é descritivo e não entra em nenhuma regra.
+
+## Regras de decisão (pré-registradas)
+
+- **`run_count`:** para cada célula (perfil x seletor), `S(k)` e `M(k)` são a
+  média e a mediana de `trocados` sobre os 10 pares de seeds no prefixo k. A
+  célula achatou quando `S(100) - S(150) <= 0,5` (os dois últimos candidatos
+  declarados); seu `k_min` é o menor candidato (30, 60, 100, 150) com
+  `S(k) <= S(150) + 0,5` **e** `M(k) <= M(150) + 0,5`, ε = 0,5 troca na média e
+  na mediana. O valor é o maior `k_min` entre as células, e só existe se todas
+  achataram; senão é `data_insufficient`. A regra roda de novo deixando cada
+  seed de fora (os 6 pares das outras quatro) e a recomendação é o **máximo**
+  das seis (cheia e cinco leave-one-seed-out); `data_insufficient` em qualquer
+  uma vale para a recomendação inteira.
+- **Alvos do critério adaptativo:** julgados juntos a 150 execuções, como a
+  produção para (só para quando os dois valem). `target_jaccard` 0,75 é
+  `reachable` numa célula quando todas as seeds têm `jaccard_mean >= 0,75`,
+  `unreachable` quando nenhuma tem e `mixed` no resto; `target_cv` 0,02 da
+  mesma forma com `fitness_cv <= 0,02`. A ação é `keep` só quando os dois
+  vereditos são `reachable` em todas as células; senão `use_fixed_run_count`
+  com o `run_count` recomendado (150 quando `data_insufficient`).
+- **Zona de proteção (AD-022):** no prefixo recomendado, `K*` é o quantil 0,95
+  por CDF invertida dos rankings, no lote da outra seed, de cada titular, nos 20
+  pares ordenados de seeds (um titular sem ranking conta como infinito; abaixo
+  de n sobe para n; acima de 30 é nulo); a recomendação é `k_offset = K* - n`.
+  `δ*` é o quantil 0,95 por CDF invertida de `|f_i(t) - f_j(t)|` nos 10 pares,
+  calculado exatamente a partir das contagens (frações, sem float) e
+  arredondado para cima em 0,01. Para cada seletor vale o maior `k_offset` e o
+  maior δ entre os perfis.
+
+Os valores (ε, quantil, arredondamento, prefixos, seeds, grade de δ) estão no
+protocolo; o relatório não tem número escrito à mão.
+
+## Limitação: o giro com a zona é medido dentro da amostra
+
+- **O giro no ponto recomendado é otimista.** `recommend_zone` ajusta `K*` e
+  `δ*` nos 20 pares ordenados de seeds (`scripts/convergence_analysis.py:1134`)
+  e simula o ponto recomendado nesses mesmos pares (`:1148`). A coluna "giro no
+  ponto recomendado" do relatório (média 0,40 / 0,10 / 0,70 / 0,00) é, portanto,
+  dentro da amostra e otimista.
+- **Sensibilidade leave-one-seed-out (exploratória, não pré-registrada).** Uma
+  sonda da revisão do PR #51 (não commitada) ajusta K e δ com a mesma regra
+  em 4 seeds (o maior entre os perfis) e simula só os 8 pares ordenados com a
+  seed deixada de fora. O giro médio com a zona sobe para 0,300 em
+  `premium-2026-11-02/stocks` (0,10 dentro da amostra), 0,725 em
+  `arrojado-anchor/stocks` (0,40) e 0,775 em `arrojado-anchor/fiis` (0,70);
+  `premium-2026-11-02/fiis` fica em 0,000. Sem a zona (K = 0) o giro é o mesmo
+  dos dois jeitos: 1,10, 1,40 e 1,30.
+- **K depende do conjunto de seeds.** Nos cinco ajustes sem uma seed, o
+  `k_offset` de ações vai de 2 a 6 (6 com as cinco seeds), o de FIIs de 1 a 4
+  (3) e δ de 0,10 a 0,12 (0,11).
+- **A recomendação pré-registrada não muda.** `k_offset` 6 / δ 0,11 para ações
+  e `k_offset` 3 / δ 0,11 para FIIs seguem sendo a recomendação; a sonda é uma
+  sensibilidade e não a substitui. O #46 precisa considerar que o giro com a
+  zona fora da amostra é maior e que K é sensível ao conjunto de seeds ao
+  dimensionar K e δ.
+
+## Como rodar e regenerar
+
+A partir da raiz do repositório, com o `.venv` do projeto:
+
+```sh
+.venv/bin/python scripts/multirun_convergence.py run --protocol docs/validation/multirun-convergence-protocol.json --registry /home/caio/Documents/projetos/TCC/snapshots --lots-dir docs/validation/multirun-convergence/lots --jobs 5
+.venv/bin/python scripts/multirun_convergence.py report --protocol docs/validation/multirun-convergence-protocol.json --lots-dir docs/validation/multirun-convergence/lots --out-dir docs/validation
+```
+
+`run` recusa (saída 6) um protocolo não commitado ou com mudanças, ou código
+modificado em `api/app`, `py` e nos quatro scripts do experimento e do
+benchmark; pula lotes já gravados e válidos; nunca sobrescreve um lote
+inválido (saída 4). `report` reconstrói os três arquivos byte a byte a partir
+do protocolo e dos lotes, sem o registro. Códigos de saída: 0 escrito, 1 um
+processo filho falhou, 2 protocolo ou argumentos inválidos, 3 o registro não
+tem o snapshot declarado, 4 integridade dos lotes, 6 pré-registro violado.
+
+## Custo do experimento medido
+
+Os números por lote estão em `multirun-convergence-cost.json` e na tabela de
+custo do `.md`, copiados dos arquivos de custo: 24,22 CPU-horas medidas nos 10
+lotes (11,64 nos 5 de `arrojado-anchor`, 12,58 nos 5 de `premium-2026-11-02`),
+com `jobs` 5 numa AMD Ryzen 5 7600X (6 núcleos / 12 threads). O que os arquivos
+de custo não mostram:
+
+- **A execução teve duas invocações.** A primeira começou em 2026-11-03 às
+  15:02 (-03) e gravou os 5 lotes de `arrojado-anchor` entre 17:27 e 17:32
+  (8.984,8 s do primeiro início ao último fim). Os 5 processos de
+  `premium-2026-11-02` dela rodaram cerca de 1h20 e foram interrompidos de
+  propósito para reiniciar a máquina, sem gravar nada. O mesmo comando,
+  retomado em 2026-11-04 às 00:53 (-03), pulou os 5 lotes válidos, gravou os 5
+  de `premium-2026-11-02` e saiu com 0 por volta de 03:30 (9.416,4 s).
+- **O tempo de parede do relatório cobre só a segunda invocação.**
+  `run-summary.json` é escrito pela invocação que iniciou filhos, então os
+  9.416,4 s do relatório são só os lotes de `premium-2026-11-02`. Somando as
+  duas janelas que gravaram lotes, o experimento levou 18.401,2 s (cerca de
+  5,1 h) de parede, fora a parte descartada.
+- **Computação descartada, fora das 24,22 CPU-horas:** cerca de 1h20 x 5
+  processos (por volta de 6,7 horas-processo) da primeira tentativa de
+  `premium-2026-11-02`. Não foi medida: o log da primeira invocação ficava em
+  `/tmp` e não sobreviveu à reinicialização, então nem o 1h20 (estimativa do
+  operador) nem o total de cerca de 31 citado antes têm registro. As duas
+  grandezas ficam separadas: 24,22 CPU-horas medidas nos lotes gravados e
+  cerca de 6,7 horas-processo estimadas na parte descartada. Horas-processo
+  não são CPU-horas medidas, então não se somam.
+- **O kernel mudou na reinicialização** (7.0.0-38-generic nos lotes de
+  `arrojado-anchor`, 7.0.0-42-generic nos de `premium-2026-11-02`), por isso o
+  relatório lista dois fingerprints de máquina para o mesmo processador. Python
+  (3.14.4), numpy (2.5.4) e pandas (3.0.6) são os mesmos nos 10 arquivos de
+  custo (`machine.libraries`), então os lotes vêm do mesmo build.
+
+## Errata: a execução de produção de 2026-11-02 não foi refeita
+
+O relatório gerado diz, em `docs/validation/multirun-convergence.md:57`
+(escrito por `scripts/convergence_analysis.py:1435-1436`): "O lote
+`premium-2026-11-02` com a seed 46641103 refaz a execução
+`9e22cc16-cfda-495e-a8c9-c0d202ef32b6` sem o critério adaptativo". Isso está
+errado. O `.md` não é corrigido à mão porque `report` o regenera byte a byte a
+partir de código congelado para a auditoria (nada em `scripts/` mudou depois de
+`9b3b375`, o commit de código dos lotes).
+
+O lote reusa o código, o perfil, a política, a seed e o snapshot de alocação
+da execução de produção, e o critério adaptativo não disparou nela (a
+estabilidade final, Jaccard 0,137 / CV 0,054 nas ações e 0,386 / 0,042 nos
+FIIs, nunca atingiu 0,75 / 0,02, então ela rodou as 150 execuções). O que
+difere são as entradas dos seletores. A produção baixa de novo o Status Invest
+para o workspace a cada execução (`api/app/services/premium_executor.py:104`,
+que chama `status_invest_inputs.refresh_inputs`) e entrega esses arquivos aos
+dois seletores. No banco de desenvolvimento, a execução `9e22cc16` registra em
+`result_json.provenance.selector_sources` o sha256 `4323377c…` para ações
+(baixado em 2026-11-02T20:47:25Z) e `7c5fb662…` para FIIs. Esse banco é a
+cópia local, não commitada, de `api/prumo-dev.db` no checkout principal: o
+`api/prumo-dev.db` commitado não tem a execução `9e22cc16`. Os valores
+completos lá registrados são, para ações, sha256
+`4323377c9204d5bdba8947e4b310c31e971bacfef9c3628c6c654c75679ce648`
+(`retrieved_at` 2026-11-02T20:47:25.048114Z) e, para FIIs, sha256
+`7c5fb66236d02ed83901fa45573038ae9ff0d9fa900aa01ab498b477a9586419`
+(`retrieved_at` 2026-11-02T20:47:29.649295Z). O experimento usa
+os CSVs congelados do snapshot: `690e9ae9…` (ações) e `549af15b…` (FIIs).
+Então o `production_run_match` falso nos dois seletores mede uma diferença de
+entrada, não o GA nem o critério de parada.
+
+**Limitação.** Como cada execução Premium baixa as entradas de novo, o giro que
+o usuário vê na produção inclui também a deriva dos dados baixados dentro do
+mesmo snapshot, além do ruído do GA. Este experimento, com entradas
+congeladas, mede só o ruído do GA; a deriva de entrada não está medida. O #46
+precisa considerá-la ao dimensionar K e δ.
+
+**Achado fora do #9.** A proveniência da política da execução
+(`policy_json.provenance.source_snapshot_hashes.stock` e `.fii`) registra os hashes
+do snapshot (`690e9ae9…` e `549af15b…`), embora os seletores tenham rodado
+sobre o download novo (`4323377c…` e `7c5fb662…`). Quem lê a proveniência
+acredita que a execução usou o snapshot. Isso fica para uma issue separada; o
+#9 não muda código de produção.

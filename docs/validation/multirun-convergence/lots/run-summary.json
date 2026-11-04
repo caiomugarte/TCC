@@ -1,0 +1,50 @@
+{
+  "experiment_wall_s": 9416.423036526001,
+  "first_started_at": "2026-11-04T03:53:32.773007+00:00",
+  "jobs": 5,
+  "last_finished_at": "2026-11-04T06:30:29.196042+00:00",
+  "lots": [
+    {
+      "lot": "arrojado-anchor:46641103",
+      "status": "skipped"
+    },
+    {
+      "lot": "arrojado-anchor:42",
+      "status": "skipped"
+    },
+    {
+      "lot": "arrojado-anchor:43",
+      "status": "skipped"
+    },
+    {
+      "lot": "arrojado-anchor:44",
+      "status": "skipped"
+    },
+    {
+      "lot": "arrojado-anchor:45",
+      "status": "skipped"
+    },
+    {
+      "lot": "premium-2026-11-02:46641103",
+      "status": "written"
+    },
+    {
+      "lot": "premium-2026-11-02:42",
+      "status": "written"
+    },
+    {
+      "lot": "premium-2026-11-02:43",
+      "status": "written"
+    },
+    {
+      "lot": "premium-2026-11-02:44",
+      "status": "written"
+    },
+    {
+      "lot": "premium-2026-11-02:45",
+      "status": "written"
+    }
+  ],
+  "mode": "measured",
+  "protocol_id": "multirun-convergence-v1"
+}

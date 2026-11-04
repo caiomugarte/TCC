@@ -1,0 +1,137 @@
+{
+  "cpu_s": 8952.976220999999,
+  "finished_at": "2026-11-04T06:25:47.353065+00:00",
+  "jobs": 5,
+  "load_avg_end": [
+    6.109375,
+    6.1357421875,
+    6.13720703125
+  ],
+  "load_avg_start": [
+    0.82421875,
+    0.56591796875,
+    0.33984375
+  ],
+  "lot": "premium-2026-11-02:45",
+  "machine": {
+    "arch": "x86_64",
+    "cpu_model": "AMD Ryzen 5 7600X 6-Core Processor",
+    "fingerprint": "60c16cfaee4ccce84be963e0f1b7107a7f2969287ef7c3b2e4f56ad2f16cb753",
+    "kernel": "7.0.0-42-generic",
+    "libraries": {
+      "numpy": "2.5.4",
+      "pandas": "3.0.6"
+    },
+    "logical_cpus": 12,
+    "mem_total_kb": 31358120,
+    "os": "Ubuntu 26.04.1 LTS",
+    "physical_cores": 6,
+    "python": "3.14.4",
+    "python_implementation": "CPython"
+  },
+  "mode": "measured",
+  "rss_peak_kb": {
+    "process_peak_kb": 208164,
+    "ratio": 0.9999,
+    "reason": null,
+    "ru_maxrss": 207036,
+    "sampled": 208140,
+    "status": "ok",
+    "vm_hwm": 208164
+  },
+  "stages": {
+    "allocation": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.46351237300000003,
+      "cpu_s": 0.46350899999999995,
+      "cpu_seconds": 0.46350899999999995,
+      "cpu_seconds_total": 0.46350899999999995,
+      "cpu_system_s": 0.0,
+      "cpu_user_s": 0.46350899999999995,
+      "cpu_utilization": 0.9997171081988356,
+      "executed": true,
+      "rss_peak_sampled_kb": 178076,
+      "rss_samples": 2,
+      "vm_hwm_kb_at_end": 178076,
+      "wall_s": 0.46364015999995445
+    },
+    "composition": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.0023217709986056434,
+      "cpu_s": 0.0023320000019690923,
+      "cpu_seconds": 0.002332000001842971,
+      "cpu_seconds_total": 0.002332000001842971,
+      "cpu_system_s": 4.999999999810711e-06,
+      "cpu_user_s": 0.0023270000019692816,
+      "cpu_utilization": 1.0030362066346539,
+      "derived": "total - engines",
+      "executed": true,
+      "rss_peak_sampled_kb": null,
+      "rss_samples": 0,
+      "vm_hwm_kb_at_end": null,
+      "wall_s": 0.0023249410005519167
+    },
+    "fiis": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 5302.813763492,
+      "cpu_s": 5302.813761,
+      "cpu_seconds": 5302.813761,
+      "cpu_seconds_total": 5302.813761,
+      "cpu_system_s": 0.7633980000000001,
+      "cpu_user_s": 5302.050363,
+      "cpu_utilization": 0.9827964656926282,
+      "executed": true,
+      "rss_peak_sampled_kb": 208016,
+      "rss_samples": 5391,
+      "vm_hwm_kb_at_end": 208016,
+      "wall_s": 5395.63780102
+    },
+    "snapshot_load": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 0.027698468999999948,
+      "cpu_s": 0.027698999999999918,
+      "cpu_seconds": 0.027698999999999918,
+      "cpu_seconds_total": 0.027698999999999918,
+      "cpu_system_s": 0.0009419999999999984,
+      "cpu_user_s": 0.02675699999999992,
+      "cpu_utilization": 0.9746281070153863,
+      "executed": true,
+      "rss_peak_sampled_kb": 177876,
+      "rss_samples": 2,
+      "vm_hwm_kb_at_end": 177876,
+      "wall_s": 0.028420071000027747
+    },
+    "stocks": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 3648.920540718,
+      "cpu_s": 3648.9205389999997,
+      "cpu_seconds": 3648.9205389999997,
+      "cpu_seconds_total": 3648.9205389999997,
+      "cpu_system_s": 0.704367,
+      "cpu_user_s": 3648.216172,
+      "cpu_utilization": 0.9763869019743637,
+      "executed": true,
+      "rss_peak_sampled_kb": 194204,
+      "rss_samples": 3734,
+      "vm_hwm_kb_at_end": 194204,
+      "wall_s": 3737.1666207539997
+    },
+    "total": {
+      "cpu_children_seconds": 0.0,
+      "cpu_process_time_s": 8952.227836823,
+      "cpu_s": 8952.227840000001,
+      "cpu_seconds": 8952.227840000001,
+      "cpu_seconds_total": 8952.227840000001,
+      "cpu_system_s": 1.468712,
+      "cpu_user_s": 8950.759128000002,
+      "cpu_utilization": 0.9801746367031929,
+      "executed": true,
+      "rss_peak_sampled_kb": 208016,
+      "rss_samples": 9131,
+      "vm_hwm_kb_at_end": 208016,
+      "wall_s": 9133.298806946
+    }
+  },
+  "started_at": "2026-11-04T03:53:32.808357+00:00",
+  "wall_s": 9134.544695531
+}
