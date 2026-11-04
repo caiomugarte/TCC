@@ -211,7 +211,7 @@ def preprocess_profile(
 
     Steps:
     1. Aplica filtros de elegibilidade
-    2. Converte colunas string para numeric e preenche DY vazio com 0
+    2. Converte colunas string para numeric; DY vazio vira 0 e DY negativo, 0
     3. Winsoriza outliers setoriais
     4. Inverte métricas (quanto menor, melhor)
     5. Normaliza via z-score intra-setor
@@ -279,8 +279,10 @@ def preprocess_profile(
 
     # 3b. DY vazio = 0: o Status Invest deixa o DY vazio para quem não pagou
     # dividendos (o export não tem nenhum zero), então o vazio é o valor real.
+    # O corte em 0 vale para o DY bruto, antes do z-score: depois dele, um
+    # corte em 0 igualaria quem não paga a quem paga na média do setor.
     if "DY" in df.columns:
-        df["DY"] = df["DY"].fillna(0.0)
+        df["DY"] = df["DY"].fillna(0.0).clip(lower=0.0)
 
     # 4. Seleciona apenas colunas numéricas
     metric_cols = [c for c in candidates if df[c].dtype.kind in "fi"]
@@ -386,8 +388,6 @@ def apply_robustness_filter(df: pd.DataFrame, threshold: float = 0.80) -> pd.Dat
     """
     Filtra ativos com pelo menos `threshold`% das métricas preenchidas.
 
-    Também força DY negativo para 0.
-
     Parameters
     ----------
     df : pd.DataFrame
@@ -401,10 +401,6 @@ def apply_robustness_filter(df: pd.DataFrame, threshold: float = 0.80) -> pd.Dat
         DataFrame filtrado.
     """
     df = df.copy()
-
-    # DY negativo -> 0
-    if "DY" in df.columns:
-        df["DY"] = df["DY"].clip(lower=0)
 
     # Filtra ativos com ≥ threshold% das métricas
     metric_subset = df.drop(columns=["TICKER", "SETOR"], errors="ignore")

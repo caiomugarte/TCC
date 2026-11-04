@@ -76,7 +76,19 @@ class EmptyDividendYieldTests(unittest.TestCase):
         self.assertEqual(len(ranked), 6)
         self.assertTrue(ranked["SCORE"].map(math.isfinite).all())
         avg_div = ranked.set_index("TICKER")["AVG_DIV"]
-        self.assertEqual(avg_div["CCC3"], avg_div.min())
+        # AAA3 pays (DY 1) but below the sector mean: the non-payer must stay
+        # strictly below it, not tie at 0 with every below-average payer.
+        self.assertLess(avg_div["AAA3"], 0.0)
+        self.assertLess(avg_div["CCC3"], avg_div["AAA3"])
+        self.assertEqual(avg_div.nunique(), len(avg_div))
+
+    def test_negative_raw_dy_is_clipped_before_standardisation(self):
+        frame = _frame(no_dy=("CCC3",))
+        frame.loc[frame["TICKER"] == "DDD3", "DY"] = -5.0
+        clean = preprocess_profile(frame, filters=FILTERS).set_index("TICKER")
+
+        self.assertEqual(clean.loc["DDD3", "DY"], clean.loc["CCC3", "DY"])
+        self.assertLess(clean.loc["DDD3", "DY"], 0.0)  # z-scored, not clipped after
 
 
 class MissingScoreExclusionTests(unittest.TestCase):
@@ -183,9 +195,16 @@ class ConsensusTieBreakTests(unittest.TestCase):
                 )
             self.assertEqual(set(consensus["TICKER"]), expected)
 
+        # CCCC3 and DDDD3 tie on frequency and SCORE; DDDD3 is seen first, so
+        # only the ticker key can put CCCC3 in a two-asset portfolio.
+        ddd_first = [
+            {"tickers": ["DDDD3", "CCCC3", "BBBB3", "AAAA3"]},
+            {"tickers": ["DDDD3", "CCCC3", "BBBB3", "AAAA3"]},
+            {"tickers": ["EEEE3"]},
+        ]
         with redirect_stdout(StringIO()):
             two = build_consensus_portfolio(
-                results, df_ranked, selection_config={"n_assets": 2}
+                ddd_first, df_ranked, selection_config={"n_assets": 2}
             )
         self.assertEqual(set(two["TICKER"]), {"BBBB3", "CCCC3"})
 
