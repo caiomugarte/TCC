@@ -614,6 +614,26 @@ class RankGapTests(unittest.TestCase):
         finally:
             lots.close()
 
+    def test_median_frequency_by_rank(self):
+        """C59: each rank n+1..window reports the median over seeds of f at that rank, 0.0 past R_k (AC 22)."""
+
+        lots = LotSet()
+        try:
+            report = lots.report_json()
+            differs_from_mean = 0
+            for selector in ca.SELECTORS:
+                for item in report["cells"][f"p/{selector}"]["rank_gap"]:
+                    for rank in ("3", "4", "5"):
+                        values = []
+                        for s in ("1", "2", "3"):
+                            freqs = item["by_seed"][s]["frequencies"]
+                            values.append(freqs[int(rank) - 1]["frequency"] if len(freqs) >= int(rank) else 0.0)
+                        self.assertEqual(item["median_frequency_by_rank"][rank], sorted(values)[1])
+                        differs_from_mean += sorted(values)[1] != math.fsum(values) / 3
+            self.assertGreater(differs_from_mean, 0)
+        finally:
+            lots.close()
+
 
 class WithinSeedTests(unittest.TestCase):
     def test_within_seed(self):
@@ -696,6 +716,16 @@ class ZoneTests(unittest.TestCase):
         counts = Counter({"C": 29, "P": 10})
         portfolio, turnover = ca.zone_portfolio(["P"], ["C", "P"], counts, 100, 2, 0.2, "fiis")
         self.assertEqual((portfolio, turnover), ({"P"}, 0))
+
+    def test_weakest_protected_is_lowest_rank_not_lowest_count(self):
+        """C56: protected incumbents tied in count are challenged lowest rank in R first (door 3)."""
+
+        counts = Counter({"D": 18, "A": 16, "B": 12, "E": 12, "C": 12})
+        scores = {"D": 0.95, "A": 0.85, "B": 0.9, "E": 0.8, "C": 0.7}
+        ranking = ca.extended_ranking(counts, scores, "fiis")
+        self.assertEqual(ranking, ["D", "A", "B", "E", "C"])
+        portfolio = ca.zone_portfolio(self.INCUMBENTS, ranking, counts, 20, 5, 0.0, "fiis")
+        self.assertEqual(portfolio, ({"A", "B", "D"}, 1))
 
 
 class ZoneGridTests(unittest.TestCase):
@@ -786,6 +816,13 @@ class RunCountTests(unittest.TestCase):
         self.assertEqual(not_flat, {"flattened": False, "k_min": None})
         self.assertEqual(ca.combine_run_count([self.rule(S), not_flat]), ca.DATA_INSUFFICIENT)
         self.assertEqual(ca.combine_run_count([{"flattened": True, "k_min": 60}, {"flattened": True, "k_min": 100}]), 100)
+
+    def test_median_against_its_own_last_value(self):
+        """C57: M(k) is bounded by M(last) + ε, not by S(last) + ε (criterion 25)."""
+
+        S = {30: 3.1, 60: 2.0, 100: 2.0, 150: 1.8}
+        M = {30: 3.0, 60: 2.4, 100: 2.0, 150: 2.0}
+        self.assertEqual(ca.run_count_rule(S, M, self.CANDIDATES, 0.5), {"flattened": True, "k_min": 60})
 
     def test_leave_one_seed_out(self):
         self.assertEqual(ca.final_run_count(60, {"1": 60, "2": 100, "3": 30}), 100)
@@ -1129,6 +1166,26 @@ class ProductionMatchTests(unittest.TestCase):
             self.assertEqual(code, 0, err)
             report = json.loads((lots.out_dir / "multirun-convergence.json").read_text(encoding="utf-8"))
             self.assertEqual(report["production_run_match"], {"stocks": True, "fiis": False})
+        finally:
+            lots.close()
+
+    def test_match_ignores_declared_order(self):
+        """C58: declared tickers in reversed order still match (sets, criterion 28)."""
+
+        lots = LotSet()
+        try:
+            declared = lots.protocol["production_run"]
+            lot = lots.lots[(declared["profile"], declared["seed"])]
+            for selector in ca.SELECTORS:
+                selected = lot["selectors"][selector]["selected_tickers"]
+                declared[selector] = list(reversed(selected))
+                self.assertNotEqual(declared[selector], list(selected))
+            lots.protocol_path.write_text(json.dumps(lots.protocol), encoding="utf-8")
+            lots.sha = ca.sha256_bytes(lots.protocol_path.read_bytes())
+            for each in lots.lots.values():
+                each["protocol_sha256"] = lots.sha
+            lots.write()
+            self.assertEqual(lots.report_json()["production_run_match"], {"stocks": True, "fiis": True})
         finally:
             lots.close()
 

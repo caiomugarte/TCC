@@ -4,7 +4,7 @@ Mutations: 4
 Build: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m py_compile scripts/multirun_convergence.py scripts/convergence_analysis.py tests/test_convergence_analysis.py tests/test_multirun_convergence.py`
 Plan: `.specs/features/multirun-convergence/plan.md`
 
-55 checks in 10 slices · 5 one-way doors · 0 open
+59 checks in 11 slices · 5 one-way doors · 0 open
 
 Test modules: `tests/test_convergence_analysis.py` (pure analysis on hand-built lots, offline) and
 `tests/test_multirun_convergence.py` (CLI, child runner and a fixture registry built from the
@@ -214,6 +214,20 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 **C55** - A child whose FII `selected_tickers` differ from the consensus recomputed from its runs exits 1 naming `fiis: consensus recomputed at 12 runs`, with no lot or cost file (AC 18, round-2 review U-5)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGapTests.test_fii_selected_tickers_off_consensus_exits_1`
 
+### S11 - Gaps closed after the independent Verifier (appended)
+
+**C56** - Incumbents {A, B, C}, k 20, counts D 18, A 16, B 12, E 12, C 12, scores D 0.95, A 0.85, B 0.9, E 0.8, C 0.7 → `R` [D, A, B, E, C]; K 5, δ 0 → ({A, B, D}, turnover 1): the weakest protected incumbent is the one ranked lowest in `R`, not the lowest count (door 3, Verifier V-2)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests.test_weakest_protected_is_lowest_rank_not_lowest_count`
+
+**C57** - Candidates 30/60/100/150, ε 0.5, S {30: 3.1, 60: 2.0, 100: 2.0, 150: 1.8}, M {30: 3.0, 60: 2.4, 100: 2.0, 150: 2.0} → flattened, `k_min` 60: M(k) is bounded by M(150) + ε, S(k) by S(150) + ε (AC 25, Verifier V-3)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountTests.test_median_against_its_own_last_value`
+
+**C58** - With the declared `production_run` tickers in the reverse order of the lot's `selected_tickers`, `production_run_match` is `{"stocks": true, "fiis": true}` (AC 28 "as sets", Verifier V-4)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ProductionMatchTests.test_match_ignores_declared_order`
+
+**C59** - In every cell and prefix, `rank_gap[*].median_frequency_by_rank[r]` for r in n+1..window equals the median over seeds (middle of 3) of each seed's frequency at rank r, 0.0 for a seed with fewer than r ranks, and differs from the mean over seeds somewhere on the fixture (AC 22, Verifier V-5)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RankGapTests.test_median_frequency_by_rank`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
@@ -235,6 +249,7 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 | generated files (3) | `multirun-convergence.json` C9 · `multirun-convergence-cost.json` C32 · `multirun-convergence.md` C31 | - |
 | tooling review findings (12) | T-1 C38 · T-2 C39 · T-3 C40 · T-4 C41 · T-5 C42 · T-6 C43 · T-7 C44 · T-8 C45 · T-9 C46 · T-10 C47 · T-11 C48 C50 · T-12 C49 | - |
 | second tooling review findings (5) | U-1 C51 · U-2 C52 · U-3 C53 · U-4 C54 · U-5 C55 | - |
+| independent Verifier findings closed by a check, V-6 accepted in Handoff (4) | V-2 C56 · V-3 C57 · V-4 C58 · V-5 C59 | - |
 | child exit-1 guards before writing (5) | run count C34 · candidate scores C48 · consensus C49 C55 · code provenance at start C44 · code provenance before writing C44 | - |
 | reuse fields of an existing lot (4) | `mode` C46 · `snapshot` C46 · `code_fingerprint` C46 · `experiment_fingerprint` C46 | - |
 | production code paths kept (4) | `py` C36 · `api/app` C36 · `scripts/benchmark_premium.py` C36 · `scripts/bench_measure.py` C36 | - |

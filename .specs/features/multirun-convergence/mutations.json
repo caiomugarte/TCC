@@ -382,27 +382,27 @@
     "file": "scripts/convergence_analysis.py",
     "old": "weakest = max(held, key=lambda t: rank[t])",
     "new": "weakest = min(held, key=lambda t: counts.get(t, 0))",
-    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests"
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests.test_weakest_protected_is_lowest_rank_not_lowest_count"
   },
   {
     "label": "V-M2 C25: k_min compares the median curve against S(last) instead of M(last)",
     "file": "scripts/convergence_analysis.py",
     "old": "curves[stat][k] <= curves[stat][last] + epsilon + TOLERANCE",
     "new": "curves[stat][k] <= S[last] + epsilon + TOLERANCE",
-    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountTests"
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountTests.test_median_against_its_own_last_value"
   },
   {
     "label": "V-M3 C28: production_run_match compares lists in order instead of sets",
     "file": "scripts/convergence_analysis.py",
     "old": "set(lot[\"selectors\"][selector][\"selected_tickers\"]) == set(declared[selector])",
     "new": "list(lot[\"selectors\"][selector][\"selected_tickers\"]) == list(declared[selector])",
-    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ProductionMatchTests"
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ProductionMatchTests.test_match_ignores_declared_order"
   },
   {
     "label": "V-M4 AC 22: median_frequency_by_rank takes the mean over seeds instead of the median",
     "file": "scripts/convergence_analysis.py",
     "old": "beyond[str(rank)] = median(values_at)",
     "new": "beyond[str(rank)] = mean(values_at)",
-    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RankGapTests"
+    "proof": "/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RankGapTests.test_median_frequency_by_rank"
   }
 ]
