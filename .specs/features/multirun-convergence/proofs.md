@@ -1,8 +1,8 @@
 # multirun-convergence proofs
 
-**HEAD**: c82297b
+**HEAD**: e1f447c
 **Tree**: clean
-**Result**: 68 pass, 0 fail; mutations 54 killed, 0 not
+**Result**: 74 pass, 0 fail; mutations 58 killed, 0 not
 
 | Check | Proof | Ran | Passed | Result |
 | --- | --- | --- | --- | --- |
@@ -36,9 +36,9 @@
 | C21 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k TurnoverTest` | 1 | - | pass |
 | C22 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RankGapTests` | 1 | - | pass |
 | C35 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k WithinSeedTe` | 1 | - | pass |
-| C23 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests` | 4 | - | pass |
+| C23 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests` | 5 | - | pass |
 | C24 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneGridTest` | 1 | - | pass |
-| C25 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountTest` | 3 | - | pass |
+| C25 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountTest` | 4 | - | pass |
 | C26 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k TargetTests.` | 1 | - | pass |
 | C27 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneRecommen` | 3 | - | pass |
 | C28 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ProductionMa` | 1 | - | pass |
@@ -73,6 +73,12 @@
 | C53 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGa` | 1 | - | pass |
 | C54 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGa` | 1 | - | pass |
 | C55 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_multirun_convergence -k ChildGuardGa` | 1 | - | pass |
+| C56 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ZoneTests.te` | 1 | - | pass |
+| C57 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RunCountTest` | 1 | - | pass |
+| C58 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ProductionMa` | 1 | - | pass |
+| C59 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RankGapTests` | 1 | - | pass |
+| C60 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReadmeTests.` | 1 | - | pass |
+| C61 | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReadmeTests.` | 1 | - | pass |
 | Build | `/home/caio/Documents/projetos/TCC/.venv/bin/python -m py_compile scripts/multirun_convergence.py scripts/conve` | - | - | pass |
 
 ## Mutations
@@ -133,3 +139,7 @@
 | Q4-reuse-no-expfp - T-9 C46: reuse ignores experiment_fingerprint | `scripts/multirun_convergence.py:603` | yes |
 | H1-loo-null-allowed - T-10 C47: leave_one_seed_out null accepted | `scripts/convergence_analysis.py:263` | yes |
 | G1b-fii-null-allowed-child - T-11b C48: child accepts a null FII score | `scripts/convergence_analysis.py:644` | yes |
+| V-M1 door 3 / C23: weakest protected incumbent chosen by lowest count, not lowest rank in R | `scripts/convergence_analysis.py:550` | yes |
+| V-M2 C25: k_min compares the median curve against S(last) instead of M(last) | `scripts/convergence_analysis.py:1012` | yes |
+| V-M3 C28: production_run_match compares lists in order instead of sets | `scripts/convergence_analysis.py:1165` | yes |
+| V-M4 AC 22: median_frequency_by_rank takes the mean over seeds instead of the median | `scripts/convergence_analysis.py:905` | yes |
