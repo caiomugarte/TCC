@@ -180,6 +180,30 @@ com 150) é descritivo e não entra em nenhuma regra.
 Os valores (ε, quantil, arredondamento, prefixos, seeds, grade de δ) estão no
 protocolo; o relatório não tem número escrito à mão.
 
+## Limitação: o giro com a zona é medido dentro da amostra
+
+- **O giro no ponto recomendado é otimista.** `recommend_zone` ajusta `K*` e
+  `δ*` nos 20 pares ordenados de seeds (`scripts/convergence_analysis.py:1134`)
+  e simula o ponto recomendado nesses mesmos pares (`:1148`). A coluna "giro no
+  ponto recomendado" do relatório (média 0,40 / 0,10 / 0,70 / 0,00) é, portanto,
+  dentro da amostra e otimista.
+- **Sensibilidade leave-one-seed-out (exploratória, não pré-registrada).** Uma
+  sonda da revisão do PR #51 (não commitada) ajusta K e δ com a mesma regra
+  em 4 seeds (o maior entre os perfis) e simula só os 8 pares ordenados com a
+  seed deixada de fora. O giro médio com a zona sobe para 0,300 em
+  `premium-2026-11-02/stocks` (0,10 dentro da amostra), 0,725 em
+  `arrojado-anchor/stocks` (0,40) e 0,775 em `arrojado-anchor/fiis` (0,70);
+  `premium-2026-11-02/fiis` fica em 0,000. Sem a zona (K = 0) o giro é o mesmo
+  dos dois jeitos: 1,10, 1,40 e 1,30.
+- **K depende do conjunto de seeds.** Nos cinco ajustes sem uma seed, o
+  `k_offset` de ações vai de 2 a 6 (6 com as cinco seeds), o de FIIs de 1 a 4
+  (3) e δ de 0,10 a 0,12 (0,11).
+- **A recomendação pré-registrada não muda.** `k_offset` 6 / δ 0,11 para ações
+  e `k_offset` 3 / δ 0,11 para FIIs seguem sendo a recomendação; a sonda é uma
+  sensibilidade e não a substitui. O #46 precisa considerar que o giro com a
+  zona fora da amostra é maior e que K é sensível ao conjunto de seeds ao
+  dimensionar K e δ.
+
 ## Como rodar e regenerar
 
 A partir da raiz do repositório, com o `.venv` do projeto:

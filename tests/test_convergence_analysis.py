@@ -261,10 +261,16 @@ class ProtocolFileTests(unittest.TestCase):
         self.assertEqual(protocol, expected)
 
 
+def flat(text):
+    """Collapse every run of whitespace to one space, so a re-wrapped paragraph reads the same."""
+
+    return " ".join(text.split())
+
+
 class ReadmeTests(unittest.TestCase):
     def test_readme_section(self):
         text = (PROJECT_ROOT / "docs" / "validation" / "README.md").read_text(encoding="utf-8")
-        section = text[text.index("# Convergência do multi-run"):]
+        section = flat(text[text.index("# Convergência do multi-run"):])
         for needle in (
             "multirun-convergence-protocol.json",
             "multirun-convergence/lots/<perfil>/seed-<seed>.json",
@@ -274,11 +280,11 @@ class ReadmeTests(unittest.TestCase):
             "multirun-convergence-cost.json",
             "multirun-convergence.md",
             "**Giro entre seeds**",
-            "Não é o\ngiro mês a mês",
-            "ε = 0,5 troca na média e\n  na mediana",
+            "Não é o giro mês a mês",
+            "ε = 0,5 troca na média e na mediana",
             "**máximo**",
             "leave-one-seed-out",
-            "quantil 0,95\n  por CDF invertida",
+            "quantil 0,95 por CDF invertida",
             "exatamente a partir das contagens",
             "arredondado para cima em 0,01",
             "`target_jaccard` 0,75",
@@ -295,11 +301,11 @@ class ReadmeTests(unittest.TestCase):
         """C60: the README corrects the generated report's 'refaz a execução' (V-1, V-8)."""
 
         section = self.section()
-        errata = section[section.index("## Errata: a execução de produção de 2026-11-02 não foi refeita"):]
+        errata = flat(section[section.index("## Errata: a execução de produção de 2026-11-02 não foi refeita"):])
         for needle in (
             "`docs/validation/multirun-convergence.md:57`",
             "`scripts/convergence_analysis.py:1435-1436`",
-            "refaz a execução\n`9e22cc16-cfda-495e-a8c9-c0d202ef32b6` sem o critério adaptativo",
+            "refaz a execução `9e22cc16-cfda-495e-a8c9-c0d202ef32b6` sem o critério adaptativo",
             "`api/app/services/premium_executor.py:104`",
             "`status_invest_inputs.refresh_inputs`",
             "`result_json.provenance.selector_sources`",
@@ -309,7 +315,7 @@ class ReadmeTests(unittest.TestCase):
             "`549af15b…`",
             "**Limitação.**",
             "deriva dos dados baixados",
-            "O #46\nprecisa considerá-la",
+            "O #46 precisa considerá-la",
             "`policy_json.provenance.source_snapshot_hashes.stock`",
             "issue separada",
         ):
@@ -321,14 +327,37 @@ class ReadmeTests(unittest.TestCase):
         """C61: the lost first log is stated and process-hours are not added to CPU-hours (V-7)."""
 
         section = self.section()
-        cost = section[section.index("## Custo do experimento medido"):section.index("## Errata")]
+        cost = flat(section[section.index("## Custo do experimento medido"):section.index("## Errata")])
         for needle in (
-            "o log da primeira invocação ficava em\n  `/tmp` e não sobreviveu à reinicialização",
-            "nem o 1h20 (estimativa do\n  operador) nem o total de cerca de 31 citado antes têm registro",
-            "Horas-processo\n  não são CPU-horas medidas, então não se somam.",
+            "o log da primeira invocação ficava em `/tmp` e não sobreviveu à reinicialização",
+            "nem o 1h20 (estimativa do operador) nem o total de cerca de 31 citado antes têm registro",
+            "Horas-processo não são CPU-horas medidas, então não se somam.",
         ):
             self.assertIn(needle, cost, needle)
         self.assertNotIn("ficou perto de 31 CPU-horas", cost)
+
+    def test_zone_turnover_in_sample(self):
+        """C62: the README says the with-zone turnover is in-sample and gives the leave-one-seed-out sensitivity (J-1)."""
+
+        section = self.section()
+        start = section.index("## Limitação: o giro com a zona é medido dentro da amostra")
+        limitation = flat(section[start:section.index("## Como rodar e regenerar")])
+        for needle in (
+            "**O giro no ponto recomendado é otimista.**",
+            "`scripts/convergence_analysis.py:1134`",
+            "`:1148`",
+            "dentro da amostra e otimista",
+            "**Sensibilidade leave-one-seed-out (exploratória, não pré-registrada).**",
+            "0,300 em `premium-2026-11-02/stocks` (0,10 dentro da amostra)",
+            "0,725 em `arrojado-anchor/stocks` (0,40)",
+            "0,775 em `arrojado-anchor/fiis` (0,70)",
+            "**K depende do conjunto de seeds.**",
+            "`k_offset` de ações vai de 2 a 6",
+            "**A recomendação pré-registrada não muda.**",
+            "a sonda é uma sensibilidade e não a substitui",
+            "O #46 precisa considerar",
+        ):
+            self.assertIn(needle, limitation, needle)
 
 
 # --------------------------------------------------------------------------
