@@ -201,18 +201,18 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| PZ-01 | P1: Zone selection function | Tasks T1-T2 | In Tasks (T1 done) |
+| PZ-01 | P1: Zone selection function | Tasks T1-T2 | Implemented |
 | PZ-02 | P1: Zone selection function | Tasks T1 | Implemented |
-| PZ-03 | P1: Zone selection function | Tasks T2 | In Tasks |
-| PZ-04 | P1: Zone selection function | Tasks T2 | In Tasks |
-| PZ-05 | P1: Zone selection function | Tasks T2 | In Tasks |
-| PZ-06 | P1: Zone selection function | Tasks T2 | In Tasks |
-| PZ-07 | P1: Zone selection function | Tasks T2 | In Tasks |
-| PZ-08 | P1: Zone selection function | Tasks T2 | In Tasks |
-| PZ-09 | P1: Zone selection function | Tasks T2 | In Tasks |
-| PZ-10 | P1: Zone selection function | Tasks T2 | In Tasks |
+| PZ-03 | P1: Zone selection function | Tasks T2 | Implemented |
+| PZ-04 | P1: Zone selection function | Tasks T2 | Implemented |
+| PZ-05 | P1: Zone selection function | Tasks T2 | Implemented |
+| PZ-06 | P1: Zone selection function | Tasks T2 | Implemented |
+| PZ-07 | P1: Zone selection function | Tasks T2 | Implemented |
+| PZ-08 | P1: Zone selection function | Tasks T2 | Implemented |
+| PZ-09 | P1: Zone selection function | Tasks T2 | Implemented |
+| PZ-10 | P1: Zone selection function | Tasks T2 | Implemented |
 | PZ-11 | P1: Zone selection function | Tasks T1 | Implemented |
-| PZ-12 | P1: Zone selection function | Tasks T2 | In Tasks |
+| PZ-12 | P1: Zone selection function | Tasks T2 | Implemented |
 | PZ-13 | P1: Zone selection function | Tasks T4 | In Tasks |
 | PZ-14 | P1: HHI fallback | Tasks T3, T5, T7 | In Tasks |
 | PZ-15 | P1: HHI fallback | Tasks T3 | In Tasks |

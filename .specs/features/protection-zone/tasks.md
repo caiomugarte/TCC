@@ -64,7 +64,8 @@ Test counts never go down: each task's "Done when" states the expected minimum.
 | Repeated swaps stop at first failure | Two strong outsiders and two weak incumbents: both swapped, weakest first; a third weaker outsider stops the loop | PZ-05 |
 | Replaced never re-admitted | A swapped-out incumbent never re-enters in the same call | PZ-05 |
 | Ineligible leaves | Incumbent absent from `eligible` but present in frequencies: never protected, `saiu: inelegível` | PZ-06 |
-| Dedup by base company | Incumbent `POMO4` + outsider `POMO3` ranked above: never both; replacement of `POMO4` by `POMO3` allowed only via swap | PZ-09 |
+| Dedup, `POMO3` ranks above `POMO4` | Incumbent `POMO4` has no rank: it leaves with `saiu: fora do top K`; outsider `POMO3` enters as `novo`. A same-company swap never happens: the ranking holds one ticker per company (PZ-02, AD-022) | PZ-09 |
+| Dedup, `POMO4` ranks above `POMO3` | Incumbent `POMO4` is protected (`mantido`); outsider `POMO3` is never selected, even with vacancies | PZ-09 |
 | Capacity cap | 15 qualifying incumbents, `n_assets = 13`: 13 best-ranked kept, 2 `saiu: vagas reduzidas` | PZ-08 |
 | Order independence | Shuffled incumbent lists give equal results; lower-case and duplicate tickers normalize | PZ-12 |
 | Partition | Every incumbent in exactly one of `kept` or `departures`; `turnover == len(entered)`; `exits == len(departures)` | PZ-12, PZ-01 |
@@ -171,6 +172,8 @@ T15 → T16 → T17
 
 #### T2: `apply_protection_zone`
 
+**Status**: Complete
+
 **What**: Implement the AD-022 zone with A-3/A-4 (capacity cap, reasons, departures, turnover, exits).
 **Where**: `py/core/protection_zone.py` (modify)
 **Depends on**: T1
@@ -186,10 +189,10 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Every core row of the Test Strategy table except the HHI rows has a passing test
-- [ ] The function imports nothing from `scripts/` and nothing from pandas
-- [ ] Gate check passes: Quick
-- [ ] Test count: at least 16 new tests, T1 tests still pass
+- [x] Every core row of the Test Strategy table except the HHI rows has a passing test
+- [x] The function imports nothing from `scripts/` and nothing from pandas
+- [x] Gate check passes: Quick
+- [x] Test count: at least 16 new tests, T1 tests still pass
 
 **Tests**: unit
 **Gate**: quick

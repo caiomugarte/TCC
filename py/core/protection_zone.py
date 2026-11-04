@@ -5,7 +5,7 @@ they count the GA runs. The stock and FII selectors call this module, and the
 API only reads the incumbents and records the provenance. No pandas here.
 """
 
-from collections.abc import Mapping
+from collections.abc import Collection, Iterable, Mapping
 from dataclasses import dataclass
 import math
 import numbers
@@ -89,3 +89,107 @@ def validate_zone_inputs(
     for ticker, frequency in frequencies.items():
         if not 0.0 <= frequency <= 1.0:
             raise ValueError(f"frequency of {ticker} must be in [0, 1]")
+
+
+def apply_protection_zone(
+    incumbents: Iterable[str],
+    frequencies: Mapping[str, float],
+    scores: Mapping[str, float],
+    n_assets: int,
+    K: int,
+    delta: float,
+    *,
+    eligible: Collection[str],
+    dedup_base_company: bool,
+) -> ZoneSelection:
+    """Apply the AD-022 zone to one class and give a reason for every ticker (PZ-01).
+
+    Only eligible tickers are ranked, so an ineligible ticker is never selected.
+    With ``dedup_base_company`` the ranking holds one ticker per company, so the
+    portfolio never holds two tickers of one company (PZ-09). ``K = 0`` returns
+    the pure consensus.
+    """
+
+    validate_zone_inputs(n_assets, K, delta, frequencies)
+    incumbent_set = {ticker.strip().upper() for ticker in incumbents}
+    eligible_set = set(eligible)
+    # SPEC_DEVIATION: design step 2 ranks every picked ticker; this ranks eligible picks only.
+    # Reason: PZ-06 says an ineligible incumbent is never selected, and the fill draws from this
+    # ranking. Production picks are always eligible (they come from the ranked frame), so no output changes.
+    candidates = {ticker: f for ticker, f in frequencies.items() if ticker in eligible_set}
+    ranking = rank_candidates(candidates, scores, dedup_base_company=dedup_base_company)
+    rank = {ticker: position for position, ticker in enumerate(ranking, start=1)}
+
+    # Protection: eligible incumbents ranked within K, the n_assets best only (PZ-03, PZ-08).
+    qualifying = sorted(
+        (t for t in incumbent_set if t in rank and rank[t] <= K), key=rank.__getitem__
+    )
+    protected = qualifying[:n_assets]
+    capped = set(qualifying[n_assets:])
+
+    # Fill the vacancies in rank order (PZ-04).
+    held = set(protected)
+    for ticker in ranking:
+        if len(held) >= n_assets:
+            break
+        held.add(ticker)
+
+    # Swaps (PZ-05): the weakest protected ticker still held gives way to the best
+    # outside candidate when it ranks above it and leads by delta. A replaced
+    # ticker never returns. Every ranked ticker shares no company with another
+    # one, so a challenger never shares a company with the portfolio.
+    protected_held = set(protected)
+    replaced: set[str] = set()
+    swaps: list[tuple[str, str]] = []
+    while protected_held:
+        weakest = max(protected_held, key=rank.__getitem__)
+        challenger = next((t for t in ranking if t not in held and t not in replaced), None)
+        if challenger is None:
+            break
+        if not (
+            rank[challenger] < rank[weakest]
+            and candidates[challenger] >= candidates[weakest] + delta - TOLERANCE
+        ):
+            break
+        held.remove(weakest)
+        held.add(challenger)
+        protected_held.remove(weakest)
+        replaced.add(weakest)
+        swaps.append((weakest, challenger))
+
+    tickers = tuple(sorted(held, key=rank.__getitem__))
+    kept = tuple(sorted(t for t in held if t in incumbent_set))
+    entered = tuple(sorted(t for t in held if t not in incumbent_set))
+    swapped_in = {challenger: weakest for weakest, challenger in swaps}
+    swapped_out = {weakest: challenger for weakest, challenger in swaps}
+
+    reasons: dict[str, str] = {}
+    for ticker in tickers:
+        if ticker in swapped_in:
+            reasons[ticker] = f"substituiu {swapped_in[ticker]}"
+        elif ticker in incumbent_set:
+            reasons[ticker] = "mantido"
+        else:
+            reasons[ticker] = "novo"
+
+    departures: dict[str, str] = {}
+    for ticker in sorted(incumbent_set - held):
+        if ticker not in eligible_set:
+            departures[ticker] = "saiu: inelegível"
+        elif ticker in swapped_out:
+            departures[ticker] = f"saiu: substituído por {swapped_out[ticker]}"
+        elif ticker in capped:
+            departures[ticker] = "saiu: vagas reduzidas"
+        else:
+            departures[ticker] = "saiu: fora do top K"
+
+    return ZoneSelection(
+        tickers=tickers,
+        reasons=reasons,
+        departures=departures,
+        kept=kept,
+        replaced=tuple(swaps),
+        entered=entered,
+        turnover=len(entered),
+        exits=len(departures),
+    )
