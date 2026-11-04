@@ -1,16 +1,29 @@
 # Multi-run convergence experiment verification
 
-**Verdict**: FAIL
-**Mutations**: 4 - probed C23 (door 3 weakest incumbent), C25 (k_min median bound), C28 (set equality), AC 22 (median of f_(n+1)..f_30); 0 of 4 killed by their narrowest proof
-**Proofs**: `proofs.md` at c82297b (HEAD ee9e33b changes only `proofs.md`); not rerun (settled: 68 pass, 54 killed)
-**Verifier**: independent sub-agent (author != verifier), over `9fb617c..ee9e33b`
+**Verdict**: PASS
+**Mutations**: 4 - probed C23 / C56 (door 3 weakest incumbent), C25 / C57 (k_min median bound), C28 / C58 (set equality), AC 22 / C59 (median of f_(n+1)..f_30); V-M1..V-M4 re-injected, 4 of 4 killed by their narrowest proof, 58 of 58 in `mutations.json`
+**Proofs**: `proofs.md` at e1f447c (committed); re-run by this Verifier at 5756508: 74 pass, 0 fail, 58 killed
+**Verifier**: independent sub-agent (author != verifier), round 2, over `f1463bb..5756508`
 
-Mutants were applied only to a `git archive HEAD` copy (scratchpad `verifier/tree`, re-initialised as a
-git repo), never to the worktree. In that copy `CommittedReportTests.test_committed_report_is_measured`
-(C29) fails at baseline because the copy has no history; every other test in
-`tests.test_convergence_analysis` is green unmutated.
+Round 2 re-checks the round-1 ledger at `5756508`. `check_proofs.py --mutations` ran in a `git archive 5756508`
+copy (scratchpad `verifier2/tree`), with the branch history fetched into its own `.git` so C29 has its
+ancestry. The copy was clean at `5756508`. Result: `**HEAD**: 5756508`, `**Tree**: clean`, 74 pass, 0 fail,
+58 killed, 0 not. The worktree was never mutated. Other gates at `5756508` in the worktree:
+- root suite (`-m unittest discover -s tests`): 462 tests OK, 1 skipped;
+- `api` suite: 125 tests OK;
+- `validate_checks.py`: 0 errors, 1 warning (C36, pre-existing);
+- `git diff 9b3b375 HEAD -- scripts py api/app`: empty.
 
 ## Findings
+
+Round 2 (new; both nonblocking, both README-only):
+
+| Finding | Evidence | Fix | Closed |
+| --- | --- | --- | --- |
+| **V2-1** nonblocking - the errata cannot be found from where the error is. `docs/validation/README.md:143` | The file table row `multirun-convergence.md` says only "o mesmo relatório em texto". The errata is at `README.md:234`, about 90 lines below, after the cost section. The generated report is frozen and has no pointer to it. A reader of the README's #9 section will reach the errata, because it is an H2 inside that section. A reader who opens `multirun-convergence.md` or `multirun-convergence.json` (`production_run_match`) directly will not. The errata is accurate (see the ledger), so it is discoverable but not from its target. | In the row at `README.md:143`, append "(a frase da linha 57 sobre a execução de produção está errada: ver a Errata no fim desta seção)". Mention the errata in the PR body as well. C2 / C60 are unaffected: no needle covers that row's description. | |
+| **V2-2** nonblocking - the errata's DB evidence cannot be checked at `HEAD`. `docs/validation/README.md:251-255` | "No banco de desenvolvimento, a execução `9e22cc16` registra…". The committed `api/prumo-dev.db` (tracked, 296 KB at `5756508`) has no run `9e22cc16`. The run exists only in the main checkout's uncommitted copy (`git status` on `develop`: ` M api/prumo-dev.db`, 432 KB). There I confirmed `selector_sources.stocks.sha256 = 4323377c9204d5bdba8947e4b310c31e971bacfef9c3628c6c654c75679ce648` (retrieved 2026-11-02T20:47:25.048Z) and `fiis.sha256 = 7c5fb66236d02ed83901fa45573038ae9ff0d9fa900aa01ab498b477a9586419` (20:47:29.649Z). The errata shows only 8-character prefixes. | Say that the evidence is the main checkout's local, uncommitted `api/prumo-dev.db` (not the committed file). Write the two full sha256 values with their `retrieved_at`, so the claim survives a reset of that DB. Make it additive: C60's needles (the prefixes with `…`) still match if the full hashes go in a separate sentence. | |
+
+Round 1 (closed; re-checked in round 2, see the ledger):
 
 | Finding | Evidence | Fix | Closed |
 | --- | --- | --- | --- |
@@ -23,36 +36,46 @@ git repo), never to the worktree. In that copy `CommittedReportTests.test_commit
 | **V-7** nonblocking - cost documentation gap. | `docs/validation/README.md:208-223` gives about 1h20 x 5 (about 6.7 process-hours) for the discarded first attempt and "perto de 31 CPU-horas", but does not say that the first invocation's log was lost in the reboot (Handoff only, `checks.md:256`). So the 1h20 figure has no surviving record and adds process-hours to CPU-hours. The generated `md:435` labels 9,416.4 s "tempo de parede do experimento" although it covers only the resumed invocation. README `:215-219` corrects this. | Add one sentence to the README cost section: the first invocation's log lived under `/tmp` and did not survive the reboot, so the 1h20 is the operator's estimate and the 31 is an upper estimate (process-hours, not measured CPU). | `e8c0838` - C61 `ReadmeTests.test_cost_units_apart` |
 | **V-8** nonblocking - production finding to surface (outside #9's scope). | Production's `policy.provenance.source_snapshot_hashes.stock` / `.fii` (`690e9ae9…` / `549af15b…`) name the snapshot CSVs, but the selectors ran on the live scrape (`4323377c…` / `7c5fb662…`, in `result.provenance.selector_sources`). A reader of the run's provenance would believe it ran on the snapshot. Each Premium run also re-scrapes, so a user's consensus moves with input drift as well as with GA noise. | Open a separate issue (with `issue-shaper`) for selector inputs versus snapshot provenance, and reference it from #46. No change to #9's code. | `e8c0838` - C60 (README errata) and follow-up issue listed in `checks.md` Handoff, to be opened by the orchestrator |
 
+## Round-1 ledger at 5756508
+
+| Item | Status | Round-2 evidence |
+| --- | --- | --- |
+| V-1 | closed | The errata's evidence holds on every point. (1) `premium_executor.py:104` is `selector_inputs = self.status_invest_inputs_loader(workspace)`, and the loader defaults to `refresh_inputs` (`:37`). (2) In the main checkout's DB, run `9e22cc16` has `selector_sources` `4323377c…` / `7c5fb662…`. Its `policy_json.provenance.source_snapshot_hashes` are `690e9ae9…` / `549af15b…`. (3) `sha256sum` on the registry: `snapshots/stocks.csv` is `690e9ae99f92…` and `snapshots/fiis.csv` is `549af15bfc9a…`. The manifest names those paths, and the lot reads them (`multirun_convergence.py:421`). (4) The final stability in `result_json.diagnostics` matches the errata (0.137 / 0.054 and 0.386 / 0.042). (5) `git diff 4a2481a 9b3b375 -- py api/app` touches only `py/pit_validation.py`, so "reusa o código" holds for the selectors. (6) Generated line 57 still carries the sentence that C60 pins. The input-drift limitation is stated and addressed to #46 (`README.md:258-262`). Plan Q2 is corrected and points to the errata. Discoverability is adequate for README readers but not from the report itself (V2-1). The DB evidence is not reproducible at `HEAD` (V2-2). |
+| V-2 | closed | C56 asserts the exact `({A, B, D}, 1)` and pins `R`. V-M1 is killed by `ZoneTests.test_weakest_protected_is_lowest_rank_not_lowest_count`. |
+| V-3 | closed | C57 asserts `{"flattened": True, "k_min": 60}` on S ≠ M with M(150) ≠ S(150). V-M2 is killed. |
+| V-4 | closed | C58 reverses the declared tickers, asserts they differ from `selected_tickers`, re-hashes the protocol and asserts `{stocks: True, fiis: True}`. V-M3 is killed. |
+| V-5 | closed | C59 asserts the median over 3 seeds at every rank n+1..window for every prefix and selector. It also asserts that the median differs from the mean somewhere, so mean cannot pass. V-M4 is killed by the narrow proof, not only by C30. |
+| V-6 | accepted, sound | The four guards are unreachable for any `R` that `extended_ranking` builds. For stocks it keeps one ticker per base company (`convergence_analysis.py:431-437`). `protected` ⊆ R, the fill draws from R, and challengers come from R. So no non-held ticker of R shares a base company with a held one (`:541`, `:555`). A replaced incumbent W ranks below every protected incumbent still held, because W was the max-rank among them. If the guard at `:553` is dropped, W becomes the challenger and fails `rank[c] < rank[p]`. If it is kept, the next challenger ranks even lower. Both paths `break` (`:553`). `held` filters by `portfolio`, so `discard` is redundant (`:564`). Keeping door 3's literal in frozen code, with the invariant written in the Handoff, is sound. |
+| V-7 | closed | `README.md:220-227` states the lost `/tmp` log and keeps 24.22 CPU-hours apart from ~6.7 process-hours ("não se somam"). C61 pins it. Nit, not a finding: "o total de cerca de 31 citado antes" (`:224`) refers to text this commit deleted. Rewording it means changing C61's needle under rule 3, which is not worth it. |
+| V-8 | closed as out of scope | The errata records it (`README.md:264-269`) and the Handoff lists the follow-up issue for the orchestrator to open. It is not opened yet, so it is still owed outside this feature. |
+
+Own examples at `5756508` (throwaway, not committed), all as door 3 / criterion 25 state:
+- **Zone, stocks, chained swaps.** Incumbents [AAAA3, BBBB3, CCCC3]; counts X 20, A 19, Y 18, B 10, C 5; k 20; K 5. At δ 0.1 the result is ({A, X, Y}, 2): C is replaced, then B, then no challenger is left. At δ 0.45 it is ({A, B, X}, 1): Y 0.90 < B 0.50 + 0.45.
+- **Zone, base company.** An incumbent PETR3 deduplicated out of R behind PETR4 is unprotected, so the result is ({PETR4, VALE3}, 1).
+- **run_count.** The plateau at exactly ε (S(100) - S(150) = 0.5) is flattened, with `k_min` 100. A gap of 0.51 is not flattened. M(60) = M(150) + ε exactly gives `k_min` 60.
+
 ## Mutations injected
 
 | Mutation | Location | Killed |
 | --- | --- | --- |
-| V-M1 door 3 / C23: weakest protected incumbent chosen by lowest count, not lowest rank in R | `scripts/convergence_analysis.py:550` | no |
-| V-M2 C25: k_min compares the median curve against S(last) instead of M(last) | `scripts/convergence_analysis.py:1012` | no |
-| V-M3 C28: production_run_match compares lists in order instead of sets | `scripts/convergence_analysis.py:1165` | no |
-| V-M4 AC 22: median_frequency_by_rank takes the mean over seeds instead of the median | `scripts/convergence_analysis.py:905` | no |
+| V-M1 door 3 / C23: weakest protected incumbent chosen by lowest count, not lowest rank in R | `scripts/convergence_analysis.py:550` | yes (C56) |
+| V-M2 C25: k_min compares the median curve against S(last) instead of M(last) | `scripts/convergence_analysis.py:1012` | yes (C57) |
+| V-M3 C28: production_run_match compares lists in order instead of sets | `scripts/convergence_analysis.py:1165` | yes (C58) |
+| V-M4 AC 22: median_frequency_by_rank takes the mean over seeds instead of the median | `scripts/convergence_analysis.py:905` | yes (C59) |
 
-The four are appended to `mutations.json` (58 entries) with their narrowest proofs. Against the whole
-module: V-M1, V-M2 and V-M3 also survive C30. V-M4 is killed only by C30's byte pin.
+The other 54 entries of `mutations.json` were also killed at `5756508`. No new mutation was added.
 
-## Acceptance criteria of #9 mapped to committed artifacts
+## Completion gate
 
-| Issue item | Where |
-| --- | --- |
-| Criterion registered before the experiment | `docs/validation/multirun-convergence-protocol.json` (only commit `19ead15`, 2026-11-03 12:42 -03, an ancestor of the lots' `code.commit` `9b3b375`); rules in `README.md:152-181`; `md:6` |
-| 150-run lots, prefixes 30/60/100/150, 2 profiles x 5 seeds | `lots/*/seed-*.json` (`f8a1580`, 150 + 150 runs each, `mode` measured); `md:9` |
-| CV and Jaccard curves per prefix, frequency per ticker | `md:61-79`, `151-169`, `241-259`, `331-…` (curves); `md:83-116` and per cell (top 30 at 150); per-prefix counts in the JSON `cells.*.frequencies` |
-| Consensus turnover between seeds, stocks and FIIs apart | `md:118-125`, `208-215`, `298-305`, `388-395` (swapped of n, Jaccard) |
-| Frequency of the 13th and of the 14th-30th, typical gap | `md:127-134`, `307-314`, `397-404` (f_n / f_(n+1) / gap, median) plus the top-30 tables |
-| 0.75 reachability with a recommendation | `md:31-37`: both targets `unreachable`, `use_fixed_run_count`, `fixed_run_count` 150 |
-| Explicit run_count or "data insufficient" | `md:13-29`: `data_insufficient` (arrojado: S(100) - S(150) = 0.60 and 0.90 > 0.5; premium: `k_min` 60 for both) |
-| K and δ with turnover with and without the zone | `md:39-53`: stocks `k_offset` 6, FIIs 3, δ 0.11 both, at 150; grids `md:136-147`, `226-…`, `316-327`, `406-417` |
-| Cost documented | `md:419-436`, `multirun-convergence-cost.json`, `README.md:200-228` (24.22 CPU-h measured, two invocations, about 6.7 process-hours discarded, kernel 7.0.0-38 -> 7.0.0-42) |
-| Tests: prefix analysis deterministic; Jaccard/CV with known cases; same lot + seed -> same report | C9 and C30; C14 and C15; C9 and C30 |
+At `5756508`, `validate_verification.py` reports one error: `proofs.md was written at e1f447c and HEAD
+is 5756508`. The skill intends `proofs.md` to be written by `check_proofs.py` at the `HEAD` it names. That
+script ignores uncommitted `.specs/` paths when it judges the tree clean, and the gate compares the recorded
+`HEAD` with `git rev-parse HEAD` strictly. So the gate passes only between a `check_proofs.py` run and the
+commit that records `proofs.md`. A commit that holds only `proofs.md` always leaves it one `.specs`-only
+commit behind, which is what happened at `e1f447c` -> `5756508`. That lag carries no risk, but the gate
+does not accept it. Minimal action for the builder, after closing V2-1 and V2-2:
+1. Run `check_proofs.py multirun-convergence --mutations .specs/features/multirun-convergence/mutations.json` at the final `HEAD`.
+2. Run `validate_verification.py multirun-convergence` while `proofs.md` is still uncommitted, and keep its exit 0 as the completion evidence.
+3. Commit `proofs.md` alone.
 
-Pre-registration holds. The protocol has one commit (`19ead15`). No file under `scripts/`, `tests/`,
-`py/` or `api/app/` changed after `9b3b375`, the lots' code commit, and the last rule-bearing change
-(`c9bdd0f`) precedes it. Commits after `f8a1580` touch only reports, README and `.specs`. C36 holds
-(`git diff --quiet 751cafb HEAD -- py api/app …`). The report makes no out-of-sample claim and changes
-no production default. It states the coverage limitation (`md:446`) and the door-5 limitation
-(`md:445`). Besides V-1, its conclusions follow from the numbers it prints.
+`git diff --stat <recorded HEAD> HEAD` then shows only `proofs.md`.
