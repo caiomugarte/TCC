@@ -1195,7 +1195,7 @@ def run_multi_execution_profile(
                 "avg_score": float(consensus.attrs.get("avg_score", consensus["SCORE"].mean())),
                 "stability": stability,
             },
-            "exclusion_reasons": dict(df.attrs.get("exclusion_reasons", {})),
+            "exclusion_reasons": dict(df_ranked.attrs.get("exclusion_reasons", {})),
             "config": dict(explicit_config),
             "seed": int(random_seed),
             "run_seeds": [int(result["seed"]) for result in results],

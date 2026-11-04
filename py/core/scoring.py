@@ -156,7 +156,9 @@ def build_scores(
 
     1. Calcula médias por grupo
     2. Aplica pesos do perfil
-    3. Ordena por score (maior para menor)
+    3. Exclui ativos com SCORE NaN (grupo inteiro ausente), com registro em
+       ``attrs["exclusion_reasons"]``
+    4. Ordena por score (maior para menor)
 
     Parameters
     ----------
@@ -192,13 +194,51 @@ def build_scores(
         profile_weights=profile_weights,
     )
 
+    df = exclude_missing_scores(df)
+
     # Ordena do maior para o menor score
     sort_columns = ["SCORE"]
     ascending = [False]
     if "TICKER" in df.columns:
         sort_columns.append("TICKER")
         ascending.append(True)
-    return df.sort_values(sort_columns, ascending=ascending).reset_index(drop=True)
+    attrs = dict(df.attrs)
+    ranked = df.sort_values(sort_columns, ascending=ascending).reset_index(drop=True)
+    ranked.attrs.update(attrs)
+    return ranked
+
+
+def exclude_missing_scores(df: pd.DataFrame) -> pd.DataFrame:
+    """Remove ativos com SCORE NaN e registra o motivo em ``exclusion_reasons``.
+
+    Um SCORE NaN vem de um grupo de métricas inteiro ausente (``AVG_<grupo>``
+    NaN). O motivo registrado é ``missing_metric_group:<grupo>`` para cada
+    grupo ausente.
+    """
+    reasons = {
+        key: list(value)
+        for key, value in df.attrs.get("exclusion_reasons", {}).items()
+    }
+    missing = df["SCORE"].isna()
+    result = df[~missing].copy()
+    result.attrs.update(df.attrs)
+    if missing.any():
+        avg_cols = [c for c in df.columns if c.startswith("AVG_")]
+        for index in df.index[missing]:
+            groups = [
+                col[len("AVG_"):].lower()
+                for col in avg_cols
+                if pd.isna(df.loc[index, col])
+            ]
+            labels = [f"missing_metric_group:{group}" for group in groups] or ["missing_score"]
+            ticker = (
+                str(df.loc[index, "TICKER"]).strip().upper()
+                if "TICKER" in df.columns
+                else str(index)
+            )
+            reasons.setdefault(ticker, []).extend(labels)
+    result.attrs["exclusion_reasons"] = reasons
+    return result
 
 
 def get_top_stocks(

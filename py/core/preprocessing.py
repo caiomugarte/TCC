@@ -211,7 +211,7 @@ def preprocess_profile(
 
     Steps:
     1. Aplica filtros de elegibilidade
-    2. Converte colunas string para numeric
+    2. Converte colunas string para numeric e preenche DY vazio com 0
     3. Winsoriza outliers setoriais
     4. Inverte métricas (quanto menor, melhor)
     5. Normaliza via z-score intra-setor
@@ -276,6 +276,11 @@ def preprocess_profile(
                 .str.replace(",", ".", regex=False)  # Troca vírgula por ponto
             )
             df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # 3b. DY vazio = 0: o Status Invest deixa o DY vazio para quem não pagou
+    # dividendos (o export não tem nenhum zero), então o vazio é o valor real.
+    if "DY" in df.columns:
+        df["DY"] = df["DY"].fillna(0.0)
 
     # 4. Seleciona apenas colunas numéricas
     metric_cols = [c for c in candidates if df[c].dtype.kind in "fi"]
