@@ -196,3 +196,33 @@ inválido (saída 4). `report` reconstrói os três arquivos byte a byte a parti
 do protocolo e dos lotes, sem o registro. Códigos de saída: 0 escrito, 1 um
 processo filho falhou, 2 protocolo ou argumentos inválidos, 3 o registro não
 tem o snapshot declarado, 4 integridade dos lotes, 6 pré-registro violado.
+
+## Custo do experimento medido
+
+Os números por lote estão em `multirun-convergence-cost.json` e na tabela de
+custo do `.md`, copiados dos arquivos de custo: 24,22 CPU-horas medidas nos 10
+lotes (11,64 nos 5 de `arrojado-anchor`, 12,58 nos 5 de `premium-2026-11-02`),
+com `jobs` 5 numa AMD Ryzen 5 7600X (6 núcleos / 12 threads). O que os arquivos
+de custo não mostram:
+
+- **A execução teve duas invocações.** A primeira começou em 2026-11-03 às
+  15:02 (-03) e gravou os 5 lotes de `arrojado-anchor` entre 17:27 e 17:32
+  (8.984,8 s do primeiro início ao último fim). Os 5 processos de
+  `premium-2026-11-02` dela rodaram cerca de 1h20 e foram interrompidos de
+  propósito para reiniciar a máquina, sem gravar nada. O mesmo comando,
+  retomado em 2026-11-04 às 00:53 (-03), pulou os 5 lotes válidos, gravou os 5
+  de `premium-2026-11-02` e saiu com 0 por volta de 03:30 (9.416,4 s).
+- **O tempo de parede do relatório cobre só a segunda invocação.**
+  `run-summary.json` é escrito pela invocação que iniciou filhos, então os
+  9.416,4 s do relatório são só os lotes de `premium-2026-11-02`. Somando as
+  duas janelas que gravaram lotes, o experimento levou 18.401,2 s (cerca de
+  5,1 h) de parede, fora a parte descartada.
+- **Computação descartada, fora das 24,22 CPU-horas:** cerca de 1h20 x 5
+  processos (por volta de 6,7 horas-processo) da primeira tentativa de
+  `premium-2026-11-02`. Não foi medida; o custo real do experimento, contando
+  a interrupção, ficou perto de 31 CPU-horas.
+- **O kernel mudou na reinicialização** (7.0.0-38-generic nos lotes de
+  `arrojado-anchor`, 7.0.0-42-generic nos de `premium-2026-11-02`), por isso o
+  relatório lista dois fingerprints de máquina para o mesmo processador. Python
+  (3.14.4), numpy (2.5.4) e pandas (3.0.6) são os mesmos nos 10 arquivos de
+  custo (`machine.libraries`), então os lotes vêm do mesmo build.
