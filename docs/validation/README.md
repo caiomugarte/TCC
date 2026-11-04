@@ -140,7 +140,7 @@ da execução. As decisões estão em `.specs/STATE.md` (AD-022, AD-023 e AD-024
 | `multirun-convergence/lots/run-summary.json` | o tempo de parede do experimento e `jobs` |
 | `multirun-convergence.json` | o relatório gerado: curvas, frequências, giro, folga de ranking, zona e as recomendações |
 | `multirun-convergence-cost.json` | o custo por lote, copiado dos arquivos de custo |
-| `multirun-convergence.md` | o mesmo relatório em texto |
+| `multirun-convergence.md` | o mesmo relatório em texto (a frase da linha 57 sobre a execução de produção está errada: ver a Errata no fim desta seção) |
 
 **Giro entre seeds** é a diferença entre os consensos de seeds diferentes no
 mesmo snapshot: `trocados = n - |C_i ∩ C_j|` para cada par de seeds. Não é o
@@ -250,7 +250,14 @@ para o workspace a cada execução (`api/app/services/premium_executor.py:104`,
 que chama `status_invest_inputs.refresh_inputs`) e entrega esses arquivos aos
 dois seletores. No banco de desenvolvimento, a execução `9e22cc16` registra em
 `result_json.provenance.selector_sources` o sha256 `4323377c…` para ações
-(baixado em 2026-11-02T20:47:25Z) e `7c5fb662…` para FIIs. O experimento usa
+(baixado em 2026-11-02T20:47:25Z) e `7c5fb662…` para FIIs. Esse banco é a
+cópia local, não commitada, de `api/prumo-dev.db` no checkout principal: o
+`api/prumo-dev.db` commitado não tem a execução `9e22cc16`. Os valores
+completos lá registrados são, para ações, sha256
+`4323377c9204d5bdba8947e4b310c31e971bacfef9c3628c6c654c75679ce648`
+(`retrieved_at` 2026-11-02T20:47:25.048114Z) e, para FIIs, sha256
+`7c5fb66236d02ed83901fa45573038ae9ff0d9fa900aa01ab498b477a9586419`
+(`retrieved_at` 2026-11-02T20:47:29.649295Z). O experimento usa
 os CSVs congelados do snapshot: `690e9ae9…` (ações) e `549af15b…` (FIIs).
 Então o `production_run_match` falso nos dois seletores mede uma diferença de
 entrada, não o GA nem o critério de parada.
