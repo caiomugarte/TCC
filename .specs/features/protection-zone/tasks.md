@@ -202,11 +202,13 @@ T15 → T16 → T17
 
 #### T3: `select_with_fallback` and the class record
 
+**Status**: Complete
+
 **What**: Add the HHI fallback wrapper and the JSON-ready class record builder.
 **Where**: `py/core/protection_zone.py` (modify)
 **Depends on**: T2
 **Reuses**: tolerance `1e-12` of `py/fii_selection.py:735`
-**Requirement**: PZ-14, PZ-15, PZ-28 (record fields produced by the core)
+**Requirement**: PZ-14, PZ-15, PZ-16 (zone within the limit is used), PZ-28 (record fields produced by the core)
 **Risk area**: provenance contract (defines the class record's field names)
 **Heavy**: no
 
@@ -217,10 +219,10 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] HHI rows of the Test Strategy pass, including the boundary at exactly `hhi_max + 1e-12`
-- [ ] The record has exactly the fields of design "Class record", with `replaced` as `[{"out", "in"}]`, sorted lists, `consensus_tickers` and `consensus_turnover`, and is `json.dumps(..., allow_nan=False)`-serializable
-- [ ] Gate check passes: Quick
-- [ ] Test count: at least 5 new tests
+- [x] HHI rows of the Test Strategy pass, including the boundary at exactly `hhi_max + 1e-12`
+- [x] The record has exactly the fields of design "Class record", with `replaced` as `[{"out", "in"}]`, sorted lists, `consensus_tickers` and `consensus_turnover`, and is `json.dumps(..., allow_nan=False)`-serializable
+- [x] Gate check passes: Quick
+- [x] Test count: at least 5 new tests
 
 **Tests**: unit
 **Gate**: quick

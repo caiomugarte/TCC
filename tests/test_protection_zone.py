@@ -2,6 +2,7 @@
 
 import contextlib
 import io
+import json
 import math
 from pathlib import Path
 import random
@@ -15,6 +16,7 @@ from core.protection_zone import (  # noqa: E402
     apply_protection_zone,
     base_company,
     rank_candidates,
+    select_with_fallback,
     validate_zone_inputs,
 )
 
@@ -388,6 +390,145 @@ class ZoneInvariantTests(unittest.TestCase):
             elif isinstance(node, ast.ImportFrom) and node.module:
                 imported.add(node.module.split(".")[0])
         self.assertFalse(imported & {"pandas", "numpy", "scripts", "convergence_analysis"}, imported)
+
+
+def _no_hhi_call(tickers):
+    raise AssertionError(f"hhi_of must not be called, got {tickers}")
+
+
+def _zone_select(incumbents, frequencies, n_assets, K, delta, *, hhi_of=_no_hhi_call, hhi_max=None):
+    return select_with_fallback(
+        incumbents,
+        frequencies,
+        {t: 1.0 for t in frequencies},
+        n_assets,
+        {"K": K, "delta": delta},
+        eligible=set(frequencies) | set(incumbents),
+        dedup_base_company=True,
+        hhi_of=hhi_of,
+        hhi_max=hhi_max,
+    )
+
+
+# Zone keeps GAMA3 (rank 3 <= K = 3) and fills ALFA3; the pure consensus is ALFA3 and BETA3.
+FALLBACK_FREQUENCIES = {"ALFA3": 0.9, "BETA3": 0.8, "GAMA3": 0.7, "DELT3": 0.6, "EPSI3": 0.1}
+
+
+class HhiFallbackTests(unittest.TestCase):
+    def test_zone_over_the_limit_falls_back_to_the_pure_consensus(self):  # PZ-14
+        hhi_of = lambda tickers: 0.5 if set(tickers) == {"ALFA3", "GAMA3"} else 0.2  # noqa: E731
+        selection, record = _zone_select(
+            ["GAMA3"], FALLBACK_FREQUENCIES, 2, 3, 0.11, hhi_of=hhi_of, hhi_max=0.3
+        )
+        self.assertEqual(selection.tickers, ("ALFA3", "BETA3"))
+        self.assertEqual(selection.reasons, {"ALFA3": "novo", "BETA3": "novo"})
+        self.assertEqual(selection.departures, {"GAMA3": "saiu: fora do top K"})
+        self.assertEqual((record["status"], record["buffer_fallback"]), ("fallback_hhi", "hhi"))
+
+    def test_zone_within_the_limit_is_used_when_the_consensus_is_over_it(self):  # PZ-14, N4
+        hhi_of = lambda tickers: 0.2 if set(tickers) == {"ALFA3", "GAMA3"} else 0.5  # noqa: E731
+        selection, record = _zone_select(
+            ["GAMA3"], FALLBACK_FREQUENCIES, 2, 3, 0.11, hhi_of=hhi_of, hhi_max=0.3
+        )
+        self.assertEqual(selection.tickers, ("ALFA3", "GAMA3"))
+        self.assertEqual(selection.reasons, {"ALFA3": "novo", "GAMA3": "mantido"})
+        self.assertEqual(selection.departures, {})
+        self.assertEqual((record["status"], record["buffer_fallback"]), ("applied", None))
+        self.assertEqual(record["consensus_tickers"], ["ALFA3", "BETA3"])
+        self.assertEqual(record["consensus_turnover"], 2)
+
+    def test_hhi_limit_is_exceeded_only_beyond_the_tolerance(self):  # PZ-14 boundary
+        def at(value):
+            return lambda tickers: value
+
+        _, at_limit = _zone_select(
+            ["GAMA3"], FALLBACK_FREQUENCIES, 2, 3, 0.11, hhi_of=at(0.3 + 1e-12), hhi_max=0.3
+        )
+        self.assertEqual(at_limit["status"], "applied")
+        _, beyond = _zone_select(
+            ["GAMA3"], FALLBACK_FREQUENCIES, 2, 3, 0.11, hhi_of=at(0.3 + 2e-12), hhi_max=0.3
+        )
+        self.assertEqual(beyond["status"], "fallback_hhi")
+
+    def test_without_an_hhi_limit_the_zone_never_falls_back(self):  # PZ-15
+        selection, record = _zone_select(["GAMA3"], FALLBACK_FREQUENCIES, 2, 3, 0.11, hhi_max=None)
+        self.assertEqual(selection.tickers, ("ALFA3", "GAMA3"))
+        self.assertIsNone(record["buffer_fallback"])
+        self.assertEqual(record["status"], "applied")
+
+    def test_no_incumbents_gives_the_consensus_without_checking_hhi(self):  # PZ-10, A-14
+        selection, record = _zone_select([], FALLBACK_FREQUENCIES, 2, 3, 0.11, hhi_max=0.3)
+        self.assertEqual(selection.tickers, ("ALFA3", "BETA3"))
+        self.assertEqual(record["status"], "no_incumbents")
+        self.assertIsNone(record["buffer_fallback"])
+
+    def test_applied_record_has_the_class_record_fields_and_serializes(self):  # PZ-28
+        frequencies = {"QUIN3": 0.6, "CARL3": 0.21, "PAUL3": 0.1}
+        _, record = _zone_select(["QUIN3", "PAUL3"], frequencies, 2, 3, 0.11)
+        self.assertEqual(
+            record,
+            {
+                "status": "applied",
+                "K": 3,
+                "k_offset": 1,
+                "delta": 0.11,
+                "n_assets": 2,
+                "incumbents": ["PAUL3", "QUIN3"],
+                "kept": ["QUIN3"],
+                "replaced": [{"out": "PAUL3", "in": "CARL3"}],
+                "entered": ["CARL3"],
+                "departures": {"PAUL3": "saiu: substituído por CARL3"},
+                "turnover": 1,
+                "exits": 1,
+                "buffer_fallback": None,
+                "consensus_tickers": ["CARL3", "QUIN3"],
+                "consensus_turnover": 1,
+            },
+        )
+        json.dumps(record, allow_nan=False)
+
+    def test_fallback_record_drops_the_zone_swaps(self):  # PZ-14, PZ-28
+        frequencies = {"QUIN3": 0.6, "CARL3": 0.21, "PAUL3": 0.1}
+        _, record = _zone_select(
+            ["QUIN3", "PAUL3"], frequencies, 2, 3, 0.11,
+            hhi_of=lambda tickers: 0.5, hhi_max=0.3,
+        )
+        self.assertEqual(
+            record,
+            {
+                "status": "fallback_hhi",
+                "K": 3,
+                "k_offset": 1,
+                "delta": 0.11,
+                "n_assets": 2,
+                "incumbents": ["PAUL3", "QUIN3"],
+                "kept": ["QUIN3"],
+                "replaced": [],
+                "entered": ["CARL3"],
+                "departures": {"PAUL3": "saiu: fora do top K"},
+                "turnover": 1,
+                "exits": 1,
+                "buffer_fallback": "hhi",
+                "consensus_tickers": ["CARL3", "QUIN3"],
+                "consensus_turnover": 1,
+            },
+        )
+        json.dumps(record, allow_nan=False)
+
+    def test_record_keeps_swap_order_and_sorts_the_ticker_lists(self):  # PZ-28
+        frequencies = {
+            "ALFA3": 0.9, "BETA3": 0.8, "GAMA3": 0.6, "DELT3": 0.4, "EPSI3": 0.25, "ZETA3": 0.2,
+        }
+        _, record = _zone_select(["GAMA3", "DELT3", "ZETA3"], frequencies, 3, 10, 0.1)
+        self.assertEqual(
+            record["replaced"],
+            [{"out": "ZETA3", "in": "ALFA3"}, {"out": "DELT3", "in": "BETA3"}],
+        )
+        self.assertEqual(record["incumbents"], ["DELT3", "GAMA3", "ZETA3"])
+        self.assertEqual(record["kept"], ["GAMA3"])
+        self.assertEqual(record["entered"], ["ALFA3", "BETA3"])
+        self.assertEqual(record["consensus_tickers"], ["ALFA3", "BETA3", "GAMA3"])
+        self.assertEqual(record["consensus_turnover"], 2)
 
 
 if __name__ == "__main__":

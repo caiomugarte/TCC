@@ -5,7 +5,7 @@ they count the GA runs. The stock and FII selectors call this module, and the
 API only reads the incumbents and records the provenance. No pandas here.
 """
 
-from collections.abc import Collection, Iterable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 import math
 import numbers
@@ -193,3 +193,61 @@ def apply_protection_zone(
         turnover=len(entered),
         exits=len(departures),
     )
+
+
+def select_with_fallback(
+    incumbents: Iterable[str],
+    frequencies: Mapping[str, float],
+    scores: Mapping[str, float],
+    n_assets: int,
+    zone: Mapping[str, object],
+    *,
+    eligible: Collection[str],
+    dedup_base_company: bool,
+    hhi_of: Callable[[Sequence[str]], float],
+    hhi_max: float | None,
+) -> tuple[ZoneSelection, dict[str, object]]:
+    """Run the zone for one class and return the portfolio used with its class record.
+
+    The zone falls back to the pure consensus (K = 0) only when ``hhi_max`` is set
+    and the zone portfolio's HHI exceeds it by more than the tolerance (PZ-14).
+    The record has the fields of the design's class record; the adapter writes
+    the reduced record for a class it does not send to a selector.
+    """
+
+    incumbent_list = sorted({ticker.strip().upper() for ticker in incumbents})
+    K = zone["K"]
+    delta = zone["delta"]
+    zone_selection = apply_protection_zone(
+        incumbent_list, frequencies, scores, n_assets, K, delta,
+        eligible=eligible, dedup_base_company=dedup_base_company,
+    )
+    consensus = apply_protection_zone(
+        incumbent_list, frequencies, scores, n_assets, 0, delta,
+        eligible=eligible, dedup_base_company=dedup_base_company,
+    )
+
+    selection, status, buffer_fallback = zone_selection, "applied", None
+    if not incumbent_list:
+        status = "no_incumbents"
+    elif hhi_max is not None and hhi_of(zone_selection.tickers) > hhi_max + TOLERANCE:
+        selection, status, buffer_fallback = consensus, "fallback_hhi", "hhi"
+
+    record: dict[str, object] = {
+        "status": status,
+        "K": int(K),
+        "k_offset": int(K) - int(n_assets),
+        "delta": float(delta),
+        "n_assets": int(n_assets),
+        "incumbents": incumbent_list,
+        "kept": list(selection.kept),
+        "replaced": [{"out": out, "in": into} for out, into in selection.replaced],
+        "entered": list(selection.entered),
+        "departures": dict(sorted(selection.departures.items())),
+        "turnover": selection.turnover,
+        "exits": selection.exits,
+        "buffer_fallback": buffer_fallback,
+        "consensus_tickers": sorted(consensus.tickers),
+        "consensus_turnover": consensus.turnover,
+    }
+    return selection, record

@@ -92,7 +92,7 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 
 1. PZ-14: IF a sector HHI limit is configured and the zone portfolio's `hhi_sector` exceeds `hhi_max + 1e-12` THEN the system SHALL use the pure consensus for that class and record `buffer_fallback: "hhi"`, with reasons recomputed against the consensus (`mantido` for incumbents in it, `novo` otherwise, departures as PZ-06/PZ-07). <!-- unwanted-behavior -->
 2. PZ-15: WHERE no HHI limit is configured the system SHALL never fall back and SHALL record `buffer_fallback: null`. <!-- optional-feature -->
-3. PZ-16: IF the pure consensus itself exceeds the limit THEN the system SHALL behave as today: the FII selector raises `FiiSelectionError`, and the adapter raises `PremiumOptimizationError` with code `infeasible_constraints` for stocks. <!-- unwanted-behavior -->
+3. PZ-16: IF the zone falls back (PZ-14) AND the pure consensus also exceeds `hhi_max + 1e-12` THEN the system SHALL behave as today: the FII selector raises `FiiSelectionError`, and the adapter raises `PremiumOptimizationError` with code `infeasible_constraints` for stocks. IF the zone portfolio is within the limit THEN the system SHALL use it, even when the pure consensus exceeds the limit. <!-- unwanted-behavior -->
 
 **Independent Test**: selector tests with a two-sector fixture where the zone portfolio's HHI exceeds `hhi_max` and the consensus's does not.
 
@@ -214,9 +214,9 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-11 | P1: Zone selection function | Tasks T1 | Implemented |
 | PZ-12 | P1: Zone selection function | Tasks T2 | Implemented |
 | PZ-13 | P1: Zone selection function | Tasks T4 | In Tasks |
-| PZ-14 | P1: HHI fallback | Tasks T3, T5, T7 | In Tasks |
-| PZ-15 | P1: HHI fallback | Tasks T3 | In Tasks |
-| PZ-16 | P1: HHI fallback | Tasks T7, T12 | In Tasks |
+| PZ-14 | P1: HHI fallback | Tasks T3, T5, T7 | In Tasks (T3 done) |
+| PZ-15 | P1: HHI fallback | Tasks T3 | Implemented |
+| PZ-16 | P1: HHI fallback | Tasks T3, T8, T12 | In Tasks (T3 done) |
 | PZ-17 | P1: Selectors apply the zone | Tasks T5, T7 | In Tasks |
 | PZ-18 | P1: Selectors apply the zone | Tasks T5 | In Tasks |
 | PZ-19 | P1: Selectors apply the zone | Tasks T7 | In Tasks |
@@ -228,7 +228,7 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-25 | P1: Executor passes the incumbents | Tasks T11 | In Tasks |
 | PZ-26 | P1: Executor passes the incumbents | Tasks T11, T13 | In Tasks |
 | PZ-27 | P1: Executor passes the incumbents | Tasks T11 | In Tasks |
-| PZ-28 | P1: Provenance and reasons | Tasks T13, T14 | In Tasks |
+| PZ-28 | P1: Provenance and reasons | Tasks T3, T13, T14 | In Tasks (T3 done) |
 | PZ-29 | P1: Provenance and reasons | Tasks T13 | In Tasks |
 | PZ-30 | P1: Provenance and reasons | Tasks T12 | In Tasks |
 | PZ-31 | P1: Provenance and reasons | Tasks T13 | In Tasks |
