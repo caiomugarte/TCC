@@ -219,10 +219,51 @@ de custo não mostram:
   5,1 h) de parede, fora a parte descartada.
 - **Computação descartada, fora das 24,22 CPU-horas:** cerca de 1h20 x 5
   processos (por volta de 6,7 horas-processo) da primeira tentativa de
-  `premium-2026-11-02`. Não foi medida; o custo real do experimento, contando
-  a interrupção, ficou perto de 31 CPU-horas.
+  `premium-2026-11-02`. Não foi medida: o log da primeira invocação ficava em
+  `/tmp` e não sobreviveu à reinicialização, então nem o 1h20 (estimativa do
+  operador) nem o total de cerca de 31 citado antes têm registro. As duas
+  grandezas ficam separadas: 24,22 CPU-horas medidas nos lotes gravados e
+  cerca de 6,7 horas-processo estimadas na parte descartada. Horas-processo
+  não são CPU-horas medidas, então não se somam.
 - **O kernel mudou na reinicialização** (7.0.0-38-generic nos lotes de
   `arrojado-anchor`, 7.0.0-42-generic nos de `premium-2026-11-02`), por isso o
   relatório lista dois fingerprints de máquina para o mesmo processador. Python
   (3.14.4), numpy (2.5.4) e pandas (3.0.6) são os mesmos nos 10 arquivos de
   custo (`machine.libraries`), então os lotes vêm do mesmo build.
+
+## Errata: a execução de produção de 2026-11-02 não foi refeita
+
+O relatório gerado diz, em `docs/validation/multirun-convergence.md:57`
+(escrito por `scripts/convergence_analysis.py:1435-1436`): "O lote
+`premium-2026-11-02` com a seed 46641103 refaz a execução
+`9e22cc16-cfda-495e-a8c9-c0d202ef32b6` sem o critério adaptativo". Isso está
+errado. O `.md` não é corrigido à mão porque `report` o regenera byte a byte a
+partir de código congelado para a auditoria (nada em `scripts/` mudou depois de
+`9b3b375`, o commit de código dos lotes).
+
+O lote reusa o código, o perfil, a política, a seed e o snapshot de alocação
+da execução de produção, e o critério adaptativo não disparou nela (a
+estabilidade final, Jaccard 0,137 / CV 0,054 nas ações e 0,386 / 0,042 nos
+FIIs, nunca atingiu 0,75 / 0,02, então ela rodou as 150 execuções). O que
+difere são as entradas dos seletores. A produção baixa de novo o Status Invest
+para o workspace a cada execução (`api/app/services/premium_executor.py:104`,
+que chama `status_invest_inputs.refresh_inputs`) e entrega esses arquivos aos
+dois seletores. No banco de desenvolvimento, a execução `9e22cc16` registra em
+`result_json.provenance.selector_sources` o sha256 `4323377c…` para ações
+(baixado em 2026-11-02T20:47:25Z) e `7c5fb662…` para FIIs. O experimento usa
+os CSVs congelados do snapshot: `690e9ae9…` (ações) e `549af15b…` (FIIs).
+Então o `production_run_match` falso nos dois seletores mede uma diferença de
+entrada, não o GA nem o critério de parada.
+
+**Limitação.** Como cada execução Premium baixa as entradas de novo, o giro que
+o usuário vê na produção inclui também a deriva dos dados baixados dentro do
+mesmo snapshot, além do ruído do GA. Este experimento, com entradas
+congeladas, mede só o ruído do GA; a deriva de entrada não está medida. O #46
+precisa considerá-la ao dimensionar K e δ.
+
+**Achado fora do #9.** A proveniência da política da execução
+(`policy_json.provenance.source_snapshot_hashes.stock` e `.fii`) registra os hashes
+do snapshot (`690e9ae9…` e `549af15b…`), embora os seletores tenham rodado
+sobre o download novo (`4323377c…` e `7c5fb662…`). Quem lê a proveniência
+acredita que a execução usou o snapshot. Isso fica para uma issue separada; o
+#9 não muda código de produção.

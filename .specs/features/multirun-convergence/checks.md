@@ -4,7 +4,7 @@ Mutations: 4
 Build: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m py_compile scripts/multirun_convergence.py scripts/convergence_analysis.py tests/test_convergence_analysis.py tests/test_multirun_convergence.py`
 Plan: `.specs/features/multirun-convergence/plan.md`
 
-59 checks in 11 slices · 5 one-way doors · 0 open
+61 checks in 11 slices · 5 one-way doors · 0 open
 
 Test modules: `tests/test_convergence_analysis.py` (pure analysis on hand-built lots, offline) and
 `tests/test_multirun_convergence.py` (CLI, child runner and a fixture registry built from the
@@ -228,6 +228,12 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 **C59** - In every cell and prefix, `rank_gap[*].median_frequency_by_rank[r]` for r in n+1..window equals the median over seeds (middle of 3) of each seed's frequency at rank r, 0.0 for a seed with fewer than r ranks, and differs from the mean over seeds somewhere on the fixture (AC 22, Verifier V-5)
 Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k RankGapTests.test_median_frequency_by_rank`
 
+**C60** - `docs/validation/README.md` has, in the #9 section, an errata `## Errata: a execução de produção de 2026-11-02 não foi refeita` that quotes the generated `multirun-convergence.md:57` sentence ("refaz a execução … sem o critério adaptativo", still present at line 57) with its source `convergence_analysis.py:1435-1436`; gives the cause (`premium_executor.py:104` → `refresh_inputs`; production selector sources `4323377c…` / `7c5fb662…` against the snapshot's `690e9ae9…` / `549af15b…`); states the limitation that production turnover also includes input drift this experiment does not measure, which #46 must account for; and records the outside-#9 provenance finding (`policy_json.provenance.source_snapshot_hashes`) for a separate issue. `production_run_match` (C28) therefore measures an input difference, not a replay of the run (AC 28, Verifier V-1, V-8)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReadmeTests.test_production_run_errata`
+
+**C61** - The README cost section states that the first invocation's log was under `/tmp` and lost in the reboot, so neither the ~1h20 nor the ~31 figure has a record, keeps 24.22 measured CPU-hours and ~6.7 estimated process-hours apart, and no longer says "ficou perto de 31 CPU-horas" (AC 32, Verifier V-7)
+Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.test_convergence_analysis -k ReadmeTests.test_cost_units_apart`
+
 ## Coverage
 
 | Set (size) | Member -> proof | Unproven |
@@ -249,7 +255,7 @@ Proof: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest tests.tes
 | generated files (3) | `multirun-convergence.json` C9 · `multirun-convergence-cost.json` C32 · `multirun-convergence.md` C31 | - |
 | tooling review findings (12) | T-1 C38 · T-2 C39 · T-3 C40 · T-4 C41 · T-5 C42 · T-6 C43 · T-7 C44 · T-8 C45 · T-9 C46 · T-10 C47 · T-11 C48 C50 · T-12 C49 | - |
 | second tooling review findings (5) | U-1 C51 · U-2 C52 · U-3 C53 · U-4 C54 · U-5 C55 | - |
-| independent Verifier findings closed by a check, V-6 accepted in Handoff (4) | V-2 C56 · V-3 C57 · V-4 C58 · V-5 C59 | - |
+| independent Verifier findings closed by a check, V-6 accepted in Handoff (7) | V-1 C60 · V-2 C56 · V-3 C57 · V-4 C58 · V-5 C59 · V-7 C61 · V-8 C60 | - |
 | child exit-1 guards before writing (5) | run count C34 · candidate scores C48 · consensus C49 C55 · code provenance at start C44 · code provenance before writing C44 | - |
 | reuse fields of an existing lot (4) | `mode` C46 · `snapshot` C46 · `code_fingerprint` C46 · `experiment_fingerprint` C46 | - |
 | production code paths kept (4) | `py` C36 · `api/app` C36 · `scripts/benchmark_premium.py` C36 · `scripts/bench_measure.py` C36 | - |

@@ -287,6 +287,49 @@ class ReadmeTests(unittest.TestCase):
         ):
             self.assertIn(needle, section, needle)
 
+    def section(self):
+        text = (PROJECT_ROOT / "docs" / "validation" / "README.md").read_text(encoding="utf-8")
+        return text[text.index("# Convergência do multi-run"):]
+
+    def test_production_run_errata(self):
+        """C60: the README corrects the generated report's 'refaz a execução' (V-1, V-8)."""
+
+        section = self.section()
+        errata = section[section.index("## Errata: a execução de produção de 2026-11-02 não foi refeita"):]
+        for needle in (
+            "`docs/validation/multirun-convergence.md:57`",
+            "`scripts/convergence_analysis.py:1435-1436`",
+            "refaz a execução\n`9e22cc16-cfda-495e-a8c9-c0d202ef32b6` sem o critério adaptativo",
+            "`api/app/services/premium_executor.py:104`",
+            "`status_invest_inputs.refresh_inputs`",
+            "`result_json.provenance.selector_sources`",
+            "`4323377c…`",
+            "`7c5fb662…`",
+            "`690e9ae9…`",
+            "`549af15b…`",
+            "**Limitação.**",
+            "deriva dos dados baixados",
+            "O #46\nprecisa considerá-la",
+            "`policy_json.provenance.source_snapshot_hashes.stock`",
+            "issue separada",
+        ):
+            self.assertIn(needle, errata, needle)
+        generated = (PROJECT_ROOT / "docs" / "validation" / "multirun-convergence.md").read_text(encoding="utf-8")
+        self.assertIn("refaz a execução `9e22cc16-cfda-495e-a8c9-c0d202ef32b6` sem o critério adaptativo", generated.splitlines()[56])
+
+    def test_cost_units_apart(self):
+        """C61: the lost first log is stated and process-hours are not added to CPU-hours (V-7)."""
+
+        section = self.section()
+        cost = section[section.index("## Custo do experimento medido"):section.index("## Errata")]
+        for needle in (
+            "o log da primeira invocação ficava em\n  `/tmp` e não sobreviveu à reinicialização",
+            "nem o 1h20 (estimativa do\n  operador) nem o total de cerca de 31 citado antes têm registro",
+            "Horas-processo\n  não são CPU-horas medidas, então não se somam.",
+        ):
+            self.assertIn(needle, cost, needle)
+        self.assertNotIn("ficou perto de 31 CPU-horas", cost)
+
 
 # --------------------------------------------------------------------------
 # S3 - metrics, curves, ranking, stop, integrity
