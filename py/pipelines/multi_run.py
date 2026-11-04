@@ -44,6 +44,7 @@ from core.preprocessing import (
 from core.scoring import build_scores
 from core.optimizer import derive_run_seed, optimize_portfolio
 from core.metrics import hhi_sector, jaccard_similarity, coefficient_of_variation
+from core.protection_zone import select_with_fallback
 from cleaner import to_float
 
 # Configura matplotlib para backend não-interativo (evita problemas com multiprocessing)
@@ -189,6 +190,8 @@ def build_consensus_portfolio(
     df_ranked: pd.DataFrame,
     profile: Optional[str] = None,
     selection_config: Optional[Mapping[str, object]] = None,
+    *,
+    incumbents: Optional[Sequence[str]] = None,
 ) -> pd.DataFrame:
     """
     Constrói carteira consenso baseada na frequência de aparição.
@@ -201,6 +204,9 @@ def build_consensus_portfolio(
         DataFrame com dados ranqueados.
     profile : str
         Perfil do investidor.
+    incumbents : Sequence[str], optional
+        Tickers of the previous Premium portfolio. With a ``protection_zone`` in
+        ``selection_config`` they apply the AD-022 zone (issue #46).
 
     Returns
     -------
@@ -274,6 +280,27 @@ def build_consensus_portfolio(
                 print(f"      • {skipped} (freq: {freq/len(results):.1%}, score: {score:.3f}) "
                       f"→ já tem {kept} da mesma empresa")
 
+    # Protection zone (AD-022): applied only with incumbents and a configured zone.
+    zone_record = None
+    zone = selection_config.get("protection_zone") if selection_config is not None else None
+    if incumbents and zone is not None:
+        filters = selection_config.get("liquidity_and_size_filters") or {}
+        hhi_max = filters.get("hhi_max")
+        scores = {ticker: score for ticker, _, score in ticker_data}
+        frequencies = {ticker: count / len(results) for ticker, count in ticker_counts.items()}
+        selection, zone_record = select_with_fallback(
+            incumbents,
+            frequencies,
+            scores,
+            n_assets,
+            zone,
+            eligible=set(df_ranked["TICKER"]),
+            dedup_base_company=True,
+            hhi_of=lambda tickers: hhi_sector(df_ranked[df_ranked["TICKER"].isin(list(tickers))]),
+            hhi_max=None if hhi_max is None else float(hhi_max),
+        )
+        consensus_tickers = list(selection.tickers)
+
     # Constrói DataFrame da carteira consenso
     consensus_portfolio = df_ranked[
         df_ranked["TICKER"].isin(consensus_tickers)
@@ -291,6 +318,8 @@ def build_consensus_portfolio(
     consensus_portfolio.attrs["hhi"] = hhi
     consensus_portfolio.attrs["avg_score"] = avg_score
     consensus_portfolio.attrs["method"] = "consensus_frequency"
+    if zone_record is not None:
+        consensus_portfolio.attrs["protection_zone"] = zone_record
 
     return consensus_portfolio.sort_values("FREQUENCY", ascending=False)
 

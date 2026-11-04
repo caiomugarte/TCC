@@ -265,6 +265,8 @@ T15 → T16 → T17
 
 #### T5: Stock consensus applies the zone
 
+**Status**: Complete
+
 **What**: Add the keyword-only `incumbents` to `build_consensus_portfolio` and the zone branch after the pure consensus.
 **Where**: `py/pipelines/multi_run.py` (modify `build_consensus_portfolio` only)
 **Depends on**: T3
@@ -280,11 +282,11 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] With `incumbents` omitted, `None` or `[]`, the frame equals the `76a6d70` body's frame (`assert_frame_equal` + equal `attrs`)
-- [ ] With incumbents and a zone config: rows are the zone tickers, `attrs["protection_zone"]` holds the record, sort by `FREQUENCY` desc
-- [ ] HHI fallback from `selection_config["liquidity_and_size_filters"]["hhi_max"]` covered
-- [ ] Gate check passes: Selector
-- [ ] Test count: at least 5 new tests in `tests/test_protection_zone_selectors.py`
+- [x] With `incumbents` omitted, `None` or `[]`, the frame equals the `76a6d70` body's frame (`assert_frame_equal` + equal `attrs`)
+- [x] With incumbents and a zone config: rows are the zone tickers, `attrs["protection_zone"]` holds the record, sort by `FREQUENCY` desc
+- [x] HHI fallback from `selection_config["liquidity_and_size_filters"]["hhi_max"]` covered
+- [x] Gate check passes: Selector
+- [x] Test count: at least 5 new tests in `tests/test_protection_zone_selectors.py` (8 tests, all pass)
 
 **Tests**: unit
 **Gate**: selector
