@@ -16,6 +16,7 @@ from app.adapters.premium_optimization import (
 from app.services.premium_policy import resolve_recommendation_policy
 from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
 from core.allocation import DailyReturn
+from core.protection_zone import select_with_fallback
 from fii_selection import FiiSelectionError, FiiUniverseInfeasibleError
 
 
@@ -678,6 +679,15 @@ def recording_engine(calls, key, tickers, extra=None):
     def engine(**kwargs):
         calls[key] = kwargs
         result = selector_result(tickers)
+        if kwargs.get("incumbents"):
+            # A real selector always returns its class record with incumbents (PZ-20).
+            result["protection_zone"] = {
+                "status": "applied",
+                "incumbents": list(kwargs["incumbents"]),
+                "kept": [],
+                "entered": [],
+                "replaced": [],
+            }
         result.update(extra or {})
         return result
 
@@ -815,6 +825,175 @@ class ProtectionZoneForwardingTests(unittest.TestCase):
         )
         self.assertEqual([item["ticker"] for item in result["stocks"]], ["AAA3", "BBB3"])
         self.assertEqual(calls["stocks"]["incumbents"], ["AAA3"])
+
+
+def zone_engine(incumbents, frequencies, zone, *, hhi_of=None, hhi_max=None, calls=None, key=None):
+    """Fake selector whose zone output comes from the real core function."""
+
+    def engine(**kwargs):
+        if calls is not None:
+            calls[key] = kwargs
+        selection, record = select_with_fallback(
+            kwargs.get("incumbents", incumbents),
+            frequencies,
+            {ticker: 0.5 for ticker in frequencies},
+            2,
+            zone,
+            eligible=set(frequencies),
+            dedup_base_company=False,
+            hhi_of=hhi_of or (lambda _tickers: 0.0),
+            hhi_max=hhi_max,
+        )
+        result = selector_result(list(selection.tickers))
+        if kwargs.get("incumbents"):
+            result["protection_zone"] = record
+        return result
+
+    return engine
+
+
+STOCK_FREQUENCIES = {"DDD3": 0.9, "AAA3": 0.8, "CCC3": 0.5, "EEE3": 0.1}
+FII_FREQUENCIES = {"BBB11": 0.9, "AAA11": 0.6, "CCC11": 0.2}
+
+
+def reasons_by_ticker(constituents):
+    return {item["ticker"]: item["reasons"] for item in constituents}
+
+
+class ProtectionZoneProvenanceTests(unittest.TestCase):
+    """PZ-26, PZ-28, PZ-29, PZ-31: the run says what it kept and why."""
+
+    def run_zone(self, incumbents, *, weights=None, stock_engine=None, fii_engine=None, policy_value=None):
+        kwargs = {} if incumbents is None else {"incumbents": incumbents}
+        return run_with(
+            zone_policy() if policy_value is None else policy_value,
+            stock_engine=stock_engine or zone_engine([], STOCK_FREQUENCIES, STOCK_ZONE),
+            fii_engine=fii_engine or zone_engine([], FII_FREQUENCIES, FII_ZONE),
+            weights=weights,
+            **kwargs,
+        )
+
+    def test_applied_records_the_core_record_and_appends_reasons(self):
+        result = self.run_zone(
+            {"run_id": "run-1", "stocks": ["AAA3", "CCC3"], "fiis": ["AAA11"]}
+        )
+        zone = result["provenance"]["protection_zone"]
+        self.assertEqual(zone["incumbent_run_id"], "run-1")
+        stocks = zone["stocks"]
+        self.assertEqual(stocks["status"], "applied")
+        self.assertEqual(
+            (stocks["K"], stocks["k_offset"], stocks["delta"], stocks["n_assets"]), (8, 6, 0.11, 2)
+        )
+        self.assertEqual(stocks["incumbents"], ["AAA3", "CCC3"])
+        self.assertEqual(stocks["kept"], ["AAA3"])
+        self.assertEqual(stocks["replaced"], [{"out": "CCC3", "in": "DDD3"}])
+        self.assertEqual(stocks["entered"], ["DDD3"])
+        self.assertEqual(stocks["departures"], {"CCC3": "saiu: substituído por DDD3"})
+        self.assertEqual((stocks["turnover"], stocks["exits"]), (1, 1))
+        self.assertIsNone(stocks["buffer_fallback"])
+        self.assertEqual(stocks["consensus_tickers"], ["AAA3", "DDD3"])
+        self.assertEqual(stocks["consensus_turnover"], 1)
+        self.assertEqual(
+            reasons_by_ticker(result["stocks"]),
+            {"DDD3": ["substituiu CCC3"], "AAA3": ["mantido"]},
+        )
+        fiis = zone["fiis"]
+        self.assertEqual(fiis["status"], "applied")
+        self.assertEqual((fiis["K"], fiis["k_offset"]), (5, 3))
+        self.assertEqual(fiis["kept"], ["AAA11"])
+        self.assertEqual(fiis["entered"], ["BBB11"])
+        self.assertEqual(
+            reasons_by_ticker(result["fiis"]), {"BBB11": ["novo"], "AAA11": ["mantido"]}
+        )
+
+    def test_hhi_fallback_is_recorded_with_reasons_against_the_consensus(self):
+        frequencies = {"DDD3": 0.9, "AAA3": 0.8, "CCC3": 0.75}
+        result = self.run_zone(
+            {"run_id": "run-1", "stocks": ["CCC3"], "fiis": ["AAA11"]},
+            stock_engine=zone_engine(
+                [], frequencies, STOCK_ZONE,
+                hhi_of=lambda tickers: 1.0 if "CCC3" in tickers else 0.1,
+                hhi_max=0.25,
+            ),
+        )
+        stocks = result["provenance"]["protection_zone"]["stocks"]
+        self.assertEqual(stocks["status"], "fallback_hhi")
+        self.assertEqual(stocks["buffer_fallback"], "hhi")
+        self.assertEqual(stocks["departures"], {"CCC3": "saiu: fora do top K"})
+        self.assertEqual(
+            reasons_by_ticker(result["stocks"]), {"DDD3": ["novo"], "AAA3": ["novo"]}
+        )
+
+    def test_class_with_an_empty_incumbent_list_records_no_incumbents(self):
+        result = self.run_zone({"run_id": "run-1", "stocks": ["AAA3"], "fiis": []})
+        fiis = result["provenance"]["protection_zone"]["fiis"]
+        self.assertEqual(
+            fiis,
+            {"status": "no_incumbents", "K": 5, "k_offset": 3, "delta": 0.11, "n_assets": 2},
+        )
+        self.assertEqual(reasons_by_ticker(result["fiis"]), {"BBB11": [], "AAA11": []})
+
+    def test_first_run_records_no_incumbents_and_keeps_reasons_unchanged(self):
+        result = self.run_zone(None)
+        zone = result["provenance"]["protection_zone"]
+        self.assertIsNone(zone["incumbent_run_id"])
+        self.assertEqual(
+            zone["stocks"],
+            {"status": "no_incumbents", "K": 8, "k_offset": 6, "delta": 0.11, "n_assets": 2},
+        )
+        self.assertEqual(zone["fiis"]["status"], "no_incumbents")
+        for constituents in (result["stocks"], result["fiis"]):
+            self.assertTrue(all(item["reasons"] == [] for item in constituents))
+
+    def test_unreadable_class_records_incumbents_unreadable_and_completes(self):
+        calls = {}
+        result = self.run_zone(
+            {"run_id": "run-1", "stocks": None, "fiis": ["AAA11"]},
+            stock_engine=zone_engine([], STOCK_FREQUENCIES, STOCK_ZONE, calls=calls, key="stocks"),
+        )
+        zone = result["provenance"]["protection_zone"]
+        self.assertEqual(zone["incumbent_run_id"], "run-1")
+        self.assertEqual(
+            zone["stocks"],
+            {"status": "incumbents_unreadable", "K": 8, "k_offset": 6, "delta": 0.11, "n_assets": 2},
+        )
+        self.assertNotIn("incumbents", calls["stocks"])
+        self.assertEqual([item["ticker"] for item in result["stocks"]], ["DDD3", "AAA3"])
+        self.assertTrue(all(item["reasons"] == [] for item in result["stocks"]))
+        self.assertEqual(zone["fiis"]["status"], "applied")
+
+    def test_class_with_zero_weight_records_class_not_selected(self):
+        weights = dict(FIXTURE_WEIGHTS, brazilian_stocks=0.0, fixed_income=0.6)
+        result = self.run_zone(
+            {"run_id": "run-1", "stocks": ["AAA3"], "fiis": ["AAA11"]},
+            weights=weights,
+            stock_engine=lambda **_kwargs: self.fail("stock selector must not run"),
+        )
+        zone = result["provenance"]["protection_zone"]
+        self.assertEqual(
+            zone["stocks"],
+            {"status": "class_not_selected", "K": 8, "k_offset": 6, "delta": 0.11, "n_assets": 2},
+        )
+        self.assertNotIn("turnover", zone["stocks"])
+        self.assertEqual(result["stocks"], [])
+
+    def test_policy_without_zone_has_no_protection_zone_provenance(self):
+        for label, policy_value in (("basic", resolved_policy("basic")), ("legacy", policy())):
+            with self.subTest(policy=label):
+                result = self.run_zone(
+                    {"run_id": "run-1", "stocks": ["AAA3"], "fiis": ["AAA11"]},
+                    policy_value=policy_value,
+                )
+                self.assertNotIn("protection_zone", result["provenance"])
+                self.assertTrue(all(item["reasons"] == [] for item in result["stocks"]))
+
+    def test_selector_ignoring_incumbents_fails_instead_of_recording_a_wrong_status(self):
+        with self.assertRaises(PremiumOptimizationError) as error:
+            self.run_zone(
+                {"run_id": "run-1", "stocks": ["AAA3"], "fiis": []},
+                stock_engine=lambda **_kwargs: selector_result(["AAA3", "BBB3"]),
+            )
+        self.assertEqual(error.exception.code, "engine_error")
 
 
 if __name__ == "__main__":

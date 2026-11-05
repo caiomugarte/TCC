@@ -520,12 +520,12 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Each status covered: `applied`, `fallback_hhi`, `no_incumbents`, `incumbents_unreadable`, `class_not_selected`
-- [ ] `incumbent_run_id` equals the passed run id, `null` without incumbents
-- [ ] Reasons: `mantido`/`novo`/`substituiu <t>` appended; unchanged when the class has no incumbents (A-14)
-- [ ] No `protection_zone` key in provenance when the policy declares none
-- [ ] Gate check passes: Full
-- [ ] Test count: at least 6 new tests
+- [x] Each status covered: `applied`, `fallback_hhi`, `no_incumbents`, `incumbents_unreadable`, `class_not_selected`
+- [x] `incumbent_run_id` equals the passed run id, `null` without incumbents
+- [x] Reasons: `mantido`/`novo`/`substituiu <t>` appended; unchanged when the class has no incumbents (A-14)
+- [x] No `protection_zone` key in provenance when the policy declares none
+- [x] Gate check passes: Full
+- [x] Test count: at least 6 new tests
 
 **Tests**: unit
 **Gate**: full
