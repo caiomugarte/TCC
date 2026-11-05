@@ -202,14 +202,31 @@
 - **Date**: 2026-11-03
 - **Status**: active
 
+### AD-026
+- **Decision**: Protection-zone contract for Premium (issue #46). Incumbents are the `stocks`/`fiis` tickers in `result_json` of the account's latest `completed` `premium` run (any profile revision or policy version, `created_at` desc then `id` desc, never the run itself), read by `PremiumExecutor` at execution time and passed as `incumbents={"run_id", "stocks", "fiis"}` only when such a run exists; an unreadable class gets no incumbents and status `incumbents_unreadable`, never a failed run. The zone values live on `SelectorPolicy.protection_zone` (`{"k_offset", "K", "delta"}`: stocks 6, FIIs 3, δ 0.11) for `premium-policy-v3` only; Basic omits the key and stays `basic-policy-v2` byte-identical. The rule is AD-022 run by one pure function in `py/core/protection_zone.py` after each selector's frequency count, with two production extensions: protection capped at the `n_assets` best-ranked when more incumbents qualify (`saiu: vagas reduzidas`), and turnover counted as entries (`exits` recorded apart). A zone portfolio above `hhi_max + 1e-12` falls back to the pure consensus (`buffer_fallback: "hhi"`). Each run records `provenance.protection_zone = {incumbent_run_id, stocks, fiis}` with per-class `status`, K, δ, kept, replaced, entered, departures, `turnover`, `exits`, `consensus_tickers` and `consensus_turnover`.
+- **Reason**: Issue #46 `## Decisões` (incumbent source, always-on rule, frequency metric, function in `py/core/`, HHI fallback, #9 values). Reading at execution time lets the single worker see a run that completed while the next one was queued; passing the keyword only when needed keeps every existing runner and engine signature valid; recording the pure consensus beside the zone lets one execution measure turnover with and without the zone (#9 phase 2).
+- **Trade-off**: The incumbent is the last recommendation, not what the user actually holds. K and δ were calibrated on lots that still contain NaN-score stocks (AD-025) and on two profiles above selector score 0.70, then applied to every profile. The version bump changes the derived GA seed, so a v3 run differs from a v2 run on the same inputs even without incumbents.
+- **Scope**: `py/core/protection_zone.py`, `py/pipelines/multi_run.py`, `py/fii_selection.py`, `api/app/services/premium_policy.py`, `api/app/services/premium_executor.py`, `api/app/repositories/recommendations.py`, `api/app/adapters/premium_optimization.py`, #47 (scheduled re-runs inherit this contract).
+- **Date**: 2026-11-04
+- **Status**: active - pending the orchestrator's spec review
+
 ## Handoff
 
-- **Feature**: p0-02-v0-corrected (Issue #7 / P0-02) - `.specs/features/p0-02-v0-corrected/`
-- **Phase / Task**: SPECIFY complete (29 requirements, `validate_spec.py` exit 0). Independent SPEC review: round 1 `CHANGES_REQUIRED blocking=6 nonblocking=15`, round 2 `CHANGES_REQUIRED blocking=2 nonblocking=7`; the two residual blocking findings (F1 reference↔driver closure, F2 verdict-field/`score_recompute` scope) were closed by the orchestrator in a third pass which added VC-29 and the bounded divergence table. DESIGN/TASKS not started.
-- **Completed**: `spec.md` (P1 corrected bundle + VC-01..VC-11, VC-25/VC-26/VC-29; P2 invalidation with the Verdict Attribution Rule + VC-12..VC-16/VC-24/VC-28; P3 note + 80-run replay + VC-17..VC-23/VC-27), falsifiable E1-E4 expectation table over 80 runs (seeds 42-61), pinned base commit `181453f`, canonical (old_bytes,new_bytes) transform, and AD-007..AD-015 in this file.
-- **In-progress**: none
-- **Next step**: human approves the SPEC (TLC checkpoint), then DESIGN (bundle layout + tool contracts + test design) and TASKS, then EXECUTE. Implementation order that keeps the gates honest: `py/ga.py` hunk + byte-equality test, then bundle code/data copy + manifest, then generators + `reference/`, then `verify_artifacts.py` + property enumeration, then `status.json` + marking tests, then the note, then the opt-in 80-run replay (~75 min measured).
-- **Blockers**: SPEC awaits human approval. Environment constraint unchanged: numpy/pandas exist only in the ephemeral `/tmp/opencode/tcc-venv` (no hypothesis, no pytest); stdlib `unittest` is the suite runner.
-- **Previous handoff**: snapshot-registry-lifecycle (Issue #16 / P0-09) reached SPEC complete with review round 3 closed and IMPLEMENT pending on branch `t3/issue-16` (`cf4e8ad`, `b736875`); its artifacts remain at `.specs/features/snapshot-registry-lifecycle/`.
-- **Uncommitted files**: the SPEC-stage commit carries `spec.md` + this file.
-- **Branch**: t3/issue-7-auto-route
+- **Feature**: protection-zone (issue #46) - `.specs/features/protection-zone/`
+- **Phase / Task**: EXECUTE. Batches b1 (Phases 1-2, T1-T8) and b2 (Phase 3 T9-T14, Phase 4 T15-T16) done. T17 DEFERRED (pending data). Next: the orchestrator's Verifier over the whole feature.
+- **Completed**: T1 `c48e396`, T2 `1ef5dc2`, T3 `dcfc43a`, T4 `d34a3b9`, T5 `bb5dd63`, T6 `9c472bf`, T7 `b70db07`, T8 `0f617b2`, T9 `07f4c44`, T10 `0f90187`, T11 `9ee9e00`, T12 `49a4e22`, T13 `234e148`, T14 `6d41885`, T15 `3ce82f1`, T16 `c633918`.
+- **Gates at `c633918`** (Build): compileall clean; root suite 535 OK (2 skipped); API suite 160 OK.
+- **In-progress** (file:line): none.
+- **Deferred**: T17 (October-to-November measurement). No published manifest with cutoff `>= 2026-11-01` exists (only `dev-2026-10-29` and `dev-2026-10-29-ibov`). Run `scripts/protection_zone_turnover.py measure --registry <snapshots> --manifest-id <november>` at a clean committed HEAD once a November snapshot is built, validated and published; commit the generated files unmodified and turn the README "pendente" entry into a link. Never write the numbers by hand. PZ-32 and PZ-35 stay "In Tasks" until then.
+- **Blockers**: none for the Verifier. Open question A-9 (K and δ calibrated on lots with NaN-score stocks) stays as decided in `## Decisões`.
+- **Uncommitted files**: none.
+- **Branch**: t3/issue-46 (PR base `develop`; merge commit, never squash, AD-023).
+- **Notes for the Verifier**:
+  - SPEC_DEVIATION in `py/core/protection_zone.py:116` (b1): ranking uses eligible picks only.
+  - Adapter decision (T13, not in the spec): a selector that receives incumbents and returns no `protection_zone` record, or a status other than `applied`/`fallback_hhi`, fails the run with `engine_error` (`api/app/adapters/premium_optimization.py` `_zone_record`). Recorded in design "Error Handling".
+  - `_selector_config` copies `protection_zone`; `ProtectionZoneForwardingTests` fail if it does not. `result["policy"]` uses `policy.to_dict()` only for the policy; the shared `_json_value` is unchanged (review N5).
+  - T14's second run uses `force=True` (review N7); without it `create_run` returns the cached first run and `assertNotEqual(second.id, first.id)` fails.
+  - Incumbents with `incumbents=None` for a class (unreadable) reach the adapter as `None`; empty list = `no_incumbents`.
+  - #9 tooling (`multirun_convergence.py`, `benchmark_premium.py`) now resolves `premium-policy-v3`: new or resumed lots are not comparable with the committed lots (review N8; design Risks, tasks Rollback).
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Root suite about 175 s; API suite about 75 s.
+- **Previous handoff**: p0-02-v0-corrected (issue #7) at SPECIFY complete awaiting human approval; its artifacts remain at `.specs/features/p0-02-v0-corrected/`.

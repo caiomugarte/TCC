@@ -24,6 +24,35 @@ def _close_session(session: Any) -> None:
         close()
 
 
+def _incumbent_tickers(result_json: object, key: str) -> list[str] | None:
+    """Tickers of one class of a completed run; None when the data is unreadable."""
+
+    if not isinstance(result_json, Mapping):
+        return None
+    entries = result_json.get(key)
+    if not isinstance(entries, list):
+        return None
+    tickers: list[str] = []
+    for entry in entries:
+        ticker = entry.get("ticker") if isinstance(entry, Mapping) else None
+        if not isinstance(ticker, str) or not ticker.strip():
+            return None
+        normalized = ticker.strip().upper()
+        if normalized not in tickers:
+            tickers.append(normalized)
+    return tickers
+
+
+def _declares_protection_zone(policy: object) -> bool:
+    if not isinstance(policy, Mapping):
+        return False
+    return any(
+        isinstance(policy.get(key), Mapping)
+        and policy[key].get("protection_zone") is not None
+        for key in ("stocks", "fiis")
+    )
+
+
 class PremiumExecutor:
     """Single-process bounded worker for the private Premium pilot."""
 
@@ -91,6 +120,7 @@ class PremiumExecutor:
             if profile is None:
                 raise RuntimeError("profile for Premium run is no longer available")
             capital = float(profile.investable_capital_brl)
+            incumbents = self._incumbents(repository, run)
         except Exception as exc:
             _close_session(session)
             self._fail(run_id, self._failure_code(exc), exc)
@@ -104,12 +134,15 @@ class PremiumExecutor:
             selector_inputs = self.status_invest_inputs_loader(workspace)
             if not isinstance(selector_inputs, StatusInvestInputs):
                 raise StatusInvestInputError("Status Invest inputs were not validated")
+            runner_kwargs: dict[str, Any] = {"selector_inputs": selector_inputs}
+            if incumbents is not None:
+                runner_kwargs["incumbents"] = incumbents
             result = self.optimization_runner(
                 policy,
                 manifest,
                 workspace,
                 capital,
-                selector_inputs=selector_inputs,
+                **runner_kwargs,
             )
             if not isinstance(result, Mapping):
                 raise RuntimeError("Premium optimization returned an invalid result")
@@ -131,6 +164,25 @@ class PremiumExecutor:
             return
         finally:
             _close_session(session)
+
+    @staticmethod
+    def _incumbents(
+        repository: RecommendationRepository, run: Any
+    ) -> dict[str, Any] | None:
+        """The account's previous Premium portfolio, read at execution time (A-7)."""
+
+        if run.plan != "premium" or not _declares_protection_zone(run.policy_json):
+            return None
+        previous = repository.get_latest_completed_for_account(
+            run.account_id, plan="premium", exclude_run_id=run.id
+        )
+        if previous is None:
+            return None
+        return {
+            "run_id": previous.id,
+            "stocks": _incumbent_tickers(previous.result_json, "stocks"),
+            "fiis": _incumbent_tickers(previous.result_json, "fiis"),
+        }
 
     def recover_stale(self) -> int:
         session = _open_session(self.session_factory)

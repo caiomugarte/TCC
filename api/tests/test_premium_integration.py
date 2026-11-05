@@ -15,6 +15,7 @@ from app.services.premium_recommendation import PremiumRecommendationService
 from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
 from app.repositories.recommendations import RecommendationRepository
 from app.schemas.recommendation import PremiumRecommendationRequest
+from core.protection_zone import select_with_fallback
 
 
 class Manifest:
@@ -255,6 +256,169 @@ class PremiumIntegrationTests(unittest.TestCase):
         )
         self.assertNotEqual(forced.id, first.id)
         self.assertEqual(executor.submitted, [first.id, forced.id])
+
+
+def zone_selector(prefix, frequencies_for):
+    """Fake selector: applies the real core zone when it receives incumbents."""
+
+    def engine(**kwargs):
+        config = kwargs.get("config", kwargs.get("selection_config"))
+        n_assets = int(config["n_assets"])
+        frequencies = frequencies_for(prefix, n_assets, bool(kwargs.get("incumbents")))
+        selection, record = select_with_fallback(
+            kwargs.get("incumbents", []),
+            frequencies,
+            {ticker: 0.5 for ticker in frequencies},
+            n_assets,
+            config.get("protection_zone") or {"K": 0, "delta": 0.0},
+            eligible=set(frequencies),
+            dedup_base_company=False,
+            hhi_of=lambda _tickers: 0.0,
+            hhi_max=None,
+        )
+        tickers = list(selection.tickers)
+        result = {
+            "selected_tickers": tickers,
+            "sleeve_weights": {ticker: 1 / len(tickers) for ticker in tickers},
+        }
+        if kwargs.get("incumbents"):
+            result["protection_zone"] = record
+        return result
+
+    return engine
+
+
+class ProtectionZoneIntegrationTests(unittest.TestCase):
+    """PZ-24, PZ-28: a second v3 Premium run treats the first as incumbent."""
+
+    tearDown = PremiumIntegrationTests.tearDown
+
+    def setUp(self):
+        PremiumIntegrationTests.setUp(self)
+        self.profile.dimensions = {
+            "apetite": 0.5,
+            "capacidade": 0.5,
+            "liquidez": 0.5,
+            "conhecimento": 0.5,
+        }
+        self.profile.restrictions_json = ["nenhuma"]
+        self.session.commit()
+
+    @staticmethod
+    def frequencies_for(prefix, n_assets, second_snapshot):
+        # n_assets + 3 candidates; the second snapshot reverses the ranking.
+        tickers = [f"{prefix}{index:02d}" for index in range(n_assets + 3)]
+        if second_snapshot:
+            tickers.reverse()
+        return {ticker: round(0.95 - 0.05 * index, 2) for index, ticker in enumerate(tickers)}
+
+    def zone_runner(self, policy_value, manifest, workspace, capital, *, selector_inputs=None, incumbents=None):
+        kwargs = {} if incumbents is None else {"incumbents": incumbents}
+        return run_premium_optimization(
+            policy_value,
+            manifest,
+            workspace,
+            capital,
+            selector_inputs=selector_inputs or _default_selector_inputs(),
+            snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+            allocation_engine=lambda *_args, **_kwargs: {
+                "weights": {
+                    "brazilian_stocks": 0.4,
+                    "fiis": 0.2,
+                    "international_equity": 0.1,
+                    "fixed_income": 0.2,
+                    "crypto": 0.1,
+                }
+            },
+            stock_engine=zone_selector("S", self.frequencies_for),
+            fii_engine=zone_selector("F", self.frequencies_for),
+            **kwargs,
+        )
+
+    def services(self):
+        manifest = Manifest()
+        executor = PremiumExecutor(
+            session_factory=self.sessions,
+            manifest_loader=lambda _provenance: manifest,
+            manifest_validator=lambda value: value,
+            status_invest_inputs_loader=lambda _workspace: _default_selector_inputs(),
+            optimization_runner=self.zone_runner,
+            workspace_root=Path(self.temp.name) / "workspaces",
+        )
+        service = PremiumRecommendationService(
+            manifest_loader=lambda: manifest,
+            manifest_validator=lambda value: value,
+            executor=executor,
+        )
+        return executor, service
+
+    def create_and_wait(self, executor, service, *, plan="premium", force=False):
+        run = service.create_run(
+            self.account,
+            PremiumRecommendationRequest(force=force),
+            self.session,
+            plan=plan,
+        )
+        executor.futures[run.id].result(timeout=10)
+        with self.sessions() as check:
+            stored = check.get(type(run), run.id)
+            self.assertEqual(stored.status, "completed")
+            return stored
+
+    def test_second_premium_run_records_the_first_as_incumbent(self):
+        executor, service = self.services()
+        try:
+            first = self.create_and_wait(executor, service)
+            second = self.create_and_wait(executor, service, force=True)
+        finally:
+            executor.shutdown()
+
+        self.assertNotEqual(second.id, first.id)
+        self.assertEqual(first.policy_version, "premium-policy-v3")
+        self.assertEqual(second.policy_version, "premium-policy-v3")
+        first_zone = first.result_json["provenance"]["protection_zone"]
+        self.assertIsNone(first_zone["incumbent_run_id"])
+        self.assertEqual(first_zone["stocks"]["status"], "no_incumbents")
+        self.assertEqual(first_zone["fiis"]["status"], "no_incumbents")
+
+        zone = second.result_json["provenance"]["protection_zone"]
+        self.assertEqual(zone["incumbent_run_id"], first.id)
+        for key in ("stocks", "fiis"):
+            record = zone[key]
+            first_tickers = sorted(item["ticker"] for item in first.result_json[key])
+            second_tickers = sorted(item["ticker"] for item in second.result_json[key])
+            self.assertEqual(record["status"], "applied")
+            self.assertEqual(record["incumbents"], first_tickers)
+            self.assertIsInstance(record["turnover"], int)
+            self.assertIsInstance(record["exits"], int)
+            self.assertEqual(sorted(record["kept"] + record["entered"]), second_tickers)
+            self.assertEqual(record["turnover"], len(set(second_tickers) - set(first_tickers)))
+            self.assertGreater(record["turnover"], 0)
+            swapped_in = {item["in"]: item["out"] for item in record["replaced"]}
+            reasons = {item["ticker"]: item["reasons"] for item in second.result_json[key]}
+            for ticker in second_tickers:
+                if ticker in swapped_in:
+                    expected = f"substituiu {swapped_in[ticker]}"
+                else:
+                    expected = "mantido" if ticker in first_tickers else "novo"
+                self.assertEqual(reasons[ticker], [expected])
+
+    def test_basic_run_after_a_premium_run_has_no_protection_zone(self):
+        executor, service = self.services()
+        try:
+            self.create_and_wait(executor, service)
+            basic = self.create_and_wait(executor, service, plan="basic")
+        finally:
+            executor.shutdown()
+
+        self.assertEqual(basic.policy_version, "basic-policy-v2")
+        self.assertNotIn("protection_zone", basic.result_json["provenance"])
+        self.assertNotIn("protection_zone", basic.result_json["policy"]["stocks"])
+        self.assertNotIn("protection_zone", basic.result_json["policy"]["fiis"])
+        self.assertNotIn("protection_zone", basic.policy_json["stocks"])
+        self.assertTrue(
+            all(item["reasons"] == [] for item in basic.result_json["stocks"] + basic.result_json["fiis"])
+        )
 
 
 if __name__ == "__main__":

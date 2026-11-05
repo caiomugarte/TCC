@@ -164,6 +164,97 @@ class RecommendationRepositoryTests(unittest.TestCase):
         )
         self.assertEqual(selected.id, matched.id)
 
+    # PZ-24 (A-7): the incumbent run is the account's latest completed Premium run.
+
+    def set_created_at(self, run, value):
+        run.created_at = value
+        self.session.commit()
+
+    def new_profile(self, account_id, version):
+        record = ProfileRecord(
+            account_id=account_id,
+            version=version,
+            answers={},
+            dimensions={},
+            suitability_score=0.5,
+            generic_profile="moderado",
+            investable_capital_brl=1000,
+            consented_at=datetime.now(timezone.utc),
+        )
+        self.session.add(record)
+        self.session.flush()
+        return record
+
+    def latest(self, **kwargs):
+        return self.repository.get_latest_completed_for_account(
+            self.account.id, plan="premium", **kwargs
+        )
+
+    def test_no_completed_premium_run_returns_none(self):
+        self.assertIsNone(self.latest())
+
+    def test_other_accounts_runs_are_ignored(self):
+        other_profile = self.new_profile(self.other.id, 1)
+        self.complete_run(account_id=self.other.id, profile_id=other_profile.id)
+
+        self.assertIsNone(self.latest())
+        mine = self.complete_run()
+        self.assertEqual(self.latest().id, mine.id)
+
+    def test_basic_runs_are_ignored(self):
+        premium = self.complete_run(plan="premium")
+        basic = self.complete_run(plan="basic")
+        self.set_created_at(premium, datetime(2026, 10, 1, tzinfo=timezone.utc))
+        self.set_created_at(basic, datetime(2026, 11, 1, tzinfo=timezone.utc))
+
+        self.assertEqual(self.latest().id, premium.id)
+
+    def test_failed_running_and_queued_runs_are_ignored(self):
+        completed = self.complete_run()
+        failed = self.create_run()
+        self.repository.mark_failed(failed.id, "engine_error", "fixture")
+        running = self.create_run()
+        self.repository.mark_running(running.id)
+        queued = self.create_run()
+        self.session.commit()
+        self.set_created_at(completed, datetime(2026, 10, 1, tzinfo=timezone.utc))
+        for index, run in enumerate((failed, running, queued), start=2):
+            self.set_created_at(run, datetime(2026, 10, index, tzinfo=timezone.utc))
+
+        self.assertEqual(self.latest().id, completed.id)
+
+    def test_latest_by_created_at_then_id(self):
+        older = self.complete_run()
+        newer = self.complete_run()
+        self.set_created_at(older, datetime(2026, 10, 2, tzinfo=timezone.utc))
+        self.set_created_at(newer, datetime(2026, 10, 1, tzinfo=timezone.utc))
+        self.assertEqual(self.latest().id, older.id)
+
+        tie = datetime(2026, 10, 5, tzinfo=timezone.utc)
+        self.set_created_at(older, tie)
+        self.set_created_at(newer, tie)
+        self.assertEqual(self.latest().id, max(older.id, newer.id))
+
+    def test_exclude_run_id_skips_the_current_run(self):
+        first = self.complete_run()
+        second = self.complete_run()
+        self.set_created_at(first, datetime(2026, 10, 1, tzinfo=timezone.utc))
+        self.set_created_at(second, datetime(2026, 10, 2, tzinfo=timezone.utc))
+
+        self.assertEqual(self.latest().id, second.id)
+        self.assertEqual(self.latest(exclude_run_id=second.id).id, first.id)
+        self.assertEqual(self.latest(exclude_run_id=first.id).id, second.id)
+
+    def test_runs_of_every_profile_revision_count(self):
+        revision_two = self.new_profile(self.account.id, 2)
+        old_revision = self.complete_run()
+        new_revision = self.complete_run(profile_id=revision_two.id)
+        self.set_created_at(old_revision, datetime(2026, 10, 2, tzinfo=timezone.utc))
+        self.set_created_at(new_revision, datetime(2026, 10, 1, tzinfo=timezone.utc))
+
+        self.assertEqual(self.latest().id, old_revision.id)
+        self.assertEqual(self.latest(exclude_run_id=old_revision.id).id, new_revision.id)
+
 
 if __name__ == "__main__":
     unittest.main()

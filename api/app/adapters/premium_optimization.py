@@ -50,6 +50,7 @@ def _default_stock_engine(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
         workspace=kwargs["workspace"],
         random_seed=int(kwargs["seed"]),
         input_path=kwargs["input_path"],
+        incumbents=kwargs.get("incumbents"),
     )
 
 
@@ -299,7 +300,7 @@ def _selector_config(section: Mapping[str, Any]) -> dict[str, Any]:
             raise PremiumOptimizationError(
                 f"selector GA configuration is missing: {key}", "policy_invalid"
             )
-    return {
+    config = {
         "selection_preset": section.get("selection_preset", "explicit"),
         "n_assets": int(section["n_assets"]),
         "factor_weights": dict(section.get("factor_weights", {})),
@@ -307,6 +308,27 @@ def _selector_config(section: Mapping[str, Any]) -> dict[str, Any]:
         "lambda_hhi": float(section.get("lambda_hhi", settings["lambda"])),
         "system_ga_config": settings,
     }
+    zone = section.get("protection_zone")
+    if zone is not None:
+        if not isinstance(zone, Mapping):
+            raise PremiumOptimizationError("selector protection zone is invalid", "policy_invalid")
+        config["protection_zone"] = dict(zone)
+    return config
+
+
+def _class_incumbents(
+    incumbents: Mapping[str, Any] | None,
+    key: str,
+    config: Mapping[str, Any],
+) -> list[str] | None:
+    """Incumbents of one class, only when its config declares a protection zone."""
+
+    if not incumbents or config.get("protection_zone") is None:
+        return None
+    value = incumbents.get(key)
+    if not isinstance(value, (list, tuple)):
+        return None
+    return [str(ticker) for ticker in value]
 
 
 def _selector_output(result: Mapping[str, Any]) -> tuple[list[str], dict[str, float], dict[str, Any]]:
@@ -405,10 +427,66 @@ def _validate_selector_constraints(
         )
 
 
+ZONE_SELECTOR_STATUSES = frozenset({"applied", "fallback_hhi"})
+
+
+def _zone_record(
+    key: str,
+    config: Mapping[str, Any],
+    incumbents: Mapping[str, Any] | None,
+    class_incumbents: list[str] | None,
+    result: Mapping[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Per-class protection-zone record (PZ-28); None when the class declares no zone."""
+
+    zone = config.get("protection_zone")
+    if zone is None:
+        return None
+    if result is not None and class_incumbents:
+        record = result.get("protection_zone")
+        if not isinstance(record, Mapping) or record.get("status") not in ZONE_SELECTOR_STATUSES:
+            raise PremiumOptimizationError(
+                f"{key} selector returned no protection-zone record", "engine_error"
+            )
+        return _json_value(record)
+    if result is None:
+        status = "class_not_selected"
+    elif incumbents is not None and not isinstance(incumbents.get(key), (list, tuple)):
+        status = "incumbents_unreadable"
+    else:
+        status = "no_incumbents"
+    return {
+        "status": status,
+        "K": int(zone["K"]),
+        "k_offset": int(zone["k_offset"]),
+        "delta": float(zone["delta"]),
+        "n_assets": int(config["n_assets"]),
+    }
+
+
+def _zone_reasons(record: Mapping[str, Any] | None) -> dict[str, str]:
+    """Reason per selected ticker (PZ-29); empty when the class had no incumbents."""
+
+    if not record or record.get("status") not in ZONE_SELECTOR_STATUSES:
+        return {}
+    incumbents = set(record.get("incumbents", []))
+    swapped_in = {item["in"]: item["out"] for item in record.get("replaced", [])}
+    reasons = {}
+    for ticker in [*record.get("kept", []), *record.get("entered", [])]:
+        if ticker in swapped_in:
+            reasons[ticker] = f"substituiu {swapped_in[ticker]}"
+        elif ticker in incumbents:
+            reasons[ticker] = "mantido"
+        else:
+            reasons[ticker] = "novo"
+    return reasons
+
+
 def _constituents(
     result: Mapping[str, Any],
     class_weight: float,
     class_amount: float,
+    zone_reasons: Mapping[str, str] | None = None,
 ) -> list[dict[str, Any]]:
     tickers, sleeve_weights, normalized = _selector_output(result)
     reasons = normalized.get("exclusion_reasons", {})
@@ -424,6 +502,8 @@ def _constituents(
             ticker_reasons = [str(reason_value)]
         else:
             ticker_reasons = []
+        if zone_reasons and ticker in zone_reasons:
+            ticker_reasons.append(zone_reasons[ticker])
         sleeve_weight = sleeve_weights[ticker]
         portfolio_weight = class_weight * sleeve_weight
         constituents.append(
@@ -450,6 +530,7 @@ def run_premium_optimization(
     stock_engine: Callable[..., Mapping[str, Any]] = _default_stock_engine,
     fii_engine: Callable[..., Mapping[str, Any]] = _default_fii_engine,
     seed: int | None = None,
+    incumbents: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run the three explicit Premium engines and compose one API result."""
 
@@ -464,7 +545,8 @@ def run_premium_optimization(
     allocation_section = _policy_section(policy, "allocation")
     stock_section = _policy_section(policy, "stocks")
     fii_section = _policy_section(policy, "fiis")
-    policy_dict = _json_value(policy)
+    to_dict = getattr(policy, "to_dict", None)
+    policy_dict = _json_value(to_dict() if callable(to_dict) else policy)
     if not isinstance(policy_dict, dict):
         raise PremiumOptimizationError("policy is not serializable", "policy_invalid")
     run_seed = _seed(policy, seed)
@@ -496,7 +578,16 @@ def run_premium_optimization(
     }
     stock_config = _selector_config(stock_section)
     fii_config = _selector_config(fii_section)
+    class_incumbents = {
+        "stocks": _class_incumbents(incumbents, "stocks", stock_config),
+        "fiis": _class_incumbents(incumbents, "fiis", fii_config),
+    }
+    engine_incumbents = {
+        key: {"incumbents": value} if value else {}
+        for key, value in class_incumbents.items()
+    }
     selector_results: dict[str, Mapping[str, Any]] = {}
+    zone_records: dict[str, dict[str, Any] | None] = {}
 
     stock_weight = weights["brazilian_stocks"]
     if stock_weight > 1e-9:
@@ -507,6 +598,7 @@ def run_premium_optimization(
                 config=stock_config,
                 workspace=stock_workspace,
                 seed=run_seed,
+                **engine_incumbents["stocks"],
             )
         except PremiumOptimizationError:
             raise
@@ -522,12 +614,19 @@ def run_premium_optimization(
             raise PremiumOptimizationError("stock engine returned an invalid result", "engine_error")
         _validate_selector_constraints(stock_result, stock_config)
         selector_results["stocks"] = stock_result
+        zone_records["stocks"] = _zone_record(
+            "stocks", stock_config, incumbents, class_incumbents["stocks"], stock_result
+        )
         stocks = _constituents(
             stock_result,
             stock_weight,
             float(class_by_engine["brazilian_stocks"]["target_amount_brl"]),
+            _zone_reasons(zone_records["stocks"]),
         )
     else:
+        zone_records["stocks"] = _zone_record(
+            "stocks", stock_config, incumbents, class_incumbents["stocks"], None
+        )
         stocks = []
 
     fii_weight = weights["fiis"]
@@ -541,6 +640,7 @@ def run_premium_optimization(
                 parallel=False,
                 workspace=fii_workspace,
                 seed=run_seed,
+                **engine_incumbents["fiis"],
             )
         except PremiumOptimizationError:
             raise
@@ -569,12 +669,19 @@ def run_premium_optimization(
             raise PremiumOptimizationError("FII engine returned an invalid result", "engine_error")
         _validate_selector_constraints(fii_result, fii_config)
         selector_results["fiis"] = fii_result
+        zone_records["fiis"] = _zone_record(
+            "fiis", fii_config, incumbents, class_incumbents["fiis"], fii_result
+        )
         fiis = _constituents(
             fii_result,
             fii_weight,
             float(class_by_engine["fiis"]["target_amount_brl"]),
+            _zone_reasons(zone_records["fiis"]),
         )
     else:
+        zone_records["fiis"] = _zone_record(
+            "fiis", fii_config, incumbents, class_incumbents["fiis"], None
+        )
         fiis = []
 
     policy_provenance = _policy_section(policy, "provenance")
@@ -600,6 +707,11 @@ def run_premium_optimization(
             "selector_sources": selector_inputs.provenance(),
         }
     )
+    if any(record is not None for record in zone_records.values()):
+        provenance["protection_zone"] = {
+            "incumbent_run_id": incumbents.get("run_id") if incumbents else None,
+            **{key: record for key, record in zone_records.items() if record is not None},
+        }
     return {
         "policy": policy_dict,
         "classes": classes,

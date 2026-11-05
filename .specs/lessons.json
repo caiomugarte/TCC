@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "promote_threshold": 2,
+  "window_days": 45,
+  "quarantine_threshold": 2,
+  "next_id": 4,
+  "lessons": [
+    {
+      "id": "L-001",
+      "key": "surviving_mutant::give each refusal guard its own test input that only that guard rejects so an earlier guard cannot mask it",
+      "text": "Give each refusal guard its own test input that only that guard rejects, so an earlier guard cannot mask it",
+      "signal": "surviving_mutant",
+      "scope": "scripts",
+      "status": "candidate",
+      "features": [
+        "protection-zone"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M65 tests/test_protection_zone_turnover.py:246 (scripts)"
+      ],
+      "created": "2026-11-05T01:03:15Z",
+      "last_seen": "2026-11-05T01:03:15Z"
+    },
+    {
+      "id": "L-002",
+      "key": "spec_deviation::when implementation narrows a spec rule to stay consistent with another ac update the spec text in the same feature instead of leaving only a code marker",
+      "text": "When implementation narrows a spec rule to stay consistent with another AC, update the spec text in the same feature instead of leaving only a code marker",
+      "signal": "spec_deviation",
+      "scope": "specs",
+      "status": "candidate",
+      "features": [
+        "protection-zone"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "SPEC_DEVIATION py/core/protection_zone.py:116 (specs)"
+      ],
+      "created": "2026-11-05T01:03:15Z",
+      "last_seen": "2026-11-05T01:03:15Z"
+    },
+    {
+      "id": "L-003",
+      "key": "surviving_mutant::assert the exact arguments of a defensive query filter even when another filter currently makes it redundant",
+      "text": "Assert the exact arguments of a defensive query filter even when another filter currently makes it redundant",
+      "signal": "surviving_mutant",
+      "scope": "api",
+      "status": "candidate",
+      "features": [
+        "protection-zone"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "M46 api/app/services/premium_executor.py:176 (api)"
+      ],
+      "created": "2026-11-05T01:03:16Z",
+      "last_seen": "2026-11-05T01:03:16Z"
+    }
+  ]
+}
