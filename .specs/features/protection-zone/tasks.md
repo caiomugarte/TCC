@@ -404,11 +404,11 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] `api/tests/test_premium_policy.py:269`, `:280` pins updated to `premium-policy-v3`; new test: `premium-policy-v2` rejected
-- [ ] Premium `stocks.protection_zone == {"k_offset": 6, "K": n + 6, "delta": 0.11}`, FIIs `k_offset` 3, for conservador, moderado and arrojado anchors
-- [ ] Basic `to_json()` has no `protection_zone` and equals a golden string captured at `76a6d70` for one fixture profile
-- [ ] Gate check passes: Full
-- [ ] Test count: API suite at least 125 + new tests
+- [x] `api/tests/test_premium_policy.py:269`, `:280` pins updated to `premium-policy-v3`; new test: `premium-policy-v2` rejected
+- [x] Premium `stocks.protection_zone == {"k_offset": 6, "K": n + 6, "delta": 0.11}`, FIIs `k_offset` 3, for conservador, moderado and arrojado anchors
+- [x] Basic `to_json()` has no `protection_zone` and equals a golden string captured at `76a6d70` for one fixture profile
+- [x] Gate check passes: Full
+- [x] Test count: API suite at least 125 + new tests
 
 **Tests**: unit
 **Gate**: full

@@ -9,7 +9,7 @@ from typing import Any, Mapping, Sequence
 from app.db.models import ProfileRecord
 
 
-POLICY_VERSION = "premium-policy-v2"
+POLICY_VERSION = "premium-policy-v3"
 BASIC_POLICY_VERSION = "basic-policy-v2"
 RULES_VERSION = POLICY_VERSION
 PROFILE_SCHEMA_VERSION = 1
@@ -79,6 +79,13 @@ FII_RULES = {
     },
 }
 
+# Protection zone (issue #46, AD-022): K = n_assets + k_offset. Values from
+# docs/validation/multirun-convergence.md, section "Zona de proteção (K, δ)".
+PROTECTION_ZONE = {
+    "stocks": {"k_offset": 6, "delta": 0.11},
+    "fiis": {"k_offset": 3, "delta": 0.11},
+}
+
 
 class PremiumPolicyError(ValueError):
     """Raised when a persisted profile cannot produce a safe Premium policy."""
@@ -116,6 +123,7 @@ class SelectorPolicy:
     liquidity_and_size_filters: Mapping[str, object]
     lambda_hhi: float
     system_ga_config: Mapping[str, int | float | bool]
+    protection_zone: Mapping[str, object] | None = None
 
 
 @dataclass(frozen=True)
@@ -140,8 +148,8 @@ class ResolvedOptimizationPolicy:
         return {
             "profile": _section_dict(self.profile),
             "allocation": _section_dict(self.allocation),
-            "stocks": _section_dict(self.stocks),
-            "fiis": _section_dict(self.fiis),
+            "stocks": _selector_dict(self.stocks),
+            "fiis": _selector_dict(self.fiis),
             "provenance": _section_dict(self.provenance),
         }
 
@@ -160,6 +168,26 @@ class ResolvedOptimizationPolicy:
 def _section_dict(section: object) -> dict[str, object]:
     value = asdict(section)
     return _json_value(value)
+
+
+def _selector_dict(section: SelectorPolicy) -> dict[str, object]:
+    value = _section_dict(section)
+    if value.get("protection_zone") is None:
+        value.pop("protection_zone", None)
+    return value
+
+
+def _protection_zone(section: SelectorPolicy, key: str) -> SelectorPolicy:
+    zone = PROTECTION_ZONE[key]
+    k_offset = int(zone["k_offset"])
+    return replace(
+        section,
+        protection_zone={
+            "k_offset": k_offset,
+            "K": section.n_assets + k_offset,
+            "delta": float(zone["delta"]),
+        },
+    )
 
 
 def _json_value(value: Any) -> Any:
@@ -392,8 +420,8 @@ def resolve_premium_policy(
 
     selector_score = _selector_score(score, checked_dimensions)
     allocation = _allocation_policy(score, restriction_set)
-    stocks = _selector_policy(STOCK_RULES, selector_score, restriction_set)
-    fiis = _selector_policy(FII_RULES, selector_score, restriction_set)
+    stocks = _protection_zone(_selector_policy(STOCK_RULES, selector_score, restriction_set), "stocks")
+    fiis = _protection_zone(_selector_policy(FII_RULES, selector_score, restriction_set), "fiis")
     cutoff = cutoff_date.isoformat() if isinstance(cutoff_date, date) else cutoff_date
     if random_seed is not None and not isinstance(random_seed, int):
         raise PremiumPolicyError("random seed must be an integer")

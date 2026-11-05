@@ -221,9 +221,9 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-18 | P1: Selectors apply the zone | Tasks T5 | Implemented |
 | PZ-19 | P1: Selectors apply the zone | Tasks T7 | Implemented |
 | PZ-20 | P1: Selectors apply the zone | Tasks T6, T8 | Implemented |
-| PZ-21 | P1: Premium policy v3 | Tasks T9 | In Tasks |
-| PZ-22 | P1: Premium policy v3 | Tasks T9 | In Tasks |
-| PZ-23 | P1: Premium policy v3 | Tasks T9 | In Tasks |
+| PZ-21 | P1: Premium policy v3 | Tasks T9 | Implemented |
+| PZ-22 | P1: Premium policy v3 | Tasks T9 | Implemented |
+| PZ-23 | P1: Premium policy v3 | Tasks T9 | Implemented |
 | PZ-24 | P1: Executor passes the incumbents | Tasks T10, T11 | In Tasks |
 | PZ-25 | P1: Executor passes the incumbents | Tasks T11 | In Tasks |
 | PZ-26 | P1: Executor passes the incumbents | Tasks T11, T13 | In Tasks |

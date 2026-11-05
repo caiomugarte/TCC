@@ -266,7 +266,7 @@ class PremiumPolicyTests(unittest.TestCase):
         )
 
     def test_policy_versions_are_bumped_and_reject_the_v1_strings(self) -> None:
-        self.assertEqual(POLICY_VERSION, "premium-policy-v2")
+        self.assertEqual(POLICY_VERSION, "premium-policy-v3")
         self.assertEqual(BASIC_POLICY_VERSION, "basic-policy-v2")
         with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
             resolve_premium_policy(profile(), rules_version="premium-policy-v1")
@@ -277,8 +277,97 @@ class PremiumPolicyTests(unittest.TestCase):
         premium = resolve_premium_policy(profile())
         basic = resolve_recommendation_policy(profile(), plan="basic")
 
-        self.assertEqual(premium.provenance.policy_version, "premium-policy-v2")
+        self.assertEqual(premium.provenance.policy_version, "premium-policy-v3")
         self.assertEqual(basic.provenance.policy_version, "basic-policy-v2")
+
+
+# Basic to_json() for profile(generic_profile="moderado",
+# restrictions=["limitar_concentracao"]), captured at 76a6d70 (before #46).
+BASIC_GOLDEN_JSON = (
+    '{"allocation":{"class_constraints":{"hhi_max":null,"maximum_weights":{},'
+    '"minimum_class_weight":0.0,"minimum_weights":{}},"crypto_risk_contribution_cap":0.4,'
+    '"drawdown_cap":0.25,"hhi_penalty":0.25,"risk_adjusted_weights":{"drawdown":0.25,'
+    '"return":0.5,"volatility":0.25},"score":0.5,"volatility_cap":0.15},'
+    '"fiis":{"factor_weights":{"dividend":0.1,"growth":0.2,"liquidity":0.2,"size_cash":0.25,'
+    '"value":0.25},"lambda_hhi":0.25,"liquidity_and_size_filters":{"enforce_liquidity_and_size":false,'
+    '"hhi_max":0.25,"liq_min":500000.0,"size_min":1000000000.0},"n_assets":12,'
+    '"selection_preset":"moderado","system_ga_config":{"adaptive_mode":true,"crossover_rate":0.8,'
+    '"generations":400,"min_runs":40,"mutation_rate":0.02,"population":300,"run_count":150,'
+    '"target_cv":0.02,"target_jaccard":0.75}},'
+    '"profile":{"applied_rules":["fixture rule"],"dimensions":{"apetite":0.5,"capacidade":0.5,'
+    '"conhecimento":0.8,"liquidez":0.5},"generic_profile":"moderado","profile_revision":3,'
+    '"raw_score":0.73,"restrictions":["limitar_concentracao"],"schema_version":1,"score":0.5,'
+    '"warnings":["fixture warning"]},'
+    '"provenance":{"cutoff_date":null,"model_versions":{"allocation":"allocation-v1",'
+    '"fiis":"fii-selection-v1","stocks":"stock-selection-v1"},"policy_version":"basic-policy-v2",'
+    '"random_seed":null,"source_snapshot_hashes":{},"source_snapshot_ids":[]},'
+    '"stocks":{"factor_weights":{"div":0.1,"growth":0.2,"liquidez":0.2,"rent":0.25,"value":0.25},'
+    '"lambda_hhi":0.25,"liquidity_and_size_filters":{"cap_min":1000000000.0,'
+    '"enforce_liquidity_and_size":false,"hhi_max":0.25,"liq_min":500000.0},"n_assets":12,'
+    '"selection_preset":"moderado","system_ga_config":{"adaptive_mode":true,"crossover_rate":0.8,'
+    '"generations":400,"min_runs":40,"mutation_rate":0.02,"population":300,"run_count":150,'
+    '"target_cv":0.02,"target_jaccard":0.75}}}'
+)
+
+
+class ProtectionZonePolicyTests(unittest.TestCase):
+    """PZ-21..PZ-23: the zone lives in the Premium policy v3 only."""
+
+    def test_premium_policy_v2_is_rejected(self) -> None:
+        with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
+            resolve_premium_policy(profile(), rules_version="premium-policy-v2")
+        with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
+            resolve_recommendation_policy(
+                profile(), rules_version="premium-policy-v2", plan="premium"
+            )
+
+    def test_premium_sections_carry_the_issue_9_zone_values_for_every_anchor(self) -> None:
+        anchors = {
+            "conservador": (0.0, 10),
+            "moderado": (0.5, 12),
+            "arrojado": (1.0, 15),
+        }
+        for band, (score, n_assets) in anchors.items():
+            with self.subTest(band=band):
+                resolved = resolve_premium_policy(
+                    profile(score=score, knowledge=score, generic_profile=band)
+                )
+                self.assertEqual(resolved.stocks.n_assets, n_assets)
+                self.assertEqual(resolved.fiis.n_assets, n_assets)
+                self.assertEqual(
+                    resolved.stocks.protection_zone,
+                    {"k_offset": 6, "K": n_assets + 6, "delta": 0.11},
+                )
+                self.assertEqual(
+                    resolved.fiis.protection_zone,
+                    {"k_offset": 3, "K": n_assets + 3, "delta": 0.11},
+                )
+                payload = resolved.to_dict()
+                self.assertEqual(
+                    payload["stocks"]["protection_zone"],
+                    {"k_offset": 6, "K": n_assets + 6, "delta": 0.11},
+                )
+                self.assertEqual(
+                    payload["fiis"]["protection_zone"],
+                    {"k_offset": 3, "K": n_assets + 3, "delta": 0.11},
+                )
+
+    def test_zone_k_follows_an_interpolated_asset_count(self) -> None:
+        resolved = resolve_premium_policy(profile(score=0.75, knowledge=0.75))
+        self.assertEqual(resolved.stocks.protection_zone["K"], resolved.stocks.n_assets + 6)
+        self.assertEqual(resolved.fiis.protection_zone["K"], resolved.fiis.n_assets + 3)
+
+    def test_basic_policy_has_no_zone_and_matches_the_pre_change_json(self) -> None:
+        resolved = resolve_basic_policy(
+            profile(generic_profile="moderado", restrictions=["limitar_concentracao"])
+        )
+        self.assertIsNone(resolved.stocks.protection_zone)
+        self.assertIsNone(resolved.fiis.protection_zone)
+        payload = resolved.to_dict()
+        self.assertNotIn("protection_zone", payload["stocks"])
+        self.assertNotIn("protection_zone", payload["fiis"])
+        self.assertNotIn("protection_zone", resolved.to_json())
+        self.assertEqual(resolved.to_json(), BASIC_GOLDEN_JSON)
 
 
 class PolicyDriftGuardTests(unittest.TestCase):
