@@ -201,41 +201,41 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| PZ-01 | P1: Zone selection function | Tasks T1-T2 | Implemented |
-| PZ-02 | P1: Zone selection function | Tasks T1 | Implemented |
-| PZ-03 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-04 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-05 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-06 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-07 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-08 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-09 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-10 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-11 | P1: Zone selection function | Tasks T1 | Implemented |
-| PZ-12 | P1: Zone selection function | Tasks T2 | Implemented |
-| PZ-13 | P1: Zone selection function | Tasks T4 | Implemented |
-| PZ-14 | P1: HHI fallback | Tasks T3, T5, T7 | Implemented |
-| PZ-15 | P1: HHI fallback | Tasks T3 | Implemented |
-| PZ-16 | P1: HHI fallback | Tasks T3, T8, T12 | Implemented |
-| PZ-17 | P1: Selectors apply the zone | Tasks T5, T7 | Implemented |
-| PZ-18 | P1: Selectors apply the zone | Tasks T5 | Implemented |
-| PZ-19 | P1: Selectors apply the zone | Tasks T7 | Implemented |
-| PZ-20 | P1: Selectors apply the zone | Tasks T6, T8 | Implemented |
-| PZ-21 | P1: Premium policy v3 | Tasks T9 | Implemented |
-| PZ-22 | P1: Premium policy v3 | Tasks T9 | Implemented |
-| PZ-23 | P1: Premium policy v3 | Tasks T9 | Implemented |
-| PZ-24 | P1: Executor passes the incumbents | Tasks T10, T11 | Implemented |
-| PZ-25 | P1: Executor passes the incumbents | Tasks T11 | Implemented |
-| PZ-26 | P1: Executor passes the incumbents | Tasks T11, T13 | Implemented |
-| PZ-27 | P1: Executor passes the incumbents | Tasks T11 | Implemented |
-| PZ-28 | P1: Provenance and reasons | Tasks T3, T13, T14 | Implemented |
-| PZ-29 | P1: Provenance and reasons | Tasks T13 | Implemented |
-| PZ-30 | P1: Provenance and reasons | Tasks T12 | Implemented |
-| PZ-31 | P1: Provenance and reasons | Tasks T13 | Implemented |
-| PZ-32 | P2: Month-to-month turnover | Tasks T15, T17 | In Tasks (T15 done; T17 deferred) |
-| PZ-33 | P2: Month-to-month turnover | Tasks T15 | Implemented |
-| PZ-34 | P2: Month-to-month turnover | Tasks T15 | Implemented |
-| PZ-35 | P2: Month-to-month turnover | Tasks T16, T17 | In Tasks (T16 done; T17 deferred) |
+| PZ-01 | P1: Zone selection function | Tasks T1-T2 | Verified |
+| PZ-02 | P1: Zone selection function | Tasks T1 | Verified |
+| PZ-03 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-04 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-05 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-06 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-07 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-08 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-09 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-10 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-11 | P1: Zone selection function | Tasks T1 | Verified |
+| PZ-12 | P1: Zone selection function | Tasks T2 | Verified |
+| PZ-13 | P1: Zone selection function | Tasks T4 | Verified |
+| PZ-14 | P1: HHI fallback | Tasks T3, T5, T7 | Verified |
+| PZ-15 | P1: HHI fallback | Tasks T3 | Verified |
+| PZ-16 | P1: HHI fallback | Tasks T3, T8, T12 | Verified |
+| PZ-17 | P1: Selectors apply the zone | Tasks T5, T7 | Verified |
+| PZ-18 | P1: Selectors apply the zone | Tasks T5 | Verified |
+| PZ-19 | P1: Selectors apply the zone | Tasks T7 | Verified |
+| PZ-20 | P1: Selectors apply the zone | Tasks T6, T8 | Verified |
+| PZ-21 | P1: Premium policy v3 | Tasks T9 | Verified |
+| PZ-22 | P1: Premium policy v3 | Tasks T9 | Verified |
+| PZ-23 | P1: Premium policy v3 | Tasks T9 | Verified |
+| PZ-24 | P1: Executor passes the incumbents | Tasks T10, T11 | Verified |
+| PZ-25 | P1: Executor passes the incumbents | Tasks T11 | Verified |
+| PZ-26 | P1: Executor passes the incumbents | Tasks T11, T13 | Verified |
+| PZ-27 | P1: Executor passes the incumbents | Tasks T11 | Verified |
+| PZ-28 | P1: Provenance and reasons | Tasks T3, T13, T14 | Verified |
+| PZ-29 | P1: Provenance and reasons | Tasks T13 | Verified |
+| PZ-30 | P1: Provenance and reasons | Tasks T12 | Verified |
+| PZ-31 | P1: Provenance and reasons | Tasks T13 | Verified |
+| PZ-32 | P2: Month-to-month turnover | Tasks T15, T17 | Pending data (T15 verified; T17 deferred) |
+| PZ-33 | P2: Month-to-month turnover | Tasks T15 | Verified |
+| PZ-34 | P2: Month-to-month turnover | Tasks T15 | Verified |
+| PZ-35 | P2: Month-to-month turnover | Tasks T16, T17 | Pending data (T16 verified; T17 deferred) |
 
 **ID format:** `PZ-NN`.
 
