@@ -25,7 +25,13 @@ sys.path.insert(0, str(PROJECT_ROOT / "py"))
 from config import PROFILE_WEIGHTS  # noqa: E402
 from core.metrics import hhi_sector  # noqa: E402
 from fetch_status_invest import SOURCE_COLUMNS as STOCK_COLUMNS  # noqa: E402
-from fii_selection import _consensus  # noqa: E402
+from fetch_status_invest_fii import SOURCE_COLUMNS as FII_COLUMNS  # noqa: E402
+from fii_selection import (  # noqa: E402
+    FII_PROFILE_WEIGHTS,
+    FiiSelectionError,
+    _consensus,
+    run_fii_selection,
+)
 from pipelines.multi_run import (  # noqa: E402
     GA_CONFIG,
     build_consensus_portfolio,
@@ -517,6 +523,94 @@ class FiiConsensusZoneTests(unittest.TestCase):
         self.assertEqual(result["TICKER"].tolist(), ["AAA11", "DDD11"])
         self.assertEqual(result.attrs["protection_zone"]["status"], "applied")
         self.assertIsNone(result.attrs["protection_zone"]["buffer_fallback"])
+
+
+def _fii_frame() -> pd.DataFrame:
+    """Six FIIs in two segments (the fixture of tests/test_fii_selection.py)."""
+
+    rows = []
+    values = [
+        ("AAA11", "Segment A", 0.80, 12.0, 10.0, 100.0, 3.0),
+        ("BBB11", "Segment A", 1.00, 8.0, 8.0, 80.0, 2.0),
+        ("CCC11", "Segment A", 1.20, 5.0, 6.0, 60.0, 1.0),
+        ("DDD11", "Segment B", 0.85, 11.0, 9.0, 90.0, 2.5),
+        ("EEE11", "Segment B", 1.05, 7.0, 7.0, 70.0, 1.5),
+        ("FFF11", "Segment B", 1.25, 4.0, 5.0, 50.0, 0.5),
+    ]
+    for ticker, sector, p_vp, dy, dividend_cagr, liquidity, cash in values:
+        rows.append(
+            {
+                "TICKER": ticker,
+                "PRECO": 100.0,
+                "ULTIMO DIVIDENDO": 1.0,
+                "DY": dy,
+                "VALOR PATRIMONIAL COTA": 100.0,
+                "P/VP": p_vp,
+                "LIQUIDEZ MEDIA DIARIA": liquidity * 10000,
+                "PERCENTUAL EM CAIXA": cash,
+                "CAGR DIVIDENDOS 3 ANOS": dividend_cagr,
+                "CAGR VALOR COTA 3 ANOS": dividend_cagr,
+                "PATRIMONIO": liquidity * 1000000,
+                "N COTISTAS": liquidity * 10,
+                "GESTAO": "",
+                "N COTAS": liquidity * 1000,
+                "SETOR": sector,
+            }
+        )
+    return pd.DataFrame(rows, columns=list(FII_COLUMNS) + ["SETOR"])
+
+
+def _fii_config(filters: dict, with_zone: bool = True) -> dict:
+    config = {
+        "factor_weights": dict(FII_PROFILE_WEIGHTS["conservador"]),
+        "liquidity_and_size_filters": filters,
+        "n_assets": 2,
+        "lambda": 0.5,
+        "system_ga_config": {"generations": 2, "pop_size": 4},
+    }
+    if with_zone:
+        config["protection_zone"] = {"K": 5, "delta": 0.11, "k_offset": 3}
+    return config
+
+
+class FiiPipelineForwardsIncumbentsTests(unittest.TestCase):
+    """Explicit-mode FII selection on the six-FII fixture (PZ-16, PZ-20)."""
+
+    def _run(self, *, filters: Optional[dict] = None, with_zone: bool = True, **kwargs) -> dict:
+        with tempfile.TemporaryDirectory() as directory:
+            input_path = Path(directory) / "fii.csv"
+            _fii_frame().to_csv(input_path, index=False)
+            return run_fii_selection(
+                input_path=input_path,
+                selection_config=_fii_config({} if filters is None else filters, with_zone),
+                n_runs=2,
+                **kwargs,
+            )
+
+    def test_fallen_back_consensus_that_breaks_the_hhi_limit_raises(self):  # PZ-16
+        # Every run picks AAA11 and BBB11 (one segment): the zone and the consensus both have HHI 1.
+        def one_segment_picks(df_ranked, profile, **kwargs):
+            portfolio = df_ranked[df_ranked["TICKER"].isin(["AAA11", "BBB11"])].copy()
+            portfolio.attrs.update({"fitness": 0.0, "hhi": 1.0})
+            return portfolio
+
+        with patch("fii_selection.optimize_fii_portfolio", side_effect=one_segment_picks):
+            with self.assertRaisesRegex(FiiSelectionError, "HHI"):
+                self._run(filters={"hhi_max": 0.5}, incumbents=["DDD11"])
+
+    def test_result_carries_the_zone_when_incumbents_are_applied(self):  # PZ-20
+        result = self._run(incumbents=["DDD11", "EEE11"])
+        record = result["protection_zone"]
+        self.assertEqual(record["status"], "applied")
+        self.assertEqual(record["incumbents"], ["DDD11", "EEE11"])
+        self.assertEqual(record["K"], 5)
+        self.assertEqual(sorted(record["kept"] + record["entered"]), sorted(result["selected_tickers"]))
+
+    def test_result_has_no_zone_without_incumbents(self):  # PZ-20
+        cases = {"omitted": {}, "none": {"incumbents": None}, "empty": {"incumbents": []}}
+        for label, kwargs in cases.items():
+            with self.subTest(incumbents=label):
+                self.assertNotIn("protection_zone", self._run(**kwargs))
 
 
 if __name__ == "__main__":

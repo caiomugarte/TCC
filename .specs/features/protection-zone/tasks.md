@@ -356,6 +356,8 @@ T15 → T16 → T17
 
 #### T8: FII pipeline forwards incumbents
 
+**Status**: Complete
+
 **What**: Add `incumbents` to `run_fii_selection`, resolve `hhi_max` before `_consensus`, keep the post-check, expose `protection_zone`.
 **Where**: `py/fii_selection.py` (modify `run_fii_selection` only)
 **Depends on**: T7
@@ -371,11 +373,11 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Fallen-back consensus that still violates HHI raises `FiiSelectionError` (PZ-16)
-- [ ] Result has `protection_zone` only when applied
-- [ ] Existing `tests/test_fii_selection.py` passes unchanged
-- [ ] Gate check passes: Build (end of Phase 2)
-- [ ] Test count: at least 3 new tests
+- [x] Fallen-back consensus that still violates HHI raises `FiiSelectionError` (PZ-16; the test stubs `optimize_fii_portfolio` so every run picks one segment)
+- [x] Result has `protection_zone` only when applied
+- [x] Existing `tests/test_fii_selection.py` passes unchanged (23 tests OK)
+- [x] Gate check passes: Build (end of Phase 2): root 529 OK (2 skipped), API 125 OK
+- [x] Test count: at least 3 new tests (3 new, all pass)
 
 **Tests**: unit
 **Gate**: build

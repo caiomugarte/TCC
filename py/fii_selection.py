@@ -615,6 +615,7 @@ def run_fii_selection(
     config: Optional[Mapping[str, object]] = None,
     workspace: Optional[Path] = None,
     seed: Optional[int] = None,
+    incumbents: Optional[Sequence[str]] = None,
 ) -> Dict[str, object]:
     """Run FII selection and return a structured sleeve result.
 
@@ -623,6 +624,8 @@ def run_fii_selection(
     system GA settings.  The result includes ``selected_tickers``, equal
     ``sleeve_weights``, metrics, exclusion reasons, seed, and workspace.
     Named ``profile`` calls retain the existing offline behavior.
+    ``incumbents`` (the previous Premium portfolio) apply the protection zone
+    when the explicit config carries ``protection_zone``.
     """
 
     if selection_config is not None and config is not None:
@@ -749,13 +752,20 @@ def run_fii_selection(
             ):
                 break
 
-    selected = _consensus(portfolios, ranked, n_assets)
-    selected.attrs["hhi"] = hhi_sector(selected)
     hhi_max = None
     if explicit_mode:
         filters_for_hhi = resolved_config.get("liquidity_and_size_filters")
         if isinstance(filters_for_hhi, Mapping):
             hhi_max = filters_for_hhi.get("hhi_max")
+    selected = _consensus(
+        portfolios,
+        ranked,
+        n_assets,
+        incumbents=incumbents,
+        protection_zone=resolved_config.get("protection_zone") if explicit_mode else None,
+        hhi_max=hhi_max,
+    )
+    selected.attrs["hhi"] = hhi_sector(selected)
     if hhi_max is not None and selected.attrs["hhi"] > float(hhi_max) + 1e-12:
         raise FiiSelectionError("FII selection violates the configured HHI limit")
 
@@ -792,7 +802,7 @@ def run_fii_selection(
         "system_ga_config": dict(settings),
     }
 
-    return {
+    result = {
         "profile": profile if profile is not None else "explicit",
         "n_runs": len(execution_results),
         "n_candidates": len(ranked),
@@ -817,3 +827,6 @@ def run_fii_selection(
         "seed": int(random_seed),
         "workspace": str(workspace_path) if workspace_path is not None else None,
     }
+    if "protection_zone" in selected.attrs:
+        result["protection_zone"] = selected.attrs["protection_zone"]
+    return result
