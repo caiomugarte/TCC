@@ -490,12 +490,12 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Fake engines record kwargs: `incumbents` present only for classes with a non-empty list; config has `protection_zone`
-- [ ] `_default_stock_engine` forwards `incumbents` to `run_multi_execution_profile` (patched)
-- [ ] Basic dataclass policy: `result["policy"]` has no `protection_zone`
-- [ ] Zone-fallback stock result that still breaks HHI yields `infeasible_constraints` (PZ-16)
-- [ ] Gate check passes: Full
-- [ ] Test count: at least 4 new tests
+- [x] Fake engines record kwargs: `incumbents` present only for classes with a non-empty list; config has `protection_zone`
+- [x] `_default_stock_engine` forwards `incumbents` to `run_multi_execution_profile` (patched)
+- [x] Basic dataclass policy: `result["policy"]` has no `protection_zone`
+- [x] Zone-fallback stock result that still breaks HHI yields `infeasible_constraints` (PZ-16)
+- [x] Gate check passes: Full
+- [x] Test count: at least 4 new tests
 
 **Tests**: unit
 **Gate**: full

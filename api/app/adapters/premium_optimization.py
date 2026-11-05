@@ -50,6 +50,7 @@ def _default_stock_engine(*args: Any, **kwargs: Any) -> Mapping[str, Any]:
         workspace=kwargs["workspace"],
         random_seed=int(kwargs["seed"]),
         input_path=kwargs["input_path"],
+        incumbents=kwargs.get("incumbents"),
     )
 
 
@@ -299,7 +300,7 @@ def _selector_config(section: Mapping[str, Any]) -> dict[str, Any]:
             raise PremiumOptimizationError(
                 f"selector GA configuration is missing: {key}", "policy_invalid"
             )
-    return {
+    config = {
         "selection_preset": section.get("selection_preset", "explicit"),
         "n_assets": int(section["n_assets"]),
         "factor_weights": dict(section.get("factor_weights", {})),
@@ -307,6 +308,27 @@ def _selector_config(section: Mapping[str, Any]) -> dict[str, Any]:
         "lambda_hhi": float(section.get("lambda_hhi", settings["lambda"])),
         "system_ga_config": settings,
     }
+    zone = section.get("protection_zone")
+    if zone is not None:
+        if not isinstance(zone, Mapping):
+            raise PremiumOptimizationError("selector protection zone is invalid", "policy_invalid")
+        config["protection_zone"] = dict(zone)
+    return config
+
+
+def _class_incumbents(
+    incumbents: Mapping[str, Any] | None,
+    key: str,
+    config: Mapping[str, Any],
+) -> list[str] | None:
+    """Incumbents of one class, only when its config declares a protection zone."""
+
+    if not incumbents or config.get("protection_zone") is None:
+        return None
+    value = incumbents.get(key)
+    if not isinstance(value, (list, tuple)):
+        return None
+    return [str(ticker) for ticker in value]
 
 
 def _selector_output(result: Mapping[str, Any]) -> tuple[list[str], dict[str, float], dict[str, Any]]:
@@ -450,6 +472,7 @@ def run_premium_optimization(
     stock_engine: Callable[..., Mapping[str, Any]] = _default_stock_engine,
     fii_engine: Callable[..., Mapping[str, Any]] = _default_fii_engine,
     seed: int | None = None,
+    incumbents: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Run the three explicit Premium engines and compose one API result."""
 
@@ -464,7 +487,8 @@ def run_premium_optimization(
     allocation_section = _policy_section(policy, "allocation")
     stock_section = _policy_section(policy, "stocks")
     fii_section = _policy_section(policy, "fiis")
-    policy_dict = _json_value(policy)
+    to_dict = getattr(policy, "to_dict", None)
+    policy_dict = _json_value(to_dict() if callable(to_dict) else policy)
     if not isinstance(policy_dict, dict):
         raise PremiumOptimizationError("policy is not serializable", "policy_invalid")
     run_seed = _seed(policy, seed)
@@ -496,6 +520,14 @@ def run_premium_optimization(
     }
     stock_config = _selector_config(stock_section)
     fii_config = _selector_config(fii_section)
+    class_incumbents = {
+        "stocks": _class_incumbents(incumbents, "stocks", stock_config),
+        "fiis": _class_incumbents(incumbents, "fiis", fii_config),
+    }
+    engine_incumbents = {
+        key: {"incumbents": value} if value else {}
+        for key, value in class_incumbents.items()
+    }
     selector_results: dict[str, Mapping[str, Any]] = {}
 
     stock_weight = weights["brazilian_stocks"]
@@ -507,6 +539,7 @@ def run_premium_optimization(
                 config=stock_config,
                 workspace=stock_workspace,
                 seed=run_seed,
+                **engine_incumbents["stocks"],
             )
         except PremiumOptimizationError:
             raise
@@ -541,6 +574,7 @@ def run_premium_optimization(
                 parallel=False,
                 workspace=fii_workspace,
                 seed=run_seed,
+                **engine_incumbents["fiis"],
             )
         except PremiumOptimizationError:
             raise

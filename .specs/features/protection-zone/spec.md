@@ -216,7 +216,7 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-13 | P1: Zone selection function | Tasks T4 | Implemented |
 | PZ-14 | P1: HHI fallback | Tasks T3, T5, T7 | Implemented |
 | PZ-15 | P1: HHI fallback | Tasks T3 | Implemented |
-| PZ-16 | P1: HHI fallback | Tasks T3, T8, T12 | In Tasks (T3, T5, T8 done) |
+| PZ-16 | P1: HHI fallback | Tasks T3, T8, T12 | Implemented |
 | PZ-17 | P1: Selectors apply the zone | Tasks T5, T7 | Implemented |
 | PZ-18 | P1: Selectors apply the zone | Tasks T5 | Implemented |
 | PZ-19 | P1: Selectors apply the zone | Tasks T7 | Implemented |
@@ -230,7 +230,7 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-27 | P1: Executor passes the incumbents | Tasks T11 | Implemented |
 | PZ-28 | P1: Provenance and reasons | Tasks T3, T13, T14 | In Tasks (T3 done) |
 | PZ-29 | P1: Provenance and reasons | Tasks T13 | In Tasks |
-| PZ-30 | P1: Provenance and reasons | Tasks T12 | In Tasks |
+| PZ-30 | P1: Provenance and reasons | Tasks T12 | Implemented |
 | PZ-31 | P1: Provenance and reasons | Tasks T13 | In Tasks |
 | PZ-32 | P2: Month-to-month turnover | Tasks T15, T17 | In Tasks |
 | PZ-33 | P2: Month-to-month turnover | Tasks T15 | In Tasks |

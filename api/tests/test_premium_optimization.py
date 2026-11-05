@@ -647,5 +647,175 @@ class PremiumOptimizationTests(unittest.TestCase):
         self.assertIsNone(failure.details)
 
 
+STOCK_ZONE = {"k_offset": 6, "K": 8, "delta": 0.11}
+FII_ZONE = {"k_offset": 3, "K": 5, "delta": 0.11}
+
+
+def zone_policy(selector_hhi_max=None):
+    value = policy(selector_hhi_max=selector_hhi_max)
+    value["stocks"]["protection_zone"] = dict(STOCK_ZONE)
+    value["fiis"]["protection_zone"] = dict(FII_ZONE)
+    value["provenance"]["policy_version"] = "premium-policy-v3"
+    return value
+
+
+def run_with(policy_value, *, stock_engine, fii_engine, weights=None, **kwargs):
+    return run_premium_optimization(
+        policy_value,
+        Manifest(),
+        Path("/tmp/prumo-test-run"),
+        100_000,
+        selector_inputs=selector_inputs(),
+        snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+        allocation_engine=lambda *_args, **_kwargs: allocation_result(weights),
+        stock_engine=stock_engine,
+        fii_engine=fii_engine,
+        **kwargs,
+    )
+
+
+def recording_engine(calls, key, tickers, extra=None):
+    def engine(**kwargs):
+        calls[key] = kwargs
+        result = selector_result(tickers)
+        result.update(extra or {})
+        return result
+
+    return engine
+
+
+class ProtectionZoneForwardingTests(unittest.TestCase):
+    """PZ-30, PZ-16: zone config and incumbents reach the selectors."""
+
+    def test_incumbents_reach_only_classes_with_a_non_empty_list(self):
+        cases = {
+            "stocks only": ({"run_id": "r1", "stocks": ["AAA3"], "fiis": []}, ["AAA3"], None),
+            "fiis only": ({"run_id": "r1", "stocks": None, "fiis": ["AAA11"]}, None, ["AAA11"]),
+            "both": ({"run_id": "r1", "stocks": ["AAA3"], "fiis": ["AAA11"]}, ["AAA3"], ["AAA11"]),
+            "none passed": (None, None, None),
+        }
+        for label, (incumbents, stock_expected, fii_expected) in cases.items():
+            with self.subTest(case=label):
+                calls = {}
+                kwargs = {} if incumbents is None else {"incumbents": incumbents}
+                run_with(
+                    zone_policy(),
+                    stock_engine=recording_engine(calls, "stocks", ["AAA3", "BBB3"]),
+                    fii_engine=recording_engine(calls, "fiis", ["AAA11", "BBB11"]),
+                    **kwargs,
+                )
+                for key, expected in (("stocks", stock_expected), ("fiis", fii_expected)):
+                    if expected is None:
+                        self.assertNotIn("incumbents", calls[key])
+                    else:
+                        self.assertEqual(calls[key]["incumbents"], expected)
+                self.assertEqual(calls["stocks"]["config"]["protection_zone"], STOCK_ZONE)
+                self.assertEqual(calls["fiis"]["selection_config"]["protection_zone"], FII_ZONE)
+
+    def test_resolved_premium_policy_zone_is_copied_into_both_selector_configs(self):
+        resolved = resolved_policy("premium")
+        calls = {}
+        run_with(
+            resolved,
+            stock_engine=recording_engine(calls, "stocks", ["AAA3", "BBB3"]),
+            fii_engine=recording_engine(calls, "fiis", ["AAA11", "BBB11"]),
+            incumbents={"run_id": "r1", "stocks": ["AAA3"], "fiis": ["AAA11"]},
+        )
+        self.assertEqual(
+            calls["stocks"]["config"]["protection_zone"],
+            {"k_offset": 6, "K": resolved.stocks.n_assets + 6, "delta": 0.11},
+        )
+        self.assertEqual(
+            calls["fiis"]["selection_config"]["protection_zone"],
+            {"k_offset": 3, "K": resolved.fiis.n_assets + 3, "delta": 0.11},
+        )
+        self.assertEqual(calls["stocks"]["incumbents"], ["AAA3"])
+        self.assertEqual(calls["fiis"]["incumbents"], ["AAA11"])
+
+    def test_policy_without_zone_never_forwards_incumbents(self):
+        for label, policy_value in (("basic", resolved_policy("basic")), ("legacy", policy())):
+            with self.subTest(policy=label):
+                calls = {}
+                run_with(
+                    policy_value,
+                    stock_engine=recording_engine(calls, "stocks", ["AAA3", "BBB3"]),
+                    fii_engine=recording_engine(calls, "fiis", ["AAA11", "BBB11"]),
+                    incumbents={"run_id": "r1", "stocks": ["AAA3"], "fiis": ["AAA11"]},
+                )
+                self.assertNotIn("incumbents", calls["stocks"])
+                self.assertNotIn("incumbents", calls["fiis"])
+                self.assertNotIn("protection_zone", calls["stocks"]["config"])
+                self.assertNotIn("protection_zone", calls["fiis"]["selection_config"])
+
+    def test_default_stock_engine_forwards_incumbents(self):
+        policy_value = resolved_policy("premium").to_dict()
+        calls = []
+        pipelines = ModuleType("pipelines")
+        pipelines.__path__ = []
+        multi_run = ModuleType("pipelines.multi_run")
+        multi_run.run_multi_execution_profile = lambda **kwargs: calls.append(kwargs)
+        with patch.dict(sys.modules, {"pipelines": pipelines, "pipelines.multi_run": multi_run}):
+            for incumbents in (["AAA3", "BBB3"], None):
+                kwargs = {} if incumbents is None else {"incumbents": incumbents}
+                _default_stock_engine(
+                    config=policy_value["stocks"],
+                    workspace=Path("/tmp/prumo-test-run/stocks"),
+                    seed=19,
+                    input_path=Path("/tmp/run/status-invest/stocks.csv"),
+                    **kwargs,
+                )
+        self.assertEqual(calls[0]["incumbents"], ["AAA3", "BBB3"])
+        self.assertIsNone(calls[1]["incumbents"])
+        self.assertEqual(
+            calls[0]["selection_config"]["protection_zone"],
+            policy_value["stocks"]["protection_zone"],
+        )
+
+    def test_result_policy_omits_the_zone_for_a_basic_dataclass_policy(self):
+        results = {}
+        for plan in ("basic", "premium"):
+            results[plan] = run_with(
+                resolved_policy(plan),
+                stock_engine=lambda **_kwargs: selector_result(["AAA3", "BBB3"]),
+                fii_engine=lambda **_kwargs: selector_result(["AAA11", "BBB11"]),
+            )
+        basic_policy = results["basic"]["policy"]
+        self.assertNotIn("protection_zone", basic_policy["stocks"])
+        self.assertNotIn("protection_zone", basic_policy["fiis"])
+        self.assertEqual(basic_policy, resolved_policy("basic").to_dict())
+        premium_policy = results["premium"]["policy"]
+        self.assertEqual(premium_policy["stocks"]["protection_zone"]["k_offset"], 6)
+        self.assertEqual(premium_policy["fiis"]["protection_zone"]["k_offset"], 3)
+
+    def test_stock_zone_fallback_that_still_breaks_hhi_is_infeasible(self):
+        fallback_record = {"status": "fallback_hhi", "buffer_fallback": "hhi"}
+        with self.assertRaises(PremiumOptimizationError) as error:
+            run_with(
+                zone_policy(selector_hhi_max=0.25),
+                stock_engine=recording_engine(
+                    {}, "stocks", ["AAA3", "BBB3"],
+                    {"metrics": {"hhi": 0.5}, "protection_zone": fallback_record},
+                ),
+                fii_engine=lambda **_kwargs: selector_result(["AAA11", "BBB11"]),
+                incumbents={"run_id": "r1", "stocks": ["AAA3"], "fiis": []},
+            )
+        self.assertEqual(error.exception.code, "infeasible_constraints")
+
+    def test_stock_zone_portfolio_within_the_limit_is_used(self):
+        calls = {}
+        result = run_with(
+            zone_policy(selector_hhi_max=0.25),
+            stock_engine=recording_engine(
+                calls, "stocks", ["AAA3", "BBB3"], {"metrics": {"hhi": 0.25}}
+            ),
+            fii_engine=recording_engine(
+                calls, "fiis", ["AAA11", "BBB11"], {"metrics": {"hhi": 0.2}}
+            ),
+            incumbents={"run_id": "r1", "stocks": ["AAA3"], "fiis": []},
+        )
+        self.assertEqual([item["ticker"] for item in result["stocks"]], ["AAA3", "BBB3"])
+        self.assertEqual(calls["stocks"]["incumbents"], ["AAA3"])
+
+
 if __name__ == "__main__":
     unittest.main()
