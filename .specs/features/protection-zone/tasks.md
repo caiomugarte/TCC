@@ -550,10 +550,10 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Run 2 `provenance.protection_zone.incumbent_run_id == run1.id`, `policy_version == "premium-policy-v3"`, per-class `turnover` integers
-- [ ] Basic run's `result_json` has no `protection_zone`
-- [ ] Gate check passes: Build (end of Phase 3)
-- [ ] Test count: API suite at least 125 + Phase 3 additions
+- [x] Run 2 `provenance.protection_zone.incumbent_run_id == run1.id`, `policy_version == "premium-policy-v3"`, per-class `turnover` integers
+- [x] Basic run's `result_json` has no `protection_zone`
+- [x] Gate check passes: Build (end of Phase 3)
+- [x] Test count: API suite at least 125 + Phase 3 additions
 
 **Tests**: integration
 **Gate**: build

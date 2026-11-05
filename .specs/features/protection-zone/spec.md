@@ -228,7 +228,7 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-25 | P1: Executor passes the incumbents | Tasks T11 | Implemented |
 | PZ-26 | P1: Executor passes the incumbents | Tasks T11, T13 | Implemented |
 | PZ-27 | P1: Executor passes the incumbents | Tasks T11 | Implemented |
-| PZ-28 | P1: Provenance and reasons | Tasks T3, T13, T14 | In Tasks (T3, T13 done) |
+| PZ-28 | P1: Provenance and reasons | Tasks T3, T13, T14 | Implemented |
 | PZ-29 | P1: Provenance and reasons | Tasks T13 | Implemented |
 | PZ-30 | P1: Provenance and reasons | Tasks T12 | Implemented |
 | PZ-31 | P1: Provenance and reasons | Tasks T13 | Implemented |
