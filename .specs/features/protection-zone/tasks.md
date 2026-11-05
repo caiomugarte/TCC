@@ -433,9 +433,9 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Tests: other account's run ignored; `basic` ignored; `failed`/`running` ignored; latest by `created_at` then `id`; `exclude_run_id` honored; across profile revisions of the same account
-- [ ] Gate check passes: Full
-- [ ] Test count: at least 5 new tests in `api/tests/test_recommendation_repository.py`
+- [x] Tests: other account's run ignored; `basic` ignored; `failed`/`running` ignored; latest by `created_at` then `id`; `exclude_run_id` honored; across profile revisions of the same account
+- [x] Gate check passes: Full
+- [x] Test count: at least 5 new tests in `api/tests/test_recommendation_repository.py`
 
 **Tests**: integration
 **Gate**: full

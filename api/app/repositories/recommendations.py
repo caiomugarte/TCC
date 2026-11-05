@@ -158,6 +158,29 @@ class RecommendationRepository:
             statuses=("completed",),
         )
 
+    def get_latest_completed_for_account(
+        self,
+        account_id: str,
+        *,
+        plan: str,
+        exclude_run_id: str | None = None,
+    ) -> RecommendationRun | None:
+        """Latest completed run of the account across every profile revision."""
+
+        statement = select(RecommendationRun).where(
+            RecommendationRun.account_id == account_id,
+            RecommendationRun.plan == plan,
+            RecommendationRun.status == "completed",
+        )
+        if exclude_run_id is not None:
+            statement = statement.where(RecommendationRun.id != exclude_run_id)
+        return self.session.scalar(
+            statement.order_by(
+                desc(RecommendationRun.created_at),
+                desc(RecommendationRun.id),
+            ).limit(1)
+        )
+
     def mark_running(self, run_id: str) -> RecommendationRun:
         run = self._required(run_id)
         self._transition(run, "running")
