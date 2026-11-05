@@ -460,12 +460,12 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] No prior run: runner receives exactly the current arguments (existing fixed-signature fakes pass untouched)
-- [ ] Prior completed Premium run: `incumbents == {"run_id", "stocks", "fiis"}` with upper-cased, deduplicated tickers
-- [ ] Unreadable shapes (`None`, not a dict, class not a list, entry without string `ticker`) give `None` for that class; run completes
-- [ ] Basic run: repository lookup never called (spy)
-- [ ] Gate check passes: Full
-- [ ] Test count: at least 6 new tests
+- [x] No prior run: runner receives exactly the current arguments (existing fixed-signature fakes pass untouched)
+- [x] Prior completed Premium run: `incumbents == {"run_id", "stocks", "fiis"}` with upper-cased, deduplicated tickers
+- [x] Unreadable shapes (`None`, not a dict, class not a list, entry without string `ticker`) give `None` for that class; run completes
+- [x] Basic run: repository lookup never called (spy)
+- [x] Gate check passes: Full
+- [x] Test count: at least 6 new tests
 
 **Tests**: integration
 **Gate**: full
