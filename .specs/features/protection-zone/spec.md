@@ -232,9 +232,9 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-29 | P1: Provenance and reasons | Tasks T13 | Implemented |
 | PZ-30 | P1: Provenance and reasons | Tasks T12 | Implemented |
 | PZ-31 | P1: Provenance and reasons | Tasks T13 | Implemented |
-| PZ-32 | P2: Month-to-month turnover | Tasks T15, T17 | In Tasks |
-| PZ-33 | P2: Month-to-month turnover | Tasks T15 | In Tasks |
-| PZ-34 | P2: Month-to-month turnover | Tasks T15 | In Tasks |
+| PZ-32 | P2: Month-to-month turnover | Tasks T15, T17 | In Tasks (T15 done; T17 deferred) |
+| PZ-33 | P2: Month-to-month turnover | Tasks T15 | Implemented |
+| PZ-34 | P2: Month-to-month turnover | Tasks T15 | Implemented |
 | PZ-35 | P2: Month-to-month turnover | Tasks T16, T17 | In Tasks (T17 pending data) |
 
 **ID format:** `PZ-NN`.

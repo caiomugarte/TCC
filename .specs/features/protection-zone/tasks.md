@@ -580,11 +580,11 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Fixture manifest + fake engines: JSON and Markdown hold per-class `turnover`, `consensus_turnover`, kept, swapped, departures, K, δ, manifest id and sha256, commit, seed
-- [ ] Exit 3 and no files for: missing manifest, cutoff before 2026-11-01, id `dev-2026-10-29-ibov`
-- [ ] Two runs give byte-identical files
-- [ ] Test file `tests/test_protection_zone_turnover.py`; gate check passes: Quick + `tests.test_protection_zone_turnover`
-- [ ] Test count: at least 5 new tests
+- [x] Fixture manifest + fake engines: JSON and Markdown hold per-class `turnover`, `consensus_turnover`, kept, swapped, departures, K, δ, manifest id and sha256, commit, seed
+- [x] Exit 3 and no files for: missing manifest, cutoff before 2026-11-01, id `dev-2026-10-29-ibov`
+- [x] Two runs give byte-identical files
+- [x] Test file `tests/test_protection_zone_turnover.py`; gate check passes: Quick + `tests.test_protection_zone_turnover`
+- [x] Test count: at least 5 new tests
 
 **Tests**: unit
 **Gate**: quick
