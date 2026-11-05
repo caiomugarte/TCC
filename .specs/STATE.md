@@ -213,12 +213,19 @@
 ## Handoff
 
 - **Feature**: protection-zone (issue #46) - `.specs/features/protection-zone/`
-- **Phase / Task**: SPECIFY, DESIGN and TASKS written; EXECUTE not started. `validate_spec.py` exit 0 (1 warning: open questions logged with defaults), `validate_tasks.py` exit 0 (2 warnings: T16/T17 are docs, matrix says none).
-- **Completed**: `spec.md` (PZ-01..PZ-35), `design.md`, `tasks.md` (17 tasks, 4 phases), AD-026.
-- **In-progress**: none
-- **Next step**: orchestrator review of spec/design/tasks (the TLC approval checkpoint: the skill asks for user approval of the spec before design and of tasks before Execute; the orchestrator owns that review here), then Execute in batches: Phase 1 (T1-T4), Phase 2 (T5-T8), Phase 3 (T9-T14), Phase 4 (T15-T16; T17 later).
-- **Blockers**: T17 (PZ-32 measured report, PZ-35) is PENDING DATA: no November snapshot exists on 2026-11-04 (only `dev-2026-10-29` and `dev-2026-10-29-ibov` in the main checkout's untracked `snapshots/`). Someone must build, validate and publish a November manifest with `py/snapshot_registry.py` first; the report is never written by hand. Open question A-9: K and δ were calibrated on #9 lots that include NaN-score stocks, which #52 now excludes; kept per `## Decisões`.
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Baseline at `76a6d70`: root `$PY -m unittest discover -s tests -p "test_*.py"` 472 OK (2 skipped) in 171 s; API `cd api && PYTHONPATH=.:../py $PY -m unittest discover -s tests -t .` 125 OK in 72 s.
-- **Uncommitted files**: none after the spec commit.
-- **Branch**: t3/issue-46 (PR base `develop`; merge commit, never squash, AD-023)
+- **Phase / Task**: EXECUTE. Batch b1 done: Phase 1 (T1-T4, earlier attempt) and Phase 2 (T5-T8). Next: Phase 3 (T9-T14), then Phase 4 (T15-T16; T17 pending data).
+- **Completed**: T1, T2, T3, T4, T5, T6, T7, T8. Commits: T1 `c48e396`, T2 `1ef5dc2`, T3 `dcfc43a`, T4 `d34a3b9`, T5 `bb5dd63`, T6 `9c472bf`, T7 `b70db07`, T8 `0f617b2`.
+- **Gates at `0f617b2`** (Build, end of Phase 2): compileall clean; root suite 529 OK (2 skipped); API suite 125 OK.
+- **In-progress** (file:line): none.
+- **Next step**: T9 (`api/app/services/premium_policy.py`) and T10 (`api/app/repositories/recommendations.py`), then T11-T14 in the Execution Plan order. Phase 3 gate: Full (API suite).
+- **Blockers**: T17 is PENDING DATA (no published November manifest; only `dev-2026-10-29` and `dev-2026-10-29-ibov` exist). Open question A-9 (K and δ calibrated on lots with NaN-score stocks) stays as decided in `## Decisões`.
+- **Uncommitted files**: none.
+- **Branch**: t3/issue-46 (PR base `develop`; merge commit, never squash, AD-023).
+- **Notes for Phase 3**:
+  - `_default_stock_engine` (`api/app/adapters/premium_optimization.py:35`) passes explicit keywords to `run_multi_execution_profile`; T12 adds `incumbents=kwargs.get("incumbents")`.
+  - `_selector_config` (`:288`) copies `liquidity_and_size_filters` (so the stock HHI fallback has `hhi_max`) but not `protection_zone`; T12 copies `protection_zone` too. The stock zone reads it from that same config.
+  - The stock selector does not raise when a fallback still breaks HHI. The adapter's check (`:391-403`, 1e-9) must still run on the returned portfolio (T12, PZ-16).
+  - SPEC_DEVIATION in `py/core/protection_zone.py:116`: ranking uses eligible picks only, while design step 2 ranks every pick. Production picks are always eligible, so output is unchanged. The Verifier should check it.
+  - Explicit results carry `protection_zone` only when applied. The adapter writes `no_incumbents`, `incumbents_unreadable` and `class_not_selected` itself (T13).
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Root suite about 190 s; API suite about 80 s.
 - **Previous handoff**: p0-02-v0-corrected (issue #7) at SPECIFY complete awaiting human approval; its artifacts remain at `.specs/features/p0-02-v0-corrected/`.
