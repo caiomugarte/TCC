@@ -235,7 +235,7 @@ The Premium stock and FII sleeves are the frequency consensus of up to 150 GA ru
 | PZ-32 | P2: Month-to-month turnover | Tasks T15, T17 | In Tasks (T15 done; T17 deferred) |
 | PZ-33 | P2: Month-to-month turnover | Tasks T15 | Implemented |
 | PZ-34 | P2: Month-to-month turnover | Tasks T15 | Implemented |
-| PZ-35 | P2: Month-to-month turnover | Tasks T16, T17 | In Tasks (T17 pending data) |
+| PZ-35 | P2: Month-to-month turnover | Tasks T16, T17 | In Tasks (T16 done; T17 deferred) |
 
 **ID format:** `PZ-NN`.
 

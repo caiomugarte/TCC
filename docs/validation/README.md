@@ -298,3 +298,62 @@ do snapshot (`690e9ae9…` e `549af15b…`), embora os seletores tenham rodado
 sobre o download novo (`4323377c…` e `7c5fb662…`). Quem lê a proveniência
 acredita que a execução usou o snapshot. Isso fica para uma issue separada; o
 #9 não muda código de produção.
+
+# Giro mês a mês com a zona de proteção (issue #46, fase 2 da #9)
+
+**Estado: pendente: snapshot de novembro.** Não há manifesto publicado com corte
+em novembro (só `dev-2026-10-29` e `dev-2026-10-29-ibov`), então a medição não
+rodou e não há número aqui. Os dois arquivos abaixo não existem até ela rodar.
+
+| Arquivo | O que é |
+| --- | --- |
+| `protection-zone-turnover.json` | o giro de outubro para novembro por classe, com e sem a zona, e o que ficou, trocou e saiu |
+| `protection-zone-turnover.md` | o mesmo relatório em texto |
+
+`scripts/protection_zone_turnover.py measure` roda o pipeline Premium de
+produção uma vez num manifesto publicado de novembro, com o registro de perfil
+`premium-2026-11-02`, a política `premium-policy-v3`, a seed 46641103 e, como
+titulares, os tickers que a execução de produção
+`9e22cc16-cfda-495e-a8c9-c0d202ef32b6` entregou em outubro
+(`multirun-convergence-protocol.json`, `production_run`). A zona roda depois do
+consenso, então as mesmas execuções do GA dão os dois números: `turnover` (com
+a zona) e `consensus_turnover` (consenso puro), ambos contados como entradas
+contra a carteira de outubro.
+
+## O que a medição precisa
+
+1. Um snapshot de novembro construído, validado e publicado com
+   `py/snapshot_registry.py` (`build`, `validate`, `publish`), com corte em ou
+   depois de 2026-11-01.
+2. Um `HEAD` commitado e limpo: o relatório grava o commit e se a árvore tinha
+   mudanças.
+3. Cerca de 2,5 h de parede (uma execução Premium 13 + 13 sem paralelismo).
+
+```sh
+.venv/bin/python scripts/protection_zone_turnover.py measure --registry /home/caio/Documents/projetos/TCC/snapshots --manifest-id <manifesto-de-novembro> --out-dir docs/validation
+```
+
+Códigos de saída: 0 escrito, 1 o pipeline falhou ou um seletor não aplicou a
+zona, 2 argumentos ou protocolo inválidos, 3 manifesto ausente, não publicado,
+inválido, o de outubro (`dev-2026-10-29-ibov`) ou com corte antes de
+2026-11-01. Uma falha não escreve nada. Rodar de novo com o mesmo manifesto, o
+mesmo código e a mesma seed reescreve os dois arquivos byte a byte.
+
+## Limitações conhecidas antes de medir
+
+- **Pontuação de outubro anterior ao #52.** Os titulares vêm da execução
+  `9e22cc16`, pontuada antes do #52 (ações com SCORE NaN ainda podiam ser
+  escolhidas). Novembro descarta essas ações antes do GA, então parte das
+  saídas de ações pode vir da mudança de pontuação e não do snapshot novo.
+- **Seed fixa.** A medição usa a seed de outubro. A produção deriva a seed da
+  versão da política (`derive_premium_seed`), então uma execução real em
+  `premium-policy-v3` na mesma conta, perfil e manifesto sorteia execuções do
+  GA diferentes.
+- **Entradas congeladas.** A medição lê os CSVs do manifesto; a execução de
+  outubro rodou sobre o Status Invest baixado na hora (ver a Errata acima).
+  A deriva dos dados baixados não entra no número.
+- **Um perfil e um par de meses.** K e δ vêm da calibração da #9, feita em
+  lotes que ainda tinham ações com SCORE NaN.
+
+A primeira, a segunda e a última também ficam gravadas em `limitations` no
+relatório gerado.

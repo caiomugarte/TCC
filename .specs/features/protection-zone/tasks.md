@@ -609,9 +609,9 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] Entry states "pendente: snapshot de novembro" and writes no number
-- [ ] Gate check passes: Build
-- [ ] Test count: unchanged from T15
+- [x] Entry states "pendente: snapshot de novembro" and writes no number
+- [x] Gate check passes: Build
+- [x] Test count: unchanged from T15
 
 **Tests**: none
 **Gate**: build
