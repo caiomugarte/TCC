@@ -89,6 +89,7 @@ Test counts never go down: each task's "Done when" states the expected minimum.
 - **Persisted runs**: v3 runs stay readable after a revert. `policy_json.stocks.protection_zone` and `provenance.protection_zone` are extra keys in JSON columns typed `dict[str, Any]`; no reader validates them. Seeds return to the v2 derivation, so the next v2 run differs from a v3 run on the same inputs (expected).
 - **Partial rollback**: setting `PROTECTION_ZONE` values to `K = 0` (via `k_offset = -n_assets`) is not supported; disabling means reverting. The zone has no runtime flag by design (`## Decisões`: always on for Premium).
 - **Phase 2 artifacts**: `docs/validation/protection-zone-turnover.*` are generated files; delete and regenerate with `measure`.
+- **#9 tooling after the bump (risk, not a rollback step)**: `scripts/multirun_convergence.py` and `scripts/benchmark_premium.py` resolve the policy with `POLICY_VERSION`, so a lot built or resumed after this change resolves `premium-policy-v3` (with `protection_zone`) and gets a different `policy_sha256` from the committed `multirun-convergence/lots`. Such lots are not comparable with the committed ones; never mix them in one `report`.
 
 ---
 
@@ -630,6 +631,8 @@ T15 → T16 → T17
 **Heavy**: **yes** (one production Premium execution, about 2.5 h measured for a 13 + 13 profile; needs a November snapshot built, validated and published with `py/snapshot_registry.py`)
 
 **Blocked until**: a published manifest with cutoff `>= 2026-11-01` exists in the registry (none on 2026-11-04). Do not start, and do not fill the report by hand, before that.
+
+**Status**: DEFERRED (2026-11-04, batch b2). No November manifest exists; the tool (T15) and the pending README entry (T16) are committed. Run it as an operator task once the snapshot is published.
 
 **Tools**:
 

@@ -213,19 +213,20 @@
 ## Handoff
 
 - **Feature**: protection-zone (issue #46) - `.specs/features/protection-zone/`
-- **Phase / Task**: EXECUTE. Batch b1 done: Phase 1 (T1-T4, earlier attempt) and Phase 2 (T5-T8). Next: Phase 3 (T9-T14), then Phase 4 (T15-T16; T17 pending data).
-- **Completed**: T1, T2, T3, T4, T5, T6, T7, T8. Commits: T1 `c48e396`, T2 `1ef5dc2`, T3 `dcfc43a`, T4 `d34a3b9`, T5 `bb5dd63`, T6 `9c472bf`, T7 `b70db07`, T8 `0f617b2`.
-- **Gates at `0f617b2`** (Build, end of Phase 2): compileall clean; root suite 529 OK (2 skipped); API suite 125 OK.
+- **Phase / Task**: EXECUTE. Batches b1 (Phases 1-2, T1-T8) and b2 (Phase 3 T9-T14, Phase 4 T15-T16) done. T17 DEFERRED (pending data). Next: the orchestrator's Verifier over the whole feature.
+- **Completed**: T1 `c48e396`, T2 `1ef5dc2`, T3 `dcfc43a`, T4 `d34a3b9`, T5 `bb5dd63`, T6 `9c472bf`, T7 `b70db07`, T8 `0f617b2`, T9 `07f4c44`, T10 `0f90187`, T11 `9ee9e00`, T12 `49a4e22`, T13 `234e148`, T14 `6d41885`, T15 `3ce82f1`, T16 `c633918`.
+- **Gates at `c633918`** (Build): compileall clean; root suite 535 OK (2 skipped); API suite 160 OK.
 - **In-progress** (file:line): none.
-- **Next step**: T9 (`api/app/services/premium_policy.py`) and T10 (`api/app/repositories/recommendations.py`), then T11-T14 in the Execution Plan order. Phase 3 gate: Full (API suite).
-- **Blockers**: T17 is PENDING DATA (no published November manifest; only `dev-2026-10-29` and `dev-2026-10-29-ibov` exist). Open question A-9 (K and δ calibrated on lots with NaN-score stocks) stays as decided in `## Decisões`.
+- **Deferred**: T17 (October-to-November measurement). No published manifest with cutoff `>= 2026-11-01` exists (only `dev-2026-10-29` and `dev-2026-10-29-ibov`). Run `scripts/protection_zone_turnover.py measure --registry <snapshots> --manifest-id <november>` at a clean committed HEAD once a November snapshot is built, validated and published; commit the generated files unmodified and turn the README "pendente" entry into a link. Never write the numbers by hand. PZ-32 and PZ-35 stay "In Tasks" until then.
+- **Blockers**: none for the Verifier. Open question A-9 (K and δ calibrated on lots with NaN-score stocks) stays as decided in `## Decisões`.
 - **Uncommitted files**: none.
 - **Branch**: t3/issue-46 (PR base `develop`; merge commit, never squash, AD-023).
-- **Notes for Phase 3**:
-  - `_default_stock_engine` (`api/app/adapters/premium_optimization.py:35`) passes explicit keywords to `run_multi_execution_profile`; T12 adds `incumbents=kwargs.get("incumbents")`.
-  - `_selector_config` (`:288`) copies `liquidity_and_size_filters` (so the stock HHI fallback has `hhi_max`) but not `protection_zone`; T12 copies `protection_zone` too. The stock zone reads it from that same config.
-  - The stock selector does not raise when a fallback still breaks HHI. The adapter's check (`:391-403`, 1e-9) must still run on the returned portfolio (T12, PZ-16).
-  - SPEC_DEVIATION in `py/core/protection_zone.py:116`: ranking uses eligible picks only, while design step 2 ranks every pick. Production picks are always eligible, so output is unchanged. The Verifier should check it.
-  - Explicit results carry `protection_zone` only when applied. The adapter writes `no_incumbents`, `incumbents_unreadable` and `class_not_selected` itself (T13).
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Root suite about 190 s; API suite about 80 s.
+- **Notes for the Verifier**:
+  - SPEC_DEVIATION in `py/core/protection_zone.py:116` (b1): ranking uses eligible picks only.
+  - Adapter decision (T13, not in the spec): a selector that receives incumbents and returns no `protection_zone` record, or a status other than `applied`/`fallback_hhi`, fails the run with `engine_error` (`api/app/adapters/premium_optimization.py` `_zone_record`). Recorded in design "Error Handling".
+  - `_selector_config` copies `protection_zone`; `ProtectionZoneForwardingTests` fail if it does not. `result["policy"]` uses `policy.to_dict()` only for the policy; the shared `_json_value` is unchanged (review N5).
+  - T14's second run uses `force=True` (review N7); without it `create_run` returns the cached first run and `assertNotEqual(second.id, first.id)` fails.
+  - Incumbents with `incumbents=None` for a class (unreadable) reach the adapter as `None`; empty list = `no_incumbents`.
+  - #9 tooling (`multirun_convergence.py`, `benchmark_premium.py`) now resolves `premium-policy-v3`: new or resumed lots are not comparable with the committed lots (review N8; design Risks, tasks Rollback).
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Root suite about 175 s; API suite about 75 s.
 - **Previous handoff**: p0-02-v0-corrected (issue #7) at SPECIFY complete awaiting human approval; its artifacts remain at `.specs/features/p0-02-v0-corrected/`.

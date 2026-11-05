@@ -213,6 +213,7 @@ class ZoneSelection:
 | Pure consensus breaks `hhi_max` | Unchanged: `FiiSelectionError` / adapter `infeasible_constraints` | Same failure message as today. |
 | Incumbent run's `result_json` unreadable | Class runs without incumbents, `status: "incumbents_unreadable"` | Normal recommendation, no protection for that class. |
 | No completed Premium run | Runner called as today | First recommendation, no reasons added. |
+| Selector receives incumbents but returns no `protection_zone` record (or a status other than `applied`/`fallback_hhi`) | `PremiumOptimizationError("engine_error")` in the adapter (`_zone_record`) | Run fails; only a selector bug can cause it (both real selectors return the record, PZ-20). Chosen over recording a wrong `status`. |
 | Invalid zone config (negative K, NaN δ) | `ValueError` from `apply_protection_zone` → adapter's existing `engine_error` path | Run fails with the generic message; this only happens with a bad policy constant, pinned by tests. |
 | DB error while reading incumbents | Existing `_fail` path (`engine_error` or the exception's code) | Run fails; retry possible. |
 | `measure` on a non-November or missing manifest | Exit 3, nothing written | Operator sees the reason on stderr. |
@@ -232,6 +233,7 @@ class ZoneSelection:
 | #8 performance gate compares `code_fingerprint` over `py` and `api/app` | `scripts/benchmark_premium.py:77`, `docs/validation/premium-performance-baseline.md` "Gate de regressão" | Gate exits 6 (not comparable) after this change. | Already the case since #52 touched `py/`. Re-baselining is out of scope; noted in the PR. The zone adds O(candidates) work per selector, negligible next to the GA. |
 | Seeds change with the version | `api/app/services/premium_recommendation.py:113` (`derive_premium_seed`) | A v3 run differs from a v2 run on the same inputs even without incumbents. | A-10: regression is asserted at selector level with fixed GA runs. |
 | `_json_value` serializes dataclasses with `asdict` | `api/app/adapters/premium_optimization.py:102` | A dataclass Basic policy would emit `protection_zone: null` into `result["policy"]`. | Prefer `to_dict()` when present; T12 tests Basic result has no `protection_zone`. |
+| #9 lots built or resumed after the policy bump | `scripts/multirun_convergence.py:190-205` and `scripts/benchmark_premium.py:206-212` resolve with `POLICY_VERSION` | A new or resumed lot resolves `premium-policy-v3` (with `protection_zone`), so its `policy_sha256` differs from the committed lots: not comparable with them. | Do not mix new lots with `docs/validation/multirun-convergence/lots` in one `report`; noted in the PR. |
 | Turnover script needs a published November manifest | `snapshots/` (untracked, main checkout only: `dev-2026-10-29`, `dev-2026-10-29-ibov`) | Measurement cannot run now. | T15 ships the tool with fixture tests; T17 is gated on data and marked heavy; spec and STATE flag it. |
 
 ---
