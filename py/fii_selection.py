@@ -23,6 +23,7 @@ from core.metrics import (  # noqa: E402
     jaccard_similarity,
 )
 from core.optimizer import GeneticAlgorithm, derive_run_seed  # noqa: E402
+from core.protection_zone import select_with_fallback  # noqa: E402
 from fetch_status_invest_fii import (  # noqa: E402
     RAW_DATA_FILE,
     SOURCE_COLUMNS,
@@ -555,6 +556,10 @@ def _consensus(
     portfolios: Sequence[pd.DataFrame],
     df_ranked: pd.DataFrame,
     n_assets: int,
+    *,
+    incumbents: Optional[Sequence[str]] = None,
+    protection_zone: Optional[Mapping[str, object]] = None,
+    hhi_max: Optional[float] = None,
 ) -> pd.DataFrame:
     counts = Counter(
         ticker
@@ -562,15 +567,34 @@ def _consensus(
         for ticker in portfolio["TICKER"].tolist()
     )
     scores = df_ranked.set_index("TICKER")["SCORE"]
-    selected = sorted(
-        counts,
-        key=lambda ticker: (-counts[ticker], -float(scores[ticker]), ticker),
-    )[:n_assets]
+    zone_record = None
+    if incumbents and protection_zone is not None:
+        # AD-022 zone (#46). FIIs take no base-company dedup.
+        selection, zone_record = select_with_fallback(
+            incumbents,
+            {ticker: count / len(portfolios) for ticker, count in counts.items()},
+            {ticker: float(scores[ticker]) for ticker in counts},
+            n_assets,
+            protection_zone,
+            eligible=set(df_ranked["TICKER"]),
+            dedup_base_company=False,
+            hhi_of=lambda tickers: hhi_sector(df_ranked[df_ranked["TICKER"].isin(list(tickers))]),
+            hhi_max=None if hhi_max is None else float(hhi_max),
+        )
+        selected = list(selection.tickers)
+    else:
+        selected = sorted(
+            counts,
+            key=lambda ticker: (-counts[ticker], -float(scores[ticker]), ticker),
+        )[:n_assets]
     result = df_ranked[df_ranked["TICKER"].isin(selected)].copy()
     result["FREQUENCY"] = result["TICKER"].map(
         lambda ticker: counts[ticker] / len(portfolios)
     )
-    return result.sort_values(["FREQUENCY", "SCORE", "TICKER"], ascending=[False, False, True])
+    result = result.sort_values(["FREQUENCY", "SCORE", "TICKER"], ascending=[False, False, True])
+    if zone_record is not None:
+        result.attrs["protection_zone"] = zone_record
+    return result
 
 
 def run_fii_selection(

@@ -12,7 +12,7 @@ import math
 from pathlib import Path
 import sys
 import tempfile
-from typing import Dict, List, Mapping, Optional
+from typing import Dict, List, Mapping, Optional, Sequence
 import unittest
 from unittest.mock import patch
 
@@ -25,6 +25,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "py"))
 from config import PROFILE_WEIGHTS  # noqa: E402
 from core.metrics import hhi_sector  # noqa: E402
 from fetch_status_invest import SOURCE_COLUMNS as STOCK_COLUMNS  # noqa: E402
+from fii_selection import _consensus  # noqa: E402
 from pipelines.multi_run import (  # noqa: E402
     GA_CONFIG,
     build_consensus_portfolio,
@@ -408,6 +409,114 @@ class PipelineForwardsIncumbentsTests(unittest.TestCase):
     def test_explicit_result_has_no_zone_when_the_config_declares_none(self):  # PZ-20
         result = self._run(with_zone=False, incumbents=["AAA3"])
         self.assertNotIn("protection_zone", result)
+
+
+# _consensus at 76a6d70 (py/fii_selection.py:554-573), copied verbatim.
+def _pre_change_fii_consensus(
+    portfolios: Sequence[pd.DataFrame],
+    df_ranked: pd.DataFrame,
+    n_assets: int,
+) -> pd.DataFrame:
+    counts = Counter(
+        ticker
+        for portfolio in portfolios
+        for ticker in portfolio["TICKER"].tolist()
+    )
+    scores = df_ranked.set_index("TICKER")["SCORE"]
+    selected = sorted(
+        counts,
+        key=lambda ticker: (-counts[ticker], -float(scores[ticker]), ticker),
+    )[:n_assets]
+    result = df_ranked[df_ranked["TICKER"].isin(selected)].copy()
+    result["FREQUENCY"] = result["TICKER"].map(
+        lambda ticker: counts[ticker] / len(portfolios)
+    )
+    return result.sort_values(["FREQUENCY", "SCORE", "TICKER"], ascending=[False, False, True])
+
+
+def _portfolios(*ticker_lists):
+    """One GA run per ticker list, as the portfolio frames _consensus reads."""
+
+    return [pd.DataFrame({"TICKER": tickers}) for tickers in ticker_lists]
+
+
+class FiiConsensusWithoutIncumbentsTests(unittest.TestCase):
+    def test_omitted_none_and_empty_incumbents_return_the_pre_change_frame(self):  # PZ-17
+        ranked = _ranked(
+            [("CCC11", 0.7, "S3"), ("AAA11", 0.5, "S1"), ("BBB11", 0.9, "S2"), ("DDD11", 0.7, "S4")]
+        )
+        portfolios = _portfolios(["AAA11", "BBB11", "CCC11"], ["AAA11", "DDD11"])
+        expected = _pre_change_fii_consensus(portfolios, ranked, 3)
+        variants = {"omitted": {}, "none": {"incumbents": None}, "empty": {"incumbents": []}}
+        for label, kwargs in variants.items():
+            with self.subTest(incumbents=label):
+                actual = _consensus(portfolios, ranked, 3, **kwargs)
+                assert_frame_equal(actual, expected)
+                self.assertEqual(dict(actual.attrs), dict(expected.attrs))
+                self.assertNotIn("protection_zone", actual.attrs)
+
+
+class FiiConsensusZoneTests(unittest.TestCase):
+    def test_zone_rows_sort_by_frequency_then_score_then_ticker(self):  # PZ-19
+        # Input order is reversed and ZZZ11 outscores CCC11 and DDD11: the sort decides.
+        ranked = _ranked(
+            [("DDD11", 0.7, "S4"), ("CCC11", 0.7, "S3"), ("ZZZ11", 0.9, "S2"), ("AAA11", 0.5, "S1")]
+        )
+        portfolios = _portfolios(["AAA11", "ZZZ11", "CCC11"], ["AAA11", "DDD11"])
+        result = _consensus(
+            portfolios, ranked, 4,
+            incumbents=["CCC11", "DDD11"],
+            protection_zone={"K": 6, "delta": 0.6, "k_offset": 2},
+        )
+        self.assertEqual(result["TICKER"].tolist(), ["AAA11", "ZZZ11", "CCC11", "DDD11"])
+        self.assertEqual(result["FREQUENCY"].tolist(), [1.0, 0.5, 0.5, 0.5])
+        self.assertEqual(result.attrs["protection_zone"]["status"], "applied")
+
+    def test_zone_keeps_two_tickers_of_one_base_name(self):  # PZ-19
+        # The stock rule would merge AAAA11 and AAAA3; the FII path never strips a suffix.
+        ranked = _ranked([("AAAA11", 0.9, "S1"), ("AAAA3", 0.8, "S2"), ("BBBB11", 0.5, "S3")])
+        portfolios = _portfolios(["AAAA11", "AAAA3"], ["AAAA11", "AAAA3"])
+        result = _consensus(
+            portfolios, ranked, 2,
+            incumbents=["AAAA3"],
+            protection_zone={"K": 2, "delta": 0.11, "k_offset": 0},
+        )
+        self.assertEqual(result["TICKER"].tolist(), ["AAAA11", "AAAA3"])
+        self.assertEqual(result.attrs["protection_zone"]["status"], "applied")
+
+    def test_zone_over_the_hhi_limit_falls_back_to_the_consensus(self):  # PZ-14
+        # Zone AAA11 + BBB11 is one sector (HHI 1 > 0.6); consensus AAA11 + CCC11 has HHI 0.5.
+        ranked = _ranked([("AAA11", 0.9, "S1"), ("BBB11", 0.8, "S1"), ("CCC11", 0.7, "S2"), ("DDD11", 0.6, "S3")])
+        portfolios = _portfolios(
+            ["AAA11", "CCC11", "BBB11"], ["AAA11", "CCC11", "BBB11"],
+            ["AAA11", "CCC11", "DDD11"], ["AAA11"],
+        )
+        result = _consensus(
+            portfolios, ranked, 2,
+            incumbents=["BBB11"],
+            protection_zone={"K": 3, "delta": 0.3, "k_offset": 1},
+            hhi_max=0.6,
+        )
+        self.assertEqual(result["TICKER"].tolist(), ["AAA11", "CCC11"])
+        self.assertEqual(result.attrs["protection_zone"]["status"], "fallback_hhi")
+        self.assertEqual(result.attrs["protection_zone"]["buffer_fallback"], "hhi")
+
+    def test_zone_within_the_hhi_limit_is_used_when_the_consensus_exceeds_it(self):  # PZ-16
+        # Consensus AAA11 + BBB11 is one sector (HHI 1 > 0.6); zone AAA11 + DDD11 has HHI 0.5.
+        ranked = _ranked([("AAA11", 0.9, "S1"), ("BBB11", 0.8, "S1"), ("CCC11", 0.7, "S2"), ("DDD11", 0.6, "S3")])
+        portfolios = _portfolios(
+            ["AAA11", "BBB11", "DDD11"], ["AAA11", "BBB11", "DDD11"],
+            ["AAA11", "BBB11"], ["AAA11", "CCC11"],
+        )
+        result = _consensus(
+            portfolios, ranked, 2,
+            incumbents=["DDD11"],
+            protection_zone={"K": 3, "delta": 0.3, "k_offset": 1},
+            hhi_max=0.6,
+        )
+        self.assertEqual(result["TICKER"].tolist(), ["AAA11", "DDD11"])
+        self.assertEqual(result.attrs["protection_zone"]["status"], "applied")
+        self.assertIsNone(result.attrs["protection_zone"]["buffer_fallback"])
 
 
 if __name__ == "__main__":

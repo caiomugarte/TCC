@@ -326,6 +326,8 @@ T15 → T16 → T17
 
 #### T7: FII consensus applies the zone
 
+**Status**: Complete
+
 **What**: Add `incumbents`, `protection_zone`, `hhi_max` keywords to `_consensus` and the zone branch without dedup.
 **Where**: `py/fii_selection.py` (modify `_consensus` only)
 **Depends on**: T3
@@ -341,10 +343,10 @@ T15 → T16 → T17
 
 **Done when**:
 
-- [ ] With no incumbents the frame equals the `76a6d70` body's frame
-- [ ] Zone path sorted by `FREQUENCY`, `SCORE` desc, `TICKER` asc; no base-company dedup (two `XXXX11` funds of one manager both allowed)
-- [ ] Gate check passes: Selector
-- [ ] Test count: at least 4 new tests
+- [x] With no incumbents the frame equals the `76a6d70` body's frame
+- [x] Zone path sorted by `FREQUENCY`, `SCORE` desc, `TICKER` asc; no base-company dedup (tested with `AAAA11` and `AAAA3`, which the stock rule would merge)
+- [x] Gate check passes: Selector
+- [x] Test count: at least 4 new tests (5 new, all pass)
 
 **Tests**: unit
 **Gate**: selector
