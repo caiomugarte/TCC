@@ -374,8 +374,8 @@ class ProtectionZoneIntegrationTests(unittest.TestCase):
             executor.shutdown()
 
         self.assertNotEqual(second.id, first.id)
-        self.assertEqual(first.policy_version, "premium-policy-v3")
-        self.assertEqual(second.policy_version, "premium-policy-v3")
+        self.assertEqual(first.policy_version, "premium-policy-v4")
+        self.assertEqual(second.policy_version, "premium-policy-v4")
         first_zone = first.result_json["provenance"]["protection_zone"]
         self.assertIsNone(first_zone["incumbent_run_id"])
         self.assertEqual(first_zone["stocks"]["status"], "no_incumbents")

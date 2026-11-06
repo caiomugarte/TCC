@@ -267,7 +267,7 @@ class PremiumPolicyTests(unittest.TestCase):
         )
 
     def test_policy_versions_are_bumped_and_reject_the_v1_strings(self) -> None:
-        self.assertEqual(POLICY_VERSION, "premium-policy-v3")
+        self.assertEqual(POLICY_VERSION, "premium-policy-v4")
         self.assertEqual(BASIC_POLICY_VERSION, "basic-policy-v2")
         with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
             resolve_premium_policy(profile(), rules_version="premium-policy-v1")
@@ -278,7 +278,7 @@ class PremiumPolicyTests(unittest.TestCase):
         premium = resolve_premium_policy(profile())
         basic = resolve_recommendation_policy(profile(), plan="basic")
 
-        self.assertEqual(premium.provenance.policy_version, "premium-policy-v3")
+        self.assertEqual(premium.provenance.policy_version, "premium-policy-v4")
         self.assertEqual(basic.provenance.policy_version, "basic-policy-v2")
 
 
@@ -400,6 +400,50 @@ class SegmentCapPolicyTests(unittest.TestCase):
             with self.subTest(score=score):
                 resolved = resolve_premium_policy(profile(score=score, knowledge=score))
                 self.assertEqual(resolved.fiis.n_assets, n_assets)
+
+    def test_owner_profile_resolves_five_fiis_capped_at_two(self) -> None:
+        resolved = resolve_premium_policy(profile(score=0.7, knowledge=0.7))
+        self.assertEqual(resolved.provenance.policy_version, "premium-policy-v4")
+        self.assertEqual(resolved.fiis.n_assets, 5)
+        self.assertEqual(resolved.fiis.max_per_segment, 2)
+        self.assertEqual(
+            resolved.fiis.protection_zone, {"k_offset": 3, "K": 8, "delta": 0.11}
+        )
+        self.assertEqual(resolved.stocks.n_assets, 13)
+
+    def test_premium_policy_v3_is_rejected(self) -> None:
+        with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
+            resolve_premium_policy(profile(), rules_version="premium-policy-v3")
+        with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
+            resolve_recommendation_policy(
+                profile(), rules_version="premium-policy-v3", plan="premium"
+            )
+
+    def test_model_versions_record_fii_selection_v2(self) -> None:
+        premium_versions = {
+            "allocation": "allocation-v1",
+            "stocks": "stock-selection-v1",
+            "fiis": "fii-selection-v2",
+        }
+        basic_versions = {**premium_versions, "fiis": "fii-selection-v1"}
+        premium = resolve_premium_policy(profile())
+        self.assertEqual(dict(premium.provenance.model_versions), premium_versions)
+        self.assertEqual(
+            json.loads(premium.to_json())["provenance"]["model_versions"], premium_versions
+        )
+        self.assertEqual(
+            dict(resolve_recommendation_policy(profile(), plan="premium").provenance.model_versions),
+            premium_versions,
+        )
+        for basic in (
+            resolve_basic_policy(profile()),
+            resolve_recommendation_policy(profile(), plan="basic"),
+        ):
+            with self.subTest(policy_version=basic.provenance.policy_version):
+                self.assertEqual(dict(basic.provenance.model_versions), basic_versions)
+                self.assertEqual(
+                    json.loads(basic.to_json())["provenance"]["model_versions"], basic_versions
+                )
 
 
 class PolicyDriftGuardTests(unittest.TestCase):

@@ -9,7 +9,7 @@ from typing import Any, Mapping, Sequence
 from app.db.models import ProfileRecord
 
 
-POLICY_VERSION = "premium-policy-v3"
+POLICY_VERSION = "premium-policy-v4"
 BASIC_POLICY_VERSION = "basic-policy-v2"
 RULES_VERSION = POLICY_VERSION
 PROFILE_SCHEMA_VERSION = 1
@@ -96,6 +96,15 @@ PROTECTION_ZONE = {
 
 # FII segment cap (issue #56, AD-027): at most this many Premium FIIs per SETOR.
 FII_MAX_PER_SEGMENT = 2
+
+# Selection method versions persisted in provenance. The Premium FII method
+# changed with the segment cap (#56); Basic keeps the uncapped v1 method.
+PREMIUM_MODEL_VERSIONS = {
+    "allocation": "allocation-v1",
+    "stocks": "stock-selection-v1",
+    "fiis": "fii-selection-v2",
+}
+BASIC_MODEL_VERSIONS = {**PREMIUM_MODEL_VERSIONS, "fiis": "fii-selection-v1"}
 
 
 class PremiumPolicyError(ValueError):
@@ -444,14 +453,7 @@ def resolve_premium_policy(
         raise PremiumPolicyError("random seed must be an integer")
     provenance = Provenance(
         policy_version=rules_version,
-        model_versions=dict(
-            model_versions
-            or {
-                "allocation": "allocation-v1",
-                "stocks": "stock-selection-v1",
-                "fiis": "fii-selection-v1",
-            }
-        ),
+        model_versions=dict(model_versions or PREMIUM_MODEL_VERSIONS),
         source_snapshot_ids=tuple(str(value) for value in source_snapshot_ids),
         source_snapshot_hashes=dict(source_snapshot_hashes or {}),
         cutoff_date=cutoff,
@@ -496,11 +498,16 @@ def resolve_basic_policy(
     if selector_score is None:
         raise PremiumPolicyError(f"unsupported generic profile: {generic_profile}")
     restrictions = set(resolved.profile.restrictions)
+    model_versions = dict(kwargs.get("model_versions") or BASIC_MODEL_VERSIONS)
     return replace(
         resolved,
         stocks=_selector_policy(STOCK_RULES, selector_score, restrictions),
         fiis=_selector_policy(BASIC_FII_RULES, selector_score, restrictions),
-        provenance=replace(resolved.provenance, policy_version=rules_version),
+        provenance=replace(
+            resolved.provenance,
+            policy_version=rules_version,
+            model_versions=model_versions,
+        ),
     )
 
 

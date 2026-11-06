@@ -161,7 +161,7 @@ class ProtectionZoneTurnoverTests(unittest.TestCase):
         manifest = json.loads((self.registry / "nov-fixture.json").read_text(encoding="utf-8"))
         self.assertEqual(report["seed"], 46641103)
         self.assertEqual(report["profile_id"], "premium-2026-11-02")
-        self.assertEqual(report["policy_version"], "premium-policy-v3")
+        self.assertEqual(report["policy_version"], "premium-policy-v4")
         self.assertEqual(report["october"]["run_id"], "9e22cc16-cfda-495e-a8c9-c0d202ef32b6")
         self.assertEqual(report["november"]["manifest_id"], "nov-fixture")
         self.assertEqual(report["november"]["manifest_sha256"], manifest["manifest_sha256"])

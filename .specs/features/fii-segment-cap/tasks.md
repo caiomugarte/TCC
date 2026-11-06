@@ -498,7 +498,7 @@ T13 → T14
 
 #### T11: Bump to `premium-policy-v4` and `fii-selection-v2`
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Set `POLICY_VERSION = "premium-policy-v4"`, Premium `model_versions.fiis = "fii-selection-v2"` (Basic keeps `v1`), and update the tests that pin the v3 version string.
 **Where**: `api/app/services/premium_policy.py` (tests: `api/tests/test_premium_policy.py`, `api/tests/test_premium_integration.py`, `tests/test_protection_zone_turnover.py`)
@@ -515,12 +515,12 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Updated version tests, new `test_premium_policy_v3_is_rejected`, `test_model_versions_record_fii_selection_v2`, `test_owner_profile_resolves_five_fiis_capped_at_two` pass
-- [ ] `test_premium_integration` and `test_protection_zone_turnover` assert `premium-policy-v4` (only the version literal changes)
-- [ ] `BASIC_GOLDEN_JSON` test passes unchanged
-- [ ] `git diff --exit-code a61164a -- docs/validation/` is empty
-- [ ] Gate check passes: Policy
-- [ ] Test count: API suite ≥ 166
+- [x] Updated version tests, new `test_premium_policy_v3_is_rejected`, `test_model_versions_record_fii_selection_v2`, `test_owner_profile_resolves_five_fiis_capped_at_two` pass
+- [x] `test_premium_integration` and `test_protection_zone_turnover` assert `premium-policy-v4` (only the version literal changes)
+- [x] `BASIC_GOLDEN_JSON` test passes unchanged
+- [x] `git diff --exit-code a61164a -- docs/validation/` is empty
+- [x] Gate check passes: Policy
+- [x] Test count: API suite ≥ 166
 
 **Tests**: unit
 **Gate**: policy
