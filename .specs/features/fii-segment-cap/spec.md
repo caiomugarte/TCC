@@ -242,12 +242,12 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-06 | P1: Premium policy v4 | Tasks T10 | In Tasks |
 | SEG-07 | P1: Premium policy v4 | Tasks T11 | In Tasks |
 | SEG-08 | P1: Premium policy v4 | Tasks T10, T11 | In Tasks |
-| SEG-09 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
-| SEG-10 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
-| SEG-11 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
-| SEG-12 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
-| SEG-13 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
-| SEG-14 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
+| SEG-09 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
+| SEG-10 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
+| SEG-11 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
+| SEG-12 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
+| SEG-13 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
+| SEG-14 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
 | SEG-15 | P1: Pure consensus skips a full segment | Tasks T2, T7 | In Tasks |
 | SEG-16 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
 | SEG-17 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |

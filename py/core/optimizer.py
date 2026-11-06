@@ -55,7 +55,8 @@ class GeneticAlgorithm:
         random_seed: Optional[int] = None,
         hhi_max: Optional[float] = None,
         early_stopping_patience: int = 50,
-        early_stopping_min_delta: float = 1e-6
+        early_stopping_min_delta: float = 1e-6,
+        max_per_segment: Optional[int] = None
     ):
         """
         Inicializa o otimizador GA.
@@ -80,6 +81,9 @@ class GeneticAlgorithm:
             Número de gerações sem melhoria para parar (default: 50).
         early_stopping_min_delta : float, optional
             Melhoria mínima considerada significativa (default: 1e-6).
+        max_per_segment : int, optional
+            Máximo de ativos com o mesmo SETOR; acima dele o candidato é
+            inviável (None = sem teto).
         """
         if n_assets <= 0:
             raise ValueError("n_assets must be positive")
@@ -93,6 +97,12 @@ class GeneticAlgorithm:
             not math.isfinite(float(hhi_max)) or not 0.0 <= float(hhi_max) <= 1.0
         ):
             raise ValueError("hhi_max must be between 0 and 1")
+        if max_per_segment is not None and (
+            not isinstance(max_per_segment, int)
+            or isinstance(max_per_segment, bool)
+            or max_per_segment < 1
+        ):
+            raise ValueError("max_per_segment must be an integer >= 1")
         self.n_assets = int(n_assets)
         self.lambda_hhi = float(lambda_hhi)
         self.generations = int(generations)
@@ -103,6 +113,7 @@ class GeneticAlgorithm:
         self.hhi_max = None if hhi_max is None else float(hhi_max)
         self.early_stopping_patience = early_stopping_patience
         self.early_stopping_min_delta = early_stopping_min_delta
+        self.max_per_segment = max_per_segment
         self._random = random_module.Random(random_seed)
         self._numpy = np.random.default_rng(random_seed)
 
@@ -128,6 +139,11 @@ class GeneticAlgorithm:
             return -np.inf  # Inviável
 
         selected = df.iloc[mask.astype(bool)]
+        if self.max_per_segment is not None:
+            if "SETOR" not in df.columns:
+                raise ValueError("max_per_segment requires a SETOR column")
+            if selected["SETOR"].value_counts().max() > self.max_per_segment:
+                return -np.inf
         hhi = hhi_sector(selected)
         if self.hhi_max is not None and (
             not math.isfinite(float(hhi)) or hhi > self.hhi_max + 1e-12

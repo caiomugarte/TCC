@@ -184,7 +184,7 @@ T13 → T14
 
 #### T1: Segment cap in the GA fitness
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add `max_per_segment` to `GeneticAlgorithm` (validated in `__init__`, `-inf` in `fitness` above the cap, `ValueError` without `SETOR`), leaving the `None` path byte-identical.
 **Where**: `py/core/optimizer.py`
@@ -201,11 +201,11 @@ T13 → T14
 
 **Done when**:
 
-- [ ] FIRST, before editing `optimizer.py`: golden values (tickers, `fitness`, `hhi`, `generations_run`, `seed`) for seeds 3 and 11 on the test's synthetic frame are captured at `a61164a` and written as literals in `tests/test_segment_cap_optimizer.py`
-- [ ] Every `test_segment_cap_optimizer` row of the Test Strategy passes
-- [ ] The new keyword is appended after `early_stopping_min_delta`; `crossover`, `mutate`, `initialize_population`, `optimize`, `optimize_portfolio` unchanged (`git diff` shows edits only in `__init__` and `fitness`)
-- [ ] Gate check passes: Core (modules present at this point)
-- [ ] Test count: at least 7 new tests; `tests.test_protection_zone*` counts unchanged
+- [x] FIRST, before editing `optimizer.py`: golden values (tickers, `fitness`, `hhi`, `generations_run`, `seed`) for seeds 3 and 11 on the test's synthetic frame are captured at `a61164a` and written as literals in `tests/test_segment_cap_optimizer.py`
+- [x] Every `test_segment_cap_optimizer` row of the Test Strategy passes
+- [x] The new keyword is appended after `early_stopping_min_delta`; `crossover`, `mutate`, `initialize_population`, `optimize`, `optimize_portfolio` unchanged (`git diff` shows edits only in `__init__` and `fitness`)
+- [x] Gate check passes: Core (modules present at this point)
+- [x] Test count: at least 7 new tests; `tests.test_protection_zone*` counts unchanged
 
 **Tests**: unit
 **Gate**: core
