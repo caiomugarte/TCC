@@ -342,7 +342,7 @@ T13 → T14
 
 #### T6: Cap from the FII config reaches the GA
 
-**Status**: Pending
+**Status**: Done
 
 **What**: `optimize_fii_portfolio` copies `config["max_per_segment"]` into its settings and constructs `GeneticAlgorithm(..., max_per_segment=...)`.
 **Where**: `py/fii_selection.py`
@@ -359,9 +359,9 @@ T13 → T14
 
 **Done when**:
 
-- [ ] `test_config_cap_reaches_every_ga_run` and `test_config_without_cap_constructs_the_ga_with_none` pass (recording GA subclass, as `_RecordingGeneticAlgorithm` in `api/tests/test_premium_policy.py`)
-- [ ] Gate check passes: Selector
-- [ ] Test count: at least 2 new tests in `tests/test_segment_cap_fii.py`
+- [x] `test_config_cap_reaches_every_ga_run` and `test_config_without_cap_constructs_the_ga_with_none` pass (recording GA subclass, as `_RecordingGeneticAlgorithm` in `api/tests/test_premium_policy.py`)
+- [x] Gate check passes: Selector
+- [x] Test count: at least 2 new tests in `tests/test_segment_cap_fii.py`
 
 **Tests**: unit
 **Gate**: selector

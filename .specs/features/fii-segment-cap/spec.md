@@ -260,12 +260,12 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-24 | P1: Protection zone respects the cap | Tasks T3, T5 | Implemented (T3, T4, T5) |
 | SEG-25 | P1: Protection zone respects the cap | Tasks T2 | Implemented (T2) |
 | SEG-26 | P1: Protection zone respects the cap | Tasks T8 | In Tasks |
-| SEG-27 | P1: FII selector and adapter carry the cap | Tasks T6, T8, T12 | In Tasks |
+| SEG-27 | P1: FII selector and adapter carry the cap | Tasks T6, T8, T12 | In progress (T6 done) |
 | SEG-28 | P1: FII selector and adapter carry the cap | Tasks T8 | In Tasks |
 | SEG-29 | P1: FII selector and adapter carry the cap | Tasks T8 | In Tasks |
 | SEG-30 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
 | SEG-31 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
-| SEG-32 | P1: FII selector and adapter carry the cap | Tasks T6, T13, T14 | In Tasks |
+| SEG-32 | P1: FII selector and adapter carry the cap | Tasks T6, T13, T14 | In progress (T6 done) |
 | SEG-33 | P1: FII selector and adapter carry the cap | Tasks T14 | In Tasks |
 | SEG-34 | P2: Research tooling follows v4 | Tasks T10 | In Tasks |
 | SEG-35 | P2: Research tooling follows v4 | Tasks T11 | In Tasks |

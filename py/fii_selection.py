@@ -459,6 +459,8 @@ def optimize_fii_portfolio(
         ):
             if key in config:
                 settings[key] = config[key]
+        if "max_per_segment" in config:
+            settings["max_per_segment"] = config["max_per_segment"]
         filters = config.get("liquidity_and_size_filters") or config.get(
             "eligibility_filters"
         )
@@ -492,6 +494,7 @@ def optimize_fii_portfolio(
         mutation_rate=float(settings.get("mutation_rate", 0.02)),
         random_seed=random_seed,
         hhi_max=settings.get("hhi_max"),
+        max_per_segment=settings.get("max_per_segment"),
     )
     return optimizer.optimize(df_ranked)
 
