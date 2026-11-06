@@ -237,7 +237,7 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-01 | P1: Premium policy v4 | Tasks T11 | In Tasks |
 | SEG-02 | P1: Premium policy v4 | Tasks T11 | In Tasks |
 | SEG-03 | P1: Premium policy v4 | Tasks T10 | In Tasks |
-| SEG-04 | P1: Premium policy v4 | Tasks T9 | In Tasks |
+| SEG-04 | P1: Premium policy v4 | Tasks T9 | Implemented (T9) |
 | SEG-05 | P1: Premium policy v4 | Tasks T11, T12 | In Tasks |
 | SEG-06 | P1: Premium policy v4 | Tasks T10 | In Tasks |
 | SEG-07 | P1: Premium policy v4 | Tasks T11 | In Tasks |

@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from collections import Counter
@@ -368,6 +369,30 @@ class ProtectionZonePolicyTests(unittest.TestCase):
         self.assertNotIn("protection_zone", payload["fiis"])
         self.assertNotIn("protection_zone", resolved.to_json())
         self.assertEqual(resolved.to_json(), BASIC_GOLDEN_JSON)
+
+
+class SegmentCapPolicyTests(unittest.TestCase):
+    """SEG-01..SEG-08 (issue #56): the Premium FII sleeve is capped per segment."""
+
+    def test_premium_fiis_carry_max_per_segment_2_for_every_score(self) -> None:
+        for score in (0.0, 0.25, 0.5, 0.7, 1.0):
+            with self.subTest(score=score):
+                resolved = resolve_premium_policy(profile(score=score, knowledge=score))
+                self.assertEqual(resolved.fiis.max_per_segment, 2)
+                self.assertEqual(resolved.to_dict()["fiis"]["max_per_segment"], 2)
+                self.assertEqual(
+                    json.loads(resolved.to_json())["fiis"]["max_per_segment"], 2
+                )
+
+    def test_stocks_have_no_max_per_segment(self) -> None:
+        for score in (0.0, 0.5, 1.0):
+            with self.subTest(score=score):
+                resolved = resolve_premium_policy(profile(score=score, knowledge=score))
+                self.assertIsNone(resolved.stocks.max_per_segment)
+                self.assertNotIn("max_per_segment", resolved.to_dict()["stocks"])
+                self.assertNotIn(
+                    "max_per_segment", json.loads(resolved.to_json())["stocks"]
+                )
 
 
 class PolicyDriftGuardTests(unittest.TestCase):

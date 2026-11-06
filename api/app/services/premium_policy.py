@@ -86,6 +86,9 @@ PROTECTION_ZONE = {
     "fiis": {"k_offset": 3, "delta": 0.11},
 }
 
+# FII segment cap (issue #56, AD-027): at most this many Premium FIIs per SETOR.
+FII_MAX_PER_SEGMENT = 2
+
 
 class PremiumPolicyError(ValueError):
     """Raised when a persisted profile cannot produce a safe Premium policy."""
@@ -124,6 +127,7 @@ class SelectorPolicy:
     lambda_hhi: float
     system_ga_config: Mapping[str, int | float | bool]
     protection_zone: Mapping[str, object] | None = None
+    max_per_segment: int | None = None
 
 
 @dataclass(frozen=True)
@@ -174,6 +178,8 @@ def _selector_dict(section: SelectorPolicy) -> dict[str, object]:
     value = _section_dict(section)
     if value.get("protection_zone") is None:
         value.pop("protection_zone", None)
+    if value.get("max_per_segment") is None:
+        value.pop("max_per_segment", None)
     return value
 
 
@@ -421,7 +427,10 @@ def resolve_premium_policy(
     selector_score = _selector_score(score, checked_dimensions)
     allocation = _allocation_policy(score, restriction_set)
     stocks = _protection_zone(_selector_policy(STOCK_RULES, selector_score, restriction_set), "stocks")
-    fiis = _protection_zone(_selector_policy(FII_RULES, selector_score, restriction_set), "fiis")
+    fiis = replace(
+        _protection_zone(_selector_policy(FII_RULES, selector_score, restriction_set), "fiis"),
+        max_per_segment=FII_MAX_PER_SEGMENT,
+    )
     cutoff = cutoff_date.isoformat() if isinstance(cutoff_date, date) else cutoff_date
     if random_seed is not None and not isinstance(random_seed, int):
         raise PremiumPolicyError("random seed must be an integer")

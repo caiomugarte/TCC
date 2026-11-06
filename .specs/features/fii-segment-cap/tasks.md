@@ -433,7 +433,7 @@ T13 → T14
 
 #### T9: `max_per_segment` on the Premium FII policy
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add `SelectorPolicy.max_per_segment` (omitted from `to_dict()` when `None`) and set `FII_MAX_PER_SEGMENT = 2` on the Premium FII section only.
 **Where**: `api/app/services/premium_policy.py`
@@ -450,10 +450,10 @@ T13 → T14
 
 **Done when**:
 
-- [ ] `test_premium_fiis_carry_max_per_segment_2_for_every_score` and `test_stocks_have_no_max_per_segment` pass
-- [ ] `BASIC_GOLDEN_JSON` test passes unchanged
-- [ ] Gate check passes: Policy
-- [ ] Test count: API suite ≥ 162
+- [x] `test_premium_fiis_carry_max_per_segment_2_for_every_score` and `test_stocks_have_no_max_per_segment` pass
+- [x] `BASIC_GOLDEN_JSON` test passes unchanged
+- [x] Gate check passes: Policy
+- [x] Test count: API suite ≥ 162
 
 **Tests**: unit
 **Gate**: policy
