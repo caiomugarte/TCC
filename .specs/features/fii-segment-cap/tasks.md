@@ -278,7 +278,7 @@ T13 → T14
 
 #### T4: HHI skip inside `apply_protection_zone`
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add keyword-only `hhi_max` to `apply_protection_zone` (accepted only with a cap): the protection walk, the fill and the challengers through `_fits` (an incumbent the walk rejects leaves with `saiu: teto do segmento`, AD-029), and `SegmentCapInfeasibleError` when the fill cannot reach `n_assets` (spec A-5, A-16, A-17).
 **Where**: `py/core/protection_zone.py`
@@ -295,11 +295,11 @@ T13 → T14
 
 **Done when**:
 
-- [ ] `test_fill_skips_a_ticker_that_would_break_hhi_max`, `test_challenger_that_would_break_hhi_max_is_skipped`, `test_challenger_hhi_check_excludes_the_weakest`, `test_protected_pair_over_hhi_max_keeps_the_higher_ranked_incumbent`, `test_incumbent_past_capacity_is_cut_by_capacity_not_by_hhi`, `test_zone_fill_short_raises_instead_of_a_short_sleeve` and the `apply_protection_zone` half of `test_hhi_max_without_cap_raises` pass
-- [ ] The protection walk calls `_fits` while fewer than `n_assets` incumbents are accepted and the cap check alone after that (design step 2); no HHI gate raises on the protected set
-- [ ] `tests/test_protection_zone.py`, `tests/test_protection_zone_equivalence.py` and every T3 test pass with zero edits
-- [ ] Gate check passes: Core
-- [ ] Test count: at least 7 new tests in `tests/test_segment_cap_zone.py`
+- [x] `test_fill_skips_a_ticker_that_would_break_hhi_max`, `test_challenger_that_would_break_hhi_max_is_skipped`, `test_challenger_hhi_check_excludes_the_weakest`, `test_protected_pair_over_hhi_max_keeps_the_higher_ranked_incumbent`, `test_incumbent_past_capacity_is_cut_by_capacity_not_by_hhi`, `test_zone_fill_short_raises_instead_of_a_short_sleeve` and the `apply_protection_zone` half of `test_hhi_max_without_cap_raises` pass
+- [x] The protection walk calls `_fits` while fewer than `n_assets` incumbents are accepted and the cap check alone after that (design step 2); no HHI gate raises on the protected set
+- [x] `tests/test_protection_zone.py`, `tests/test_protection_zone_equivalence.py` and every T3 test pass with zero edits
+- [x] Gate check passes: Core
+- [x] Test count: at least 7 new tests in `tests/test_segment_cap_zone.py`
 
 **Tests**: unit
 **Gate**: core

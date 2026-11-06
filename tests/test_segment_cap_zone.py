@@ -104,6 +104,8 @@ class TakeWithinSegmentCapTests(unittest.TestCase):
             take_within_segment_cap(
                 ordered, 2, segment_of=_segments(*ordered), max_per_segment=None, hhi_max=0.25
             )
+        with self.assertRaisesRegex(ValueError, "^hhi_max"):
+            _cap_zone(["P1"], {"P1": 0.9, "Q1": 0.8}, 2, 3, 0.11, max_per_segment=None, hhi_max=0.25)
         for value in (0, 0.0, -0.1, float("nan"), float("inf"), "0.25"):
             with self.subTest(hhi_max=value):
                 with self.assertRaisesRegex(ValueError, "^hhi_max"):
@@ -112,13 +114,13 @@ class TakeWithinSegmentCapTests(unittest.TestCase):
                     )
 
 
-def _cap_zone(incumbents, frequencies, n_assets, K, delta, *, max_per_segment=2, **extra):
+def _cap_zone(incumbents, frequencies, n_assets, K, delta, *, max_per_segment=2, scores=None, **extra):
     """apply_protection_zone over letter segments, every candidate eligible, score 1.0, no dedup."""
 
     return apply_protection_zone(
         incumbents,
         frequencies,
-        {t: 1.0 for t in frequencies},
+        {t: 1.0 for t in frequencies} if scores is None else scores,
         n_assets,
         K,
         delta,
@@ -246,6 +248,62 @@ class ZoneSegmentCapTests(unittest.TestCase):
                 # The same fixture capped at 2 differs, so the None path is not the cap path.
                 if n_assets >= 3:
                     self.assertNotEqual(_cap_zone(incumbents, frequencies, n_assets, 5, 0.11), without)
+
+
+
+class ZoneHhiSkipTests(unittest.TestCase):
+    def test_zone_rejects_an_invalid_hhi_max_with_a_cap(self):  # SEG-41 (zone side)
+        for value in (0, float("nan")):
+            with self.subTest(hhi_max=value):
+                with self.assertRaisesRegex(ValueError, "^hhi_max"):
+                    _cap_zone(["P1"], {"P1": 0.9, "Q1": 0.8}, 2, 3, 0.11, hhi_max=value)
+
+    def test_fill_skips_a_ticker_that_would_break_hhi_max(self):  # SEG-38
+        frequencies = {"P1": 0.9, "P2": 0.85, "Q1": 0.8, "R1": 0.7, "S1": 0.6, "T1": 0.5}
+        selection = _cap_zone(["P1"], frequencies, 5, 8, 0.11, hhi_max=0.25)
+        self.assertEqual(selection.tickers, ("P1", "Q1", "R1", "S1", "T1"))
+        self.assertEqual(selection.kept, ("P1",))
+
+    def test_challenger_that_would_break_hhi_max_is_skipped(self):  # SEG-38
+        # Weakest protected Q1. P2 leads it by >= delta but a P pair does not fit at n 5
+        # under 0.25; R2 is next and leads by >= delta, so R2 replaces Q1.
+        frequencies = {"P1": 0.95, "P2": 0.9, "R2": 0.85, "S1": 0.8, "T1": 0.75, "U1": 0.7, "Q1": 0.5}
+        selection = _cap_zone(["P1", "S1", "T1", "U1", "Q1"], frequencies, 5, 8, 0.11, hhi_max=0.25)
+        self.assertEqual(selection.replaced, (("Q1", "R2"),))
+        self.assertEqual(selection.tickers, ("P1", "R2", "S1", "T1", "U1"))
+        self.assertNotIn("P2", selection.tickers)
+
+    def test_challenger_hhi_check_excludes_the_weakest(self):  # SEG-38 (held minus the weakest)
+        frequencies = {"Q2": 0.9, "P1": 0.85, "R1": 0.8, "S1": 0.75, "T1": 0.7, "Q1": 0.5}
+        selection = _cap_zone(["P1", "R1", "S1", "T1", "Q1"], frequencies, 5, 8, 0.11, hhi_max=0.25)
+        self.assertEqual(selection.replaced, (("Q1", "Q2"),))
+        self.assertEqual(selection.tickers, ("Q2", "P1", "R1", "S1", "T1"))
+
+    def test_protected_pair_over_hhi_max_keeps_the_higher_ranked_incumbent(self):  # SEG-39, A-5
+        frequencies = {"P1": 0.9, "Q1": 0.8, "P2": 0.7, "R1": 0.6, "S1": 0.5, "T1": 0.4}
+        selection = _cap_zone(["P1", "Q1", "P2"], frequencies, 5, 8, 0.11, hhi_max=0.25)
+        self.assertEqual(selection.kept, ("P1", "Q1"))
+        self.assertEqual(selection.departures, {"P2": "saiu: teto do segmento"})
+        self.assertEqual(set(selection.tickers), {"P1", "Q1", "R1", "S1", "T1"})
+
+        # Equal frequency: the higher SCORE ranks first and stays (rank tie-break).
+        frequencies = {"P1": 0.9, "P2": 0.9, "Q1": 0.8, "R1": 0.6, "S1": 0.5, "T1": 0.4}
+        scores = {"P1": 0.5, "P2": 0.8, "Q1": 1.0, "R1": 1.0, "S1": 1.0, "T1": 1.0}
+        selection = _cap_zone(["P1", "Q1", "P2"], frequencies, 5, 8, 0.11, hhi_max=0.25, scores=scores)
+        self.assertEqual(selection.kept, ("P2", "Q1"))
+        self.assertEqual(selection.departures, {"P1": "saiu: teto do segmento"})
+        self.assertEqual(set(selection.tickers), {"P2", "Q1", "R1", "S1", "T1"})
+
+    def test_incumbent_past_capacity_is_cut_by_capacity_not_by_hhi(self):  # SEG-20, SEG-39
+        frequencies = {"P1": 0.9, "Q1": 0.8, "R1": 0.7, "S1": 0.6, "P2": 0.5}
+        selection = _cap_zone(["P1", "Q1", "R1", "S1", "P2"], frequencies, 4, 8, 0.11, hhi_max=0.25)
+        self.assertEqual(selection.kept, ("P1", "Q1", "R1", "S1"))
+        self.assertEqual(selection.departures, {"P2": "saiu: vagas reduzidas"})
+
+    def test_zone_fill_short_raises_instead_of_a_short_sleeve(self):  # SEG-43
+        frequencies = {"P1": 0.9, "P2": 0.8, "Q1": 0.7, "Q2": 0.6, "R1": 0.5}
+        with self.assertRaisesRegex(SegmentCapInfeasibleError, "hhi_max"):
+            _cap_zone(["P1"], frequencies, 4, 8, 0.11, hhi_max=0.25)
 
 
 if __name__ == "__main__":

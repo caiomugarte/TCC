@@ -207,6 +207,7 @@ def apply_protection_zone(
     dedup_base_company: bool,
     segment_of: Mapping[str, str] | None = None,
     max_per_segment: int | None = None,
+    hhi_max: float | None = None,
 ) -> ZoneSelection:
     """Apply the AD-022 zone to one class and give a reason for every ticker (PZ-01).
 
@@ -218,8 +219,13 @@ def apply_protection_zone(
     With ``max_per_segment`` (issue #56, AD-027) no segment of ``segment_of``
     holds more than the cap: a qualifying incumbent of a full segment leaves
     with ``saiu: teto do segmento`` before the ``n_assets`` cut, and the fill
-    and the challengers skip a ticker that would break the cap. Without it the
-    rule is the AD-022 one, unchanged.
+    and the challengers skip a ticker that would break the cap. With ``hhi_max``
+    as well (accepted only with the cap), the protection walk, the fill and the
+    challengers also skip a ticker that would push the sleeve above the
+    projected HHI bound (spec A-16, AD-029); an incumbent the walk rejects
+    leaves with the same reason, and a fill that cannot reach ``n_assets``
+    raises SegmentCapInfeasibleError. Without a cap the rule is the AD-022
+    one, unchanged.
     """
 
     validate_zone_inputs(n_assets, K, delta, frequencies)
@@ -229,7 +235,7 @@ def apply_protection_zone(
     # Reason: PZ-06 says an ineligible incumbent is never selected, and the fill draws from this
     # ranking. Production picks are always eligible (they come from the ranked frame), so no output changes.
     candidates = {ticker: f for ticker, f in frequencies.items() if ticker in eligible_set}
-    validate_segment_cap(max_per_segment, segment_of, candidates)
+    validate_segment_cap(max_per_segment, segment_of, candidates, hhi_max)
     ranking = rank_candidates(candidates, scores, dedup_base_company=dedup_base_company)
     rank = {ticker: position for position, ticker in enumerate(ranking, start=1)}
 
@@ -243,13 +249,17 @@ def apply_protection_zone(
         capped = set(qualifying[n_assets:])
     else:
         # Segment cut before the capacity cut (A-5): walk in rank order and keep
-        # an incumbent only while its segment has room.
+        # an incumbent only while it fits (SEG-19, SEG-39). Once n_assets are
+        # accepted the rest are cut by capacity anyway, so only the cap decides
+        # whether they leave as "teto do segmento" or "vagas reduzidas".
         accepted: list[str] = []
         accepted_counts: Counter = Counter()
         for ticker in qualifying:
             if _fits(
                 ticker, accepted_counts, len(accepted), segment_of=segment_of,
-                max_per_segment=max_per_segment, hhi_max=None, n_assets=n_assets,
+                max_per_segment=max_per_segment,
+                hhi_max=hhi_max if len(accepted) < n_assets else None,
+                n_assets=n_assets,
             ):
                 accepted.append(ticker)
                 accepted_counts[segment_of[ticker]] += 1
@@ -258,7 +268,7 @@ def apply_protection_zone(
         protected = accepted[:n_assets]
         capped = set(accepted[n_assets:])
 
-    # Fill the vacancies in rank order (PZ-04), skipping a full segment (SEG-21).
+    # Fill the vacancies in rank order (PZ-04), skipping a ticker that does not fit (SEG-21, SEG-38).
     held = set(protected)
     if max_per_segment is None:
         for ticker in ranking:
@@ -272,21 +282,26 @@ def apply_protection_zone(
                 break
             if ticker in held or not _fits(
                 ticker, held_counts, len(held), segment_of=segment_of,
-                max_per_segment=max_per_segment, hhi_max=None, n_assets=n_assets,
+                max_per_segment=max_per_segment, hhi_max=hhi_max, n_assets=n_assets,
             ):
                 continue
             held.add(ticker)
             held_counts[segment_of[ticker]] += 1
+        if len(held) < n_assets:
+            raise SegmentCapInfeasibleError(
+                f"protection zone cannot fill n_assets {n_assets} within max_per_segment "
+                f"{max_per_segment} and hhi_max {hhi_max}: {len(held)} fit"
+            )
 
     def fits_without(ticker: str, weakest: str) -> bool:
-        """A challenger must fit the held set once the challenged incumbent leaves (SEG-22)."""
+        """A challenger must fit the held set once the challenged incumbent leaves (SEG-22, SEG-38)."""
 
         if max_per_segment is None:
             return True
         remaining = held - {weakest}
         return _fits(
             ticker, Counter(segment_of[t] for t in remaining), len(remaining),
-            segment_of=segment_of, max_per_segment=max_per_segment, hhi_max=None,
+            segment_of=segment_of, max_per_segment=max_per_segment, hhi_max=hhi_max,
             n_assets=n_assets,
         )
 
