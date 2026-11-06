@@ -13,6 +13,7 @@ from pandas.testing import assert_frame_equal
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 
+import fii_selection  # noqa: E402
 from core.metrics import hhi_sector  # noqa: E402
 from core.optimizer import GeneticAlgorithm  # noqa: E402
 from core.protection_zone import SegmentCapInfeasibleError, select_with_fallback  # noqa: E402
@@ -268,6 +269,112 @@ class ConsensusSegmentCapTests(unittest.TestCase):
         record = result.attrs["protection_zone"]
         self.assertEqual(record["departures"], {"P3": "saiu: teto do segmento"})
         self.assertEqual(sorted(result["TICKER"]), ["P1", "P2", "Q1", "R1"])
+
+
+
+# Three "Papéis" funds and eight funds of eight other segments.
+SPREAD_ROWS = [
+    ("PAP111", "Papéis", 10.0), ("PAP211", "Papéis", 9.0), ("PAP311", "Papéis", 8.0),
+    ("LAJ111", "Lajes", 5.0), ("LOG111", "Logística", 4.9), ("SHO111", "Shoppings", 4.8),
+    ("HIB111", "Híbrido", 4.7), ("IND111", "Indefinido", 4.6), ("REC111", "Recebíveis", 4.5),
+    ("HOT111", "Hotel", 4.4), ("AGR111", "Agro", 4.3),
+]
+
+# Five GA runs that each respect the cap but rotate the "Papéis" pairs: PAP1 4/5,
+# PAP2 3/5, PAP3 3/5, every other fund at most 2/5. Uncapped, the consensus of 5
+# holds all three "Papéis".
+CAPPED_RUNS = [
+    ["PAP111", "PAP211", "LAJ111", "LOG111", "SHO111"],
+    ["PAP111", "PAP311", "HIB111", "IND111", "REC111"],
+    ["PAP211", "PAP311", "HOT111", "AGR111", "LAJ111"],
+    ["PAP111", "PAP211", "LOG111", "SHO111", "HIB111"],
+    ["PAP111", "PAP311", "IND111", "REC111", "HOT111"],
+]
+
+
+def _scripted_ga(runs):
+    """optimize_fii_portfolio stand-in returning ``runs`` in order, as frames of df_ranked."""
+
+    remaining = list(runs)
+
+    def optimize(df_ranked, profile, **kwargs):
+        tickers = remaining.pop(0)
+        portfolio = df_ranked[df_ranked["TICKER"].isin(tickers)].copy().reset_index(drop=True)
+        portfolio.attrs.update({"fitness": 0.0, "hhi": hhi_sector(portfolio)})
+        return portfolio
+
+    return optimize
+
+
+def _segment_counts(frame) -> dict:
+    return frame["SETOR"].value_counts().to_dict()
+
+
+class RunSegmentCapTests(unittest.TestCase):
+    def test_run_with_cap_returns_at_most_two_per_segment(self):  # SEG-27 (consensus half)
+        seen = []
+        original = fii_selection._consensus
+
+        def spy(portfolios, df_ranked, n_assets, **kwargs):
+            seen.append((portfolios, df_ranked, kwargs))
+            return original(portfolios, df_ranked, n_assets, **kwargs)
+
+        config = _config(max_per_segment=2, liquidity_and_size_filters={"hhi_max": 0.6})
+        with mock.patch("fii_selection.optimize_fii_portfolio", side_effect=_scripted_ga(CAPPED_RUNS)):
+            with mock.patch("fii_selection._consensus", side_effect=spy):
+                result = _run(SPREAD_ROWS, config, n_runs=5)
+
+        self.assertEqual(len(seen), 1)
+        portfolios, ranked, kwargs = seen[0]
+        self.assertEqual(kwargs["max_per_segment"], 2)
+        self.assertEqual(kwargs["hhi_max"], 0.6)
+        self.assertEqual(result["n_selected"], 5)
+        self.assertLessEqual(max(_segment_counts(result["portfolio"]).values()), 2)
+        # The fixture binds: without the cap the same runs give three "Papéis".
+        uncapped = _pre_change_consensus(portfolios, ranked, 5)
+        self.assertGreaterEqual(_segment_counts(uncapped)["Papéis"], 3)
+
+    def test_zone_run_records_the_segment_cap_departure(self):  # SEG-26
+        config = _config(
+            max_per_segment=2, protection_zone={"K": 8, "delta": 0.11, "k_offset": 3}
+        )
+        with mock.patch("fii_selection.optimize_fii_portfolio", side_effect=_scripted_ga(CAPPED_RUNS)):
+            result = _run(
+                SPREAD_ROWS, config, n_runs=5, incumbents=["PAP111", "PAP211", "PAP311"]
+            )
+        # PAP111 ranks first (4/5); PAP211 and PAP311 tie at 3/5, so the lower SCORE ranks last.
+        scores = result["ranked"].set_index("TICKER")["SCORE"]
+        lowest = sorted(["PAP211", "PAP311"], key=lambda t: (-float(scores[t]), t))[-1]
+        self.assertEqual(
+            result["protection_zone"]["departures"], {lowest: "saiu: teto do segmento"}
+        )
+        self.assertLessEqual(max(_segment_counts(result["portfolio"]).values()), 2)
+
+    def test_universe_below_segment_capacity_fails_before_the_ga(self):  # SEG-28
+        rows = [("PAP111", "Papéis", 10.0), ("PAP211", "Papéis", 9.0), ("PAP311", "Papéis", 8.0),
+                ("LAJ111", "Lajes", 5.0), ("LOG111", "Logística", 4.0)]
+        _RecordingGeneticAlgorithm.constructed_with = []
+        with mock.patch("fii_selection.GeneticAlgorithm", _RecordingGeneticAlgorithm):
+            with self.assertRaisesRegex(FiiSelectionError, "max_per_segment") as caught:
+                _run(rows, _config(n_assets=5, max_per_segment=2), n_runs=2)
+        self.assertRegex(str(caught.exception), "capacity 4")
+        self.assertEqual(_RecordingGeneticAlgorithm.constructed_with, [])
+
+    def test_universe_at_exact_segment_capacity_runs(self):  # SEG-28 (boundary, review S4)
+        rows = [("PAP111", "Papéis", 10.0), ("PAP211", "Papéis", 9.0), ("PAP311", "Papéis", 8.0),
+                ("LAJ111", "Lajes", 5.0), ("LOG111", "Logística", 4.0)]
+        result = _run(rows, _config(n_assets=4, max_per_segment=2), n_runs=2)
+        self.assertEqual(result["n_selected"], 4)
+        self.assertEqual(_segment_counts(result["portfolio"]),
+                         {"Papéis": 2, "Lajes": 1, "Logística": 1})
+
+    def test_over_cap_final_selection_is_refused(self):  # SEG-29
+        def three_papeis(portfolios, df_ranked, n_assets, **kwargs):
+            return df_ranked[df_ranked["SETOR"] == "Papéis"].head(3).copy()
+
+        with mock.patch("fii_selection._consensus", side_effect=three_papeis):
+            with self.assertRaisesRegex(FiiSelectionError, "segment cap"):
+                _run(SPREAD_ROWS, _config(n_assets=3, max_per_segment=2), n_runs=1)
 
 
 if __name__ == "__main__":

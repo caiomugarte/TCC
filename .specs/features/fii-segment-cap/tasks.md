@@ -401,7 +401,7 @@ T13 → T14
 
 #### T8: `run_fii_selection` reads the cap, checks capacity and the result
 
-**Status**: Pending
+**Status**: Done
 
 **What**: In explicit mode read `max_per_segment` from the config, fail before the GA when the universe cannot fill `n_assets` under it, pass it to `_consensus`, and refuse a final selection above it.
 **Where**: `py/fii_selection.py`
@@ -418,10 +418,10 @@ T13 → T14
 
 **Done when**:
 
-- [ ] `test_run_with_cap_returns_at_most_two_per_segment` (with the `_consensus` spy and the fixture-binds assertion, review r1 S3), `test_zone_run_records_the_segment_cap_departure`, `test_universe_below_segment_capacity_fails_before_the_ga`, `test_universe_at_exact_segment_capacity_runs` (review r1 S4), `test_over_cap_final_selection_is_refused` pass
-- [ ] Named-profile mode never reads the key (no change to `outputs/` or `data/processed/` writers; `git status --porcelain data/ outputs/` empty after the gate)
-- [ ] Gate check passes: Build (last task of Phase 2)
-- [ ] Test count: at least 5 new tests; root suite ≥ previous + new
+- [x] `test_run_with_cap_returns_at_most_two_per_segment` (with the `_consensus` spy and the fixture-binds assertion, review r1 S3), `test_zone_run_records_the_segment_cap_departure`, `test_universe_below_segment_capacity_fails_before_the_ga`, `test_universe_at_exact_segment_capacity_runs` (review r1 S4), `test_over_cap_final_selection_is_refused` pass
+- [x] Named-profile mode never reads the key (no change to `outputs/` or `data/processed/` writers; `git status --porcelain data/ outputs/` empty after the gate)
+- [x] Gate check passes: Build (last task of Phase 2)
+- [x] Test count: at least 5 new tests; root suite ≥ previous + new
 
 **Tests**: integration
 **Gate**: build

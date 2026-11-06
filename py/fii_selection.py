@@ -242,6 +242,24 @@ def _require_feasible_universe(
     )
 
 
+def _require_segment_capacity(
+    ranked: pd.DataFrame,
+    n_assets: int,
+    max_per_segment: int,
+) -> None:
+    """Fail before any GA run when the scored universe cannot fill ``n_assets`` under the cap (SEG-28)."""
+
+    capacity = sum(
+        min(int(count), int(max_per_segment))
+        for count in ranked["SETOR"].astype(str).value_counts()
+    )
+    if capacity < n_assets:
+        raise FiiSelectionError(
+            f"FII universe cannot fill {n_assets} under max_per_segment "
+            f"{max_per_segment}: capacity {capacity}"
+        )
+
+
 def _canonical_column(column: str) -> str:
     normalized = str(column).replace("\ufeff", "").strip().upper()
     return HEADER_ALIASES.get(normalized, normalized)
@@ -717,6 +735,7 @@ def run_fii_selection(
         factor_weights=factor_weights,
     )
     n_assets = int(settings["n_assets"])
+    max_per_segment = resolved_config.get("max_per_segment") if explicit_mode else None
     if explicit_mode:
         _require_feasible_universe(
             len(clean),
@@ -725,6 +744,8 @@ def run_fii_selection(
             filters,
             str(resolved_config.get("selection_preset", "explicit")),
         )
+        if max_per_segment is not None:
+            _require_segment_capacity(ranked, n_assets, max_per_segment)
 
     execution_results = []
     portfolios = []
@@ -795,10 +816,17 @@ def run_fii_selection(
         incumbents=incumbents,
         protection_zone=resolved_config.get("protection_zone") if explicit_mode else None,
         hhi_max=hhi_max,
+        max_per_segment=max_per_segment,
     )
     selected.attrs["hhi"] = hhi_sector(selected)
     if hhi_max is not None and selected.attrs["hhi"] > float(hhi_max) + 1e-12:
         raise FiiSelectionError("FII selection violates the configured HHI limit")
+    if (
+        max_per_segment is not None
+        and not selected.empty
+        and int(selected["SETOR"].astype(str).value_counts().max()) > int(max_per_segment)
+    ):
+        raise FiiSelectionError("FII selection violates the configured segment cap")
 
     if explicit_mode:
         if workspace_path is not None:
