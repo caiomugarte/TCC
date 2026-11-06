@@ -1,3 +1,4 @@
+import copy
 import tempfile
 import unittest
 from datetime import datetime, timezone
@@ -9,7 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.adapters.premium_optimization import run_premium_optimization
 from app.db.base import Base
-from app.db.models import Account, ProfileRecord
+from app.db.models import Account, ProfileRecord, RecommendationRun
 from app.services.premium_executor import PremiumExecutor
 from app.services.premium_recommendation import PremiumRecommendationService
 from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
@@ -419,6 +420,137 @@ class ProtectionZoneIntegrationTests(unittest.TestCase):
         self.assertTrue(
             all(item["reasons"] == [] for item in basic.result_json["stocks"] + basic.result_json["fiis"])
         )
+
+
+
+PRE_CHANGE_SELECTOR_CONFIG_KEYS = {
+    "selection_preset",
+    "n_assets",
+    "factor_weights",
+    "liquidity_and_size_filters",
+    "lambda_hhi",
+    "system_ga_config",
+    "protection_zone",
+}
+
+
+class SegmentCapIntegrationTests(unittest.TestCase):
+    """SEG-32, SEG-33: a v4 run persists and forwards the FII segment cap; a
+    run whose stored policy lacks it (queued under v3) executes uncapped."""
+
+    setUp = ProtectionZoneIntegrationTests.setUp
+    tearDown = PremiumIntegrationTests.tearDown
+    frequencies_for = staticmethod(ProtectionZoneIntegrationTests.frequencies_for)
+
+    def recording_runner(self, policy_value, manifest, workspace, capital, *, selector_inputs=None, incumbents=None):
+        def recording(key, engine):
+            def wrapped(**kwargs):
+                self.engine_calls.setdefault(key, []).append(kwargs)
+                return engine(**kwargs)
+
+            return wrapped
+
+        kwargs = {} if incumbents is None else {"incumbents": incumbents}
+        return run_premium_optimization(
+            policy_value,
+            manifest,
+            workspace,
+            capital,
+            selector_inputs=selector_inputs or _default_selector_inputs(),
+            snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+            allocation_engine=lambda *_args, **_kwargs: {
+                "weights": {
+                    "brazilian_stocks": 0.4,
+                    "fiis": 0.2,
+                    "international_equity": 0.1,
+                    "fixed_income": 0.2,
+                    "crypto": 0.1,
+                }
+            },
+            stock_engine=recording("stocks", zone_selector("S", self.frequencies_for)),
+            fii_engine=recording("fiis", zone_selector("F", self.frequencies_for)),
+            **kwargs,
+        )
+
+    def executor(self, manifest):
+        self.engine_calls = {}
+        return PremiumExecutor(
+            session_factory=self.sessions,
+            manifest_loader=lambda _provenance: manifest,
+            manifest_validator=lambda value: value,
+            status_invest_inputs_loader=lambda _workspace: _default_selector_inputs(),
+            optimization_runner=self.recording_runner,
+            workspace_root=Path(self.temp.name) / "workspaces",
+        )
+
+    def stored(self, run_id):
+        with self.sessions() as check:
+            return check.get(RecommendationRun, run_id)
+
+    def test_v4_run_records_and_forwards_the_cap(self):
+        manifest = Manifest()
+        executor = self.executor(manifest)
+        service = PremiumRecommendationService(
+            manifest_loader=lambda: manifest,
+            manifest_validator=lambda value: value,
+            executor=executor,
+        )
+        try:
+            run = service.create_run(self.account, PremiumRecommendationRequest(), self.session)
+            executor.futures[run.id].result(timeout=10)
+        finally:
+            executor.shutdown()
+
+        stored = self.stored(run.id)
+        self.assertEqual(stored.status, "completed")
+        self.assertEqual(stored.policy_version, "premium-policy-v4")
+        self.assertEqual(stored.policy_json["provenance"]["policy_version"], "premium-policy-v4")
+        self.assertEqual(stored.policy_json["fiis"]["max_per_segment"], 2)
+        self.assertNotIn("max_per_segment", stored.policy_json["stocks"])
+        self.assertEqual(len(self.engine_calls["fiis"]), 1)
+        self.assertEqual(self.engine_calls["fiis"][0]["selection_config"]["max_per_segment"], 2)
+        self.assertNotIn("max_per_segment", self.engine_calls["stocks"][0]["config"])
+
+    def test_stored_v3_policy_runs_without_the_cap(self):
+        manifest = Manifest()
+
+        class QueueOnly:
+            def __init__(self):
+                self.submitted = []
+
+            def submit(self, run_id):
+                self.submitted.append(run_id)
+
+        queue = QueueOnly()
+        service = PremiumRecommendationService(
+            manifest_loader=lambda: manifest,
+            manifest_validator=lambda value: value,
+            executor=queue,
+        )
+        run = service.create_run(self.account, PremiumRecommendationRequest(), self.session)
+        self.assertEqual(queue.submitted, [run.id])
+
+        # A run queued before the deploy: its stored policy is v3, without the cap.
+        stored_policy = copy.deepcopy(run.policy_json)
+        stored_policy["fiis"].pop("max_per_segment")
+        stored_policy["provenance"]["policy_version"] = "premium-policy-v3"
+        run.policy_json = stored_policy
+        run.policy_version = "premium-policy-v3"
+        self.session.commit()
+
+        executor = self.executor(manifest)
+        try:
+            executor.execute_run(run.id)
+        finally:
+            executor.shutdown()
+
+        stored = self.stored(run.id)
+        self.assertEqual(stored.status, "completed")
+        self.assertEqual(stored.policy_version, "premium-policy-v3")
+        self.assertNotIn("max_per_segment", stored.policy_json["fiis"])
+        fii_config = self.engine_calls["fiis"][0]["selection_config"]
+        self.assertNotIn("max_per_segment", fii_config)
+        self.assertEqual(set(fii_config), PRE_CHANGE_SELECTOR_CONFIG_KEYS)
 
 
 if __name__ == "__main__":

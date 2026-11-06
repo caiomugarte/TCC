@@ -595,7 +595,7 @@ T13 → T14
 
 #### T14: End-to-end v4 run and stored v3 run
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add `SegmentCapIntegrationTests`: a created and executed Premium run records and forwards the cap; a run with a stored policy lacking the key executes uncapped.
 **Where**: `api/tests/test_premium_integration.py`
@@ -612,9 +612,9 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Both integration tests pass
-- [ ] Gate check passes: Build (last task)
-- [ ] Test count: root suite ≥ 535 + all new root tests (2 skipped); API suite ≥ 174
+- [x] Both integration tests pass
+- [x] Gate check passes: Build (last task)
+- [x] Test count: root suite ≥ 535 + all new root tests (2 skipped); API suite ≥ 174
 
 **Tests**: integration
 **Gate**: build
