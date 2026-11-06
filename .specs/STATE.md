@@ -225,16 +225,25 @@
 - **Trade-off**: Under `limitar_concentracao` at n 4/5, two qualifying incumbents of one segment make the zone fall back to `K = 0` and the run loses its protection (recorded `fallback_hhi`; spec Q3 logs applying `fits` to the protection walk as a follow-up). For a cap ≥ 3 the greedy can raise on a feasible candidate set (explicit error).
 - **Scope**: `py/core/protection_zone.py`, `py/fii_selection.py`; FII path with the cap only.
 - **Date**: 2026-11-06
+- **Status**: active - its protection-walk clause ("checks the cap only"), the `SegmentCapInfeasibleError` → `fallback_hhi` catch and the matching trade-off are superseded by AD-029
+
+### AD-029
+- **Decision**: Under the FII segment cap with `hhi_max` set (AD-028), the protection walk also applies `fits`: qualifying incumbents are walked in rank order (frequency desc, score desc, ticker asc, the order of the segment-cap cut), and while fewer than `n_assets` are accepted, one that does not fit the incumbents already accepted leaves with `saiu: teto do segmento`; the walk continues and every other protection is kept. Past `n_assets` accepted, only the cap decides (the rest leave with `saiu: vagas reduzidas`). The protected set therefore always meets the `hhi_max` bound and there is no HHI gate on it. `select_with_fallback` never falls back to the `K = 0` consensus because of `SegmentCapInfeasibleError`: it catches it from neither call, and `_consensus` turns it into `FiiSelectionError`. With cap 2 the zone fill reaches `n_assets` whenever the `K = 0` consensus does (the AD-028 count does not depend on the starting set), so the zone never raises in production. The post-hoc `hhi_of` fallback of AD-026 is unchanged and cannot fire under the cap. Stocks and uncapped FIIs are byte-identical (no `hhi_max` reaches the zone without the cap).
+- **Reason**: Human decision on 2026-11-06 closing spec Q3. The issue's `## Decisões` rejected falling back to the pure consensus because it loses protection exactly in the 13 → 5 FII migration; under AD-028 as written, at n 4/5 with `hhi_max` 0.25 (no pair fits) any two qualifying incumbents of one segment cost the run its whole protection.
+- **Rejected**: accept `fallback_hhi` and lose every protection (AD-028's default for Q3); keep a `K = 0` fallback for a zone fill that still cannot reach `n_assets` (unreachable with cap 2; propagating keeps one failure path and never drops protection silently).
+- **Trade-off**: `saiu: teto do segmento` now covers both the cap and the HHI pair limit, and the record does not say which (the persisted policy does: cap, `hhi_max`, n). An HHI rejection always involves a segment already accepted (a ticker of a new segment leaves the bound unchanged). Under `limitar_concentracao` at n 4/5 at most one incumbent per segment stays protected. With a cap of 3 or more the zone fill can raise on a feasible candidate set and fail the run instead of falling back.
+- **Scope**: `py/core/protection_zone.py` (`apply_protection_zone`, `select_with_fallback`), `py/fii_selection.py` (`_consensus` error mapping); FII path with the cap and `hhi_max` only. Feature: `.specs/features/fii-segment-cap/` (A-5, A-6, A-16, A-17, SEG-39, SEG-43).
+- **Date**: 2026-11-06
 - **Status**: active
 
 ## Handoff
 
 - **Feature**: fii-segment-cap (issue #56) - `.specs/features/fii-segment-cap/`
-- **Phase / Task**: TASKS complete and revised after spec review r1 (S1 HHI skip → AD-028, new task T4 and SEG-37..SEG-42; S2 capacity numbers; S3 `_consensus` spy; S4 capacity boundary). 14 tasks in 4 phases. Next: the orchestrator's spec re-review, then EXECUTE from T1.
+- **Phase / Task**: TASKS complete and revised after spec review r1 (S1 HHI skip → AD-028, new task T4 and SEG-37..SEG-42; S2 capacity numbers; S3 `_consensus` spy; S4 capacity boundary) and after the human closed Q3 (AD-029: HHI rule in the protection walk, no `K = 0` fallback; SEG-39 rewritten, SEG-43 added, T4/T5/T12 tests updated). 14 tasks in 4 phases. Next: the orchestrator's spec re-review, then EXECUTE from T1.
 - **Completed**: none (no production code written).
 - **In-progress** (file:line): none.
 - **Next step**: Execute T1 - capture the GA golden values at `a61164a` BEFORE editing `py/core/optimizer.py`.
-- **Blockers**: none. Open questions Q1 (Basic stays 10/12/15), Q2 (frozen #9 protocol exits 2 under v4) and Q3 (zone protection lost to `fallback_hhi` when a protected pair breaks `hhi_max`) carry defaults in spec A-2/A-10/A-17.
+- **Blockers**: none. Open questions Q1 (Basic stays 10/12/15) and Q2 (frozen #9 protocol exits 2 under v4) carry defaults in spec A-2/A-10; Q3 is closed by AD-029.
 - **Uncommitted files**: none.
 - **Branch**: t3/issue-56 (base `origin/develop`; PR base `develop`).
 - **Baseline**: root suite 535 OK (2 skipped), API suite 160 OK at `a61164a`.

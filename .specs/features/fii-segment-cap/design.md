@@ -2,7 +2,7 @@
 
 **Spec**: `.specs/features/fii-segment-cap/spec.md`
 **Status**: Draft
-**Conforms to**: AD-026 (protection-zone contract; extended, not superseded, by AD-027 and AD-028), AD-028 (HHI skip under the cap, spec review r1 S1), AD-022 (zone semantics, unchanged when no cap is given), AD-025 (NaN-score order in `rank_candidates`, untouched).
+**Conforms to**: AD-026 (protection-zone contract; extended, not superseded, by AD-027 and AD-028), AD-028 (HHI skip under the cap, spec review r1 S1), AD-029 (HHI rule on the protected incumbents, no `K = 0` fallback; closes Q3), AD-022 (zone semantics, unchanged when no cap is given), AD-025 (NaN-score order in `rank_candidates`, untouched).
 
 No approach exploration: the issue's `## Decisões` fixes the mechanism at every stage (GA infeasibility like `hhi_max`, consensus skip, zone exit reason). This design only fixes names, signatures and order.
 
@@ -10,7 +10,7 @@ No approach exploration: the issue's `## Decisões` fixes the mechanism at every
 
 ## Architecture Overview
 
-One integer, `max_per_segment`, travels from the policy to the three places that decide FII membership. Every new parameter defaults to `None`, and `None` takes the exact pre-change code path. When the cap is set and the policy also sets `hhi_max` (`limitar_concentracao`), the greedy steps use one predicate `fits` that checks both (AD-028, spec A-16); without the cap `hhi_max` never reaches the greedy.
+One integer, `max_per_segment`, travels from the policy to the three places that decide FII membership. Every new parameter defaults to `None`, and `None` takes the exact pre-change code path. When the cap is set and the policy also sets `hhi_max` (`limitar_concentracao`), the greedy steps (pure consensus, protection walk, fill, challengers) use one predicate `fits` that checks both (AD-028, AD-029, spec A-16); without the cap `hhi_max` never reaches the greedy.
 
 ```mermaid
 graph TD
@@ -21,8 +21,8 @@ graph TD
     R --> C["_consensus(max_per_segment)"]
     C -->|no incumbents| T["protection_zone.take_within_segment_cap"]
     C -->|incumbents + zone| S["protection_zone.select_with_fallback(segment_of, max_per_segment)"]
-    S --> Z["apply_protection_zone: segment cut, fill and challengers under fits (cap + HHI skip)"]
-    S --> Z0["apply_protection_zone K=0: consensus under fits / fallback on hhi_of or SegmentCapInfeasibleError"]
+    S --> Z["apply_protection_zone: protection walk, fill and challengers under fits (cap + HHI skip)"]
+    S --> Z0["apply_protection_zone K=0: consensus under fits / post-hoc hhi_of fallback; SegmentCapInfeasibleError propagates"]
     B["resolve_basic_policy<br/>FII 10/12/15, no cap, fii-selection-v1"] -.-> PJ
 ```
 
@@ -39,7 +39,7 @@ Stocks never receive the key: `stocks.max_per_segment` is `None`, so `_selector_
 | `hhi_max` infeasibility | `py/core/optimizer.py:92-95` (validation), `:132-135` (fitness) | Same shape for `max_per_segment`: validate in `__init__`, return `-np.inf` in `fitness`. |
 | `_is_integer` | `py/core/protection_zone.py:71-72` | Integer check that rejects `bool`; reuse in the zone validator. The GA gets the same three-line check (it cannot import from `protection_zone` without a cycle risk: `protection_zone` must stay pandas-free and import-light). |
 | `rank_candidates` / sort key | `py/core/protection_zone.py:30-54`, `py/fii_selection.py:588-589` | Rank order is unchanged; the cap only filters while walking it. |
-| `select_with_fallback` HHI fallback | `py/core/protection_zone.py:198-253` | Pass the cap to both the zone call and the `K = 0` call; fallback logic unchanged. |
+| `select_with_fallback` HHI fallback | `py/core/protection_zone.py:198-253` | Pass the cap to both the zone call and the `K = 0` call; post-hoc `hhi_of` fallback unchanged; no new catch (AD-029). |
 | FII HHI post-check | `py/fii_selection.py:768-770` | Same pattern for the segment post-check (SEG-29). |
 | `_require_feasible_universe` | `py/fii_selection.py:214-238` | Sibling `_require_segment_capacity` raising plain `FiiSelectionError` (SEG-28). |
 | `PROTECTION_ZONE` / `_protection_zone` / `_selector_dict` | `api/app/services/premium_policy.py:84-87`, `:173-190` | `max_per_segment` follows `protection_zone`: optional dataclass field, dropped from the dict when `None`. |
@@ -76,18 +76,27 @@ Stocks never receive the key: `stocks.max_per_segment` is `None`, so `_selector_
 - **Location**: `py/core/protection_zone.py`
 - **Interfaces**:
   - `SEGMENT_CAP_DEPARTURE = "saiu: teto do segmento"` (module constant).
-  - `class SegmentCapInfeasibleError(ValueError)` - raised when a greedy walk under `fits` cannot reach `n_assets`, or when protected incumbents already break the HHI bound (SEG-39, SEG-40).
+  - `class SegmentCapInfeasibleError(ValueError)` - raised when a greedy walk under `fits` (pure consensus or zone fill) cannot reach `n_assets` (SEG-40, SEG-43). Never caught in `protection_zone.py`.
   - `validate_segment_cap(max_per_segment, segment_of, tickers, hhi_max=None) -> None` - with a `None` cap: raises `ValueError` naming `hhi_max` if `hhi_max` is not `None` (SEG-41), else returns. With a cap: `max_per_segment` must pass `_is_integer` and be `>= 1`; `segment_of` must be a mapping containing every ticker in `tickers`; `hhi_max`, when given, must be a finite real `> 0`. Each failure names its field (SEG-25, SEG-41).
   - `_fits(ticker, held_counts: Counter[str], size: int, *, segment_of, max_per_segment, hhi_max, n_assets) -> bool` - the A-16 predicate: `held_counts[seg] < max_per_segment` and, when `hhi_max` is set, `(sq + 2·held_counts[seg] + 1 + (n_assets − size − 1)) / n_assets² <= hhi_max + TOLERANCE`, where `sq = Σ held_counts²` and `size` is the held count before adding. Integer `Σc²` arithmetic; only the final division is float. One function serves the pure greedy, the fill and the challenger, so the cap skip and the HHI skip are order-consistent by construction.
   - `take_within_segment_cap(ordered: Sequence[str], n_assets: int, *, segment_of: Mapping[str, str] | None, max_per_segment: int | None, hhi_max: float | None = None) -> list[str]` - `None` cap returns `list(ordered[:n_assets])` (after `validate_segment_cap`, so a stray `hhi_max` raises); otherwise walks `ordered`, skips a ticker that does not `_fits`, stops at `n_assets`; raises `SegmentCapInfeasibleError` (message names `n_assets`, `max_per_segment`, `hhi_max`) if the walk ends short (SEG-15, SEG-37, SEG-40).
   - `apply_protection_zone(..., eligible, dedup_base_company, segment_of: Mapping[str, str] | None = None, max_per_segment: int | None = None, hhi_max: float | None = None) -> ZoneSelection` - new keyword-only parameters. With a cap:
     1. `validate_segment_cap(max_per_segment, segment_of, candidates, hhi_max)` after the eligible filter.
-    2. Walk `qualifying` (rank order); a ticker whose segment already has `max_per_segment` protected entries goes to `segment_capped`; the rest form `qualifying_capped`. Then `protected = qualifying_capped[:n_assets]`, `capped = set(qualifying_capped[n_assets:])` (SEG-19, SEG-20, A-5). The protection walk checks the cap only, never `hhi_max` (A-17, Q3).
-    3. HHI gate (only when `hhi_max` is set): if `(Σc²(protected) + n_assets − |protected|) / n_assets² > hhi_max + TOLERANCE`, raise `SegmentCapInfeasibleError("protected incumbents exceed hhi_max")` (SEG-39).
-    4. Fill: `for ticker in ranking: if len(held) >= n_assets: break; if ticker in held or not _fits(ticker, counts(held), len(held), ...): continue; held.add(ticker)` (SEG-21, SEG-38). If `len(held) < n_assets` after the loop, raise `SegmentCapInfeasibleError` (SEG-39). Without a cap the loop is the current one verbatim.
-    5. Swap: `challenger = next((t for t in ranking if t not in held and t not in replaced and fits_without(t, weakest)), None)` where `fits_without` is `True` without a cap, else `_fits(t, counts(held - {weakest}), n_assets - 1, ...)` (SEG-22, SEG-38). Swap test unchanged.
-    6. Departures: `inelegível`, then `substituído por`, then `t in segment_capped` → `SEGMENT_CAP_DEPARTURE`, then `vagas reduzidas`, then `fora do top K` (A-6).
-  - `select_with_fallback(..., hhi_of, hhi_max, segment_of=None, max_per_segment=None)` - computes the `K = 0` consensus first, then the zone. Forwards `segment_of` and `max_per_segment` to both calls, and forwards `hhi_max` to both only when `max_per_segment is not None` (stocks and uncapped FIIs: zone calls are byte-identical to today). The `K = 0` call propagates every error. The zone call's `SegmentCapInfeasibleError` is caught only when the cap and `hhi_max` are both set and `incumbent_list` is non-empty: selection = consensus, `status "fallback_hhi"`, `buffer_fallback "hhi"` (SEG-39). The post-hoc `hhi_of(zone) > hhi_max + TOLERANCE` fallback stays as it is (under the cap it no longer fires because the zone is built within `hhi_max`). Record fields unchanged (A-13).
+    2. Protection walk over `qualifying` (rank order: frequency desc, score desc, ticker asc), building `accepted` and `segment_capped`:
+       ```
+       for t in qualifying:
+           if len(accepted) < n_assets:
+               ok = _fits(t, counts(accepted), len(accepted), ...)   # cap + HHI (when hhi_max is set)
+           else:
+               ok = counts(accepted)[seg(t)] < max_per_segment       # cap only; t is cut by capacity anyway
+           (accepted if ok else segment_capped).append(t)
+       protected = accepted[:n_assets]; capped = set(accepted[n_assets:])
+       ```
+       Without `hhi_max`, `_fits` is the cap check, so this is the cap-only walk of SEG-19/SEG-20 (A-5). With `hhi_max`, an incumbent that would push the protected set above the A-16 bound goes to `segment_capped` and the walk continues (SEG-39, AD-029). `protected` therefore always satisfies the bound; there is no separate HHI gate and no raise here.
+    3. Fill: `for ticker in ranking: if len(held) >= n_assets: break; if ticker in held or not _fits(ticker, counts(held), len(held), ...): continue; held.add(ticker)` (SEG-21, SEG-38). If `len(held) < n_assets` after the loop, raise `SegmentCapInfeasibleError` (SEG-43; with cap 2 only when the `K = 0` call fails too, spec A-8). Without a cap the loop is the current one verbatim.
+    4. Swap: `challenger = next((t for t in ranking if t not in held and t not in replaced and fits_without(t, weakest)), None)` where `fits_without` is `True` without a cap, else `_fits(t, counts(held - {weakest}), n_assets - 1, ...)` (SEG-22, SEG-38). Swap test unchanged.
+    5. Departures: `inelegível`, then `substituído por`, then `t in segment_capped` → `SEGMENT_CAP_DEPARTURE` (cap or HHI rejection in the walk), then `vagas reduzidas`, then `fora do top K` (A-6).
+  - `select_with_fallback(..., hhi_of, hhi_max, segment_of=None, max_per_segment=None)` - computes the `K = 0` consensus first, then the zone. Forwards `segment_of` and `max_per_segment` to both calls, and forwards `hhi_max` to both only when `max_per_segment is not None` (stocks and uncapped FIIs: zone calls are byte-identical to today). Both calls propagate every error, `SegmentCapInfeasibleError` included: there is no `try` around either call, so a capped zone never falls back to `K = 0` because of it (SEG-43, AD-029). The post-hoc `hhi_of(zone) > hhi_max + TOLERANCE` fallback stays as it is (under the cap it no longer fires because the zone is built within `hhi_max`). Record fields unchanged (A-13).
 - **Dependencies**: none new (stays pandas-free).
 - **Reuses**: `_is_integer`, `rank_candidates`, existing loop structure.
 
@@ -163,7 +172,8 @@ Existing keys plus top-level `"max_per_segment": 2` (FIIs only).
 | Invalid cap reaching the GA or zone directly | `ValueError` naming `max_per_segment` / `segment_of` / `SETOR` | Programming error surfaced in tests. |
 | Universe too small for the cap | `FiiSelectionError` before any GA run; adapter maps it to `engine_error` through its generic branch | Run fails with a clear message instead of "GA não convergiu". Unreachable on committed data (A-9). |
 | Capped consensus cannot fill `n_assets` under the cap and `hhi_max` | `SegmentCapInfeasibleError` → `FiiSelectionError` naming both limits in `_consensus`; adapter maps it to `engine_error` | Run fails with a clear message, never a smaller sleeve. Unreachable when cap ≤ 2 (spec A-8). |
-| Capped zone cannot meet `hhi_max` (protected pair where no pair fits, or fill short) | `SegmentCapInfeasibleError` caught in `select_with_fallback` → `K = 0` consensus, `status "fallback_hhi"` | The run succeeds without zone protection; the record says so (Q3). |
+| Two protected incumbents of one segment where no pair fits `hhi_max` (n 4/5 under `limitar_concentracao`) | Protection walk drops the lower-ranked one with `saiu: teto do segmento` (SEG-39) | The run succeeds with the rest of the protection; status `applied`, not `fallback_hhi` (AD-029). |
+| Capped zone fill cannot reach `n_assets` (cap ≥ 3, or no feasible subset) | `SegmentCapInfeasibleError` propagates through `select_with_fallback`; `_consensus` maps it to `FiiSelectionError` (SEG-43, SEG-40) | Run fails with `engine_error` and a message naming both limits; unreachable with cap 2 on GA-produced candidates (spec A-8). |
 | Final FII selection over the cap | `FiiSelectionError("... segment cap")` | Run fails rather than deliver an over-cap sleeve; unreachable unless a bug lands. |
 | Stored v3 policy executed after deploy | No key → uncapped path | Same output as before the deploy. |
 
@@ -178,7 +188,8 @@ Existing keys plus top-level `"max_per_segment": 2` (FIIs only).
 | Stored FII `SETOR` labels vary in spelling | `data/raw/status_invest_fii.csv` | Two spellings of one segment would each get 2 slots. | Out of scope: the cap uses the same exact labels as `hhi_sector` (A-4); the committed file has 18 distinct labels over 588 FIIs, no spelling variants; "Logística" (1 eligible fund for arrojado) and "Imóveis Industriais e Logísticos" are separate source labels and are capped separately. |
 | `ConservadorAnchorExecutabilityTests` subject drifts with n = 4 | `api/tests/test_premium_policy.py:604-622` | At n = 4 the uncapped GA reaches HHI 0.25 on its own, so `assertGreater(hhi, 0.25)` fails. | T10 fixes `n_assets` 10 in that test's config (its subject is "uncapped HHI exceeds 0.25"), keeping the assertion. |
 | #9 tooling no longer replays its protocol | `scripts/multirun_convergence.py:208-216` | `check_n_assets` exits 2 for the owner profile under v4. | Intended guard (A-10). Frozen files untouched (SEG-36); Q2 logged. |
-| Zone protection lost under `limitar_concentracao` at n 4/5 | `py/core/protection_zone.py` (A-17) | Any two qualifying incumbents of one segment break `hhi_max` 0.25 (no pair fits at n 4 or 5), so the zone falls back to `K = 0` for that run. | Recorded as `fallback_hhi`; Q3 logs the follow-up (apply `fits` to the protection walk). |
+| `saiu: teto do segmento` now has two causes | `py/core/protection_zone.py` (A-6, A-17) | Under `limitar_concentracao` at n 4/5 the reason covers both the cap and the HHI pair limit; the record does not say which. | Accepted (AD-029): the policy in `policy_json` (cap, `hhi_max`, n) determines the cause; no new record field (A-13). |
+| Zone fill raises instead of falling back | `py/core/protection_zone.py` `select_with_fallback` | A capped zone that cannot fill now fails the run where r1 would have returned `K = 0`. | Unreachable with cap 2 (A-8: the zone fill reaches `n_assets` whenever `K = 0` does, and `K = 0` failing already fails the run); Premium sets cap 2 (AD-027). |
 | HHI skip activated on stocks by accident | `py/core/protection_zone.py` `select_with_fallback` | Stock output would change. | `hhi_max` reaches the greedy only when `max_per_segment` is set, and the validator rejects `hhi_max` without the cap (SEG-41); existing stock zone tests run unchanged (SEG-24). |
 | `py/fii_selection.py` keeps growing (832 lines) | `py/fii_selection.py` | Readability. | Nit only (REVIEW.md); the change adds two small helpers and keyword plumbing. |
 | Test gap: no existing test pins the GA output byte-for-byte | `py/core/optimizer.py` | SEG-14 would be unprovable. | T1 captures golden tickers/fitness/hhi/generations for two seeds on a synthetic frame at `a61164a` before editing the GA. |
@@ -193,9 +204,10 @@ Existing keys plus top-level `"max_per_segment": 2` (FIIs only).
 | Challenger that would break the cap | Skipped, next one tried | Same rule as fill and pure consensus; `K = 0` stays equal to the capped pure consensus (A-7). |
 | Capped consensus above `hhi_max` (review r1 S1) | Skip a ticker that would push the projected HHI above `hhi_max`, in the same walk as the cap skip (AD-028, A-16) | Human decision. Rejected: cap 1 when `hhi_max` is set and n ≤ 5 (changes the fixed cap 2 of AD-027); accepting and documenting the failure (a user with `limitar_concentracao` would get failed runs). |
 | HHI bound evaluated on what | Projected final size: `Σc²` plus one per empty slot | Evaluating the partial sleeve would reject almost everything (one ticker has HHI 1.0); the projection is the lowest reachable HHI, so skipping above it never removes a completable sleeve. |
-| Zone that cannot meet `hhi_max` | Raise in the zone, fall back to `K = 0` in `select_with_fallback` | Reuses the AD-026 `fallback_hhi` contract; trimming protected incumbents by HHI is outside the human decision (Q3). |
+| Protected incumbents above `hhi_max` | `fits` in the protection walk: the lower-ranked incumbent leaves with `saiu: teto do segmento`, the rest stay protected; no `K = 0` fallback (AD-029) | Human decision closing Q3: the issue rejected the pure-consensus fallback because it loses protection in the 13 → 5 migration. Rejected: raise in the zone and fall back to `K = 0` (`fallback_hhi`), losing every protection. |
+| Residual zone infeasibility | Propagate `SegmentCapInfeasibleError` (→ `FiiSelectionError`) | Author default: unreachable with cap 2, one failure path, never a silent loss of protection. |
 | GA keyword position | Appended after `early_stopping_min_delta` | No positional caller shifts. |
 | Basic | Own FII counts, no cap, `fii-selection-v1` | A-2. |
 | Too-small universe | Plain `FiiSelectionError`, no new error code | Unreachable on committed data; avoids adapter and web contract changes (A-9). |
 
-Project-level decisions recorded as **AD-027** (cap contract) and **AD-028** (HHI skip under the cap) in `.specs/STATE.md`.
+Project-level decisions recorded as **AD-027** (cap contract), **AD-028** (HHI skip under the cap) and **AD-029** (HHI rule on the protected incumbents, no `K = 0` fallback) in `.specs/STATE.md`.

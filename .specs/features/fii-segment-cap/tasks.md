@@ -21,7 +21,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 | Code Layer | Required Test Type | Coverage Expectation | Location Pattern | Run Command |
 | ---------- | ------------------ | -------------------- | ---------------- | ----------- |
 | GA (`py/core/optimizer.py`) | unit | SEG-09..SEG-14 1:1; boundary at exactly the cap; golden pre-change output for the uncapped path | `tests/test_segment_cap_optimizer.py` (new) | `$PY -m unittest tests.test_segment_cap_optimizer` |
-| Zone (`py/core/protection_zone.py`) | unit | SEG-15, SEG-19..SEG-25, SEG-37..SEG-41 1:1; every spec edge case; existing `tests/test_protection_zone.py` and `tests/test_protection_zone_equivalence.py` unchanged | `tests/test_segment_cap_zone.py` (new) | `$PY -m unittest tests.test_segment_cap_zone tests.test_protection_zone tests.test_protection_zone_equivalence` |
+| Zone (`py/core/protection_zone.py`) | unit | SEG-15, SEG-19..SEG-25, SEG-37..SEG-41, SEG-43 1:1; every spec edge case; existing `tests/test_protection_zone.py` and `tests/test_protection_zone_equivalence.py` unchanged | `tests/test_segment_cap_zone.py` (new) | `$PY -m unittest tests.test_segment_cap_zone tests.test_protection_zone tests.test_protection_zone_equivalence` |
 | FII selector (`py/fii_selection.py`) | unit + selector-level integration on fixture CSV | SEG-15..SEG-18, SEG-26..SEG-29, SEG-37, SEG-40, SEG-41; capacity boundary; pre-change frame equality without a cap | `tests/test_segment_cap_fii.py` (new) | `$PY -m unittest tests.test_segment_cap_fii` |
 | API policy (`api/app/services/premium_policy.py`) | unit + real-data executability | SEG-01..SEG-08; Basic golden JSON unchanged; real-data anchors under v4; real-data multi-run with `limitar_concentracao` (SEG-42) | `api/tests/test_premium_policy.py` | API suite |
 | API adapter (`api/app/adapters/premium_optimization.py`) | unit (fake engines) | SEG-30..SEG-32: forwarded, rejected, absent | `api/tests/test_premium_optimization.py` | API suite |
@@ -80,8 +80,11 @@ Every named test fails when the behaviour it names is removed (REVIEW.md). The "
 | `test_segment_cap_zone :: test_fill_skips_a_ticker_that_would_break_hhi_max` | incumbent P1 protected, n 5, cap 2, `hhi_max` 0.25, ranking P1, P2, Q1, R1, S1, T1 → zone tickers `{P1, Q1, R1, S1, T1}` | SEG-38 | fill ignores `hhi_max` |
 | `test_segment_cap_zone :: test_challenger_that_would_break_hhi_max_is_skipped` | n 5, cap 2, `hhi_max` 0.25; weakest protected Q1; best outsider P2 (P1 held, a pair does not fit) leads by ≥ δ; next outsider R2 (R not held) leads by ≥ δ → R2 replaces Q1, P2 never enters | SEG-38 | challenger ignores `hhi_max` / stop instead of skip |
 | `test_segment_cap_zone :: test_challenger_hhi_check_excludes_the_weakest` | n 5, `hhi_max` 0.25; weakest Q1, challenger Q2 (same segment) → swap allowed (the pair disappears with Q1) | SEG-38 | `held` instead of `held - weakest` |
-| `test_segment_cap_zone :: test_protected_pair_over_hhi_max_raises_in_the_zone` | incumbents P1, P2 qualify, n 5, cap 2, `hhi_max` 0.25 → `apply_protection_zone` raises `SegmentCapInfeasibleError` | SEG-39 | gate removed (zone silently over `hhi_max`) |
-| `test_segment_cap_zone :: test_infeasible_zone_falls_back_to_the_capped_consensus` | same inputs through `select_with_fallback` → selection == `K = 0` result, `status "fallback_hhi"`, `buffer_fallback "hhi"`, HHI ≤ 0.25 | SEG-39 | error not caught / caught for the `K = 0` call |
+| `test_segment_cap_zone :: test_protected_pair_over_hhi_max_keeps_the_higher_ranked_incumbent` | `apply_protection_zone`, n 5, K 8, cap 2, `hhi_max` 0.25; incumbents P1 (freq 0.9), Q1 (0.8), P2 (0.7), all rank ≤ K; ranking also holds R1, S1, T1 → no raise; `kept == (P1, Q1)`; `departures == {"P2": "saiu: teto do segmento"}`; tickers `{P1, Q1, R1, S1, T1}`. Second case, P1 and P2 at equal frequency, P2 with the higher `SCORE` → P2 kept, P1 `saiu: teto do segmento` (rank tie-break) | SEG-39, A-5 | protection-walk HHI term removed (both protected, fill cannot reach 5, the zone raises) / walk not in rank order |
+| `test_segment_cap_zone :: test_incumbent_past_capacity_is_cut_by_capacity_not_by_hhi` | n 4, cap 2, `hhi_max` 0.25; qualifying P1, Q1, R1, S1, P2 in that rank → P1, Q1, R1, S1 kept; `departures["P2"] == "saiu: vagas reduzidas"` | SEG-20, SEG-39 | HHI term applied once `n_assets` are accepted |
+| `test_segment_cap_zone :: test_zone_fill_short_raises_instead_of_a_short_sleeve` | `apply_protection_zone`, n 4, cap 2, `hhi_max` 0.25, ranking over 3 segments only (P1, P2, Q1, Q2, R1), incumbent P1 → `SegmentCapInfeasibleError` naming `hhi_max`, no `ZoneSelection` returned | SEG-43 | short zone returned |
+| `test_segment_cap_zone :: test_protected_same_segment_pair_keeps_the_protection_without_fallback` | `select_with_fallback`, n 5, K 8, δ 0.11, cap 2, `hhi_max` 0.25, `hhi_of` = the real segment HHI over `segment_of`; incumbents P1 (freq 0.90) and P2 (0.85) of segment P plus U1 (0.45); outsiders Q1 0.80, R1 0.70, S1 0.60, T1 0.50 (ranks: P1, P2, Q1, R1, S1, T1, U1, all ≤ K) → no raise; record `status == "applied"` (not `"fallback_hhi"`), `buffer_fallback is None`; selection `(P1, Q1, R1, S1, U1)`, `kept == (P1, U1)`, `departures == {"P2": "saiu: teto do segmento"}`; selection HHI 0.20; `consensus_tickers == (P1, Q1, R1, S1, T1)`, so the selection differs from the `K = 0` consensus (U1's protection survives; T1 leads U1 by 0.05 < δ) | SEG-39, SEG-43 | protection-step HHI skip removed (the zone raises and the test errors) / `SegmentCapInfeasibleError` caught with a `K = 0` fallback (status `fallback_hhi`) |
+| `test_segment_cap_zone :: test_segment_cap_infeasible_error_propagates_from_both_calls` | `apply_protection_zone` stubbed to raise `SegmentCapInfeasibleError` on the `K > 0` call only, then on the `K = 0` call only → `select_with_fallback` raises `SegmentCapInfeasibleError` both times, never returns a record | SEG-43 | `try`/fallback around either call |
 | `test_segment_cap_zone :: test_stock_path_never_forwards_hhi_max` | `select_with_fallback` with `hhi_max` 0.25 and no cap, `apply_protection_zone` spied → every call has no `hhi_max` keyword; record equals the pre-change record | SEG-41, SEG-24 | HHI skip leaks to stocks |
 | existing `tests/test_protection_zone.py`, `tests/test_protection_zone_equivalence.py` | unchanged values | SEG-24 | regression |
 | `test_segment_cap_fii :: test_config_cap_reaches_every_ga_run` | `run_fii_selection(selection_config={..., "max_per_segment": 2}, n_runs=3)` with a recording GA → `[2, 2, 2]` | SEG-27 | cap not read from config |
@@ -112,7 +115,7 @@ Every named test fails when the behaviour it names is removed (REVIEW.md). The "
 | updated `test_premium_policy :: ConservadorAnchorExecutabilityTests.test_unrestricted_anchor_differs_only_by_hhi_max_and_runs_above_the_cap` | config `n_assets` fixed at 10; `assertGreater(hhi, 0.25)` kept | A-12 | subject preserved |
 | `test_premium_policy :: V4FiiExecutabilityTests.test_real_data_anchors_fill_n_assets_within_the_cap` | real `data/raw/status_invest_fii.csv`, GA budget 30 × 20, scores 0.0/0.5/0.7/1.0 → `n_selected == n_assets` (4/5/5/6), max segment count ≤ 2, recording GA saw cap 2 | SEG-05, SEG-27, A-9 | infeasible universe on real data |
 | `test_premium_policy :: V4FiiExecutabilityTests.test_owner_profile_with_limitar_concentracao_runs_many_ga_runs` | real data, `resolve_premium_policy(profile(score=0.7, knowledge=0.7, restrictions=["limitar_concentracao"])).fiis` (n 5, cap 2, `hhi_max` 0.25), `n_runs=8`, GA 40 generations × 30 population, seeds 0-3 → no exception, `n_selected == 5`, HHI ≤ 0.25 + 1e-12, ≤ 2 per segment | SEG-42 | HHI skip removed (seed 0 raises "FII selection violates the configured HHI limit", reproduced in spec review r1 and in a scratch prototype on 2026-11-06) |
-| `test_premium_policy :: V4FiiExecutabilityTests.test_owner_profile_with_limitar_concentracao_and_13_incumbents_runs` | same policy and budget, seeds 0-3, incumbents = the 13 best-`SCORE` tickers of the scored universe → no exception, 5 funds, HHI ≤ 0.25 + 1e-12; when `status == "fallback_hhi"` the tickers equal `consensus_tickers` | SEG-42, SEG-39 | zone HHI fallback goes to an uncapped/un-skipped consensus |
+| `test_premium_policy :: V4FiiExecutabilityTests.test_owner_profile_with_limitar_concentracao_and_13_incumbents_runs` | same policy and budget, seeds 0-3, incumbents = the 13 best-`SCORE` tickers of the scored universe → no exception, 5 funds, HHI ≤ 0.25 + 1e-12, ≤ 2 per segment, zone `status != "fallback_hhi"`, every incumbent in exactly one of `kept`/`departures`, every departure reason in the A-6 set | SEG-42, SEG-39, SEG-43 | protection walk without the HHI term (the run raises) / `K = 0` fallback re-introduced |
 | `test_premium_optimization :: SegmentCapForwardingTests.test_fii_engine_receives_the_cap` | fake FII engine's `selection_config["max_per_segment"] == 2` and is `int` | SEG-30 | copy removed |
 | `test_premium_optimization :: SegmentCapForwardingTests.test_invalid_cap_fails_with_policy_invalid` | `0`, `True`, `1.5`, `"2"` → `PremiumOptimizationError.code == "policy_invalid"`; engines not called | SEG-31 | check removed |
 | `test_premium_optimization :: SegmentCapForwardingTests.test_sections_without_cap_produce_the_pre_change_config` | stock section and a v3 FII section → config equals the literal pre-change dict, no `max_per_segment` key | SEG-32 | key always emitted |
@@ -122,7 +125,7 @@ Every named test fails when the behaviour it names is removed (REVIEW.md). The "
 | updated `test_protection_zone_turnover :: test_measure_writes_both_reports_with_the_turnover_per_class` | `report["policy_version"] == "premium-policy-v4"` | SEG-35 | version |
 | Done-when check (T10, T11) | `git diff --exit-code a61164a -- docs/validation/` is empty | SEG-36 | frozen evidence edited |
 
-**Mutation targets for the Verifier's discrimination sensor**: `>` vs `>=` in the GA cap; the `None` guard in `fitness`; segment cut before vs after the capacity cut; departure precedence order; `held - {weakest}` vs `held` in `fits`; skip vs stop for an over-cap challenger; `take_within_segment_cap` skip; cap forwarded to the `K = 0` call; `_consensus` passing `segment_of`; capacity check `<` vs `<=`; final post-check; `_selector_config` copy and its integer check; `_selector_dict` omission of `None`; Basic FII counts; `fii-selection-v2` vs `v1` for Basic; the HHI term of `_fits` removed; the HHI bound on the partial sleeve instead of the projection; `held - {weakest}` vs `held` in the challenger's HHI term; `select_with_fallback` catching the `K = 0` error or not catching the zone error; `hhi_max` forwarded without the cap; `_consensus` dropping `hhi_max` on the pure path; `SegmentCapInfeasibleError` swallowed (short list) instead of raised.
+**Mutation targets for the Verifier's discrimination sensor**: `>` vs `>=` in the GA cap; the `None` guard in `fitness`; segment cut before vs after the capacity cut; departure precedence order; `held - {weakest}` vs `held` in `fits`; skip vs stop for an over-cap challenger; `take_within_segment_cap` skip; cap forwarded to the `K = 0` call; `_consensus` passing `segment_of`; capacity check `<` vs `<=`; final post-check; `_selector_config` copy and its integer check; `_selector_dict` omission of `None`; Basic FII counts; `fii-selection-v2` vs `v1` for Basic; the HHI term of `_fits` removed; the HHI bound on the partial sleeve instead of the projection; `held - {weakest}` vs `held` in the challenger's HHI term; `select_with_fallback` catching `SegmentCapInfeasibleError` from either call (a `K = 0` fallback re-introduced, AD-029); the protection walk's HHI term removed (`_fits` replaced by the cap check); the walk's HHI term applied after `n_assets` are accepted; the walk iterating in a non-rank order; `hhi_max` forwarded without the cap; `_consensus` dropping `hhi_max` on the pure path; `SegmentCapInfeasibleError` swallowed (short list) instead of raised.
 
 ---
 
@@ -140,7 +143,7 @@ Phases run in order; tasks within a phase run in order.
 
 | Phase | Tasks | Count | Heavy | Sensitive path (REVIEW.md) | Risk | Suggested tier |
 | ----- | ----- | ----- | ----- | -------------------------- | ---- | -------------- |
-| 1. Core cap (GA and zone) | T1-T5 | 5 | none | **yes** - `py/core/optimizer.py`, `py/core/protection_zone.py` | High: GA fitness and zone rule that produce the delivered recommendation; byte-identity of the uncapped path; HHI skip (AD-028). | high reasoning |
+| 1. Core cap (GA and zone) | T1-T5 | 5 | none | **yes** - `py/core/optimizer.py`, `py/core/protection_zone.py` | High: GA fitness and zone rule that produce the delivered recommendation; byte-identity of the uncapped path; HHI skip (AD-028) including the protection walk, no `K = 0` fallback (AD-029). | high reasoning |
 | 2. FII selector wiring | T6-T8 | 3 | none | no (`py/fii_selection.py` is not listed; it is the FII recommendation path) | Medium-high: regression of the uncapped consensus. | high reasoning |
 | 3. Policy v4 and tooling tests | T9-T12 | 4 | none (T12 runs real data, under a minute) | no (`api/app/services/premium_policy.py`, tests) | Low-medium: constants, version bump, pinned tests; mechanical. | mid tier |
 | 4. Adapter and end to end | T13-T14 | 2 | none | **yes** - `api/app/adapters/premium_optimization.py` | Medium: the bridge that decides what reaches the selector. | high reasoning |
@@ -277,11 +280,11 @@ T13 → T14
 
 **Status**: Pending
 
-**What**: Add keyword-only `hhi_max` to `apply_protection_zone` (accepted only with a cap): the HHI gate on the protected set, fill and challengers through `_fits`, and `SegmentCapInfeasibleError` when the zone cannot meet `hhi_max` (spec A-16, A-17).
+**What**: Add keyword-only `hhi_max` to `apply_protection_zone` (accepted only with a cap): the protection walk, the fill and the challengers through `_fits` (an incumbent the walk rejects leaves with `saiu: teto do segmento`, AD-029), and `SegmentCapInfeasibleError` when the fill cannot reach `n_assets` (spec A-5, A-16, A-17).
 **Where**: `py/core/protection_zone.py`
 **Depends on**: T3
 **Reuses**: `_fits` and `SegmentCapInfeasibleError` from T2; the T3 fill and swap loops
-**Requirement**: SEG-38, SEG-39, SEG-41, SEG-24
+**Requirement**: SEG-38, SEG-39, SEG-41, SEG-43, SEG-24
 **Risk area**: sensitive (`py/core/**`)
 **Heavy**: no
 
@@ -292,15 +295,15 @@ T13 → T14
 
 **Done when**:
 
-- [ ] `test_fill_skips_a_ticker_that_would_break_hhi_max`, `test_challenger_that_would_break_hhi_max_is_skipped`, `test_challenger_hhi_check_excludes_the_weakest`, `test_protected_pair_over_hhi_max_raises_in_the_zone` and the `apply_protection_zone` half of `test_hhi_max_without_cap_raises` pass
-- [ ] The protection walk (segment cut, capacity cut) does not read `hhi_max` (A-17)
+- [ ] `test_fill_skips_a_ticker_that_would_break_hhi_max`, `test_challenger_that_would_break_hhi_max_is_skipped`, `test_challenger_hhi_check_excludes_the_weakest`, `test_protected_pair_over_hhi_max_keeps_the_higher_ranked_incumbent`, `test_incumbent_past_capacity_is_cut_by_capacity_not_by_hhi`, `test_zone_fill_short_raises_instead_of_a_short_sleeve` and the `apply_protection_zone` half of `test_hhi_max_without_cap_raises` pass
+- [ ] The protection walk calls `_fits` while fewer than `n_assets` incumbents are accepted and the cap check alone after that (design step 2); no HHI gate raises on the protected set
 - [ ] `tests/test_protection_zone.py`, `tests/test_protection_zone_equivalence.py` and every T3 test pass with zero edits
 - [ ] Gate check passes: Core
-- [ ] Test count: at least 5 new tests in `tests/test_segment_cap_zone.py`
+- [ ] Test count: at least 7 new tests in `tests/test_segment_cap_zone.py`
 
 **Tests**: unit
 **Gate**: core
-**Commit**: `feat(core): skip zone tickers that would break hhi_max under the cap (#56)`
+**Commit**: `feat(core): apply the hhi_max skip to the zone walk, fill and challengers (#56)`
 
 ---
 
@@ -308,11 +311,11 @@ T13 → T14
 
 **Status**: Pending
 
-**What**: Add keyword-only `segment_of` and `max_per_segment` to `select_with_fallback` and pass them to both the zone call and the `K = 0` call; forward `hhi_max` to those calls only when the cap is set; compute the `K = 0` consensus first and fall back to it (`fallback_hhi`) when the zone call raises `SegmentCapInfeasibleError` with a cap and `hhi_max` set.
+**What**: Add keyword-only `segment_of` and `max_per_segment` to `select_with_fallback` and pass them to both the zone call and the `K = 0` call; forward `hhi_max` to those calls only when the cap is set; let `SegmentCapInfeasibleError` from either call propagate (no `K = 0` fallback for it, AD-029).
 **Where**: `py/core/protection_zone.py`
 **Depends on**: T4
 **Reuses**: existing fallback logic and record (no new record field, A-13)
-**Requirement**: SEG-23, SEG-24, SEG-39, SEG-41
+**Requirement**: SEG-23, SEG-24, SEG-39, SEG-41, SEG-43
 **Risk area**: sensitive (`py/core/**`)
 **Heavy**: no
 
@@ -323,9 +326,9 @@ T13 → T14
 
 **Done when**:
 
-- [ ] `test_fallback_consensus_respects_the_cap`, `test_recorded_consensus_tickers_are_capped`, `test_infeasible_zone_falls_back_to_the_capped_consensus` and `test_stock_path_never_forwards_hhi_max` pass
+- [ ] `test_fallback_consensus_respects_the_cap`, `test_recorded_consensus_tickers_are_capped`, `test_protected_same_segment_pair_keeps_the_protection_without_fallback`, `test_segment_cap_infeasible_error_propagates_from_both_calls` and `test_stock_path_never_forwards_hhi_max` pass
 - [ ] Record keys are identical with and without a cap (asserted)
-- [ ] A `SegmentCapInfeasibleError` from the `K = 0` call propagates (asserted)
+- [ ] Discrimination evidence in the commit body: on a scratch copy with the protection walk's HHI term removed (cap check only, as in T3), `test_protected_same_segment_pair_keeps_the_protection_without_fallback` fails; the scratch copy is discarded and the real tree is unchanged
 - [ ] Gate check passes: Build (last task of Phase 1)
 - [ ] Test count: root suite ≥ 535 + new Phase 1 tests, 2 skipped; API suite 160
 
@@ -531,7 +534,7 @@ T13 → T14
 **Where**: `api/tests/test_premium_policy.py`
 **Depends on**: T11, T8
 **Reuses**: `ConservadorAnchorExecutabilityTests` harness (`_RecordingGeneticAlgorithm`, `GA_BUDGET`, `PINNED_SEED`)
-**Requirement**: SEG-05, SEG-27, SEG-42
+**Requirement**: SEG-05, SEG-27, SEG-42, SEG-43
 **Risk area**: none (test only)
 **Heavy**: no (four small GA runs on real data)
 
@@ -543,7 +546,7 @@ T13 → T14
 **Done when**:
 
 - [ ] For each score: `n_selected == n_assets` (4/5/5/6), max segment count ≤ 2, recording GA saw `max_per_segment` 2
-- [ ] Both `limitar_concentracao` tests pass; the commit body records that, on a scratch copy with the HHI term of `_fits` removed, the no-incumbent test raises "FII selection violates the configured HHI limit" for seed 0 (discrimination evidence; the scratch copy is discarded and the real tree is unchanged)
+- [ ] Both `limitar_concentracao` tests pass, the incumbent one with zone `status != "fallback_hhi"` for every seed; the commit body records that, on a scratch copy with the HHI term of `_fits` removed, the no-incumbent test raises "FII selection violates the configured HHI limit" for seed 0 (discrimination evidence; the scratch copy is discarded and the real tree is unchanged)
 - [ ] The commit body records the wall-clock of the owner-profile capped run and of the same run without the cap (design Risk 1)
 - [ ] Gate check passes: Build (last task of Phase 3)
 - [ ] Test count: API suite ≥ 169; root suite unchanged from T11
@@ -640,8 +643,8 @@ Suggested batches (whole phases, ~7 tasks, cap ~10): batch 1 = Phases 1-2 (T1-T8
 | T1: GA cap | 1 class, 2 methods, 1 file | ✅ Granular |
 | T2: capped pick + validator + `_fits` | 3 related helpers and 1 exception, 1 file | ✅ OK (cohesive: one predicate and its first caller) |
 | T3: zone cap | 1 function | ✅ Granular |
-| T4: zone HHI skip | 1 function (fill, swap, one gate) | ✅ Granular |
-| T5: fallback forwarding and catch | 1 function | ✅ Granular |
+| T4: zone HHI skip | 1 function (protection walk, fill, swap) | ✅ Granular |
+| T5: fallback forwarding, no catch | 1 function | ✅ Granular |
 | T6: GA config copy | 1 function | ✅ Granular |
 | T7: capped consensus | 1 function | ✅ Granular |
 | T8: run-level checks | 1 function + 1 helper, 1 file | ✅ OK (cohesive) |
@@ -721,8 +724,9 @@ Suggested batches (whole phases, ~7 tasks, cap ~10): batch 1 = Phases 1-2 (T1-T8
 | SEG-37 | T2, T7 | SEG-40 | T2, T7 |
 | SEG-38 | T4 | SEG-41 | T2, T4, T5, T7 |
 | SEG-39 | T4, T5 | SEG-42 | T12 |
+| SEG-43 | T4, T5, T12 | | |
 
-42 of 42 requirements mapped; every task maps to at least one requirement.
+43 of 43 requirements mapped; every task maps to at least one requirement.
 
 ---
 
