@@ -211,7 +211,7 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 - WHEN two qualifying incumbents of one segment have equal frequency under `limitar_concentracao` at n 4 or 5 THEN the one with the higher `SCORE` (then the lower ticker) SHALL stay and the other SHALL leave with `saiu: teto do segmento` (SEG-39, rank tie-break).
 - WHEN fewer than `max_per_segment` incumbents of a segment qualify THEN all of them SHALL stay protected (SEG-19 boundary: exactly `max_per_segment` is allowed).
 - WHEN incumbents come from a v3 run with 13 FIIs and the v4 run has `n_assets` 5 THEN every incumbent SHALL end in exactly one of `kept` or `departures` (partition invariant of AD-026 holds with the new reason).
-- WHEN `max_per_segment >= n_assets` THEN the result SHALL equal the uncapped result (the cap never binds).
+- WHEN `max_per_segment >= n_assets` and `hhi_max` is `None` THEN the selected tickers, `kept`, `replaced` and `entered` SHALL equal the uncapped result (the cap never binds). WHERE `hhi_max` is set the HHI skip (A-16) still applies, so the equality need not hold. Departure reasons also match unless more than `max_per_segment` qualifying incumbents share one segment: those beyond the cap leave with `saiu: teto do segmento` instead of `saiu: vagas reduzidas` (SEG-19, A-6).
 - IF a v3 run queued before the deploy is executed after it THEN it SHALL run from its stored `policy_json` without `max_per_segment` and behave as v3 (SEG-32).
 
 ## Implicit-requirement dimensions
@@ -252,12 +252,12 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-16 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
 | SEG-17 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
 | SEG-18 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
-| SEG-19 | P1: Protection zone respects the cap | Tasks T3, T7 | In Tasks |
-| SEG-20 | P1: Protection zone respects the cap | Tasks T3 | In Tasks |
-| SEG-21 | P1: Protection zone respects the cap | Tasks T3 | In Tasks |
-| SEG-22 | P1: Protection zone respects the cap | Tasks T3 | In Tasks |
+| SEG-19 | P1: Protection zone respects the cap | Tasks T3, T7 | In progress (T3 done) |
+| SEG-20 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
+| SEG-21 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
+| SEG-22 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
 | SEG-23 | P1: Protection zone respects the cap | Tasks T5 | In Tasks |
-| SEG-24 | P1: Protection zone respects the cap | Tasks T3, T5 | In Tasks |
+| SEG-24 | P1: Protection zone respects the cap | Tasks T3, T5 | In progress (T3 done) |
 | SEG-25 | P1: Protection zone respects the cap | Tasks T2 | Implemented (T2) |
 | SEG-26 | P1: Protection zone respects the cap | Tasks T8 | In Tasks |
 | SEG-27 | P1: FII selector and adapter carry the cap | Tasks T6, T8, T12 | In Tasks |

@@ -247,7 +247,7 @@ T13 → T14
 
 #### T3: Segment cap inside `apply_protection_zone`
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add keyword-only `segment_of` and `max_per_segment` to `apply_protection_zone`: segment cut before the capacity cut, capped fill, capped challengers, `saiu: teto do segmento` with the A-6 precedence.
 **Where**: `py/core/protection_zone.py`
@@ -264,11 +264,11 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Rows SEG-19..SEG-22 and the migration, cap ≥ n and `None`-cap rows of the Test Strategy pass
-- [ ] `tests/test_protection_zone.py` and `tests/test_protection_zone_equivalence.py` pass with zero edits (`git diff --exit-code -- tests/test_protection_zone.py tests/test_protection_zone_equivalence.py`)
-- [ ] The existing `SPEC_DEVIATION` comment at `py/core/protection_zone.py:116` is kept
-- [ ] Gate check passes: Core
-- [ ] Test count: at least 9 new tests in `tests/test_segment_cap_zone.py` (18+ in the file)
+- [x] Rows SEG-19..SEG-22 and the migration, cap ≥ n and `None`-cap rows of the Test Strategy pass
+- [x] `tests/test_protection_zone.py` and `tests/test_protection_zone_equivalence.py` pass with zero edits (`git diff --exit-code -- tests/test_protection_zone.py tests/test_protection_zone_equivalence.py`)
+- [x] The existing `SPEC_DEVIATION` comment at `py/core/protection_zone.py:116` is kept
+- [x] Gate check passes: Core
+- [x] Test count: at least 9 new tests in `tests/test_segment_cap_zone.py` (18+ in the file)
 
 **Tests**: unit
 **Gate**: core
