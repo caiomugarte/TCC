@@ -10,7 +10,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 
 **Spec**: `.specs/features/fii-segment-cap/spec.md`
 **Design**: `.specs/features/fii-segment-cap/design.md`
-**Status**: Draft
+**Status**: Done
 
 ---
 
