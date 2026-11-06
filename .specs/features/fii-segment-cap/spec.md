@@ -1,6 +1,6 @@
 # FII Segment Cap and Policy v4 Specification
 
-Issue: [#56](https://github.com/caiomugarte/TCC/issues/56) "Limita os FIIs a 2 por segmento e reduz para 4/5/6 por perfil (política v4)". Route DRIVEN. Every design decision is closed in the issue's `## Decisões`; this spec encodes them and does not reopen them. The protection-zone contract it extends is AD-026 (issue #46); the cap's place in the zone is recorded as AD-027.
+Issue: [#56](https://github.com/caiomugarte/TCC/issues/56) "Limita os FIIs a 2 por segmento e reduz para 4/5/6 por perfil (política v4)". Route DRIVEN. Every design decision is closed in the issue's `## Decisões`; this spec encodes them and does not reopen them. The protection-zone contract it extends is AD-026 (issue #46); the cap's place in the zone is recorded as AD-027. The HHI skip that keeps the capped consensus within `hhi_max` (spec review r1, finding S1) is a human decision recorded as AD-028.
 
 Baseline: `a61164a` (branch `t3/issue-56`, base `origin/develop`). Root suite 535 tests (2 skipped); API suite 160 tests.
 
@@ -12,6 +12,7 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 
 - [ ] Premium FII sleeves hold 4 (conservador), 5 (moderado) and 6 (arrojado) funds at the anchors, 5 for the owner profile, interpolated as today.
 - [ ] No Premium FII sleeve holds more than 2 funds of one `SETOR`, at every stage that decides membership (GA, pure consensus, protection zone).
+- [ ] Under the `limitar_concentracao` restriction (`hhi_max` 0.25) a capped Premium FII run never fails on its own HHI post-check: the consensus, the fill and the challengers skip a ticker that would push the sleeve above `hhi_max` (AD-028).
 - [ ] Every caller that does not pass a cap (stocks, Basic, offline named profiles, a stored `premium-policy-v3` run) gets byte-identical output.
 - [ ] The resolved policy records the cap (`policy.fiis.max_per_segment = 2`), the policy version (`premium-policy-v4`) and the new FII method version (`fii-selection-v2`).
 
@@ -41,20 +42,23 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | A-4 Segment identity | A segment is the exact `SETOR` string of the ranked frame (the same column `hhi_sector` counts). "Indefinido" is an ordinary label and is capped like any other. | Issue `## Decisões` ("Indefinido" counts as its own segment); `load_fii_data` already rejects a blank `SETOR` (`py/fii_selection.py:278`). | y (issue) |
 | A-5 Order inside the zone | Qualifying incumbents (rank `<= K`) are walked in rank order (frequency desc, score desc, ticker asc); one whose segment already has `max_per_segment` protected incumbents leaves with `saiu: teto do segmento`. The `n_assets` capacity cut (`saiu: vagas reduzidas`) applies after the segment cut. | "mantendo os de maior frequência" = rank order. Cutting by segment first keeps the most incumbents: with qualifying `A1, A2, A3` (segment P) and `B1`, n = 3, segment-first keeps `A1, A2, B1`; capacity-first would drop `B1` for nothing. | n (author default) |
 | A-6 Departure reason precedence | Exactly one per departing incumbent: `saiu: inelegível` > `saiu: substituído por <t>` > `saiu: teto do segmento` > `saiu: vagas reduzidas` > `saiu: fora do top K`. | Extends AD-026's four reasons with the issue's new one; a ticker cut by segment never reaches the capacity cut (A-5), so the two never compete. | n (author default) |
-| A-7 Fill and challengers under the cap | Fill takes ranked tickers in order, skipping one whose segment is full. A challenger is the best-ranked ticker not held and not replaced whose segment has fewer than `max_per_segment` held tickers once the challenged incumbent leaves; a candidate that would break the cap is skipped and the next one is tried. The swap test itself (rank above, `f(c) >= f(p) + δ - 1e-12`) is unchanged. | Issue (c): "os desafiantes também respeitam o teto". Skipping (not stopping) mirrors the pure consensus rule (b), so `K = 0` still equals the capped pure consensus. | n (author default) |
-| A-8 The cap is a partition-matroid constraint | Greedy rank-order fill under the cap always reaches `n_assets` when the candidate set can (any GA run is a feasible `n_assets` portfolio, so the union of runs always can). No new "could not fill" error in `_consensus` or the zone. | Partition-matroid greedy property; every GA output is cap-feasible (SEG-12). | n (author default) |
-| A-9 Universe too small for the cap | Before any GA run, explicit-mode `run_fii_selection` raises `FiiSelectionError` (message names `max_per_segment` and the capacity) when `Σ_segments min(count, max_per_segment) < n_assets` on the scored universe. The adapter reports it through its existing generic path (`engine_error`); no new error code. | Otherwise the GA would score every chromosome `-inf` and raise "GA não convergiu". Unreachable on the committed data: capacity with cap 2 is 9 (conservador, n 4), 18 (moderado, n 5), 28 (arrojado, n 6), 20 (owner, n 5), measured 2026-11-06 on `data/raw/status_invest_fii.csv`. | n (author default) |
+| A-7 Fill and challengers under the cap | Fill takes ranked tickers in order, skipping one that does not `fit` (A-16). A challenger is the best-ranked ticker not held and not replaced that fits the held set minus the challenged incumbent; a candidate that does not fit is skipped and the next one is tried. The swap test itself (rank above, `f(c) >= f(p) + δ - 1e-12`) is unchanged. | Issue (c): "os desafiantes também respeitam o teto". Skipping (not stopping) mirrors the pure consensus rule (b), so `K = 0` still equals the capped pure consensus. | n (author default) |
+| A-8 Greedy exactness and the infeasible case | With `max_per_segment <= 2` the rank-order greedy under `fits` is exact: it reaches `n_assets` if and only if some `n_assets`-subset of the candidates satisfies the cap and `hhi_max`. Proof sketch: with cap 2 a sleeve of `k` tickers holding `p` pairs has `Σc² = k + 2p`, so the projected bound of A-16 is `n + 2p` and the HHI rule reduces to "at most `P = floor((hhi_max·n² + tol − n) / 2)` pairs"; a ticker of a new segment always fits, so the greedy fails only after walking every candidate, holding `d + min(P, q)` tickers (`d` distinct segments, `q` segments with 2 or more candidates), which is the maximum any feasible subset can hold. Every GA run is a feasible `n_assets` subset of the union of runs (GA infeasibility for both the cap and `hhi_max`), so the pure consensus and the `K = 0` consensus never fail in production. For `max_per_segment >= 3` the greedy can fail on a feasible set; it then raises (SEG-40), never returns a shorter sleeve. With `hhi_max` 0.25: `P = 0` at n 4 and 5, `P = 1` at n 6. | Combinatorics above; Premium sets cap 2 (AD-027). | n (author default) |
+| A-9 Universe too small for the cap | Before any GA run, explicit-mode `run_fii_selection` raises `FiiSelectionError` (message names `max_per_segment` and the capacity) when `Σ_segments min(count, max_per_segment) < n_assets` on the scored universe. The adapter reports it through its existing generic path (`engine_error`); no new error code. | Otherwise the GA would score every chromosome `-inf` and raise "GA não convergiu". Unreachable on the committed data. Capacity with cap 2 on the scored universe (the `build_fii_scores` frame the check runs on, after eligibility filters and scoring): conservador 8 of 12 funds (segment multiplicities 5/3/2/1/1, as pinned in `api/tests/test_premium_policy.py:508-512`) for n 4; moderado 18 of 57 (11 segments) for n 5; owner (selector score 0.70) 18 of 71 (11 segments) for n 5; arrojado 25 of 137 (15 segments) for n 6. The `limitar_concentracao` restriction does not change these frames. Measured 2026-11-06 on `data/raw/status_invest_fii.csv` (spec review r1 S2 corrected the earlier 9/18/28/20, which counted the eligible frame before scoring). The distinct-segment counts (5/11/11/15) also cover the `hhi_max` 0.25 need of at least n distinct segments at n 4 and 5 and 5 at n 6. | n (author default) |
 | A-10 #9 research tooling | `scripts/multirun_convergence.py` and `scripts/protection_zone_turnover.py` resolve the live `POLICY_VERSION`. Under v4 the frozen protocol's owner profile resolves `(stocks 13, fiis 5)` against a declared `(13, 13)`, so `check_n_assets` exits 2. The protocol file and its lots are not edited. Tests that only use the protocol as a fixture base set `expected_n_assets` to the v4 counts; the test of the real protocol asserts the v4 counts and the exit-2 guard. | Measured: the v4 bump alone fails 16 + 5 tests in `tests/test_multirun_convergence.py` (all `expected_n_assets`) and 1 in `tests/test_protection_zone_turnover.py` (version string). Re-running #9 under v4 is #47 territory. | n (flagged, Q2) |
 | A-11 Seed change | `derive_premium_seed` hashes the policy version, so a v4 run draws different GA seeds than a v3 run on the same inputs. "Identical without a cap" is asserted at the GA, zone and selector level for the same seeds, not across policy versions. | Existing behaviour (AD-026 trade-off). | n (author default) |
 | A-12 Which existing tests change | Only tests that pin v3 policy values: `PremiumPolicyTests.test_conservador_fii_rules_pin_the_adr_0002_calibration`, `test_policy_versions_are_bumped_and_reject_the_v1_strings`, `test_persisted_provenance_reports_the_bumped_policy_versions`, `ProtectionZonePolicyTests.test_premium_sections_carry_the_issue_9_zone_values_for_every_anchor`, `ConservadorAnchorExecutabilityTests.test_unrestricted_anchor_differs_only_by_hhi_max_and_runs_above_the_cap` (fixes `n_assets` 10 so its subject, an uncapped HHI above 0.25, survives n = 4), `ProtectionZoneIntegrationTests.test_second_premium_run_records_the_first_as_incumbent` (version string), `tests/test_protection_zone_turnover.py` (version string) and `tests/test_multirun_convergence.py` (A-10). Every other existing test passes with no value change. | Measured on a scratch copy of `a61164a` with only `POLICY_VERSION` and the shared `FII_RULES` counts changed: the API tests above failed, plus the two Basic tests (`test_basic_generic_profile_bands_map_to_discrete_stock_and_fii_rules`, `test_basic_policy_has_no_zone_and_matches_the_pre_change_json`) because Basic shares `FII_RULES` today; A-2 keeps those two green unchanged. Root: 21 tests in `tests/test_multirun_convergence.py` (every one through `expected_n_assets`) and 1 in `tests/test_protection_zone_turnover.py`. `tests/test_fii_selection.py`, `tests/test_protection_zone*.py`, `tests/test_benchmark_premium.py`, `tests/test_premium_research_contracts.py` stayed green. | n (author default) |
 | A-13 Zone record | The per-class zone record gains no field. The cap lives in `policy.fiis`; a cap departure appears in `departures` with `saiu: teto do segmento` and counts in `exits`. | Keeps the stock record and the record shape of AD-026 unchanged; the policy is already persisted next to it. | n (author default) |
 | A-14 Interpolation | `n_assets = int(round(_interpolate(left, right, fraction)))` as today, Python half-to-even: selector score 0.25 → 4, 0.70 → 5, 0.75 → 6. | "interpolados como hoje". | y (issue) |
+| A-16 HHI skip under the cap (AD-028) | WHERE `max_per_segment` and `hhi_max` are both set, one predicate `fits(t, S)` decides membership at every greedy step (pure consensus, zone fill, zone challenger): `count_S(segment_of[t]) < max_per_segment` AND `(Σ_s c_s(S ∪ {t})² + (n_assets − |S ∪ {t}|)) / n_assets² <= hhi_max + 1e-12`. The second term is the lowest HHI any completion of `S ∪ {t}` to `n_assets` can reach (each remaining slot in a new segment adds 1 to `Σc²`); it is evaluated at the target size, never on the partial sleeve. Tolerance `1e-12` is the one the GA and the post-check use. For a challenger, `S` is the held set minus the challenged incumbent. Without a cap, `hhi_max` never reaches the greedy: stocks and uncapped FIIs keep the pre-change code path (the GA `hhi_max` infeasibility and the zone's post-hoc `hhi_of` check are unchanged). | Human decision after spec review r1 (S1): at n 4 and 5 a 2+1+1(+1) split gives HHI 0.375 and 0.28 > 0.25, so the cap-2 consensus could pick a pair that every GA run avoided and fail the post-check at `py/fii_selection.py:769-770`; reproduced at owner score 0.70, n 5, 8 runs 40×30, seed 0. One predicate in one walk order makes the cap skip and the HHI skip order-consistent: whichever term rejects a ticker, the walk continues with the next one. | y (human, AD-028) |
+| A-17 Zone that cannot meet `hhi_max` | WHERE both are set, IF the protected incumbents alone already break the A-16 bound, or the fill cannot reach `n_assets` under `fits`, THEN `apply_protection_zone` raises `SegmentCapInfeasibleError` (a `ValueError` subclass in `py/core/protection_zone.py`). `select_with_fallback` catches it only from the zone call (`K > 0`) and only when `hhi_max` is set, and returns the `K = 0` consensus with `status "fallback_hhi"` and `buffer_fallback "hhi"`, the AD-026 fallback contract. The `K = 0` call is never caught: if it raises, `_consensus` turns it into a `FiiSelectionError` (SEG-40). Protected incumbents are not trimmed by HHI (Q3). | Keeps the user decision's scope (consensus, fill, challengers) and reuses the existing HHI fallback instead of a new reason. With cap 2 the zone normally meets `hhi_max` by construction; it falls back only when two protected incumbents share a segment where `P = 0`. | n (author default, Q3) |
 | A-15 Caches | No `data/processed/*.csv` or `outputs/` file changes: the cap acts on selection, not on preprocessing, and the offline named-profile path passes no cap. | REVIEW.md cache check. | n (author default) |
 
 **Open questions** (logged with a default, none blocks Design or Tasks):
 
 1. **Q1 (A-2)**: should Basic also move to 4/5/6 FIIs with the cap (a `basic-policy-v3`)? Default: no, the issue names Premium only. Changing it later is one constant and a version bump.
 2. **Q2 (A-10)**: the frozen #9 protocol cannot be replayed under v4 (exit 2 on `expected_n_assets`). Default: accept it; #47 or a new protocol owns any v4 re-measurement.
+3. **Q3 (A-17)**: under `limitar_concentracao` at n 4 or 5, two qualifying incumbents of one segment already break `hhi_max`, so the zone falls back to the `K = 0` consensus and the user loses every protection for that run (status `fallback_hhi`, recorded). Default: accept it; the human decision (AD-028) names the consensus, the fill and the challengers, not the protection walk. Alternative for a follow-up: apply `fits` to the protection walk too, so the lower-ranked incumbent of the pair leaves with `saiu: teto do segmento` and the zone keeps the rest.
 
 ---
 
@@ -129,7 +133,7 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 2. WHEN the incumbents left after the segment cut still exceed `n_assets` THEN the zone SHALL protect the `n_assets` best-ranked of them and record the rest as `saiu: vagas reduzidas` (segment cut first, A-5). <!-- SEG-20 -->
 3. WHEN the zone fills vacancies THEN it SHALL skip a ranked ticker whose segment already holds `max_per_segment` held tickers. <!-- SEG-21 -->
 4. WHEN the zone looks for a challenger THEN it SHALL take the best-ranked ticker not held and not replaced whose segment holds fewer than `max_per_segment` tickers once the challenged incumbent leaves, and SHALL apply the unchanged rank and δ test to it. <!-- SEG-22 -->
-5. WHERE `max_per_segment` is set, `select_with_fallback` SHALL apply the cap to both the zone portfolio and the `K = 0` consensus it records (`consensus_tickers`) and falls back to on `hhi_max`. <!-- SEG-23 -->
+5. WHERE `max_per_segment` is set, `select_with_fallback` SHALL apply the cap to both the zone portfolio and the `K = 0` consensus it records (`consensus_tickers`) and falls back to. <!-- SEG-23 -->
 6. WHILE `max_per_segment` is `None` `apply_protection_zone` and `select_with_fallback` SHALL return the same selection and record as before the change (every existing test in `tests/test_protection_zone.py` and `tests/test_protection_zone_equivalence.py` passes unchanged). <!-- SEG-24 -->
 7. IF `max_per_segment` is set and `segment_of` is missing or lacks a ranked ticker, or `max_per_segment` is not an integer `>= 1`, THEN the zone SHALL raise `ValueError` naming the field. <!-- SEG-25 -->
 8. WHEN `run_fii_selection` runs with incumbents, a zone and `max_per_segment` 2, and three incumbents of one segment rank within K THEN `result["protection_zone"]["departures"]` SHALL map the lowest-ranked of them to `saiu: teto do segmento`. <!-- SEG-26 -->
@@ -147,7 +151,7 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 **Acceptance Criteria**:
 
 1. WHEN the explicit FII `selection_config` carries `max_per_segment` THEN `run_fii_selection` SHALL construct every `GeneticAlgorithm` with that value and SHALL pass it to the consensus. <!-- SEG-27 -->
-2. IF `max_per_segment` is set and `Σ_segments min(count, max_per_segment) < n_assets` over the scored universe THEN `run_fii_selection` SHALL raise `FiiSelectionError` naming `max_per_segment` before any GA run. <!-- SEG-28 -->
+2. IF `max_per_segment` is set and `Σ_segments min(count, max_per_segment) < n_assets` over the scored universe THEN `run_fii_selection` SHALL raise `FiiSelectionError` naming `max_per_segment` before any GA run; WHEN the capacity equals `n_assets` it SHALL NOT raise and SHALL return `n_assets` funds. <!-- SEG-28 -->
 3. IF the final FII selection holds more than `max_per_segment` tickers of one segment THEN `run_fii_selection` SHALL raise `FiiSelectionError` matching "segment cap". <!-- SEG-29 -->
 4. WHEN the adapter builds the FII selector config from a policy section with `max_per_segment` THEN `_selector_config` SHALL copy it as an `int` to the top level of the config passed to the FII engine. <!-- SEG-30 -->
 5. IF the policy section's `max_per_segment` is present and is not an integer `>= 1` THEN the adapter SHALL raise `PremiumOptimizationError` with code `policy_invalid`. <!-- SEG-31 -->
@@ -155,6 +159,25 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 7. WHEN a Premium run is created and executed end to end THEN `policy_json["fiis"]["max_per_segment"]` SHALL be 2, `policy_version` SHALL be `premium-policy-v4`, and the FII engine SHALL receive `selection_config["max_per_segment"] == 2`. <!-- SEG-33 -->
 
 **Independent Test**: `api/tests/test_premium_optimization.py` and `api/tests/test_premium_integration.py` with fake engines.
+
+---
+
+### P1: HHI skip under the cap ⭐ MVP
+
+**User Story**: As a Premium user with the `limitar_concentracao` restriction, I want the capped FII consensus and zone to stay within `hhi_max` so that my run never fails on its own HHI post-check.
+
+**Why P1**: Spec review r1 S1: without it, a capped run at n 4 or 5 with `hhi_max` 0.25 can raise "FII selection violates the configured HHI limit" (reproduced on committed data). Human decision AD-028.
+
+**Acceptance Criteria**:
+
+1. WHERE `max_per_segment` and `hhi_max` are both set, WHEN the pure consensus walks tickers in rank order THEN it SHALL skip a ticker that does not satisfy `fits` (A-16) and continue with the next one, using the same walk and the same predicate as the segment-cap skip. <!-- SEG-37 -->
+2. WHERE `max_per_segment` and `hhi_max` are both set, WHEN the zone fills vacancies or looks for a challenger THEN it SHALL take only tickers that satisfy `fits`, evaluated on the held set for the fill and on the held set minus the challenged incumbent for a challenger, skipping the others. <!-- SEG-38 -->
+3. WHERE `max_per_segment` and `hhi_max` are both set, IF the protected incumbents alone break the A-16 bound or the zone fill cannot reach `n_assets` THEN `apply_protection_zone` SHALL raise `SegmentCapInfeasibleError`, and `select_with_fallback` SHALL return the `K = 0` consensus with `status "fallback_hhi"` and `buffer_fallback "hhi"`. <!-- SEG-39 -->
+4. IF the capped pure consensus or the `K = 0` consensus cannot reach `n_assets` under `fits` THEN `_consensus` SHALL raise `FiiSelectionError` naming `max_per_segment` and `hhi_max`, and SHALL NOT return fewer than `n_assets` funds. <!-- SEG-40 -->
+5. WHILE `max_per_segment` is `None` the HHI skip SHALL NOT run: `_consensus` and `select_with_fallback` SHALL NOT pass `hhi_max` to `take_within_segment_cap` or `apply_protection_zone`, and IF either receives `hhi_max` without `max_per_segment`, or a `hhi_max` that is not a finite number `> 0`, THEN it SHALL raise `ValueError` naming `hhi_max`. <!-- SEG-41 -->
+6. WHEN `run_fii_selection` runs on the committed `data/raw/status_invest_fii.csv` with the v4 FII section resolved for selector score 0.70 and `limitar_concentracao` (n 5, cap 2, `hhi_max` 0.25), 8 runs, GA 40 generations × 30 population, seeds 0 to 3, with and without 13 incumbents and the zone THEN it SHALL return 5 funds with HHI `<= 0.25 + 1e-12` and at most 2 per segment, without raising. <!-- SEG-42 -->
+
+**Independent Test**: `tests/test_segment_cap_zone.py` (greedy and zone), `tests/test_segment_cap_fii.py` (consensus), `api/tests/test_premium_policy.py` (real data).
 
 ---
 
@@ -176,7 +199,10 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 
 ## Edge Cases
 
-- IF the scored universe cannot fill `n_assets` under the cap THEN the selector SHALL fail before the GA (SEG-28).
+- IF the scored universe cannot fill `n_assets` under the cap THEN the selector SHALL fail before the GA (SEG-28); a capacity of exactly `n_assets` runs.
+- WHEN `n_assets` is 4 and the 4 picks sit in 4 distinct segments THEN HHI is exactly 0.25 and the sleeve fits `hhi_max` 0.25 (tolerance `1e-12`, SEG-37 boundary).
+- IF the scored universe has fewer distinct segments than `hhi_max` needs THEN the GA scores every chromosome `-inf` as it does today without the cap; this pre-existing `hhi_max` behaviour is unchanged and not part of the SEG-28 check.
+- IF no candidate fits at a greedy step THEN the selector SHALL raise, never deliver a smaller sleeve (SEG-39 for the zone, SEG-40 for the consensus).
 - WHEN fewer than `max_per_segment` incumbents of a segment qualify THEN all of them SHALL stay protected (SEG-19 boundary: exactly `max_per_segment` is allowed).
 - WHEN incumbents come from a v3 run with 13 FIIs and the v4 run has `n_assets` 5 THEN every incumbent SHALL end in exactly one of `kept` or `departures` (partition invariant of AD-026 holds with the new reason).
 - WHEN `max_per_segment >= n_assets` THEN the result SHALL equal the uncapped result (the cap never binds).
@@ -187,12 +213,12 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | Dimension | Coverage |
 | --------- | -------- |
 | Input validation & bounds | SEG-12, SEG-13, SEG-25, SEG-31. |
-| Failure / partial-failure states | SEG-28 (universe too small), SEG-29 (defensive post-check). |
+| Failure / partial-failure states | SEG-28 (universe too small), SEG-29 (defensive post-check), SEG-39 (zone cannot meet `hhi_max` → fallback), SEG-40 (consensus cannot fill → error, never a shorter sleeve). |
 | Idempotency / retry / duplicates | N/A because selection is a pure seeded computation; the run cache keyed by policy version is unchanged. |
 | Auth boundaries & rate limits | N/A because no route, entitlement or account scoping changes. |
 | Concurrency / ordering | N/A because the cap travels inside the pickled config to `mp.Pool` workers; no shared state is added. |
 | Data lifecycle / expiry | Stored v3 runs execute from their stored policy (SEG-32, edge case). |
-| Observability | Cap recorded in `policy.fiis` (SEG-04), method version (SEG-07), departure reason (SEG-19, SEG-26). |
+| Observability | Cap recorded in `policy.fiis` (SEG-04), method version (SEG-07), departure reason (SEG-19, SEG-26), `fallback_hhi` status when the capped zone cannot meet `hhi_max` (SEG-39). |
 | External-dependency failure | N/A because no external call is added. |
 | State-transition integrity | N/A because run states and transitions do not change. |
 
@@ -202,44 +228,50 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| SEG-01 | P1: Premium policy v4 | Tasks T10 | In Tasks |
-| SEG-02 | P1: Premium policy v4 | Tasks T10 | In Tasks |
-| SEG-03 | P1: Premium policy v4 | Tasks T9 | In Tasks |
-| SEG-04 | P1: Premium policy v4 | Tasks T8 | In Tasks |
-| SEG-05 | P1: Premium policy v4 | Tasks T10, T11 | In Tasks |
-| SEG-06 | P1: Premium policy v4 | Tasks T9 | In Tasks |
-| SEG-07 | P1: Premium policy v4 | Tasks T10 | In Tasks |
-| SEG-08 | P1: Premium policy v4 | Tasks T9, T10 | In Tasks |
+| SEG-01 | P1: Premium policy v4 | Tasks T11 | In Tasks |
+| SEG-02 | P1: Premium policy v4 | Tasks T11 | In Tasks |
+| SEG-03 | P1: Premium policy v4 | Tasks T10 | In Tasks |
+| SEG-04 | P1: Premium policy v4 | Tasks T9 | In Tasks |
+| SEG-05 | P1: Premium policy v4 | Tasks T11, T12 | In Tasks |
+| SEG-06 | P1: Premium policy v4 | Tasks T10 | In Tasks |
+| SEG-07 | P1: Premium policy v4 | Tasks T11 | In Tasks |
+| SEG-08 | P1: Premium policy v4 | Tasks T10, T11 | In Tasks |
 | SEG-09 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
 | SEG-10 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
 | SEG-11 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
 | SEG-12 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
 | SEG-13 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
 | SEG-14 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | In Tasks |
-| SEG-15 | P1: Pure consensus skips a full segment | Tasks T2, T6 | In Tasks |
-| SEG-16 | P1: Pure consensus skips a full segment | Tasks T6 | In Tasks |
-| SEG-17 | P1: Pure consensus skips a full segment | Tasks T6 | In Tasks |
-| SEG-18 | P1: Pure consensus skips a full segment | Tasks T6 | In Tasks |
-| SEG-19 | P1: Protection zone respects the cap | Tasks T3, T6 | In Tasks |
+| SEG-15 | P1: Pure consensus skips a full segment | Tasks T2, T7 | In Tasks |
+| SEG-16 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
+| SEG-17 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
+| SEG-18 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
+| SEG-19 | P1: Protection zone respects the cap | Tasks T3, T7 | In Tasks |
 | SEG-20 | P1: Protection zone respects the cap | Tasks T3 | In Tasks |
 | SEG-21 | P1: Protection zone respects the cap | Tasks T3 | In Tasks |
 | SEG-22 | P1: Protection zone respects the cap | Tasks T3 | In Tasks |
-| SEG-23 | P1: Protection zone respects the cap | Tasks T4 | In Tasks |
-| SEG-24 | P1: Protection zone respects the cap | Tasks T3, T4 | In Tasks |
+| SEG-23 | P1: Protection zone respects the cap | Tasks T5 | In Tasks |
+| SEG-24 | P1: Protection zone respects the cap | Tasks T3, T5 | In Tasks |
 | SEG-25 | P1: Protection zone respects the cap | Tasks T2 | In Tasks |
-| SEG-26 | P1: Protection zone respects the cap | Tasks T7 | In Tasks |
-| SEG-27 | P1: FII selector and adapter carry the cap | Tasks T5, T7, T11 | In Tasks |
-| SEG-28 | P1: FII selector and adapter carry the cap | Tasks T7 | In Tasks |
-| SEG-29 | P1: FII selector and adapter carry the cap | Tasks T7 | In Tasks |
-| SEG-30 | P1: FII selector and adapter carry the cap | Tasks T12 | In Tasks |
-| SEG-31 | P1: FII selector and adapter carry the cap | Tasks T12 | In Tasks |
-| SEG-32 | P1: FII selector and adapter carry the cap | Tasks T5, T12, T13 | In Tasks |
-| SEG-33 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
-| SEG-34 | P2: Research tooling follows v4 | Tasks T9 | In Tasks |
-| SEG-35 | P2: Research tooling follows v4 | Tasks T10 | In Tasks |
-| SEG-36 | P2: Research tooling follows v4 | Tasks T9, T10 | In Tasks |
+| SEG-26 | P1: Protection zone respects the cap | Tasks T8 | In Tasks |
+| SEG-27 | P1: FII selector and adapter carry the cap | Tasks T6, T8, T12 | In Tasks |
+| SEG-28 | P1: FII selector and adapter carry the cap | Tasks T8 | In Tasks |
+| SEG-29 | P1: FII selector and adapter carry the cap | Tasks T8 | In Tasks |
+| SEG-30 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
+| SEG-31 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
+| SEG-32 | P1: FII selector and adapter carry the cap | Tasks T6, T13, T14 | In Tasks |
+| SEG-33 | P1: FII selector and adapter carry the cap | Tasks T14 | In Tasks |
+| SEG-34 | P2: Research tooling follows v4 | Tasks T10 | In Tasks |
+| SEG-35 | P2: Research tooling follows v4 | Tasks T11 | In Tasks |
+| SEG-36 | P2: Research tooling follows v4 | Tasks T10, T11 | In Tasks |
+| SEG-37 | P1: HHI skip under the cap | Tasks T2, T7 | In Tasks |
+| SEG-38 | P1: HHI skip under the cap | Tasks T4 | In Tasks |
+| SEG-39 | P1: HHI skip under the cap | Tasks T4, T5 | In Tasks |
+| SEG-40 | P1: HHI skip under the cap | Tasks T2, T7 | In Tasks |
+| SEG-41 | P1: HHI skip under the cap | Tasks T2, T4, T5, T7 | In Tasks |
+| SEG-42 | P1: HHI skip under the cap | Tasks T12 | In Tasks |
 
-**Coverage:** 36 total, 36 mapped to tasks, 0 unmapped.
+**Coverage:** 42 total, 42 mapped to tasks, 0 unmapped.
 
 ---
 
@@ -247,4 +279,5 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 
 - [ ] The owner profile's Premium policy resolves 5 FIIs with `max_per_segment` 2 and K 8 (SEG-05).
 - [ ] No GA run, pure consensus or zone portfolio in the new tests holds 3 FIIs of one segment.
+- [ ] The owner profile with `limitar_concentracao` runs 8 × 40 × 30 on committed data for seeds 0 to 3 without raising (SEG-42); seed 0 raises with the HHI skip removed.
 - [ ] Root suite (535 + new) and API suite (160 + new) pass; the only existing tests whose values change are the ones listed in A-12.
