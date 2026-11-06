@@ -3,14 +3,17 @@
 from pathlib import Path
 import sys
 import unittest
+from unittest import mock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 
+import core.protection_zone as protection_zone  # noqa: E402
 from core.protection_zone import (  # noqa: E402
     SEGMENT_CAP_DEPARTURE,
     SegmentCapInfeasibleError,
     apply_protection_zone,
+    select_with_fallback,
     take_within_segment_cap,
 )
 
@@ -304,6 +307,128 @@ class ZoneHhiSkipTests(unittest.TestCase):
         frequencies = {"P1": 0.9, "P2": 0.8, "Q1": 0.7, "Q2": 0.6, "R1": 0.5}
         with self.assertRaisesRegex(SegmentCapInfeasibleError, "hhi_max"):
             _cap_zone(["P1"], frequencies, 4, 8, 0.11, hhi_max=0.25)
+
+
+
+def _segment_hhi(tickers) -> float:
+    counts = _segment_counts(tickers)
+    return sum((c / len(tickers)) ** 2 for c in counts.values())
+
+
+def _cap_select(incumbents, frequencies, n_assets, K, delta, *, hhi_of=_segment_hhi, hhi_max=None,
+                max_per_segment=2, scores=None):
+    """select_with_fallback over letter segments, every candidate eligible, no dedup."""
+
+    return select_with_fallback(
+        incumbents,
+        frequencies,
+        {t: 1.0 for t in frequencies} if scores is None else scores,
+        n_assets,
+        {"K": K, "delta": delta},
+        eligible=set(frequencies) | set(incumbents),
+        dedup_base_company=False,
+        hhi_of=hhi_of,
+        hhi_max=hhi_max,
+        segment_of=_segments(*frequencies),
+        max_per_segment=max_per_segment,
+    )
+
+
+# Zone protects R1 (rank 5 <= K 5) and fills P1, P2; the capped K = 0 consensus skips P3
+# (P full) and takes Q1. Uncapped, the consensus would be P1, P2, P3.
+FALLBACK_CAP_FREQUENCIES = {"P1": 0.9, "P2": 0.85, "P3": 0.8, "Q1": 0.7, "R1": 0.6}
+
+
+class SelectWithFallbackSegmentCapTests(unittest.TestCase):
+    def test_fallback_consensus_respects_the_cap(self):  # SEG-23
+        hhi_of = lambda tickers: 0.95 if set(tickers) == {"P1", "P2", "R1"} else 0.1  # noqa: E731
+        selection, record = _cap_select(
+            ["R1"], FALLBACK_CAP_FREQUENCIES, 3, 5, 0.5, hhi_of=hhi_of, hhi_max=0.9
+        )
+        self.assertEqual(selection.tickers, ("P1", "P2", "Q1"))
+        self.assertEqual(selection.departures, {"R1": "saiu: fora do top K"})
+        self.assertEqual((record["status"], record["buffer_fallback"]), ("fallback_hhi", "hhi"))
+
+    def test_recorded_consensus_tickers_are_capped(self):  # SEG-23, A-13
+        selection, record = _cap_select(
+            ["R1"], FALLBACK_CAP_FREQUENCIES, 3, 5, 0.5, hhi_of=lambda tickers: 0.1, hhi_max=0.9
+        )
+        self.assertEqual(selection.tickers, ("P1", "P2", "R1"))
+        self.assertEqual(record["status"], "applied")
+        self.assertEqual(record["consensus_tickers"], ["P1", "P2", "Q1"])
+        self.assertLessEqual(max(_segment_counts(record["consensus_tickers"]).values()), 2)
+        _, uncapped = _cap_select(
+            ["R1"], FALLBACK_CAP_FREQUENCIES, 3, 5, 0.5, hhi_of=lambda tickers: 0.1, hhi_max=0.9,
+            max_per_segment=None,
+        )
+        self.assertEqual(uncapped["consensus_tickers"], ["P1", "P2", "P3"])
+        self.assertEqual(list(record), list(uncapped))
+
+    def test_protected_same_segment_pair_keeps_the_protection_without_fallback(self):  # SEG-39, SEG-43
+        frequencies = {
+            "P1": 0.90, "P2": 0.85, "Q1": 0.80, "R1": 0.70, "S1": 0.60, "T1": 0.50, "U1": 0.45,
+        }
+        selection, record = _cap_select(["P1", "P2", "U1"], frequencies, 5, 8, 0.11, hhi_max=0.25)
+        self.assertEqual(record["status"], "applied")
+        self.assertIsNone(record["buffer_fallback"])
+        self.assertEqual(selection.tickers, ("P1", "Q1", "R1", "S1", "U1"))
+        self.assertEqual(selection.kept, ("P1", "U1"))
+        self.assertEqual(selection.departures, {"P2": "saiu: teto do segmento"})
+        self.assertAlmostEqual(_segment_hhi(selection.tickers), 0.20, places=12)
+        # U1's protection survives: T1 leads it by 0.05 < delta, so the zone differs from K = 0.
+        self.assertEqual(record["consensus_tickers"], ["P1", "Q1", "R1", "S1", "T1"])
+
+    def test_segment_cap_infeasible_error_propagates_from_both_calls(self):  # SEG-43, AD-029
+        original = protection_zone.apply_protection_zone
+        frequencies = {"P1": 0.9, "Q1": 0.8, "R1": 0.7, "S1": 0.6, "T1": 0.5}
+        for failing_k in ("zone", "consensus"):
+            def stub(*args, **kwargs):
+                is_zone = args[4] > 0
+                if is_zone == (failing_k == "zone"):
+                    raise SegmentCapInfeasibleError(f"stub {failing_k} cannot fill")
+                return original(*args, **kwargs)
+
+            with self.subTest(failing=failing_k):
+                with mock.patch.object(protection_zone, "apply_protection_zone", side_effect=stub):
+                    with self.assertRaisesRegex(SegmentCapInfeasibleError, f"stub {failing_k}"):
+                        _cap_select(["P1"], frequencies, 4, 7, 0.11, hhi_max=0.25)
+
+    def test_stock_path_never_forwards_hhi_max(self):  # SEG-41, SEG-24
+        frequencies = {"ALFA3": 0.9, "BETA3": 0.8, "GAMA3": 0.7, "DELT3": 0.6, "EPSI3": 0.1}
+        original = protection_zone.apply_protection_zone
+        with mock.patch.object(
+            protection_zone, "apply_protection_zone", side_effect=original
+        ) as spy:
+            selection, record = select_with_fallback(
+                ["GAMA3"], frequencies, {t: 1.0 for t in frequencies}, 2, {"K": 3, "delta": 0.11},
+                eligible=set(frequencies), dedup_base_company=True,
+                hhi_of=lambda tickers: 0.2, hhi_max=0.25,
+            )
+        self.assertEqual(spy.call_count, 2)
+        for call in spy.call_args_list:
+            self.assertNotIn("hhi_max", call.kwargs)
+            self.assertNotIn("max_per_segment", call.kwargs)
+        self.assertEqual(selection.tickers, ("ALFA3", "GAMA3"))
+        self.assertEqual(
+            record,
+            {
+                "status": "applied",
+                "K": 3,
+                "k_offset": 1,
+                "delta": 0.11,
+                "n_assets": 2,
+                "incumbents": ["GAMA3"],
+                "kept": ["GAMA3"],
+                "replaced": [],
+                "entered": ["ALFA3"],
+                "departures": {},
+                "turnover": 1,
+                "exits": 0,
+                "buffer_fallback": None,
+                "consensus_tickers": ["ALFA3", "BETA3"],
+                "consensus_turnover": 2,
+            },
+        )
 
 
 if __name__ == "__main__":

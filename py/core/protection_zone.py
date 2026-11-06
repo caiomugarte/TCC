@@ -385,6 +385,8 @@ def select_with_fallback(
     dedup_base_company: bool,
     hhi_of: Callable[[Sequence[str]], float],
     hhi_max: float | None,
+    segment_of: Mapping[str, str] | None = None,
+    max_per_segment: int | None = None,
 ) -> tuple[ZoneSelection, dict[str, object]]:
     """Run the zone for one class and return the portfolio used with its class record.
 
@@ -392,18 +394,27 @@ def select_with_fallback(
     and the zone portfolio's HHI exceeds it by more than the tolerance (PZ-14).
     The record has the fields of the design's class record; the adapter writes
     the reduced record for a class it does not send to a selector.
+
+    With ``max_per_segment`` (issue #56) both the zone and the K = 0 consensus
+    are capped, and ``hhi_max`` also reaches their greedy steps (spec A-16). A
+    SegmentCapInfeasibleError from either call propagates: the zone never falls
+    back to K = 0 because of it (AD-029). Without a cap ``hhi_max`` only drives
+    the post-hoc fallback, as before.
     """
 
     incumbent_list = sorted({ticker.strip().upper() for ticker in incumbents})
     K = zone["K"]
     delta = zone["delta"]
+    cap: dict[str, object] = {}
+    if max_per_segment is not None:
+        cap = {"segment_of": segment_of, "max_per_segment": max_per_segment, "hhi_max": hhi_max}
     zone_selection = apply_protection_zone(
         incumbent_list, frequencies, scores, n_assets, K, delta,
-        eligible=eligible, dedup_base_company=dedup_base_company,
+        eligible=eligible, dedup_base_company=dedup_base_company, **cap,
     )
     consensus = apply_protection_zone(
         incumbent_list, frequencies, scores, n_assets, 0, delta,
-        eligible=eligible, dedup_base_company=dedup_base_company,
+        eligible=eligible, dedup_base_company=dedup_base_company, **cap,
     )
 
     selection, status, buffer_fallback = zone_selection, "applied", None

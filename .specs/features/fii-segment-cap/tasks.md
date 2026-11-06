@@ -309,7 +309,7 @@ T13 → T14
 
 #### T5: Forward the cap through `select_with_fallback`
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add keyword-only `segment_of` and `max_per_segment` to `select_with_fallback` and pass them to both the zone call and the `K = 0` call; forward `hhi_max` to those calls only when the cap is set; let `SegmentCapInfeasibleError` from either call propagate (no `K = 0` fallback for it, AD-029).
 **Where**: `py/core/protection_zone.py`
@@ -326,11 +326,11 @@ T13 → T14
 
 **Done when**:
 
-- [ ] `test_fallback_consensus_respects_the_cap`, `test_recorded_consensus_tickers_are_capped`, `test_protected_same_segment_pair_keeps_the_protection_without_fallback`, `test_segment_cap_infeasible_error_propagates_from_both_calls` and `test_stock_path_never_forwards_hhi_max` pass
-- [ ] Record keys are identical with and without a cap (asserted)
-- [ ] Discrimination evidence in the commit body: on a scratch copy with the protection walk's HHI term removed (cap check only, as in T3), `test_protected_same_segment_pair_keeps_the_protection_without_fallback` fails; the scratch copy is discarded and the real tree is unchanged
-- [ ] Gate check passes: Build (last task of Phase 1)
-- [ ] Test count: root suite ≥ 535 + new Phase 1 tests, 2 skipped; API suite 160
+- [x] `test_fallback_consensus_respects_the_cap`, `test_recorded_consensus_tickers_are_capped`, `test_protected_same_segment_pair_keeps_the_protection_without_fallback`, `test_segment_cap_infeasible_error_propagates_from_both_calls` and `test_stock_path_never_forwards_hhi_max` pass
+- [x] Record keys are identical with and without a cap (asserted)
+- [x] Discrimination evidence in the commit body: on a scratch copy with the protection walk's HHI term removed (cap check only, as in T3), `test_protected_same_segment_pair_keeps_the_protection_without_fallback` fails; the scratch copy is discarded and the real tree is unchanged
+- [x] Gate check passes: Build (last task of Phase 1)
+- [x] Test count: root suite ≥ 535 + new Phase 1 tests, 2 skipped; API suite 160
 
 **Tests**: unit
 **Gate**: build

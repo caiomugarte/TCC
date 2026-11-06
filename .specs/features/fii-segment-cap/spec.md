@@ -256,8 +256,8 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-20 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
 | SEG-21 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
 | SEG-22 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
-| SEG-23 | P1: Protection zone respects the cap | Tasks T5 | In Tasks |
-| SEG-24 | P1: Protection zone respects the cap | Tasks T3, T5 | In progress (T3, T4 done) |
+| SEG-23 | P1: Protection zone respects the cap | Tasks T5 | Implemented (T5) |
+| SEG-24 | P1: Protection zone respects the cap | Tasks T3, T5 | Implemented (T3, T4, T5) |
 | SEG-25 | P1: Protection zone respects the cap | Tasks T2 | Implemented (T2) |
 | SEG-26 | P1: Protection zone respects the cap | Tasks T8 | In Tasks |
 | SEG-27 | P1: FII selector and adapter carry the cap | Tasks T6, T8, T12 | In Tasks |
@@ -272,11 +272,11 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-36 | P2: Research tooling follows v4 | Tasks T10, T11 | In Tasks |
 | SEG-37 | P1: HHI skip under the cap | Tasks T2, T7 | In progress (T2 done) |
 | SEG-38 | P1: HHI skip under the cap | Tasks T4 | Implemented (T4) |
-| SEG-39 | P1: HHI skip under the cap | Tasks T4, T5 | In progress (T4 done) |
+| SEG-39 | P1: HHI skip under the cap | Tasks T4, T5 | Implemented (T4, T5) |
 | SEG-40 | P1: HHI skip under the cap | Tasks T2, T7 | In progress (T2 done) |
-| SEG-41 | P1: HHI skip under the cap | Tasks T2, T4, T5, T7 | In progress (T2, T4 done) |
+| SEG-41 | P1: HHI skip under the cap | Tasks T2, T4, T5, T7 | In progress (T2, T4, T5 done) |
 | SEG-42 | P1: HHI skip under the cap | Tasks T12 | In Tasks |
-| SEG-43 | P1: HHI skip under the cap | Tasks T4, T5, T12 | In progress (T4 done) |
+| SEG-43 | P1: HHI skip under the cap | Tasks T4, T5, T12 | In progress (T4, T5 done) |
 
 **Coverage:** 43 total, 43 mapped to tasks, 0 unmapped.
 
