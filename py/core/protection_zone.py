@@ -5,6 +5,7 @@ they count the GA runs. The stock and FII selectors call this module, and the
 API only reads the incumbents and records the provenance. No pandas here.
 """
 
+from collections import Counter
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 import math
@@ -70,6 +71,109 @@ class ZoneSelection:
 
 def _is_integer(value: object) -> bool:
     return isinstance(value, numbers.Integral) and not isinstance(value, bool)
+
+
+SEGMENT_CAP_DEPARTURE = "saiu: teto do segmento"
+
+
+class SegmentCapInfeasibleError(ValueError):
+    """A greedy walk under the segment cap and ``hhi_max`` cannot reach ``n_assets`` (SEG-40, SEG-43)."""
+
+
+def validate_segment_cap(
+    max_per_segment: int | None,
+    segment_of: Mapping[str, str] | None,
+    tickers: Iterable[str],
+    hhi_max: float | None = None,
+) -> None:
+    """Raise ValueError naming the field that breaks the segment-cap contract (SEG-25, SEG-41).
+
+    ``hhi_max`` is accepted only together with a cap: without one, the HHI skip
+    never runs and the caller keeps the pre-change path.
+    """
+
+    if max_per_segment is None:
+        if hhi_max is not None:
+            raise ValueError("hhi_max is only accepted together with max_per_segment")
+        return
+    if not _is_integer(max_per_segment) or max_per_segment < 1:
+        raise ValueError("max_per_segment must be an integer >= 1")
+    if not isinstance(segment_of, Mapping):
+        raise ValueError("segment_of is required when max_per_segment is set")
+    missing = sorted(ticker for ticker in tickers if ticker not in segment_of)
+    if missing:
+        raise ValueError(f"segment_of has no segment for {missing}")
+    if hhi_max is not None and (
+        not isinstance(hhi_max, numbers.Real)
+        or isinstance(hhi_max, bool)
+        or not math.isfinite(hhi_max)
+        or hhi_max <= 0
+    ):
+        raise ValueError("hhi_max must be a finite number > 0")
+
+
+def _fits(
+    ticker: str,
+    held_counts: Counter,
+    size: int,
+    *,
+    segment_of: Mapping[str, str],
+    max_per_segment: int,
+    hhi_max: float | None,
+    n_assets: int,
+) -> bool:
+    """Whether ``ticker`` may join a held set of ``size`` tickers (spec A-16).
+
+    The segment must hold fewer than ``max_per_segment`` tickers and, with
+    ``hhi_max``, the lowest HHI any completion to ``n_assets`` can reach (every
+    empty slot in a new segment) must stay within it.
+    """
+
+    count = held_counts[segment_of[ticker]]
+    if count >= max_per_segment:
+        return False
+    if hhi_max is None:
+        return True
+    squares = sum(c * c for c in held_counts.values())
+    projected = squares + 2 * count + 1 + (n_assets - size - 1)
+    return projected / (n_assets * n_assets) <= hhi_max + TOLERANCE
+
+
+def take_within_segment_cap(
+    ordered: Sequence[str],
+    n_assets: int,
+    *,
+    segment_of: Mapping[str, str] | None,
+    max_per_segment: int | None,
+    hhi_max: float | None = None,
+) -> list[str]:
+    """The first ``n_assets`` of ``ordered`` that fit the segment cap and ``hhi_max`` (SEG-15, SEG-37).
+
+    Without a cap it is the plain prefix. A ticker that does not fit is skipped
+    and the walk goes on; a walk that ends short raises (SEG-40).
+    """
+
+    validate_segment_cap(max_per_segment, segment_of, ordered, hhi_max)
+    if max_per_segment is None:
+        return list(ordered[:n_assets])
+    picked: list[str] = []
+    counts: Counter = Counter()
+    for ticker in ordered:
+        if len(picked) >= n_assets:
+            break
+        if not _fits(
+            ticker, counts, len(picked), segment_of=segment_of,
+            max_per_segment=max_per_segment, hhi_max=hhi_max, n_assets=n_assets,
+        ):
+            continue
+        picked.append(ticker)
+        counts[segment_of[ticker]] += 1
+    if len(picked) < n_assets:
+        raise SegmentCapInfeasibleError(
+            f"cannot fill n_assets {n_assets} within max_per_segment {max_per_segment} "
+            f"and hhi_max {hhi_max}: {len(picked)} fit"
+        )
+    return picked
 
 
 def validate_zone_inputs(

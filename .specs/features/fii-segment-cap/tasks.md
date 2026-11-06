@@ -215,7 +215,7 @@ T13 → T14
 
 #### T2: Capped greedy pick and cap validation in the zone module
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add `SEGMENT_CAP_DEPARTURE`, `SegmentCapInfeasibleError`, `validate_segment_cap` (with the `hhi_max` checks), the shared `_fits` predicate (cap + projected HHI, spec A-16) and `take_within_segment_cap(..., hhi_max=None)` to the zone module.
 **Where**: `py/core/protection_zone.py`
@@ -232,12 +232,12 @@ T13 → T14
 
 **Done when**:
 
-- [ ] `take_within_segment_cap` with `max_per_segment=None` returns `list(ordered[:n_assets])`
-- [ ] The `take_*`, `test_invalid_segment_cap_inputs_raise` and `test_hhi_max_without_cap_raises` (`take_within_segment_cap` half) rows of the Test Strategy pass, one input per guard (L-001)
-- [ ] `_fits` is the only place that decides the cap and the HHI term; `take_within_segment_cap` calls it (T4 reuses it for the fill and the challenger)
-- [ ] The module still imports nothing from pandas or `scripts/`
-- [ ] Gate check passes: Core
-- [ ] Test count: at least 9 new tests in `tests/test_segment_cap_zone.py`
+- [x] `take_within_segment_cap` with `max_per_segment=None` returns `list(ordered[:n_assets])`
+- [x] The `take_*`, `test_invalid_segment_cap_inputs_raise` and `test_hhi_max_without_cap_raises` (`take_within_segment_cap` half) rows of the Test Strategy pass, one input per guard (L-001)
+- [x] `_fits` is the only place that decides the cap and the HHI term; `take_within_segment_cap` calls it (T4 reuses it for the fill and the challenger)
+- [x] The module still imports nothing from pandas or `scripts/`
+- [x] Gate check passes: Core
+- [x] Test count: at least 9 new tests in `tests/test_segment_cap_zone.py`
 
 **Tests**: unit
 **Gate**: core
