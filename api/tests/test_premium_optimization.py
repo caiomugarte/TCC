@@ -11,6 +11,7 @@ from app.adapters.premium_optimization import (
     _default_fii_engine,
     _default_stock_engine,
     _rounded_amounts,
+    _selector_config,
     run_premium_optimization,
 )
 from app.services.premium_policy import resolve_recommendation_policy
@@ -994,6 +995,84 @@ class ProtectionZoneProvenanceTests(unittest.TestCase):
                 stock_engine=lambda **_kwargs: selector_result(["AAA3", "BBB3"]),
             )
         self.assertEqual(error.exception.code, "engine_error")
+
+
+
+class SegmentCapForwardingTests(unittest.TestCase):
+    """SEG-30..SEG-32: the FII segment cap reaches the FII engine config."""
+
+    def test_fii_engine_receives_the_cap(self):
+        calls = {}
+        run_with(
+            resolved_policy("premium"),
+            stock_engine=recording_engine(calls, "stocks", ["AAA3", "BBB3"]),
+            fii_engine=recording_engine(calls, "fiis", ["AAA11", "BBB11"]),
+        )
+        cap = calls["fiis"]["selection_config"]["max_per_segment"]
+        self.assertEqual(cap, 2)
+        self.assertIs(type(cap), int)
+        self.assertNotIn("max_per_segment", calls["stocks"]["config"])
+
+    def test_invalid_cap_fails_with_policy_invalid(self):
+        for value in (0, -1, True, 1.5, "2"):
+            with self.subTest(value=value):
+                calls = {}
+                policy_value = zone_policy()
+                policy_value["fiis"]["max_per_segment"] = value
+                with self.assertRaises(PremiumOptimizationError) as error:
+                    run_with(
+                        policy_value,
+                        stock_engine=recording_engine(calls, "stocks", ["AAA3", "BBB3"]),
+                        fii_engine=recording_engine(calls, "fiis", ["AAA11", "BBB11"]),
+                    )
+                self.assertEqual(error.exception.code, "policy_invalid")
+                self.assertEqual(calls, {})
+
+    def test_sections_without_cap_produce_the_pre_change_config(self):
+        # Literal configs _selector_config built at a61164a (before #56).
+        sections = zone_policy()
+        expected = {
+            "stocks": {
+                "selection_preset": "fixture",
+                "n_assets": 2,
+                "factor_weights": {"liquidez": 1.0},
+                "liquidity_and_size_filters": {},
+                "lambda_hhi": 0.2,
+                "system_ga_config": {
+                    "population": 4,
+                    "generations": 2,
+                    "run_count": 1,
+                    "n_assets": 2,
+                    "lambda": 0.2,
+                    "pop_size": 4,
+                },
+                "protection_zone": dict(STOCK_ZONE),
+            },
+            "fiis": {
+                "selection_preset": "fixture",
+                "n_assets": 2,
+                "factor_weights": {"liquidity": 1.0},
+                "liquidity_and_size_filters": {},
+                "lambda_hhi": 0.2,
+                "system_ga_config": {
+                    "population": 4,
+                    "generations": 2,
+                    "run_count": 1,
+                    "n_assets": 2,
+                    "lambda": 0.2,
+                    "pop_size": 4,
+                },
+                "protection_zone": dict(FII_ZONE),
+            },
+        }
+        for key in ("stocks", "fiis"):
+            with self.subTest(section=key):
+                self.assertNotIn("max_per_segment", sections[key])
+                config = _selector_config(sections[key])
+                self.assertEqual(config, expected[key])
+                self.assertNotIn("max_per_segment", config)
+        basic = resolved_policy("basic").to_dict()["fiis"]
+        self.assertNotIn("max_per_segment", _selector_config(basic))
 
 
 if __name__ == "__main__":

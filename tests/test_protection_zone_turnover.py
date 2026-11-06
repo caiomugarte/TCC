@@ -161,27 +161,35 @@ class ProtectionZoneTurnoverTests(unittest.TestCase):
         manifest = json.loads((self.registry / "nov-fixture.json").read_text(encoding="utf-8"))
         self.assertEqual(report["seed"], 46641103)
         self.assertEqual(report["profile_id"], "premium-2026-11-02")
-        self.assertEqual(report["policy_version"], "premium-policy-v3")
+        self.assertEqual(report["policy_version"], "premium-policy-v4")
         self.assertEqual(report["october"]["run_id"], "9e22cc16-cfda-495e-a8c9-c0d202ef32b6")
         self.assertEqual(report["november"]["manifest_id"], "nov-fixture")
         self.assertEqual(report["november"]["manifest_sha256"], manifest["manifest_sha256"])
         self.assertEqual(report["november"]["cutoff_date"], "2026-11-03")
         self.assertEqual(report["code"]["commit"], CODE["commit"])
 
-        # 13 + 13 profile, delta 0.11. Pure consensus: the 4 newcomers enter.
-        # Stocks (K = 19): every October ticker is protected; NEW0, NEW1 and NEW2
-        # lead the weakest protected ones (0.76, 0.77, 0.78) by >= 0.11, NEW3
-        # (0.89 vs 0.79) does not: 3 entries. FIIs (K = 16): the October ticker at
-        # rank 17 (0.76) is outside K and NEW0 fills its seat; NEW1 and NEW2 replace
-        # 0.77 and 0.78, NEW3 does not beat 0.79: 3 entries.
-        for key, k_value in (("stocks", 19), ("fiis", 16)):
+        # 13 stocks + 5 FIIs (premium-policy-v4), delta 0.11. Pure consensus:
+        # the 4 newcomers enter. Stocks (K = 19): every October ticker is
+        # protected; NEW0, NEW1 and NEW2 lead the weakest protected ones (0.76,
+        # 0.77, 0.78) by >= 0.11, NEW3 (0.89 vs 0.79) does not: 3 entries.
+        # FIIs (n 5, K = 8): only the October tickers at ranks 5-8 (0.88-0.85)
+        # qualify; NEW0 fills the fifth seat, NEW1 (0.97) replaces 0.85, NEW2
+        # (0.90 vs 0.86) does not: 2 entries, the other 9 leave outside K.
+        expected = {
+            "stocks": {"K": 19, "k_offset": 6, "turnover": 3, "exits": 3},
+            "fiis": {"K": 8, "k_offset": 3, "turnover": 2, "exits": 10},
+        }
+        for key, values in expected.items():
             item = report["classes"][key]
             self.assertEqual(item["status"], "applied")
-            self.assertEqual((item["K"], item["k_offset"], item["delta"]), (k_value, k_value - 13, 0.11))
+            self.assertEqual(
+                (item["K"], item["k_offset"], item["delta"]),
+                (values["K"], values["k_offset"], 0.11),
+            )
             self.assertEqual(item["incumbents"], sorted(OCTOBER[key]))
             self.assertEqual(item["consensus_turnover"], 4)
-            self.assertEqual(item["turnover"], 3)
-            self.assertEqual(item["exits"], 3)
+            self.assertEqual(item["turnover"], values["turnover"])
+            self.assertEqual(item["exits"], values["exits"])
             self.assertEqual(item["turnover"], len(item["entered"]))
             self.assertEqual(item["exits"], len(item["departures"]))
             self.assertEqual(sorted(item["kept"] + item["entered"]), item["zone_tickers"])
@@ -200,6 +208,10 @@ class ProtectionZoneTurnoverTests(unittest.TestCase):
                 {"out": OCTOBER["stocks"][11], "in": "SNEW1"},
                 {"out": OCTOBER["stocks"][10], "in": "SNEW2"},
             ],
+        )
+        self.assertEqual(
+            report["classes"]["fiis"]["replaced"],
+            [{"out": OCTOBER["fiis"][3], "in": "FNEW1"}],
         )
         self.assertEqual(
             report["classes"]["fiis"]["departures"][OCTOBER["fiis"][12]], "saiu: fora do top K"

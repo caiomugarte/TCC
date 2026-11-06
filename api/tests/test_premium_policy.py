@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from collections import Counter
@@ -236,7 +237,7 @@ class PremiumPolicyTests(unittest.TestCase):
         )
         self.assertEqual(
             {band: rules["n_assets"] for band, rules in FII_RULES.items()},
-            {"conservador": 10, "moderado": 12, "arrojado": 15},
+            {"conservador": 4, "moderado": 5, "arrojado": 6},
         )
         self.assertEqual(
             FII_RULES["moderado"]["filters"],
@@ -266,7 +267,7 @@ class PremiumPolicyTests(unittest.TestCase):
         )
 
     def test_policy_versions_are_bumped_and_reject_the_v1_strings(self) -> None:
-        self.assertEqual(POLICY_VERSION, "premium-policy-v3")
+        self.assertEqual(POLICY_VERSION, "premium-policy-v4")
         self.assertEqual(BASIC_POLICY_VERSION, "basic-policy-v2")
         with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
             resolve_premium_policy(profile(), rules_version="premium-policy-v1")
@@ -277,7 +278,7 @@ class PremiumPolicyTests(unittest.TestCase):
         premium = resolve_premium_policy(profile())
         basic = resolve_recommendation_policy(profile(), plan="basic")
 
-        self.assertEqual(premium.provenance.policy_version, "premium-policy-v3")
+        self.assertEqual(premium.provenance.policy_version, "premium-policy-v4")
         self.assertEqual(basic.provenance.policy_version, "basic-policy-v2")
 
 
@@ -323,33 +324,33 @@ class ProtectionZonePolicyTests(unittest.TestCase):
 
     def test_premium_sections_carry_the_issue_9_zone_values_for_every_anchor(self) -> None:
         anchors = {
-            "conservador": (0.0, 10),
-            "moderado": (0.5, 12),
-            "arrojado": (1.0, 15),
+            "conservador": (0.0, 10, 4),
+            "moderado": (0.5, 12, 5),
+            "arrojado": (1.0, 15, 6),
         }
-        for band, (score, n_assets) in anchors.items():
+        for band, (score, stock_n, fii_n) in anchors.items():
             with self.subTest(band=band):
                 resolved = resolve_premium_policy(
                     profile(score=score, knowledge=score, generic_profile=band)
                 )
-                self.assertEqual(resolved.stocks.n_assets, n_assets)
-                self.assertEqual(resolved.fiis.n_assets, n_assets)
+                self.assertEqual(resolved.stocks.n_assets, stock_n)
+                self.assertEqual(resolved.fiis.n_assets, fii_n)
                 self.assertEqual(
                     resolved.stocks.protection_zone,
-                    {"k_offset": 6, "K": n_assets + 6, "delta": 0.11},
+                    {"k_offset": 6, "K": stock_n + 6, "delta": 0.11},
                 )
                 self.assertEqual(
                     resolved.fiis.protection_zone,
-                    {"k_offset": 3, "K": n_assets + 3, "delta": 0.11},
+                    {"k_offset": 3, "K": fii_n + 3, "delta": 0.11},
                 )
                 payload = resolved.to_dict()
                 self.assertEqual(
                     payload["stocks"]["protection_zone"],
-                    {"k_offset": 6, "K": n_assets + 6, "delta": 0.11},
+                    {"k_offset": 6, "K": stock_n + 6, "delta": 0.11},
                 )
                 self.assertEqual(
                     payload["fiis"]["protection_zone"],
-                    {"k_offset": 3, "K": n_assets + 3, "delta": 0.11},
+                    {"k_offset": 3, "K": fii_n + 3, "delta": 0.11},
                 )
 
     def test_zone_k_follows_an_interpolated_asset_count(self) -> None:
@@ -368,6 +369,81 @@ class ProtectionZonePolicyTests(unittest.TestCase):
         self.assertNotIn("protection_zone", payload["fiis"])
         self.assertNotIn("protection_zone", resolved.to_json())
         self.assertEqual(resolved.to_json(), BASIC_GOLDEN_JSON)
+
+
+class SegmentCapPolicyTests(unittest.TestCase):
+    """SEG-01..SEG-08 (issue #56): the Premium FII sleeve is capped per segment."""
+
+    def test_premium_fiis_carry_max_per_segment_2_for_every_score(self) -> None:
+        for score in (0.0, 0.25, 0.5, 0.7, 1.0):
+            with self.subTest(score=score):
+                resolved = resolve_premium_policy(profile(score=score, knowledge=score))
+                self.assertEqual(resolved.fiis.max_per_segment, 2)
+                self.assertEqual(resolved.to_dict()["fiis"]["max_per_segment"], 2)
+                self.assertEqual(
+                    json.loads(resolved.to_json())["fiis"]["max_per_segment"], 2
+                )
+
+    def test_stocks_have_no_max_per_segment(self) -> None:
+        for score in (0.0, 0.5, 1.0):
+            with self.subTest(score=score):
+                resolved = resolve_premium_policy(profile(score=score, knowledge=score))
+                self.assertIsNone(resolved.stocks.max_per_segment)
+                self.assertNotIn("max_per_segment", resolved.to_dict()["stocks"])
+                self.assertNotIn(
+                    "max_per_segment", json.loads(resolved.to_json())["stocks"]
+                )
+
+    def test_fii_count_interpolates_half_to_even(self) -> None:
+        # 4 + 1 * 0.5 = 4.5 -> 4 and 5 + 1 * 0.5 = 5.5 -> 6 (Python round, A-14).
+        for score, n_assets in ((0.25, 4), (0.75, 6)):
+            with self.subTest(score=score):
+                resolved = resolve_premium_policy(profile(score=score, knowledge=score))
+                self.assertEqual(resolved.fiis.n_assets, n_assets)
+
+    def test_owner_profile_resolves_five_fiis_capped_at_two(self) -> None:
+        resolved = resolve_premium_policy(profile(score=0.7, knowledge=0.7))
+        self.assertEqual(resolved.provenance.policy_version, "premium-policy-v4")
+        self.assertEqual(resolved.fiis.n_assets, 5)
+        self.assertEqual(resolved.fiis.max_per_segment, 2)
+        self.assertEqual(
+            resolved.fiis.protection_zone, {"k_offset": 3, "K": 8, "delta": 0.11}
+        )
+        self.assertEqual(resolved.stocks.n_assets, 13)
+
+    def test_premium_policy_v3_is_rejected(self) -> None:
+        with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
+            resolve_premium_policy(profile(), rules_version="premium-policy-v3")
+        with self.assertRaisesRegex(PremiumPolicyError, "unsupported policy version"):
+            resolve_recommendation_policy(
+                profile(), rules_version="premium-policy-v3", plan="premium"
+            )
+
+    def test_model_versions_record_fii_selection_v2(self) -> None:
+        premium_versions = {
+            "allocation": "allocation-v1",
+            "stocks": "stock-selection-v1",
+            "fiis": "fii-selection-v2",
+        }
+        basic_versions = {**premium_versions, "fiis": "fii-selection-v1"}
+        premium = resolve_premium_policy(profile())
+        self.assertEqual(dict(premium.provenance.model_versions), premium_versions)
+        self.assertEqual(
+            json.loads(premium.to_json())["provenance"]["model_versions"], premium_versions
+        )
+        self.assertEqual(
+            dict(resolve_recommendation_policy(profile(), plan="premium").provenance.model_versions),
+            premium_versions,
+        )
+        for basic in (
+            resolve_basic_policy(profile()),
+            resolve_recommendation_policy(profile(), plan="basic"),
+        ):
+            with self.subTest(policy_version=basic.provenance.policy_version):
+                self.assertEqual(dict(basic.provenance.model_versions), basic_versions)
+                self.assertEqual(
+                    json.loads(basic.to_json())["provenance"]["model_versions"], basic_versions
+                )
 
 
 class PolicyDriftGuardTests(unittest.TestCase):
@@ -575,14 +651,14 @@ class ConservadorAnchorExecutabilityTests(unittest.TestCase):
         )
         return resolved.fiis
 
-    def _run_real_selector(self, selector_policy):
+    def _run_real_selector(self, selector_policy, n_assets=None):
         config = {
             "selection_preset": "conservador",
             "factor_weights": dict(selector_policy.factor_weights),
             "liquidity_and_size_filters": dict(
                 selector_policy.liquidity_and_size_filters
             ),
-            "n_assets": selector_policy.n_assets,
+            "n_assets": selector_policy.n_assets if n_assets is None else n_assets,
             "lambda_hhi": selector_policy.lambda_hhi,
             "system_ga_config": dict(selector_policy.system_ga_config),
         }
@@ -616,10 +692,152 @@ class ConservadorAnchorExecutabilityTests(unittest.TestCase):
         self.assertNotIn("hhi_max", unrestricted_filters)
         self.assertEqual(restricted_filters, unrestricted_filters)
 
-        result = self._run_real_selector(unrestricted)
+        # Subject: the uncapped GA exceeds HHI 0.25 at the conservador anchor.
+        # At the v4 count (4) it reaches 0.25 on its own, so the pre-#56 count
+        # 10 keeps the subject (spec A-12).
+        result = self._run_real_selector(unrestricted, n_assets=10)
 
         self.assertEqual(_RecordingGeneticAlgorithm.constructed_with, [None])
         self.assertGreater(result["hhi"], 0.25)
+
+
+class _CapRecordingGeneticAlgorithm(GeneticAlgorithm):
+    """Captures the GA constructor's ``max_per_segment`` (SEG-27 on real data)."""
+
+    constructed_with: list = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        type(self).constructed_with.append(kwargs.get("max_per_segment"))
+
+
+A6_DEPARTURE_REASONS = {
+    "saiu: inelegível",
+    "saiu: teto do segmento",
+    "saiu: vagas reduzidas",
+    "saiu: fora do top K",
+}
+
+
+class V4FiiExecutabilityTests(unittest.TestCase):
+    """SEG-05, SEG-27, SEG-42, SEG-43: the v4 FII sections run on the committed
+    ``data/raw/status_invest_fii.csv`` within the segment cap."""
+
+    ANCHOR_SEED = 42
+    ANCHOR_GA_BUDGET = {"generations": 30, "pop_size": 20}
+    MANY_RUNS = 8
+    MANY_RUNS_GA_BUDGET = {"generations": 40, "pop_size": 30}
+    SEEDS = (0, 1, 2, 3)
+
+    @staticmethod
+    def _v4_fiis(score, restrictions=None):
+        return resolve_premium_policy(
+            profile(score=score, knowledge=score, restrictions=restrictions)
+        ).fiis
+
+    @staticmethod
+    def _config(fiis):
+        # Same keys the adapter hands the FII engine for a v4 section.
+        return {
+            "selection_preset": fiis.selection_preset,
+            "factor_weights": dict(fiis.factor_weights),
+            "liquidity_and_size_filters": dict(fiis.liquidity_and_size_filters),
+            "n_assets": fiis.n_assets,
+            "lambda_hhi": fiis.lambda_hhi,
+            "system_ga_config": dict(fiis.system_ga_config),
+            "protection_zone": dict(fiis.protection_zone),
+            "max_per_segment": fiis.max_per_segment,
+        }
+
+    def _assert_capped_sleeve(self, result, n_assets, hhi_max=None):
+        self.assertEqual(result["n_selected"], n_assets)
+        self.assertEqual(len(result["selected_tickers"]), n_assets)
+        segments = Counter(result["portfolio"]["SETOR"].astype(str))
+        self.assertLessEqual(max(segments.values()), 2, segments)
+        if hhi_max is not None:
+            self.assertLessEqual(result["hhi"], hhi_max + 1e-12)
+
+    def test_real_data_anchors_fill_n_assets_within_the_cap(self) -> None:
+        for score, n_assets in ((0.0, 4), (0.5, 5), (0.7, 5), (1.0, 6)):
+            with self.subTest(score=score):
+                fiis = self._v4_fiis(score)
+                self.assertEqual((fiis.n_assets, fiis.max_per_segment), (n_assets, 2))
+                _CapRecordingGeneticAlgorithm.constructed_with = []
+                with mock.patch("fii_selection.GeneticAlgorithm", _CapRecordingGeneticAlgorithm):
+                    result = run_fii_selection(
+                        selection_config=self._config(fiis),
+                        n_runs=1,
+                        ga_config=dict(self.ANCHOR_GA_BUDGET),
+                        random_seed=self.ANCHOR_SEED,
+                    )
+                self.assertEqual(_CapRecordingGeneticAlgorithm.constructed_with, [2])
+                self._assert_capped_sleeve(result, n_assets)
+
+    def _owner_with_limitar_concentracao(self):
+        fiis = self._v4_fiis(0.7, ["limitar_concentracao"])
+        self.assertEqual(
+            (fiis.n_assets, fiis.max_per_segment, fiis.liquidity_and_size_filters["hhi_max"]),
+            (5, 2, 0.25),
+        )
+        return fiis
+
+    def _run_many(self, fiis, seed, incumbents=None):
+        return run_fii_selection(
+            selection_config=self._config(fiis),
+            n_runs=self.MANY_RUNS,
+            ga_config=dict(self.MANY_RUNS_GA_BUDGET),
+            random_seed=seed,
+            incumbents=incumbents,
+        )
+
+    def test_owner_profile_with_limitar_concentracao_runs_many_ga_runs(self) -> None:
+        # Without the HHI skip (AD-028) seed 0 raises "FII selection violates
+        # the configured HHI limit" (spec review r1 S1).
+        fiis = self._owner_with_limitar_concentracao()
+        for seed in self.SEEDS:
+            with self.subTest(seed=seed):
+                result = self._run_many(fiis, seed)
+                self.assertEqual(result["n_runs"], self.MANY_RUNS)
+                self._assert_capped_sleeve(result, 5, hhi_max=0.25)
+                self.assertNotIn("protection_zone", result)
+
+    def test_owner_profile_with_limitar_concentracao_and_13_incumbents_runs(self) -> None:
+        # The 13 -> 5 migration: incumbents are the 13 best-SCORE funds of the
+        # scored universe. Without the protection walk's HHI term (AD-029)
+        # seed 0 falls back to the K = 0 consensus with status "fallback_hhi".
+        fiis = self._owner_with_limitar_concentracao()
+        ranked = build_fii_scores(
+            preprocess_fii(
+                _raw_snapshot(),
+                eligibility_filters=dict(fiis.liquidity_and_size_filters),
+            ),
+            None,
+            factor_weights=fiis.factor_weights,
+        )
+        incumbents = (
+            ranked.sort_values(["SCORE", "TICKER"], ascending=[False, True])["TICKER"]
+            .head(13)
+            .tolist()
+        )
+        self.assertEqual(len(incumbents), 13)
+        for seed in self.SEEDS:
+            with self.subTest(seed=seed):
+                result = self._run_many(fiis, seed, incumbents=incumbents)
+                self._assert_capped_sleeve(result, 5, hhi_max=0.25)
+                zone = result["protection_zone"]
+                self.assertNotEqual(zone["status"], "fallback_hhi")
+                self.assertEqual(zone["status"], "applied")
+                kept = set(zone["kept"])
+                departed = set(zone["departures"])
+                self.assertEqual(kept & departed, set())
+                self.assertEqual(kept | departed, set(incumbents))
+                self.assertLessEqual(kept, set(result["selected_tickers"]))
+                for ticker, reason in zone["departures"].items():
+                    self.assertTrue(
+                        reason in A6_DEPARTURE_REASONS
+                        or reason.startswith("saiu: substituído por "),
+                        (ticker, reason),
+                    )
 
 
 if __name__ == "__main__":

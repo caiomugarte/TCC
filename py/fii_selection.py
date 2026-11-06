@@ -23,7 +23,11 @@ from core.metrics import (  # noqa: E402
     jaccard_similarity,
 )
 from core.optimizer import GeneticAlgorithm, derive_run_seed  # noqa: E402
-from core.protection_zone import select_with_fallback  # noqa: E402
+from core.protection_zone import (  # noqa: E402
+    SegmentCapInfeasibleError,
+    select_with_fallback,
+    take_within_segment_cap,
+)
 from fetch_status_invest_fii import (  # noqa: E402
     RAW_DATA_FILE,
     SOURCE_COLUMNS,
@@ -236,6 +240,24 @@ def _require_feasible_universe(
         normalised.get("patrimony_min", 0.0),
         normalised.get("liquidity_min", 0.0),
     )
+
+
+def _require_segment_capacity(
+    ranked: pd.DataFrame,
+    n_assets: int,
+    max_per_segment: int,
+) -> None:
+    """Fail before any GA run when the scored universe cannot fill ``n_assets`` under the cap (SEG-28)."""
+
+    capacity = sum(
+        min(int(count), int(max_per_segment))
+        for count in ranked["SETOR"].astype(str).value_counts()
+    )
+    if capacity < n_assets:
+        raise FiiSelectionError(
+            f"FII universe cannot fill {n_assets} under max_per_segment "
+            f"{max_per_segment}: capacity {capacity}"
+        )
 
 
 def _canonical_column(column: str) -> str:
@@ -459,6 +481,8 @@ def optimize_fii_portfolio(
         ):
             if key in config:
                 settings[key] = config[key]
+        if "max_per_segment" in config:
+            settings["max_per_segment"] = config["max_per_segment"]
         filters = config.get("liquidity_and_size_filters") or config.get(
             "eligibility_filters"
         )
@@ -492,6 +516,7 @@ def optimize_fii_portfolio(
         mutation_rate=float(settings.get("mutation_rate", 0.02)),
         random_seed=random_seed,
         hhi_max=settings.get("hhi_max"),
+        max_per_segment=settings.get("max_per_segment"),
     )
     return optimizer.optimize(df_ranked)
 
@@ -560,6 +585,7 @@ def _consensus(
     incumbents: Optional[Sequence[str]] = None,
     protection_zone: Optional[Mapping[str, object]] = None,
     hhi_max: Optional[float] = None,
+    max_per_segment: Optional[int] = None,
 ) -> pd.DataFrame:
     counts = Counter(
         ticker
@@ -568,25 +594,48 @@ def _consensus(
     )
     scores = df_ranked.set_index("TICKER")["SCORE"]
     zone_record = None
-    if incumbents and protection_zone is not None:
-        # AD-022 zone (#46). FIIs take no base-company dedup.
-        selection, zone_record = select_with_fallback(
-            incumbents,
-            {ticker: count / len(portfolios) for ticker, count in counts.items()},
-            {ticker: float(scores[ticker]) for ticker in counts},
-            n_assets,
-            protection_zone,
-            eligible=set(df_ranked["TICKER"]),
-            dedup_base_company=False,
-            hhi_of=lambda tickers: hhi_sector(df_ranked[df_ranked["TICKER"].isin(list(tickers))]),
-            hhi_max=None if hhi_max is None else float(hhi_max),
-        )
-        selected = list(selection.tickers)
-    else:
-        selected = sorted(
-            counts,
-            key=lambda ticker: (-counts[ticker], -float(scores[ticker]), ticker),
-        )[:n_assets]
+    # Segment cap (#56): one SETOR label per ticker; without a cap neither path changes.
+    cap: Dict[str, object] = {}
+    if max_per_segment is not None:
+        cap = {
+            "segment_of": dict(zip(df_ranked["TICKER"], df_ranked["SETOR"].astype(str))),
+            "max_per_segment": max_per_segment,
+        }
+    try:
+        if incumbents and protection_zone is not None:
+            # AD-022 zone (#46). FIIs take no base-company dedup.
+            selection, zone_record = select_with_fallback(
+                incumbents,
+                {ticker: count / len(portfolios) for ticker, count in counts.items()},
+                {ticker: float(scores[ticker]) for ticker in counts},
+                n_assets,
+                protection_zone,
+                eligible=set(df_ranked["TICKER"]),
+                dedup_base_company=False,
+                hhi_of=lambda tickers: hhi_sector(df_ranked[df_ranked["TICKER"].isin(list(tickers))]),
+                hhi_max=None if hhi_max is None else float(hhi_max),
+                **cap,
+            )
+            selected = list(selection.tickers)
+        else:
+            ordered = sorted(
+                counts,
+                key=lambda ticker: (-counts[ticker], -float(scores[ticker]), ticker),
+            )
+            if max_per_segment is None:
+                selected = ordered[:n_assets]
+            else:
+                selected = take_within_segment_cap(
+                    ordered,
+                    n_assets,
+                    **cap,
+                    hhi_max=None if hhi_max is None else float(hhi_max),
+                )
+    except SegmentCapInfeasibleError as error:
+        raise FiiSelectionError(
+            f"FII consensus cannot fill {n_assets} within max_per_segment "
+            f"{max_per_segment} and hhi_max {hhi_max}"
+        ) from error
     result = df_ranked[df_ranked["TICKER"].isin(selected)].copy()
     result["FREQUENCY"] = result["TICKER"].map(
         lambda ticker: counts[ticker] / len(portfolios)
@@ -686,6 +735,7 @@ def run_fii_selection(
         factor_weights=factor_weights,
     )
     n_assets = int(settings["n_assets"])
+    max_per_segment = resolved_config.get("max_per_segment") if explicit_mode else None
     if explicit_mode:
         _require_feasible_universe(
             len(clean),
@@ -694,6 +744,8 @@ def run_fii_selection(
             filters,
             str(resolved_config.get("selection_preset", "explicit")),
         )
+        if max_per_segment is not None:
+            _require_segment_capacity(ranked, n_assets, max_per_segment)
 
     execution_results = []
     portfolios = []
@@ -764,10 +816,17 @@ def run_fii_selection(
         incumbents=incumbents,
         protection_zone=resolved_config.get("protection_zone") if explicit_mode else None,
         hhi_max=hhi_max,
+        max_per_segment=max_per_segment,
     )
     selected.attrs["hhi"] = hhi_sector(selected)
     if hhi_max is not None and selected.attrs["hhi"] > float(hhi_max) + 1e-12:
         raise FiiSelectionError("FII selection violates the configured HHI limit")
+    if (
+        max_per_segment is not None
+        and not selected.empty
+        and int(selected["SETOR"].astype(str).value_counts().max()) > int(max_per_segment)
+    ):
+        raise FiiSelectionError("FII selection violates the configured segment cap")
 
     if explicit_mode:
         if workspace_path is not None:
