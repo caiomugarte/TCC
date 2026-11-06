@@ -239,13 +239,14 @@
 ## Handoff
 
 - **Feature**: fii-segment-cap (issue #56) - `.specs/features/fii-segment-cap/`
-- **Phase / Task**: TASKS complete and revised after spec review r1 (S1 HHI skip → AD-028, new task T4 and SEG-37..SEG-42; S2 capacity numbers; S3 `_consensus` spy; S4 capacity boundary) and after the human closed Q3 (AD-029: HHI rule in the protection walk, no `K = 0` fallback; SEG-39 rewritten, SEG-43 added, T4/T5/T12 tests updated). 14 tasks in 4 phases. Next: the orchestrator's spec re-review, then EXECUTE from T1.
-- **Completed**: none (no production code written).
+- **Phase / Task**: EXECUTE batch b1 done: Phase 1 (T1-T5, core cap in GA and zone) and Phase 2 (T6-T8, FII selector wiring) committed. Next: batch b2, Phase 3 (T9-T12, policy v4) then Phase 4 (T13-T14, adapter), then the Verifier.
+- **Completed**: T1 `9be45a7` GA cap; T2 `c5e23ac` capped pick + `_fits`; T3 `4016f7d` zone cap; T4 `13aae9e` zone HHI skip; T5 `8ffd46b` `select_with_fallback` forwarding; T6 `a9be058` GA config copy; T7 `130f1a3` capped `_consensus`; T8 `49d46cf` `run_fii_selection` capacity and post-check.
 - **In-progress** (file:line): none.
-- **Next step**: Execute T1 - capture the GA golden values at `a61164a` BEFORE editing `py/core/optimizer.py`.
-- **Blockers**: none. Open questions Q1 (Basic stays 10/12/15) and Q2 (frozen #9 protocol exits 2 under v4) carry defaults in spec A-2/A-10; Q3 is closed by AD-029.
+- **Next step**: T9 - `SelectorPolicy.max_per_segment` and `FII_MAX_PER_SEGMENT = 2` in `api/app/services/premium_policy.py`.
+- **Spec edits in b1**: Edge Cases line for `max_per_segment >= n_assets` now holds only where `hhi_max` is None and names the departure-reason difference (review S5, commit of T3).
+- **Blockers**: none. Q1 and Q2 keep their defaults (spec A-2, A-10); Q3 closed by AD-029.
 - **Uncommitted files**: none.
 - **Branch**: t3/issue-56 (base `origin/develop`; PR base `develop`).
-- **Baseline**: root suite 535 OK (2 skipped), API suite 160 OK at `a61164a`.
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root.
+- **Test counts after b1**: root suite 587 OK (2 skipped; 535 + 52 new), API suite 160 OK.
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
 - **Previous handoff**: protection-zone (issue #46) merged in PR #54; its T17 (October-to-November turnover measurement) is still DEFERRED pending a November snapshot.
