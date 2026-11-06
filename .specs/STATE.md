@@ -239,14 +239,15 @@
 ## Handoff
 
 - **Feature**: fii-segment-cap (issue #56) - `.specs/features/fii-segment-cap/`
-- **Phase / Task**: EXECUTE batch b1 done: Phase 1 (T1-T5, core cap in GA and zone) and Phase 2 (T6-T8, FII selector wiring) committed. Next: batch b2, Phase 3 (T9-T12, policy v4) then Phase 4 (T13-T14, adapter), then the Verifier.
-- **Completed**: T1 `9be45a7` GA cap; T2 `c5e23ac` capped pick + `_fits`; T3 `4016f7d` zone cap; T4 `13aae9e` zone HHI skip; T5 `8ffd46b` `select_with_fallback` forwarding; T6 `a9be058` GA config copy; T7 `130f1a3` capped `_consensus`; T8 `49d46cf` `run_fii_selection` capacity and post-check.
+- **Phase / Task**: EXECUTE complete: all 14 tasks committed (b1 T1-T8, b2 T9-T14). Next: the independent Verifier (spec-anchored check + discrimination sensor, writes `validation.md`), run by the orchestrator.
+- **Completed**: T1 `9be45a7`; T2 `c5e23ac`; T3 `4016f7d`; T4 `13aae9e`; T5 `8ffd46b`; T6 `a9be058`; T7 `130f1a3`; T8 `49d46cf`; T9 `ac0ca82` policy field + `FII_MAX_PER_SEGMENT`; T10 `8cce51e` FII anchors 4/5/6, Basic 10/12/15; T11 `452f8f4` `premium-policy-v4` + `fii-selection-v2`; T12 `92dcd9f` real-data v4 executability; T13 `244080f` adapter forwarding; T14 `a81a57f` end-to-end v4 and stored-v3 runs.
 - **In-progress** (file:line): none.
-- **Next step**: T9 - `SelectorPolicy.max_per_segment` and `FII_MAX_PER_SEGMENT = 2` in `api/app/services/premium_policy.py`.
-- **Spec edits in b1**: Edge Cases line for `max_per_segment >= n_assets` now holds only where `hhi_max` is None and names the departure-reason difference (review S5, commit of T3).
+- **Next step**: dispatch the Verifier over `a61164a..HEAD`; then `validate_state.py fii-segment-cap`.
+- **Deviations in b2**: (1) T10 moved two pins A-12 names only by file: the FII half of `test_protection_zone_turnover :: test_measure_writes_both_reports_with_the_turnover_per_class` (K 8, k_offset 3, turnover 2, exits 10, FNEW1 replaces the 0.85 incumbent) and `test_multirun_convergence :: FixtureRunTests.test_lot_shape_and_runs` (5 FII tickers). (2) T12's owner-profile tests take about 62 s each, so the API suite went from about 75 s to about 210 s; capped vs uncapped FII stage 1.31x (below the 1.5x follow-up threshold). (3) The tasks.md test-strategy row for the 13-incumbent test now says the protection-walk mutant falls back with `fallback_hhi` instead of raising (spec review S6, confirmed on a scratch copy).
+- **Not touched (observation)**: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run"; out of scope for #56 (no task), worth a one-line follow-up.
 - **Blockers**: none. Q1 and Q2 keep their defaults (spec A-2, A-10); Q3 closed by AD-029.
 - **Uncommitted files**: none.
 - **Branch**: t3/issue-56 (base `origin/develop`; PR base `develop`).
-- **Test counts after b1**: root suite 587 OK (2 skipped; 535 + 52 new), API suite 160 OK.
+- **Test counts after b2**: root suite 587 OK (2 skipped; no new root tests in b2), API suite 174 OK (160 + 14 new).
 - **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
 - **Previous handoff**: protection-zone (issue #46) merged in PR #54; its T17 (October-to-November turnover measurement) is still DEFERRED pending a November snapshot.
