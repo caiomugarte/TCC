@@ -371,7 +371,7 @@ T13 → T14
 
 #### T7: Capped FII consensus
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add `max_per_segment` to `_consensus`: pure path through `take_within_segment_cap` (with `hhi_max` only when the cap is set), zone path with `segment_of` and the cap; `SegmentCapInfeasibleError` becomes `FiiSelectionError`; uncapped path unchanged.
 **Where**: `py/fii_selection.py`
@@ -388,10 +388,10 @@ T13 → T14
 
 **Done when**:
 
-- [ ] The seven `_consensus` rows of the Test Strategy pass (four cap rows and three HHI rows; exact tickers asserted, not just counts)
-- [ ] `tests/test_protection_zone_selectors.py`, `tests/test_fii_selection.py`, `tests/test_convergence_analysis.py` pass unchanged
-- [ ] Gate check passes: Selector
-- [ ] Test count: at least 7 new tests
+- [x] The seven `_consensus` rows of the Test Strategy pass (four cap rows and three HHI rows; exact tickers asserted, not just counts)
+- [x] `tests/test_protection_zone_selectors.py`, `tests/test_fii_selection.py`, `tests/test_convergence_analysis.py` pass unchanged
+- [x] Gate check passes: Selector
+- [x] Test count: at least 7 new tests
 
 **Tests**: unit
 **Gate**: selector

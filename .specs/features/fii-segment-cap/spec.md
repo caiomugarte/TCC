@@ -248,11 +248,11 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-12 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
 | SEG-13 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
 | SEG-14 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
-| SEG-15 | P1: Pure consensus skips a full segment | Tasks T2, T7 | In progress (T2 done) |
-| SEG-16 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
-| SEG-17 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
-| SEG-18 | P1: Pure consensus skips a full segment | Tasks T7 | In Tasks |
-| SEG-19 | P1: Protection zone respects the cap | Tasks T3, T7 | In progress (T3 done) |
+| SEG-15 | P1: Pure consensus skips a full segment | Tasks T2, T7 | Implemented (T2, T7) |
+| SEG-16 | P1: Pure consensus skips a full segment | Tasks T7 | Implemented (T7) |
+| SEG-17 | P1: Pure consensus skips a full segment | Tasks T7 | Implemented (T7) |
+| SEG-18 | P1: Pure consensus skips a full segment | Tasks T7 | Implemented (T7) |
+| SEG-19 | P1: Protection zone respects the cap | Tasks T3, T7 | Implemented (T3, T7) |
 | SEG-20 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
 | SEG-21 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
 | SEG-22 | P1: Protection zone respects the cap | Tasks T3 | Implemented (T3) |
@@ -270,11 +270,11 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-34 | P2: Research tooling follows v4 | Tasks T10 | In Tasks |
 | SEG-35 | P2: Research tooling follows v4 | Tasks T11 | In Tasks |
 | SEG-36 | P2: Research tooling follows v4 | Tasks T10, T11 | In Tasks |
-| SEG-37 | P1: HHI skip under the cap | Tasks T2, T7 | In progress (T2 done) |
+| SEG-37 | P1: HHI skip under the cap | Tasks T2, T7 | Implemented (T2, T7) |
 | SEG-38 | P1: HHI skip under the cap | Tasks T4 | Implemented (T4) |
 | SEG-39 | P1: HHI skip under the cap | Tasks T4, T5 | Implemented (T4, T5) |
-| SEG-40 | P1: HHI skip under the cap | Tasks T2, T7 | In progress (T2 done) |
-| SEG-41 | P1: HHI skip under the cap | Tasks T2, T4, T5, T7 | In progress (T2, T4, T5 done) |
+| SEG-40 | P1: HHI skip under the cap | Tasks T2, T7 | Implemented (T2, T7) |
+| SEG-41 | P1: HHI skip under the cap | Tasks T2, T4, T5, T7 | Implemented (T2, T4, T5, T7) |
 | SEG-42 | P1: HHI skip under the cap | Tasks T12 | In Tasks |
 | SEG-43 | P1: HHI skip under the cap | Tasks T4, T5, T12 | In progress (T4, T5 done) |
 
