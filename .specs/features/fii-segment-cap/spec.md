@@ -220,7 +220,7 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | --------- | -------- |
 | Input validation & bounds | SEG-12, SEG-13, SEG-25, SEG-31. |
 | Failure / partial-failure states | SEG-28 (universe too small), SEG-29 (defensive post-check), SEG-39 (protected incumbents over `hhi_max` → the lower-ranked leaves, no fallback), SEG-40 and SEG-43 (consensus or zone cannot fill → error, never a shorter sleeve or a silent fallback). |
-| Idempotency / retry / duplicates | N/A because selection is a pure seeded computation; the run cache keyed by policy version is unchanged. |
+| Idempotency / retry / duplicates | Selection is a pure seeded computation. The Premium run reuse is NOT keyed by policy version: without `force`, `create_run` returns the latest finished Premium run for the profile whatever its `policy_version` (`api/app/services/premium_recommendation.py:149-163`). After the v4 deploy, an account with a finished v3 run keeps its 13-FII sleeve until a forced rerun or the reruns of #47. Pre-existing since #46 and left unchanged here (rerunning accounts is out of scope). |
 | Auth boundaries & rate limits | N/A because no route, entitlement or account scoping changes. |
 | Concurrency / ordering | N/A because the cap travels inside the pickled config to `mp.Pool` workers; no shared state is added. |
 | Data lifecycle / expiry | Stored v3 runs execute from their stored policy (SEG-32, edge case). |
