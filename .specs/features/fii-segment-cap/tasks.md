@@ -115,7 +115,7 @@ Every named test fails when the behaviour it names is removed (REVIEW.md). The "
 | updated `test_premium_policy :: ConservadorAnchorExecutabilityTests.test_unrestricted_anchor_differs_only_by_hhi_max_and_runs_above_the_cap` | config `n_assets` fixed at 10; `assertGreater(hhi, 0.25)` kept | A-12 | subject preserved |
 | `test_premium_policy :: V4FiiExecutabilityTests.test_real_data_anchors_fill_n_assets_within_the_cap` | real `data/raw/status_invest_fii.csv`, GA budget 30 × 20, scores 0.0/0.5/0.7/1.0 → `n_selected == n_assets` (4/5/5/6), max segment count ≤ 2, recording GA saw cap 2 | SEG-05, SEG-27, A-9 | infeasible universe on real data |
 | `test_premium_policy :: V4FiiExecutabilityTests.test_owner_profile_with_limitar_concentracao_runs_many_ga_runs` | real data, `resolve_premium_policy(profile(score=0.7, knowledge=0.7, restrictions=["limitar_concentracao"])).fiis` (n 5, cap 2, `hhi_max` 0.25), `n_runs=8`, GA 40 generations × 30 population, seeds 0-3 → no exception, `n_selected == 5`, HHI ≤ 0.25 + 1e-12, ≤ 2 per segment | SEG-42 | HHI skip removed (seed 0 raises "FII selection violates the configured HHI limit", reproduced in spec review r1 and in a scratch prototype on 2026-11-06) |
-| `test_premium_policy :: V4FiiExecutabilityTests.test_owner_profile_with_limitar_concentracao_and_13_incumbents_runs` | same policy and budget, seeds 0-3, incumbents = the 13 best-`SCORE` tickers of the scored universe → no exception, 5 funds, HHI ≤ 0.25 + 1e-12, ≤ 2 per segment, zone `status != "fallback_hhi"`, every incumbent in exactly one of `kept`/`departures`, every departure reason in the A-6 set | SEG-42, SEG-39, SEG-43 | protection walk without the HHI term (the run raises) / `K = 0` fallback re-introduced |
+| `test_premium_policy :: V4FiiExecutabilityTests.test_owner_profile_with_limitar_concentracao_and_13_incumbents_runs` | same policy and budget, seeds 0-3, incumbents = the 13 best-`SCORE` tickers of the scored universe → no exception, 5 funds, HHI ≤ 0.25 + 1e-12, ≤ 2 per segment, zone `status != "fallback_hhi"`, every incumbent in exactly one of `kept`/`departures`, every departure reason in the A-6 set | SEG-42, SEG-39, SEG-43 | protection walk without the HHI term (seed 0 does not raise: the zone breaks `hhi_max`, `select_with_fallback` falls back to the `K = 0` consensus with `status "fallback_hhi"`, caught by the `status != "fallback_hhi"` assertion; spec review S6, confirmed on a scratch copy in T12) / `K = 0` fallback re-introduced |
 | `test_premium_optimization :: SegmentCapForwardingTests.test_fii_engine_receives_the_cap` | fake FII engine's `selection_config["max_per_segment"] == 2` and is `int` | SEG-30 | copy removed |
 | `test_premium_optimization :: SegmentCapForwardingTests.test_invalid_cap_fails_with_policy_invalid` | `0`, `True`, `1.5`, `"2"` → `PremiumOptimizationError.code == "policy_invalid"`; engines not called | SEG-31 | check removed |
 | `test_premium_optimization :: SegmentCapForwardingTests.test_sections_without_cap_produce_the_pre_change_config` | stock section and a v3 FII section → config equals the literal pre-change dict, no `max_per_segment` key | SEG-32 | key always emitted |
@@ -530,7 +530,7 @@ T13 → T14
 
 #### T12: Real-data v4 executability for the FII anchors
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Add `V4FiiExecutabilityTests` running the real FII selector on the committed dataset for selector scores 0.0, 0.5, 0.7, 1.0 with the resolved v4 FII section, plus the owner profile with `limitar_concentracao` over 8 runs × 40 × 30 for seeds 0-3, with and without 13 incumbents (SEG-42).
 **Where**: `api/tests/test_premium_policy.py`
@@ -547,11 +547,13 @@ T13 → T14
 
 **Done when**:
 
-- [ ] For each score: `n_selected == n_assets` (4/5/5/6), max segment count ≤ 2, recording GA saw `max_per_segment` 2
-- [ ] Both `limitar_concentracao` tests pass, the incumbent one with zone `status != "fallback_hhi"` for every seed; the commit body records that, on a scratch copy with the HHI term of `_fits` removed, the no-incumbent test raises "FII selection violates the configured HHI limit" for seed 0 (discrimination evidence; the scratch copy is discarded and the real tree is unchanged)
-- [ ] The commit body records the wall-clock of the owner-profile capped run and of the same run without the cap (design Risk 1)
-- [ ] Gate check passes: Build (last task of Phase 3)
-- [ ] Test count: API suite ≥ 169; root suite unchanged from T11
+- [x] For each score: `n_selected == n_assets` (4/5/5/6), max segment count ≤ 2, recording GA saw `max_per_segment` 2
+- [x] Both `limitar_concentracao` tests pass, the incumbent one with zone `status != "fallback_hhi"` for every seed; the commit body records that, on a scratch copy with the HHI term of `_fits` removed, the no-incumbent test raises "FII selection violates the configured HHI limit" for seed 0 (discrimination evidence; the scratch copy is discarded and the real tree is unchanged)
+- [x] The commit body records the wall-clock of the owner-profile capped run and of the same run without the cap (design Risk 1)
+- [x] Gate check passes: Build (last task of Phase 3)
+- [x] Test count: API suite ≥ 169; root suite unchanged from T11
+
+**Note (execution)**: the owner-profile tests take about 62 s each (4 seeds × 8 runs × 40 × 30 on real data), not "seconds per seed"; the capped run is 1.31x the uncapped one (61.8 s vs 47.0 s for 4 seeds), below the 1.5x follow-up threshold of design Risk 1.
 
 **Tests**: integration
 **Gate**: build

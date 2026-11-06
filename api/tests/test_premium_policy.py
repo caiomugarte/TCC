@@ -701,5 +701,144 @@ class ConservadorAnchorExecutabilityTests(unittest.TestCase):
         self.assertGreater(result["hhi"], 0.25)
 
 
+class _CapRecordingGeneticAlgorithm(GeneticAlgorithm):
+    """Captures the GA constructor's ``max_per_segment`` (SEG-27 on real data)."""
+
+    constructed_with: list = []
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        type(self).constructed_with.append(kwargs.get("max_per_segment"))
+
+
+A6_DEPARTURE_REASONS = {
+    "saiu: inelegível",
+    "saiu: teto do segmento",
+    "saiu: vagas reduzidas",
+    "saiu: fora do top K",
+}
+
+
+class V4FiiExecutabilityTests(unittest.TestCase):
+    """SEG-05, SEG-27, SEG-42, SEG-43: the v4 FII sections run on the committed
+    ``data/raw/status_invest_fii.csv`` within the segment cap."""
+
+    ANCHOR_SEED = 42
+    ANCHOR_GA_BUDGET = {"generations": 30, "pop_size": 20}
+    MANY_RUNS = 8
+    MANY_RUNS_GA_BUDGET = {"generations": 40, "pop_size": 30}
+    SEEDS = (0, 1, 2, 3)
+
+    @staticmethod
+    def _v4_fiis(score, restrictions=None):
+        return resolve_premium_policy(
+            profile(score=score, knowledge=score, restrictions=restrictions)
+        ).fiis
+
+    @staticmethod
+    def _config(fiis):
+        # Same keys the adapter hands the FII engine for a v4 section.
+        return {
+            "selection_preset": fiis.selection_preset,
+            "factor_weights": dict(fiis.factor_weights),
+            "liquidity_and_size_filters": dict(fiis.liquidity_and_size_filters),
+            "n_assets": fiis.n_assets,
+            "lambda_hhi": fiis.lambda_hhi,
+            "system_ga_config": dict(fiis.system_ga_config),
+            "protection_zone": dict(fiis.protection_zone),
+            "max_per_segment": fiis.max_per_segment,
+        }
+
+    def _assert_capped_sleeve(self, result, n_assets, hhi_max=None):
+        self.assertEqual(result["n_selected"], n_assets)
+        self.assertEqual(len(result["selected_tickers"]), n_assets)
+        segments = Counter(result["portfolio"]["SETOR"].astype(str))
+        self.assertLessEqual(max(segments.values()), 2, segments)
+        if hhi_max is not None:
+            self.assertLessEqual(result["hhi"], hhi_max + 1e-12)
+
+    def test_real_data_anchors_fill_n_assets_within_the_cap(self) -> None:
+        for score, n_assets in ((0.0, 4), (0.5, 5), (0.7, 5), (1.0, 6)):
+            with self.subTest(score=score):
+                fiis = self._v4_fiis(score)
+                self.assertEqual((fiis.n_assets, fiis.max_per_segment), (n_assets, 2))
+                _CapRecordingGeneticAlgorithm.constructed_with = []
+                with mock.patch("fii_selection.GeneticAlgorithm", _CapRecordingGeneticAlgorithm):
+                    result = run_fii_selection(
+                        selection_config=self._config(fiis),
+                        n_runs=1,
+                        ga_config=dict(self.ANCHOR_GA_BUDGET),
+                        random_seed=self.ANCHOR_SEED,
+                    )
+                self.assertEqual(_CapRecordingGeneticAlgorithm.constructed_with, [2])
+                self._assert_capped_sleeve(result, n_assets)
+
+    def _owner_with_limitar_concentracao(self):
+        fiis = self._v4_fiis(0.7, ["limitar_concentracao"])
+        self.assertEqual(
+            (fiis.n_assets, fiis.max_per_segment, fiis.liquidity_and_size_filters["hhi_max"]),
+            (5, 2, 0.25),
+        )
+        return fiis
+
+    def _run_many(self, fiis, seed, incumbents=None):
+        return run_fii_selection(
+            selection_config=self._config(fiis),
+            n_runs=self.MANY_RUNS,
+            ga_config=dict(self.MANY_RUNS_GA_BUDGET),
+            random_seed=seed,
+            incumbents=incumbents,
+        )
+
+    def test_owner_profile_with_limitar_concentracao_runs_many_ga_runs(self) -> None:
+        # Without the HHI skip (AD-028) seed 0 raises "FII selection violates
+        # the configured HHI limit" (spec review r1 S1).
+        fiis = self._owner_with_limitar_concentracao()
+        for seed in self.SEEDS:
+            with self.subTest(seed=seed):
+                result = self._run_many(fiis, seed)
+                self.assertEqual(result["n_runs"], self.MANY_RUNS)
+                self._assert_capped_sleeve(result, 5, hhi_max=0.25)
+                self.assertNotIn("protection_zone", result)
+
+    def test_owner_profile_with_limitar_concentracao_and_13_incumbents_runs(self) -> None:
+        # The 13 -> 5 migration: incumbents are the 13 best-SCORE funds of the
+        # scored universe. Without the protection walk's HHI term (AD-029)
+        # seed 0 falls back to the K = 0 consensus with status "fallback_hhi".
+        fiis = self._owner_with_limitar_concentracao()
+        ranked = build_fii_scores(
+            preprocess_fii(
+                _raw_snapshot(),
+                eligibility_filters=dict(fiis.liquidity_and_size_filters),
+            ),
+            None,
+            factor_weights=fiis.factor_weights,
+        )
+        incumbents = (
+            ranked.sort_values(["SCORE", "TICKER"], ascending=[False, True])["TICKER"]
+            .head(13)
+            .tolist()
+        )
+        self.assertEqual(len(incumbents), 13)
+        for seed in self.SEEDS:
+            with self.subTest(seed=seed):
+                result = self._run_many(fiis, seed, incumbents=incumbents)
+                self._assert_capped_sleeve(result, 5, hhi_max=0.25)
+                zone = result["protection_zone"]
+                self.assertNotEqual(zone["status"], "fallback_hhi")
+                self.assertEqual(zone["status"], "applied")
+                kept = set(zone["kept"])
+                departed = set(zone["departures"])
+                self.assertEqual(kept & departed, set())
+                self.assertEqual(kept | departed, set(incumbents))
+                self.assertLessEqual(kept, set(result["selected_tickers"]))
+                for ticker, reason in zone["departures"].items():
+                    self.assertTrue(
+                        reason in A6_DEPARTURE_REASONS
+                        or reason.startswith("saiu: substituído por "),
+                        (ticker, reason),
+                    )
+
+
 if __name__ == "__main__":
     unittest.main()

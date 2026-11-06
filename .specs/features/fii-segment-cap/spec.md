@@ -238,7 +238,7 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-02 | P1: Premium policy v4 | Tasks T11 | Implemented (T11) |
 | SEG-03 | P1: Premium policy v4 | Tasks T10 | Implemented (T10) |
 | SEG-04 | P1: Premium policy v4 | Tasks T9 | Implemented (T9) |
-| SEG-05 | P1: Premium policy v4 | Tasks T11, T12 | In progress (T11 done) |
+| SEG-05 | P1: Premium policy v4 | Tasks T11, T12 | Implemented (T11, T12) |
 | SEG-06 | P1: Premium policy v4 | Tasks T10 | Implemented (T10) |
 | SEG-07 | P1: Premium policy v4 | Tasks T11 | Implemented (T11) |
 | SEG-08 | P1: Premium policy v4 | Tasks T10, T11 | Implemented (T10, T11) |
@@ -260,7 +260,7 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-24 | P1: Protection zone respects the cap | Tasks T3, T5 | Implemented (T3, T4, T5) |
 | SEG-25 | P1: Protection zone respects the cap | Tasks T2 | Implemented (T2) |
 | SEG-26 | P1: Protection zone respects the cap | Tasks T8 | Implemented (T8) |
-| SEG-27 | P1: FII selector and adapter carry the cap | Tasks T6, T8, T12 | In progress (T6, T8 done) |
+| SEG-27 | P1: FII selector and adapter carry the cap | Tasks T6, T8, T12 | Implemented (T6, T8, T12) |
 | SEG-28 | P1: FII selector and adapter carry the cap | Tasks T8 | Implemented (T8) |
 | SEG-29 | P1: FII selector and adapter carry the cap | Tasks T8 | Implemented (T8) |
 | SEG-30 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
@@ -275,8 +275,8 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-39 | P1: HHI skip under the cap | Tasks T4, T5 | Implemented (T4, T5) |
 | SEG-40 | P1: HHI skip under the cap | Tasks T2, T7 | Implemented (T2, T7) |
 | SEG-41 | P1: HHI skip under the cap | Tasks T2, T4, T5, T7 | Implemented (T2, T4, T5, T7) |
-| SEG-42 | P1: HHI skip under the cap | Tasks T12 | In Tasks |
-| SEG-43 | P1: HHI skip under the cap | Tasks T4, T5, T12 | In progress (T4, T5 done) |
+| SEG-42 | P1: HHI skip under the cap | Tasks T12 | Implemented (T12) |
+| SEG-43 | P1: HHI skip under the cap | Tasks T4, T5, T12 | Implemented (T4, T5, T12) |
 
 **Coverage:** 43 total, 43 mapped to tasks, 0 unmapped.
 
