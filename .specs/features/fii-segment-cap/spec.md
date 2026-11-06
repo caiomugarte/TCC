@@ -236,12 +236,12 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | -------------- | ----- | ----- | ------ |
 | SEG-01 | P1: Premium policy v4 | Tasks T11 | In Tasks |
 | SEG-02 | P1: Premium policy v4 | Tasks T11 | In Tasks |
-| SEG-03 | P1: Premium policy v4 | Tasks T10 | In Tasks |
+| SEG-03 | P1: Premium policy v4 | Tasks T10 | Implemented (T10) |
 | SEG-04 | P1: Premium policy v4 | Tasks T9 | Implemented (T9) |
 | SEG-05 | P1: Premium policy v4 | Tasks T11, T12 | In Tasks |
-| SEG-06 | P1: Premium policy v4 | Tasks T10 | In Tasks |
+| SEG-06 | P1: Premium policy v4 | Tasks T10 | Implemented (T10) |
 | SEG-07 | P1: Premium policy v4 | Tasks T11 | In Tasks |
-| SEG-08 | P1: Premium policy v4 | Tasks T10, T11 | In Tasks |
+| SEG-08 | P1: Premium policy v4 | Tasks T10, T11 | In progress (T10 done) |
 | SEG-09 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
 | SEG-10 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
 | SEG-11 | P1: GA treats an over-cap candidate as infeasible | Tasks T1 | Implemented (T1) |
@@ -267,9 +267,9 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-31 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
 | SEG-32 | P1: FII selector and adapter carry the cap | Tasks T6, T13, T14 | In progress (T6 done) |
 | SEG-33 | P1: FII selector and adapter carry the cap | Tasks T14 | In Tasks |
-| SEG-34 | P2: Research tooling follows v4 | Tasks T10 | In Tasks |
+| SEG-34 | P2: Research tooling follows v4 | Tasks T10 | Implemented (T10) |
 | SEG-35 | P2: Research tooling follows v4 | Tasks T11 | In Tasks |
-| SEG-36 | P2: Research tooling follows v4 | Tasks T10, T11 | In Tasks |
+| SEG-36 | P2: Research tooling follows v4 | Tasks T10, T11 | In progress (T10 done) |
 | SEG-37 | P1: HHI skip under the cap | Tasks T2, T7 | Implemented (T2, T7) |
 | SEG-38 | P1: HHI skip under the cap | Tasks T4 | Implemented (T4) |
 | SEG-39 | P1: HHI skip under the cap | Tasks T4, T5 | Implemented (T4, T5) |

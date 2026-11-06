@@ -463,7 +463,7 @@ T13 → T14
 
 #### T10: FII anchors 4/5/6; Basic keeps 10/12/15
 
-**Status**: Pending
+**Status**: Done
 
 **What**: Set `FII_RULES` n to 4/5/6, give Basic `BASIC_FII_ASSET_COUNTS` 10/12/15, and update the tests that pin the v3 FII counts (A-12): the two `test_premium_policy` pins, the conservador executability test, and the #9 tooling tests.
 **Where**: `api/app/services/premium_policy.py` (tests: `api/tests/test_premium_policy.py`, `tests/test_multirun_convergence.py`)
@@ -480,13 +480,15 @@ T13 → T14
 
 **Done when**:
 
-- [ ] Updated `test_conservador_fii_rules_pin_the_adr_0002_calibration`, `test_premium_sections_carry_the_issue_9_zone_values_for_every_anchor` and new `test_fii_count_interpolates_half_to_even` pass
-- [ ] `ConservadorAnchorExecutabilityTests.test_unrestricted_anchor_differs_only_by_hhi_max_and_runs_above_the_cap` fixes `n_assets` 10 in its config and keeps `assertGreater(result["hhi"], 0.25)`
-- [ ] `tests/test_multirun_convergence.py`: `fixture_protocol` sets `expected_n_assets` to `{"stocks": 13, "fiis": 5}`; `PolicyTests.test_profiles_resolve_expected_n_assets` asserts `(13, 5)` / `(15, 6)` and that `check_n_assets` against the declared counts raises `ChildError` with `EXIT_USAGE` mentioning `expected_n_assets`; all 40 tests of the two tooling modules pass
-- [ ] Both Basic tests pass unchanged
-- [ ] `git diff --exit-code a61164a -- docs/validation/` is empty
-- [ ] Gate check passes: Policy
-- [ ] Test count: API suite ≥ 163; root tooling modules 40 tests
+- [x] Updated `test_conservador_fii_rules_pin_the_adr_0002_calibration`, `test_premium_sections_carry_the_issue_9_zone_values_for_every_anchor` and new `test_fii_count_interpolates_half_to_even` pass
+- [x] `ConservadorAnchorExecutabilityTests.test_unrestricted_anchor_differs_only_by_hhi_max_and_runs_above_the_cap` fixes `n_assets` 10 in its config and keeps `assertGreater(result["hhi"], 0.25)`
+- [x] `tests/test_multirun_convergence.py`: `fixture_protocol` sets `expected_n_assets` to `{"stocks": 13, "fiis": 5}`; `PolicyTests.test_profiles_resolve_expected_n_assets` asserts `(13, 5)` / `(15, 6)` and that `check_n_assets` against the declared counts raises `ChildError` with `EXIT_USAGE` mentioning `expected_n_assets`; all 40 tests of the two tooling modules pass
+- [x] Both Basic tests pass unchanged
+- [x] `git diff --exit-code a61164a -- docs/validation/` is empty
+- [x] Gate check passes: Policy
+- [x] Test count: API suite ≥ 163; root tooling modules 40 tests
+
+**Note (execution)**: the FII count change also moved two pins A-12 did not name value by value, both in files A-12 lists: `test_protection_zone_turnover :: test_measure_writes_both_reports_with_the_turnover_per_class` (FII K 16 → 8, k_offset 3, turnover 3 → 2, exits 3 → 10, recomputed by hand and matched against the tool output; its version literal waits for T11) and `test_multirun_convergence :: FixtureRunTests.test_lot_shape_and_runs` (FII `selected_tickers` 13 → 5).
 
 **Tests**: unit
 **Gate**: policy

@@ -58,25 +58,33 @@ STOCK_RULES = {
     },
 }
 
+# Premium FII counts (issue #56): 4/5/6 funds, buyable with whole quotas.
 FII_RULES = {
     "conservador": {
-        "n_assets": 10,
+        "n_assets": 4,
         "factor_weights": {"liquidity": 0.30, "size_cash": 0.25, "value": 0.15, "growth": 0.10, "dividend": 0.20},
         "filters": {"size_min": 3_000_000_000, "liq_min": 2_000_000},
         "lambda_hhi": 0.50,
     },
     "moderado": {
-        "n_assets": 12,
+        "n_assets": 5,
         "factor_weights": {"liquidity": 0.20, "size_cash": 0.25, "value": 0.25, "growth": 0.20, "dividend": 0.10},
         "filters": {"size_min": 1_000_000_000, "liq_min": 500_000},
         "lambda_hhi": 0.25,
     },
     "arrojado": {
-        "n_assets": 15,
+        "n_assets": 6,
         "factor_weights": {"liquidity": 0.10, "size_cash": 0.20, "value": 0.20, "growth": 0.40, "dividend": 0.10},
         "filters": {"size_min": 200_000_000, "liq_min": 50_000},
         "lambda_hhi": 0.10,
     },
+}
+
+# Basic keeps the pre-#56 FII counts (spec A-2, Q1).
+BASIC_FII_ASSET_COUNTS = {"conservador": 10, "moderado": 12, "arrojado": 15}
+
+BASIC_FII_RULES = {
+    band: {**rules, "n_assets": BASIC_FII_ASSET_COUNTS[band]} for band, rules in FII_RULES.items()
 }
 
 # Protection zone (issue #46, AD-022): K = n_assets + k_offset. Values from
@@ -491,7 +499,7 @@ def resolve_basic_policy(
     return replace(
         resolved,
         stocks=_selector_policy(STOCK_RULES, selector_score, restrictions),
-        fiis=_selector_policy(FII_RULES, selector_score, restrictions),
+        fiis=_selector_policy(BASIC_FII_RULES, selector_score, restrictions),
         provenance=replace(resolved.provenance, policy_version=rules_version),
     )
 

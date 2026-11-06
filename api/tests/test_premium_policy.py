@@ -237,7 +237,7 @@ class PremiumPolicyTests(unittest.TestCase):
         )
         self.assertEqual(
             {band: rules["n_assets"] for band, rules in FII_RULES.items()},
-            {"conservador": 10, "moderado": 12, "arrojado": 15},
+            {"conservador": 4, "moderado": 5, "arrojado": 6},
         )
         self.assertEqual(
             FII_RULES["moderado"]["filters"],
@@ -324,33 +324,33 @@ class ProtectionZonePolicyTests(unittest.TestCase):
 
     def test_premium_sections_carry_the_issue_9_zone_values_for_every_anchor(self) -> None:
         anchors = {
-            "conservador": (0.0, 10),
-            "moderado": (0.5, 12),
-            "arrojado": (1.0, 15),
+            "conservador": (0.0, 10, 4),
+            "moderado": (0.5, 12, 5),
+            "arrojado": (1.0, 15, 6),
         }
-        for band, (score, n_assets) in anchors.items():
+        for band, (score, stock_n, fii_n) in anchors.items():
             with self.subTest(band=band):
                 resolved = resolve_premium_policy(
                     profile(score=score, knowledge=score, generic_profile=band)
                 )
-                self.assertEqual(resolved.stocks.n_assets, n_assets)
-                self.assertEqual(resolved.fiis.n_assets, n_assets)
+                self.assertEqual(resolved.stocks.n_assets, stock_n)
+                self.assertEqual(resolved.fiis.n_assets, fii_n)
                 self.assertEqual(
                     resolved.stocks.protection_zone,
-                    {"k_offset": 6, "K": n_assets + 6, "delta": 0.11},
+                    {"k_offset": 6, "K": stock_n + 6, "delta": 0.11},
                 )
                 self.assertEqual(
                     resolved.fiis.protection_zone,
-                    {"k_offset": 3, "K": n_assets + 3, "delta": 0.11},
+                    {"k_offset": 3, "K": fii_n + 3, "delta": 0.11},
                 )
                 payload = resolved.to_dict()
                 self.assertEqual(
                     payload["stocks"]["protection_zone"],
-                    {"k_offset": 6, "K": n_assets + 6, "delta": 0.11},
+                    {"k_offset": 6, "K": stock_n + 6, "delta": 0.11},
                 )
                 self.assertEqual(
                     payload["fiis"]["protection_zone"],
-                    {"k_offset": 3, "K": n_assets + 3, "delta": 0.11},
+                    {"k_offset": 3, "K": fii_n + 3, "delta": 0.11},
                 )
 
     def test_zone_k_follows_an_interpolated_asset_count(self) -> None:
@@ -393,6 +393,13 @@ class SegmentCapPolicyTests(unittest.TestCase):
                 self.assertNotIn(
                     "max_per_segment", json.loads(resolved.to_json())["stocks"]
                 )
+
+    def test_fii_count_interpolates_half_to_even(self) -> None:
+        # 4 + 1 * 0.5 = 4.5 -> 4 and 5 + 1 * 0.5 = 5.5 -> 6 (Python round, A-14).
+        for score, n_assets in ((0.25, 4), (0.75, 6)):
+            with self.subTest(score=score):
+                resolved = resolve_premium_policy(profile(score=score, knowledge=score))
+                self.assertEqual(resolved.fiis.n_assets, n_assets)
 
 
 class PolicyDriftGuardTests(unittest.TestCase):
@@ -600,14 +607,14 @@ class ConservadorAnchorExecutabilityTests(unittest.TestCase):
         )
         return resolved.fiis
 
-    def _run_real_selector(self, selector_policy):
+    def _run_real_selector(self, selector_policy, n_assets=None):
         config = {
             "selection_preset": "conservador",
             "factor_weights": dict(selector_policy.factor_weights),
             "liquidity_and_size_filters": dict(
                 selector_policy.liquidity_and_size_filters
             ),
-            "n_assets": selector_policy.n_assets,
+            "n_assets": selector_policy.n_assets if n_assets is None else n_assets,
             "lambda_hhi": selector_policy.lambda_hhi,
             "system_ga_config": dict(selector_policy.system_ga_config),
         }
@@ -641,7 +648,10 @@ class ConservadorAnchorExecutabilityTests(unittest.TestCase):
         self.assertNotIn("hhi_max", unrestricted_filters)
         self.assertEqual(restricted_filters, unrestricted_filters)
 
-        result = self._run_real_selector(unrestricted)
+        # Subject: the uncapped GA exceeds HHI 0.25 at the conservador anchor.
+        # At the v4 count (4) it reaches 0.25 on its own, so the pre-#56 count
+        # 10 keeps the subject (spec A-12).
+        result = self._run_real_selector(unrestricted, n_assets=10)
 
         self.assertEqual(_RecordingGeneticAlgorithm.constructed_with, [None])
         self.assertGreater(result["hhi"], 0.25)

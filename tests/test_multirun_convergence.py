@@ -70,6 +70,9 @@ def fixture_protocol(declaration_path, **changes):
     protocol["snapshot_declaration"] = str(declaration_path)
     protocol["seeds"] = list(SEEDS)
     protocol["profiles"] = {PROFILE: protocol["profiles"][PROFILE]}
+    # The frozen protocol declares the v3 counts (13, 13); premium-policy-v4
+    # resolves 5 FIIs for this profile (issue #56, spec A-10).
+    protocol["profiles"][PROFILE]["expected_n_assets"] = {"stocks": 13, "fiis": 5}
     protocol["production_run"]["seed"] = SEEDS[0]
     protocol["ga_override"]["run_count"] = RUN_COUNT
     protocol["prefixes"] = [4, 8, 12]
@@ -391,7 +394,7 @@ class FixtureRunTests(unittest.TestCase):
                 )
                 self.assertEqual([run["run_id"] for run in data["runs"]], list(range(RUN_COUNT)))
                 self.assertEqual(data["run_count"], RUN_COUNT)
-                self.assertEqual(len(data["selected_tickers"]), 13)
+                self.assertEqual(len(data["selected_tickers"]), {"stocks": 13, "fiis": 5}[selector])
                 self.assertFalse(data["selection_config"]["system_ga_config"]["adaptive_mode"])
                 self.assertEqual(data["selection_config"]["system_ga_config"]["run_count"], RUN_COUNT)
                 for run in data["runs"]:
@@ -525,12 +528,19 @@ class PolicyTests(unittest.TestCase):
         manifest, _ = benchmark_premium.verify_snapshot(
             benchmark_premium.load_declaration(FIXTURE["declaration"]), FIXTURE["registry"]
         )
-        expected = {"premium-2026-11-02": (13, 13), "arrojado-anchor": (15, 15)}
+        expected = {"premium-2026-11-02": (13, 5), "arrojado-anchor": (15, 6)}
         for profile_id, declared in protocol["profiles"].items():
             policy = mc.resolve_policy(declared["record"], manifest, 42)
             self.assertEqual((policy["stocks"]["n_assets"], policy["fiis"]["n_assets"]), expected[profile_id])
             self.assertEqual(policy["profile"]["score"], 1.0 if profile_id == "arrojado-anchor" else 0.582)
-            mc.check_n_assets(policy, declared["expected_n_assets"])
+            # The frozen protocol still declares the v3 FII counts: under v4 the
+            # guard refuses to replay it (spec A-10, Q2).
+            with self.assertRaises(mc.ChildError) as caught:
+                mc.check_n_assets(policy, declared["expected_n_assets"])
+            self.assertEqual(caught.exception.code, mc.EXIT_USAGE)
+            self.assertEqual(caught.exception.where, "expected_n_assets")
+            self.assertIn("expected_n_assets", str(caught.exception))
+            mc.check_n_assets(policy, {"stocks": expected[profile_id][0], "fiis": expected[profile_id][1]})
             overridden = mc.apply_override(copy.deepcopy(policy), protocol["ga_override"], smoke=False)
             for selector in ca.SELECTORS:
                 ga = overridden[selector]["system_ga_config"]
