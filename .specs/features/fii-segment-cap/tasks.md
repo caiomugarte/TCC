@@ -565,7 +565,7 @@ T13 → T14
 
 #### T13: Adapter forwards and validates the cap
 
-**Status**: Pending
+**Status**: Done
 
 **What**: `_selector_config` copies an integer `max_per_segment >= 1` from the policy section to the selector config, rejects any other value with `policy_invalid`, and emits no key when the section has none.
 **Where**: `api/app/adapters/premium_optimization.py`
@@ -582,10 +582,10 @@ T13 → T14
 
 **Done when**:
 
-- [ ] The three `SegmentCapForwardingTests` pass; the "without cap" test compares against a literal dict (L-003: exact arguments, not "key absent" alone)
-- [ ] Existing `test_premium_optimization` tests pass unchanged
-- [ ] Gate check passes: Full
-- [ ] Test count: API suite ≥ 172
+- [x] The three `SegmentCapForwardingTests` pass; the "without cap" test compares against a literal dict (L-003: exact arguments, not "key absent" alone)
+- [x] Existing `test_premium_optimization` tests pass unchanged
+- [x] Gate check passes: Full
+- [x] Test count: API suite ≥ 172
 
 **Tests**: unit
 **Gate**: full

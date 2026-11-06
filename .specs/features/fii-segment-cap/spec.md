@@ -263,9 +263,9 @@ The `premium-policy-v3` FII sleeve uses the stock asset counts (10/12/15 per anc
 | SEG-27 | P1: FII selector and adapter carry the cap | Tasks T6, T8, T12 | Implemented (T6, T8, T12) |
 | SEG-28 | P1: FII selector and adapter carry the cap | Tasks T8 | Implemented (T8) |
 | SEG-29 | P1: FII selector and adapter carry the cap | Tasks T8 | Implemented (T8) |
-| SEG-30 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
-| SEG-31 | P1: FII selector and adapter carry the cap | Tasks T13 | In Tasks |
-| SEG-32 | P1: FII selector and adapter carry the cap | Tasks T6, T13, T14 | In progress (T6 done) |
+| SEG-30 | P1: FII selector and adapter carry the cap | Tasks T13 | Implemented (T13) |
+| SEG-31 | P1: FII selector and adapter carry the cap | Tasks T13 | Implemented (T13) |
+| SEG-32 | P1: FII selector and adapter carry the cap | Tasks T6, T13, T14 | In progress (T6, T13 done) |
 | SEG-33 | P1: FII selector and adapter carry the cap | Tasks T14 | In Tasks |
 | SEG-34 | P2: Research tooling follows v4 | Tasks T10 | Implemented (T10) |
 | SEG-35 | P2: Research tooling follows v4 | Tasks T11 | Implemented (T11) |
