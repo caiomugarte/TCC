@@ -210,23 +210,24 @@
 - **Date**: 2026-11-04
 - **Status**: active - pending the orchestrator's spec review
 
+### AD-027
+- **Decision**: FII segment cap contract for `premium-policy-v4` (issue #56). `policy.fiis.max_per_segment = 2` (Premium only; omitted from the JSON when `None`, so stocks, Basic and stored v3 runs stay byte-identical) is enforced at all three membership stages: GA `fitness` returns `-inf` above the cap; the pure consensus walks the frequency ranking skipping a ticker whose `SETOR` is full; the protection zone (AD-026) cuts qualifying incumbents by segment in rank order BEFORE the `n_assets` cut (`saiu: teto do segmento`, precedence inelegível > substituído > teto do segmento > vagas reduzidas > fora do top K), fills skipping full segments, and takes as challenger the best-ranked outside ticker that fits the cap once the challenged incumbent leaves (skip, not stop). "Indefinido" is an ordinary segment. Basic keeps FII 10/12/15, no cap, `basic-policy-v2`, `fii-selection-v1`; Premium records `fii-selection-v2`.
+- **Reason**: Issue #56 `## Decisões` (cap 2, inviability like `hhi_max`, zone exit reason instead of a consensus fallback so the 13 → 5 migration keeps its protection). Segment-first keeps the most incumbents; skip-not-stop keeps `K = 0` equal to the capped pure consensus.
+- **Trade-off**: With a cap, the zone no longer equals the AD-022 oracle (`scripts/convergence_analysis.zone_portfolio`); K and δ stay calibrated on uncapped lots with n = 13. The frozen #9 protocol cannot be replayed under v4 (`expected_n_assets` exits 2). Fitness pays one extra `value_counts` per evaluation for FIIs.
+- **Scope**: `py/core/optimizer.py`, `py/core/protection_zone.py`, `py/fii_selection.py`, `api/app/services/premium_policy.py`, `api/app/adapters/premium_optimization.py`, #47 (re-runs inherit it).
+- **Date**: 2026-11-06
+- **Status**: active - pending the orchestrator's spec review
+
 ## Handoff
 
-- **Feature**: protection-zone (issue #46) - `.specs/features/protection-zone/`
-- **Phase / Task**: EXECUTE. Batches b1 (Phases 1-2, T1-T8) and b2 (Phase 3 T9-T14, Phase 4 T15-T16) done. T17 DEFERRED (pending data). Next: the orchestrator's Verifier over the whole feature.
-- **Completed**: T1 `c48e396`, T2 `1ef5dc2`, T3 `dcfc43a`, T4 `d34a3b9`, T5 `bb5dd63`, T6 `9c472bf`, T7 `b70db07`, T8 `0f617b2`, T9 `07f4c44`, T10 `0f90187`, T11 `9ee9e00`, T12 `49a4e22`, T13 `234e148`, T14 `6d41885`, T15 `3ce82f1`, T16 `c633918`.
-- **Gates at `c633918`** (Build): compileall clean; root suite 535 OK (2 skipped); API suite 160 OK.
+- **Feature**: fii-segment-cap (issue #56) - `.specs/features/fii-segment-cap/`
+- **Phase / Task**: TASKS complete (Specify, Design, Tasks written; AD-027 appended). Next: the orchestrator's spec review, then EXECUTE from T1.
+- **Completed**: none (no production code written).
 - **In-progress** (file:line): none.
-- **Deferred**: T17 (October-to-November measurement). No published manifest with cutoff `>= 2026-11-01` exists (only `dev-2026-10-29` and `dev-2026-10-29-ibov`). Run `scripts/protection_zone_turnover.py measure --registry <snapshots> --manifest-id <november>` at a clean committed HEAD once a November snapshot is built, validated and published; commit the generated files unmodified and turn the README "pendente" entry into a link. Never write the numbers by hand. PZ-32 and PZ-35 stay "In Tasks" until then.
-- **Blockers**: none for the Verifier. Open question A-9 (K and δ calibrated on lots with NaN-score stocks) stays as decided in `## Decisões`.
+- **Next step**: Execute T1 - capture the GA golden values at `a61164a` BEFORE editing `py/core/optimizer.py`.
+- **Blockers**: none. Open questions Q1 (Basic stays 10/12/15) and Q2 (frozen #9 protocol exits 2 under v4) carry defaults in spec A-2/A-10.
 - **Uncommitted files**: none.
-- **Branch**: t3/issue-46 (PR base `develop`; merge commit, never squash, AD-023).
-- **Notes for the Verifier**:
-  - SPEC_DEVIATION in `py/core/protection_zone.py:116` (b1): ranking uses eligible picks only.
-  - Adapter decision (T13, not in the spec): a selector that receives incumbents and returns no `protection_zone` record, or a status other than `applied`/`fallback_hhi`, fails the run with `engine_error` (`api/app/adapters/premium_optimization.py` `_zone_record`). Recorded in design "Error Handling".
-  - `_selector_config` copies `protection_zone`; `ProtectionZoneForwardingTests` fail if it does not. `result["policy"]` uses `policy.to_dict()` only for the policy; the shared `_json_value` is unchanged (review N5).
-  - T14's second run uses `force=True` (review N7); without it `create_run` returns the cached first run and `assertNotEqual(second.id, first.id)` fails.
-  - Incumbents with `incumbents=None` for a class (unreadable) reach the adapter as `None`; empty list = `no_incumbents`.
-  - #9 tooling (`multirun_convergence.py`, `benchmark_premium.py`) now resolves `premium-policy-v3`: new or resumed lots are not comparable with the committed lots (review N8; design Risks, tasks Rollback).
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Root suite about 175 s; API suite about 75 s.
-- **Previous handoff**: p0-02-v0-corrected (issue #7) at SPECIFY complete awaiting human approval; its artifacts remain at `.specs/features/p0-02-v0-corrected/`.
+- **Branch**: t3/issue-56 (base `origin/develop`; PR base `develop`).
+- **Baseline**: root suite 535 OK (2 skipped), API suite 160 OK at `a61164a`.
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root.
+- **Previous handoff**: protection-zone (issue #46) merged in PR #54; its T17 (October-to-November turnover measurement) is still DEFERRED pending a November snapshot.
