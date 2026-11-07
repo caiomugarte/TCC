@@ -313,6 +313,11 @@ def _selector_config(section: Mapping[str, Any]) -> dict[str, Any]:
         if not isinstance(zone, Mapping):
             raise PremiumOptimizationError("selector protection zone is invalid", "policy_invalid")
         config["protection_zone"] = dict(zone)
+    cap = section.get("max_per_segment")
+    if cap is not None:
+        if not isinstance(cap, int) or isinstance(cap, bool) or cap < 1:
+            raise PremiumOptimizationError("selector segment cap is invalid", "policy_invalid")
+        config["max_per_segment"] = int(cap)
     return config
 
 

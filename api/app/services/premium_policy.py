@@ -9,7 +9,7 @@ from typing import Any, Mapping, Sequence
 from app.db.models import ProfileRecord
 
 
-POLICY_VERSION = "premium-policy-v3"
+POLICY_VERSION = "premium-policy-v4"
 BASIC_POLICY_VERSION = "basic-policy-v2"
 RULES_VERSION = POLICY_VERSION
 PROFILE_SCHEMA_VERSION = 1
@@ -58,25 +58,33 @@ STOCK_RULES = {
     },
 }
 
+# Premium FII counts (issue #56): 4/5/6 funds, buyable with whole quotas.
 FII_RULES = {
     "conservador": {
-        "n_assets": 10,
+        "n_assets": 4,
         "factor_weights": {"liquidity": 0.30, "size_cash": 0.25, "value": 0.15, "growth": 0.10, "dividend": 0.20},
         "filters": {"size_min": 3_000_000_000, "liq_min": 2_000_000},
         "lambda_hhi": 0.50,
     },
     "moderado": {
-        "n_assets": 12,
+        "n_assets": 5,
         "factor_weights": {"liquidity": 0.20, "size_cash": 0.25, "value": 0.25, "growth": 0.20, "dividend": 0.10},
         "filters": {"size_min": 1_000_000_000, "liq_min": 500_000},
         "lambda_hhi": 0.25,
     },
     "arrojado": {
-        "n_assets": 15,
+        "n_assets": 6,
         "factor_weights": {"liquidity": 0.10, "size_cash": 0.20, "value": 0.20, "growth": 0.40, "dividend": 0.10},
         "filters": {"size_min": 200_000_000, "liq_min": 50_000},
         "lambda_hhi": 0.10,
     },
+}
+
+# Basic keeps the pre-#56 FII counts (spec A-2, Q1).
+BASIC_FII_ASSET_COUNTS = {"conservador": 10, "moderado": 12, "arrojado": 15}
+
+BASIC_FII_RULES = {
+    band: {**rules, "n_assets": BASIC_FII_ASSET_COUNTS[band]} for band, rules in FII_RULES.items()
 }
 
 # Protection zone (issue #46, AD-022): K = n_assets + k_offset. Values from
@@ -85,6 +93,18 @@ PROTECTION_ZONE = {
     "stocks": {"k_offset": 6, "delta": 0.11},
     "fiis": {"k_offset": 3, "delta": 0.11},
 }
+
+# FII segment cap (issue #56, AD-027): at most this many Premium FIIs per SETOR.
+FII_MAX_PER_SEGMENT = 2
+
+# Selection method versions persisted in provenance. The Premium FII method
+# changed with the segment cap (#56); Basic keeps the uncapped v1 method.
+PREMIUM_MODEL_VERSIONS = {
+    "allocation": "allocation-v1",
+    "stocks": "stock-selection-v1",
+    "fiis": "fii-selection-v2",
+}
+BASIC_MODEL_VERSIONS = {**PREMIUM_MODEL_VERSIONS, "fiis": "fii-selection-v1"}
 
 
 class PremiumPolicyError(ValueError):
@@ -124,6 +144,7 @@ class SelectorPolicy:
     lambda_hhi: float
     system_ga_config: Mapping[str, int | float | bool]
     protection_zone: Mapping[str, object] | None = None
+    max_per_segment: int | None = None
 
 
 @dataclass(frozen=True)
@@ -174,6 +195,8 @@ def _selector_dict(section: SelectorPolicy) -> dict[str, object]:
     value = _section_dict(section)
     if value.get("protection_zone") is None:
         value.pop("protection_zone", None)
+    if value.get("max_per_segment") is None:
+        value.pop("max_per_segment", None)
     return value
 
 
@@ -421,20 +444,16 @@ def resolve_premium_policy(
     selector_score = _selector_score(score, checked_dimensions)
     allocation = _allocation_policy(score, restriction_set)
     stocks = _protection_zone(_selector_policy(STOCK_RULES, selector_score, restriction_set), "stocks")
-    fiis = _protection_zone(_selector_policy(FII_RULES, selector_score, restriction_set), "fiis")
+    fiis = replace(
+        _protection_zone(_selector_policy(FII_RULES, selector_score, restriction_set), "fiis"),
+        max_per_segment=FII_MAX_PER_SEGMENT,
+    )
     cutoff = cutoff_date.isoformat() if isinstance(cutoff_date, date) else cutoff_date
     if random_seed is not None and not isinstance(random_seed, int):
         raise PremiumPolicyError("random seed must be an integer")
     provenance = Provenance(
         policy_version=rules_version,
-        model_versions=dict(
-            model_versions
-            or {
-                "allocation": "allocation-v1",
-                "stocks": "stock-selection-v1",
-                "fiis": "fii-selection-v1",
-            }
-        ),
+        model_versions=dict(model_versions or PREMIUM_MODEL_VERSIONS),
         source_snapshot_ids=tuple(str(value) for value in source_snapshot_ids),
         source_snapshot_hashes=dict(source_snapshot_hashes or {}),
         cutoff_date=cutoff,
@@ -479,11 +498,16 @@ def resolve_basic_policy(
     if selector_score is None:
         raise PremiumPolicyError(f"unsupported generic profile: {generic_profile}")
     restrictions = set(resolved.profile.restrictions)
+    model_versions = dict(kwargs.get("model_versions") or BASIC_MODEL_VERSIONS)
     return replace(
         resolved,
         stocks=_selector_policy(STOCK_RULES, selector_score, restrictions),
-        fiis=_selector_policy(FII_RULES, selector_score, restrictions),
-        provenance=replace(resolved.provenance, policy_version=rules_version),
+        fiis=_selector_policy(BASIC_FII_RULES, selector_score, restrictions),
+        provenance=replace(
+            resolved.provenance,
+            policy_version=rules_version,
+            model_versions=model_versions,
+        ),
     )
 
 
