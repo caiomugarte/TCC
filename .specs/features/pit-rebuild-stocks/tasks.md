@@ -210,9 +210,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cache.py`: miss downloads once and records the manifest entry; second `get` makes zero requests (SRC-02); a byte flipped in a cached file makes `verify` raise exit 4 naming the file (SRC-03); HTTP error, timeout and a non-zip body on a required `.zip` each raise exit 5 naming the URL and keep previously cached files (SRC-04); offline miss raises exit 5 when required and returns `None` when not; offline mode makes zero calls to the opener (CLI-02); `head_size` records `Content-Length`.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_cache.py`
-- [ ] Test count: ≥ 8 tests pass
+- [x] `tests/test_pit_rebuild_cache.py`: miss downloads once and records the manifest entry; second `get` makes zero requests (SRC-02); a byte flipped in a cached file makes `verify` raise exit 4 naming the file (SRC-03); HTTP error, timeout and a non-zip body on a required `.zip` each raise exit 5 naming the URL and keep previously cached files (SRC-04); offline miss raises exit 5 when required and returns `None` when not; offline mode makes zero calls to the opener (CLI-02); `head_size` records `Content-Length`.
+- [x] Gate check passes: Quick for `test_pit_rebuild_cache.py`
+- [x] Test count: ≥ 8 tests pass
 
 **Tests**: unit
 **Gate**: quick

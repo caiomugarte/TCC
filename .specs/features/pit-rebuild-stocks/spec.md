@@ -178,7 +178,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
 | SRC-01 | P1 rebuild | Tasks (T5, T6, T18) | In Tasks |
-| SRC-02 | P1 rebuild | Tasks (T5) | In Tasks |
+| SRC-02 | P1 rebuild | Tasks (T5) | Done (T5) |
 | SRC-03 | P1 rebuild | Tasks (T5, T17) | In Tasks |
 | SRC-04 | P1 rebuild | Tasks (T5, T18) | In Tasks |
 | SRC-05 | P1 rebuild | Tasks (T10, T18) | In Tasks |
