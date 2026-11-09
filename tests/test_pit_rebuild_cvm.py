@@ -24,9 +24,13 @@ from pit_rebuild_support import make_zip  # noqa: E402
 FIXTURES = PROJECT_ROOT / "tests" / "fixtures" / "pit_rebuild" / "cvm"
 ALFA = "11.111.111/0001-11"
 BETA = "22.222.222/0001-22"
+GAMA = "33.333.333/0001-33"
+DELTA = "44.444.444/0001-44"
+EPSILON = "55.555.555/0001-55"
 EDGE = "66.666.666/0001-66"
 INDIV = "77.777.777/0001-77"
 REFILED = "88.888.888/0001-88"
+SOLO = "99.999.999/0001-99"
 PENULTIMO = "PENÚLTIMO"
 
 
@@ -40,7 +44,27 @@ def zip_folder(folder: Path, out: Path, index_header_rename: tuple[str, str] | N
     return out
 
 
-class FilingStoreTests(unittest.TestCase):
+def itr_only_stores(tmp: Path) -> tuple[cvm.FilingStore, cvm.FilingStore]:
+    """A company with an ITR and no DFP at all, so the fiscal year before its year-to-date is missing."""
+    index = (
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+        f"{SOLO};2026-03-31;1;SOLO S.A.;1099;ITR;1;2026-05-10 18:00:00;\n"
+    )
+    dre = (
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;ESCALA_MOEDA;ORDEM_EXERC;DT_INI_EXERC;DT_FIM_EXERC;CD_CONTA;DS_CONTA;VL_CONTA;ST_CONTA_FIXA\n"
+        f"{SOLO};2026-03-31;1;SOLO S.A.;1099;UNIDADE;ÚLTIMO;2026-01-01;2026-03-31;3.01;Receita;2800.00;S\n"
+        f"{SOLO};2026-03-31;1;SOLO S.A.;1099;UNIDADE;PENÚLTIMO;2025-01-01;2025-03-31;3.01;Receita;2300.00;S\n"
+    )
+    itr_zip = tmp / "itr_cia_aberta_2026.zip"
+    itr_zip.write_bytes(make_zip({"itr_cia_aberta_2026.csv": index, "itr_cia_aberta_DRE_con_2026.csv": dre}))
+    dfp_zip = tmp / "dfp_cia_aberta_2025.zip"
+    dfp_zip.write_bytes(make_zip({}))
+    return cvm.load_filings([dfp_zip], cvm.DFP), cvm.load_filings([itr_zip], cvm.ITR)
+
+
+class StoreCase(unittest.TestCase):
+    """The DFP and ITR stores of the fixtures, built once per test class."""
+
     @classmethod
     def setUpClass(cls):
         cls._tmp = tempfile.TemporaryDirectory()
@@ -52,6 +76,8 @@ class FilingStoreTests(unittest.TestCase):
     def tearDownClass(cls):
         cls._tmp.cleanup()
 
+
+class FilingStoreTests(StoreCase):
     def test_receipt_on_d_is_usable_and_receipt_on_d_plus_one_is_not(self):
         # EDGE's DFP was received 2026-08-07 12:00; its ITR 2026-08-08 09:00.
         d = date(2026, 8, 7)
@@ -111,6 +137,100 @@ class FilingStoreTests(unittest.TestCase):
                 cvm.load_filings([broken], cvm.DFP)
         self.assertEqual(ctx.exception.exit_code, 4)
         self.assertIn("DT_RECEB", ctx.exception.reason)
+
+
+class AccessorTests(StoreCase):
+    def test_ttm_after_an_itr_is_fy_prev_plus_ytd_minus_prior_ytd(self):
+        # ALFA at 2025-08-14: ITR 2025-06-30 (received 2025-08-10): 12000 + 6000 - 5000.
+        # The three-month rows would give 12000 + 3000 - 2600 = 12400.
+        value = cvm.ttm(self.dfp, self.itr, ALFA, date(2025, 8, 14), "3.01")
+        self.assertEqual(value, cvm.Dated(13000.0, date(2025, 8, 10)))
+        self.assertNotEqual(value.value, 12400.0)
+
+    def test_ttm_of_a_fiscal_year_starting_in_june_uses_the_dfp_ending_2025_05_31(self):
+        # BETA at 2026-01-12: ITR 2025-11-30 (fiscal year from 2025-06-01): 40000 (MIL) + 22000 - 20000.
+        value = cvm.ttm(self.dfp, self.itr, BETA, date(2026, 1, 12), "3.01")
+        self.assertEqual(value, cvm.Dated(42000.0, date(2026, 1, 12)))
+
+    def test_ttm_after_a_dfp_is_its_annual_value(self):
+        # At 2025-05-01 the ITR of 2025-03-31 (received 2025-05-12) is not usable; the DFP 2024 is.
+        self.assertEqual(cvm.ttm(self.dfp, self.itr, ALFA, date(2025, 5, 1), "3.01"), cvm.Dated(12000.0, date(2025, 3, 20)))
+
+    def test_ttm_is_none_when_the_fiscal_year_before_is_missing(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            empty_dfp, solo_itr = itr_only_stores(Path(tmp))
+            self.assertIsNone(cvm.ttm(empty_dfp, solo_itr, SOLO, date(2026, 5, 10), "3.01"))
+
+    def test_ttm_year_before_is_the_same_flow_one_year_earlier(self):
+        d = date(2026, 8, 7)
+        self.assertEqual(cvm.ttm(self.dfp, self.itr, ALFA, d, "3.01"), cvm.Dated(16000.0, date(2026, 8, 6)))
+        # 2025-06-30 TTM: 12000 + 6000 - 5000.
+        self.assertEqual(cvm.ttm_year_before(self.dfp, self.itr, ALFA, d, "3.01"), cvm.Dated(13000.0, date(2025, 8, 10)))
+
+    def test_annual_reads_the_dfp_five_fiscal_years_back_and_is_none_when_absent(self):
+        d = date(2026, 8, 7)
+        self.assertEqual(cvm.annual(self.dfp, ALFA, d, "3.01"), cvm.Dated(15000.0, date(2026, 3, 26)))
+        self.assertEqual(cvm.annual(self.dfp, ALFA, d, "3.01", years_back=5), cvm.Dated(8000.0, date(2021, 3, 30)))
+        self.assertIsNone(cvm.annual(self.dfp, BETA, date(2026, 1, 12), "3.01", years_back=5))
+
+    def test_balance_takes_the_account_of_the_newest_usable_period(self):
+        d = date(2026, 8, 7)
+        self.assertEqual(cvm.balance(self.dfp, self.itr, ALFA, d, "2.03"), cvm.Dated(31000.0, date(2026, 8, 6)))
+        self.assertEqual(cvm.balance(self.dfp, self.itr, ALFA, d, "1"), cvm.Dated(66000.0, date(2026, 8, 6)))
+        # ITR 2025-06-30 is the newest usable period at 2026-03-01; the DFP 2024 is at 2025-05-01.
+        self.assertEqual(cvm.balance(self.dfp, self.itr, ALFA, date(2026, 3, 1), "2.03").value, 26000.0)
+        self.assertEqual(cvm.balance(self.dfp, self.itr, ALFA, date(2025, 5, 1), "2.03").value, 25000.0)
+
+    def test_shares_are_the_issued_counts_of_the_newest_usable_filing_treasury_not_subtracted(self):
+        # GAMA: the ITR 2026-03-31 (received 2026-05-14) is newer than the DFP 2025-12-31 (ON 700000000).
+        self.assertEqual(
+            cvm.shares(self.dfp, self.itr, GAMA, date(2026, 8, 7)),
+            cvm.Shares(on=705260684, pref=547818424, total=1253079108, dt_receb=date(2026, 5, 14)),
+        )
+
+    def test_shares_are_none_when_the_newest_total_is_zero_even_if_an_older_filing_has_counts(self):
+        # DELTA 2025-12-31 files 0;0;0; its 2024-12-31 filing (1000/2000/3000) is not used instead.
+        self.assertIsNone(cvm.shares(self.dfp, self.itr, DELTA, date(2026, 8, 7)))
+
+    def test_shares_are_none_when_the_newest_filing_has_no_composition_row(self):
+        # EPSILON 2025-12-31 has no composicao_capital row; its 2024-12-31 row (500/500) is not used.
+        self.assertIsNone(cvm.shares(self.dfp, self.itr, EPSILON, date(2026, 8, 7)))
+
+    def test_share_scale_picks_the_factor_that_matches_b3_or_is_unverified(self):
+        self.assertEqual(cvm.share_scale(31_258 + 61_361, 92_619_256), (1000, True))  # EUCATEX, counts in thousands
+        self.assertEqual(cvm.share_scale(1_253_079_108, 1_253_079_108), (1, True))
+        self.assertEqual(cvm.share_scale(92_619, None), (1, False))
+        self.assertEqual(cvm.share_scale(92_619, 0), (1, False))
+
+    def test_share_scale_refuses_a_zero_count(self):
+        with self.assertRaises(ValueError):
+            cvm.share_scale(0, 92_619_256)
+
+    def test_dre_description_is_read_from_the_newest_usable_filing(self):
+        self.assertEqual(
+            cvm.dre_description(self.dfp, self.itr, ALFA, date(2026, 8, 7)),
+            "Receita de Venda de Bens e/ou Serviços",
+        )
+        self.assertEqual(
+            cvm.dre_description(self.dfp, self.itr, INDIV, date(2026, 3, 25)),
+            "Receitas da Intermediação Financeira",
+        )
+        self.assertIsNone(cvm.dre_description(self.dfp, self.itr, EDGE, date(2026, 8, 6)))
+
+    def test_every_value_carries_a_dt_receb_not_after_d(self):
+        for d in (date(2025, 5, 1), date(2025, 8, 14), date(2026, 3, 1), date(2026, 8, 7)):
+            for cnpj in (ALFA, BETA, GAMA, DELTA, EPSILON, INDIV, REFILED):
+                results = [
+                    cvm.ttm(self.dfp, self.itr, cnpj, d, "3.01"),
+                    cvm.ttm_year_before(self.dfp, self.itr, cnpj, d, "3.01"),
+                    cvm.annual(self.dfp, cnpj, d, "3.01"),
+                    cvm.balance(self.dfp, self.itr, cnpj, d, "2.03"),
+                    cvm.shares(self.dfp, self.itr, cnpj, d),
+                ]
+                for result in results:
+                    if result is not None:
+                        with self.subTest(cnpj=cnpj, d=d):
+                            self.assertLessEqual(result.dt_receb, d)
 
 
 if __name__ == "__main__":

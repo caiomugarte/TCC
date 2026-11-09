@@ -16,9 +16,10 @@ Dates are read from their first ten characters, so a time after the date is acce
 
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, timedelta
 import csv
 import io
+import math
 from pathlib import Path
 import re
 import zipfile
@@ -30,6 +31,7 @@ ITR = "ITR"
 CONSOLIDATED = "consolidated"
 INDIVIDUAL = "individual"
 ULTIMO = "ÚLTIMO"
+PENULTIMO = "PENÚLTIMO"
 SCALE = {"MIL": 1000, "UNIDADE": 1}
 
 _INDEX = re.compile(r"^(dfp|itr)_cia_aberta_(\d{4})\.csv$", re.IGNORECASE)
@@ -58,6 +60,24 @@ class Filing:
     dt_receb: date
     versao: int
     statement: str
+
+
+@dataclass(frozen=True)
+class Dated:
+    """A value and the DT_RECEB of the filing it comes from."""
+
+    value: float
+    dt_receb: date
+
+
+@dataclass(frozen=True)
+class Shares:
+    """Issued shares of the newest usable filing, treasury included (A-17)."""
+
+    on: int
+    pref: int
+    total: int
+    dt_receb: date
 
 
 @dataclass(frozen=True)
@@ -154,6 +174,85 @@ def row_at(store: FilingStore, cnpj: str, dt_refer: date, account: str, ordem: s
     return None if row is None else (row.dt_ini, row.value)
 
 
+def ttm(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str) -> Dated | None:
+    """Trailing-12-month flow of a DRE account at d (IND-01).
+
+    A DFP gives its annual value. An ITR gives FY_prev + YTD - YTD_prev, where FY_prev is
+    the usable DFP whose period ends the day before the ITR's fiscal year-to-date starts.
+    """
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    return None if newest is None else _ttm_of(dfp, cnpj, d, account, newest)
+
+
+def ttm_year_before(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str) -> Dated | None:
+    """The same flow one year before the newest usable period (the PEG RATIO denominator, A-8)."""
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    if newest is None:
+        return None
+    earlier = _usable_in_either(dfp, itr, cnpj, _shift_years(newest.filing.dt_refer, -1), d)
+    return None if earlier is None else _ttm_of(dfp, cnpj, d, account, earlier)
+
+
+def annual(dfp: FilingStore, cnpj: str, d: date, account: str, years_back: int = 0) -> Dated | None:
+    """Fiscal-year value of a DRE account, years_back fiscal years before the newest usable DFP (CAGR)."""
+    usable_dfp = [p for p in dfp.periods(cnpj) if p.filing.dt_receb <= d]
+    if not usable_dfp:
+        return None
+    base = max(usable_dfp, key=lambda p: p.filing.dt_refer)
+    period = _usable_period(dfp, cnpj, _shift_years(base.filing.dt_refer, -years_back), d)
+    if period is None:
+        return None
+    row = period.dre.get((account, ULTIMO))
+    return None if row is None else Dated(row.value, period.filing.dt_receb)
+
+
+def balance(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str) -> Dated | None:
+    """A balance-sheet account (BPA or BPP) at the end of the newest usable period (IND-01)."""
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    if newest is None:
+        return None
+    value = newest.bal.get(account)
+    return None if value is None else Dated(value, newest.filing.dt_receb)
+
+
+def shares(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Shares | None:
+    """Issued shares per class from the newest usable filing, DFP or ITR (A-17).
+
+    None when that filing has no composicao_capital row for the company or its total is 0.
+    An older filing is never used instead (A-18).
+    """
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    if newest is None or newest.composition is None:
+        return None
+    on, pref, total = newest.composition
+    if total <= 0:
+        return None
+    return Shares(on=on, pref=pref, total=total, dt_receb=newest.filing.dt_receb)
+
+
+def share_scale(cvm_total: int, b3_total: int | None) -> tuple[int, bool]:
+    """Scale factor f in {1, 1000} of a CVM share count, and whether B3 verified it (A-18).
+
+    The factor minimises |log10(cvm_total * f / b3_total)|. Without a positive B3 count
+    the factor is 1 and the result is unverified.
+    """
+    if b3_total is None or b3_total <= 0:
+        return 1, False
+    if cvm_total <= 0:
+        raise ValueError("share_scale needs a positive CVM share count")
+    factor = min((1, 1000), key=lambda f: abs(math.log10(cvm_total * f / b3_total)))
+    return factor, True
+
+
+def dre_description(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str = "3.01") -> str | None:
+    """DS_CONTA of the ÚLTIMO DRE row of an account in the newest usable filing (A-10)."""
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    if newest is None:
+        return None
+    row = newest.dre.get((account, ULTIMO))
+    return None if row is None else row.desc
+
+
 def load_cadastro(path: Path) -> dict[str, dict[str, str]]:
     """CNPJ -> {cd_cvm, setor_ativ, sit} from the CVM cadastro (A-9, A-10)."""
     path = Path(path)
@@ -175,6 +274,43 @@ def load_cadastro(path: Path) -> dict[str, dict[str, str]]:
 def _newest_usable(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> _Period | None:
     candidates = [p for store in (dfp, itr) for p in store.periods(cnpj) if p.filing.dt_receb <= d]
     return max(candidates, key=lambda p: p.filing.dt_refer, default=None)
+
+
+def _usable_period(store: FilingStore, cnpj: str, dt_refer: date, d: date) -> _Period | None:
+    period = store.period(cnpj, dt_refer)
+    return period if period is not None and period.filing.dt_receb <= d else None
+
+
+def _usable_in_either(dfp: FilingStore, itr: FilingStore, cnpj: str, dt_refer: date, d: date) -> _Period | None:
+    for store in (dfp, itr):
+        period = _usable_period(store, cnpj, dt_refer, d)
+        if period is not None:
+            return period
+    return None
+
+
+def _ttm_of(dfp: FilingStore, cnpj: str, d: date, account: str, period: _Period) -> Dated | None:
+    if period.filing.kind == DFP:
+        row = period.dre.get((account, ULTIMO))
+        return None if row is None else Dated(row.value, period.filing.dt_receb)
+    ytd = period.dre.get((account, ULTIMO))
+    prior = period.dre.get((account, PENULTIMO))
+    if ytd is None or prior is None:
+        return None
+    fy_prev = _usable_period(dfp, cnpj, ytd.dt_ini - timedelta(days=1), d)
+    if fy_prev is None:
+        return None
+    annual_row = fy_prev.dre.get((account, ULTIMO))
+    if annual_row is None:
+        return None
+    return Dated(annual_row.value + ytd.value - prior.value, max(period.filing.dt_receb, fy_prev.filing.dt_receb))
+
+
+def _shift_years(day: date, years: int) -> date:
+    try:
+        return day.replace(year=day.year + years)
+    except ValueError:  # 29 February in a non-leap year
+        return day.replace(year=day.year + years, day=28)
 
 
 def _latest_versions(paths: list[Path], prefix: str) -> dict[tuple[str, date], tuple[int, date]]:
