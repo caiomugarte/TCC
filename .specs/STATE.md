@@ -254,22 +254,14 @@
 
 ## Handoff
 
-- **Feature**: premium-whole-units (issue #57) - `.specs/features/premium-whole-units/`
-- **Phase / Task**: EXECUTE complete for T1-T13 (b1: Phases 1-2; b2: Phases 3-4). Verified 2026-11-09 by an independent Verifier (`iw-57-verify-r1`): PASS, 0 blocking, 4 nonblocking (G1-G4 in `validation.md`). `validate_state.py premium-whole-units` exits 0.
-- **Completed** (commit - task): `c649dcf` T1, `6eef239` T2, `1cf4ed3` T3, `f732afd` T4, `495834e` T5, `c91752e` T6, `800125a` T7, `297e023` T8, `fd7defc` T9, `55eebea` T10, `0d3eba7` T11, `c60c07b` T12, `413c744` T13.
+- **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
+- **Phase / Task**: SPECIFY, DESIGN and TASKS drafted (2026-11-09, delegation `iw-59-spec-r1`); EXECUTE not started. `validate_spec.py` 0/0; `validate_tasks.py` 0 errors, 1 expected warning (T19 docs-only, matrix says none).
+- **Pending human checkpoint**: approve spec defaults A-1..A-14, design approach A (stdlib package, `fetch` + `report`), AD-031 (proposed) and the task list (T1-T20, counted 21; T20 heavy real run). Execute only after that approval.
+- **Completed**: spec.md, design.md, tasks.md, AD-031. No production code.
 - **In-progress** (file:line): none.
-- **Next step**: PR to `develop`. Optional follow-ups from `validation.md`: G1/G2 tighten the web regex tests (FII and stock `ClassCash` call sites, the `overTargetBrl > 0` gate, the dropped-row unit price); G3 add the latest route to the legacy-read test; G4 chain the `refresh_inputs` hash into `load_selector_prices` in one test. Sensor: API 26/26 non-equivalent mutants killed (M12, zero-weight class residual, is equivalent because class weights are rounded to 6 decimals before the 1e-9 gate); web 1/5 killed.
+- **Next step**: human review of the three artifacts; then Execute Phase 1 (T1-T6).
 - **Blockers**: none.
-- **Uncommitted files**: `web/node_modules`, a symlink to the main checkout. Untracked and not ignored by git (the `node_modules/` pattern matches directories only). Never stage it.
-- **Branch**: t3/issue-57 (base `origin/develop` `af1080e`; PR base `develop`). Nothing pushed.
-- **Counts at the end of b2** (2026-11-09): API 218 OK (205.8 s); root 587 OK, 2 skipped (182.0 s); web static 14 pass; `npm run typecheck` exit 0; `compileall` OK.
-- **Deviations for the Verifier**:
-  - N5 is implemented: the executor passes `whole_units` only when `run.plan == "premium"` and the policy declares `whole-units-v1` (`api/app/services/premium_executor.py`). Spec A-3 and design.md say so.
-  - T9 changed four existing integration tests outside the named list: in `api/tests/test_premium_integration.py`, the zone and cap runners accept and forward `whole_units`, and their selector inputs are priced CSVs (`priced_selector_inputs`). Assertions are unchanged. Reason: the real Premium policy declares the flag, so the old fixtures failed with `engine_error`.
-  - T12 has two static tests, not one: the REVIEW.md copied-name rule needs a comparison of web type names with the API aliases. The web count is 14, not 13.
-  - No API reason string is copied into `web/`. The T13 test walks `web/**/*.ts(x)` and asserts that "não coube no capital" and "mínimo de 3 FIIs" are absent.
-  - The sleeve maps stay inline in the view. The b1 test "both plans render classes, stock and FII sleeves" asserts `completed.stocks.map`.
-  - `test_dropped_lists_are_not_incumbents` passes on the pre-change code by construction. It guards LOT-20.
-  - Mutants the implementer already caught (the Verifier's sensor may still add more): executor plan check removed; flag always on; zero quantity kept; bool counted as int; `*_dropped` read as incumbents; missing quantity read as zero; adapter wiring off; web type dropped and renamed; API field renamed; price-note gate removed; legacy branch removed; reason copied into `web/`; BRL formatter replaced.
-- **Previous handoff**: fii-segment-cap (issue #56) merged in `af1080e` (#58). protection-zone (#46) T17 is still DEFERRED pending a November snapshot. Observation carried over: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run".
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
+- **Unverified points carried into Execute**: ITR zip member names assumed equal to DFP's (listing checked, members not); B3 `GetListedSupplementCompany` is an undocumented endpoint (worked on 2026-11-09 for `PETR`); Status Invest formulas (design.md table) and the 30-session liquidity window are readings to be measured, not facts.
+- **Branch**: t3/issue-59 (base `develop`). Nothing pushed.
+- **Previous handoff**: premium-whole-units (issue #57) merged into `develop` via #61 (`9f65467`). protection-zone (#46) T17 is still DEFERRED pending a November snapshot. Observation carried over: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run".
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest); system `python3` 3.14.4 without pandas runs the stdlib-only `pit_rebuild` tests. Run from the worktree root. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
