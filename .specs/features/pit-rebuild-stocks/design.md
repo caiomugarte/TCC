@@ -1,7 +1,7 @@
 # PIT Rebuild Feasibility for Stocks Design
 
 **Spec**: `.specs/features/pit-rebuild-stocks/spec.md`
-**Status**: Draft r3 (review findings S1-S14 addressed; pending human approval, together with spec A-1..A-18)
+**Status**: Draft r4 (review findings S1-S20 addressed; pending human approval, together with spec A-1..A-19)
 
 ---
 
