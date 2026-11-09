@@ -435,9 +435,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_compare.py` extended: 90.0 → `reconstruível`, 89.99 and 70.0 → `com ressalvas`, 69.99 → `não reconstruível`, denominator 0 → `sem referência`; `overall` takes the worse date and ignores `sem referência`; class verdict = worst of the 16 non-financial fields; a `não reconstruível` financial field or a `não reconstruível` `LIQUIDEZ MEDIA DIARIA` does not change the class verdict but appears in its own field; an unclassified ticker missing every field lowers `class` but not `class_without_unclassified`, and `differs` is `True` exactly then.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_compare.py`
-- [ ] Test count: ≥ 18 tests pass in the file (T13's plus ≥ 6)
+- [x] `tests/test_pit_rebuild_compare.py` extended: 90.0 → `reconstruível`, 89.99 and 70.0 → `com ressalvas`, 69.99 → `não reconstruível`, denominator 0 → `sem referência`; `overall` takes the worse date and ignores `sem referência`; class verdict = worst of the 16 non-financial fields; a `não reconstruível` financial field or a `não reconstruível` `LIQUIDEZ MEDIA DIARIA` does not change the class verdict but appears in its own field; an unclassified ticker missing every field lowers `class` but not `class_without_unclassified`, and `differs` is `True` exactly then.
+- [x] Gate check passes: Quick for `test_pit_rebuild_compare.py`
+- [x] Test count: ≥ 18 tests pass in the file (T13's plus ≥ 6) (19 tests pass: 13 from T13, 6 new)
 
 **Tests**: unit
 **Gate**: quick

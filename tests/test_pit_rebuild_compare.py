@@ -13,6 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 
 from pit_rebuild import compare  # noqa: E402
+from pit_rebuild.fields import SCORE_FIELDS  # noqa: E402
 
 
 class ToleranceTests(unittest.TestCase):
@@ -108,6 +109,74 @@ class StatisticsTests(unittest.TestCase):
         self.assertEqual((stats.within, stats.denominator), (1, 2))
         self.assertEqual(stats.diff_unit, "pp")
         self.assertAlmostEqual(stats.median_diff, 0.6)
+
+
+def uniform_verdicts(value: str) -> dict[str, dict[str, str]]:
+    return {
+        field: {"non_financial": value, "non_financial_without_unclassified": value, "financial": value}
+        for field in SCORE_FIELDS
+    }
+
+
+class VerdictTests(unittest.TestCase):
+    def test_verdict_boundaries_are_90_and_70_points_inclusive_from_below(self):
+        self.assertEqual(compare.verdict(90.0, 10), compare.RECONSTRUIVEL)
+        self.assertEqual(compare.verdict(89.99, 10), compare.COM_RESSALVAS)
+        self.assertEqual(compare.verdict(70.0, 10), compare.COM_RESSALVAS)
+        self.assertEqual(compare.verdict(69.99, 10), compare.NAO_RECONSTRUIVEL)
+
+    def test_a_zero_denominator_is_sem_referencia(self):
+        self.assertEqual(compare.verdict(None, 0), compare.SEM_REFERENCIA)
+        self.assertEqual(compare.verdict(0.0, 0), compare.SEM_REFERENCIA)
+
+    def test_overall_takes_the_worse_date_and_ignores_sem_referencia(self):
+        self.assertEqual(compare.overall(compare.RECONSTRUIVEL, compare.COM_RESSALVAS), compare.COM_RESSALVAS)
+        self.assertEqual(compare.overall(compare.NAO_RECONSTRUIVEL, compare.SEM_REFERENCIA), compare.NAO_RECONSTRUIVEL)
+        self.assertEqual(compare.overall(compare.SEM_REFERENCIA, compare.RECONSTRUIVEL), compare.RECONSTRUIVEL)
+        self.assertEqual(compare.overall(compare.SEM_REFERENCIA, compare.SEM_REFERENCIA), compare.SEM_REFERENCIA)
+
+    def test_class_verdict_is_the_worst_of_the_16_non_financial_fields(self):
+        verdicts = uniform_verdicts(compare.RECONSTRUIVEL)
+        self.assertEqual(compare.class_verdict(verdicts)["class"], compare.RECONSTRUIVEL)
+        verdicts[SCORE_FIELDS[0]]["non_financial"] = compare.COM_RESSALVAS
+        self.assertEqual(compare.class_verdict(verdicts)["class"], compare.COM_RESSALVAS)
+        verdicts[SCORE_FIELDS[1]]["non_financial"] = compare.NAO_RECONSTRUIVEL
+        self.assertEqual(compare.class_verdict(verdicts)["class"], compare.NAO_RECONSTRUIVEL)
+
+    def test_a_non_reconstruivel_financial_field_or_liquidity_does_not_change_the_class(self):
+        verdicts = uniform_verdicts(compare.RECONSTRUIVEL)
+        verdicts[SCORE_FIELDS[0]]["financial"] = compare.NAO_RECONSTRUIVEL
+        result = compare.class_verdict(verdicts)
+        self.assertEqual((result["class"], result["financial"]), (compare.RECONSTRUIVEL, compare.NAO_RECONSTRUIVEL))
+        verdicts["LIQUIDEZ MEDIA DIARIA"] = {
+            "non_financial": compare.NAO_RECONSTRUIVEL,
+            "non_financial_without_unclassified": compare.NAO_RECONSTRUIVEL,
+            "financial": compare.NAO_RECONSTRUIVEL,
+        }
+        self.assertEqual(compare.class_verdict(verdicts)["class"], compare.RECONSTRUIVEL)
+
+    def test_an_unclassified_ticker_missing_every_field_lowers_the_class_and_differs_only_with_it(self):
+        # Ten tickers within, plus two unclassified tickers with no rebuilt value: 10 of 12 is 83.3 %.
+        within_tickers = [(f"M{i}", 10.0, 10.0, None) for i in range(10)]
+        unclassified = [("U1", 10.0, None, "no_quote"), ("U2", 10.0, None, "no_quote")]
+        with_unclassified, without_unclassified = {}, {}
+        for field in SCORE_FIELDS:
+            wide = compare.summarize(field, within_tickers + unclassified)
+            narrow = compare.summarize(field, within_tickers)
+            with_unclassified[field] = {
+                "non_financial": compare.verdict(wide.pct_within, wide.denominator),
+                "non_financial_without_unclassified": compare.verdict(narrow.pct_within, narrow.denominator),
+                "financial": compare.RECONSTRUIVEL,
+            }
+            without_unclassified[field] = {
+                "non_financial": compare.verdict(narrow.pct_within, narrow.denominator),
+                "non_financial_without_unclassified": compare.verdict(narrow.pct_within, narrow.denominator),
+                "financial": compare.RECONSTRUIVEL,
+            }
+        result = compare.class_verdict(with_unclassified)
+        self.assertEqual((result["class"], result["class_without_unclassified"]), (compare.COM_RESSALVAS, compare.RECONSTRUIVEL))
+        self.assertTrue(result["differs"])
+        self.assertFalse(compare.class_verdict(without_unclassified)["differs"])
 
 
 if __name__ == "__main__":

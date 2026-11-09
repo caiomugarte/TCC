@@ -11,18 +11,23 @@ denominator and is counted in reference_blank_as_zero. A ticker in the denominat
 value is outside tolerance and is listed with its reason.
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field as dataclass_field
 import math
 import statistics
 
-from .fields import tolerance_kind
+from .fields import SCORE_FIELDS, tolerance_kind
 
 RELATIVE_TOLERANCE_PCT = 5.0  # D-1: relative difference <= 5 %
 PP_TOLERANCE = 0.5  # A-2: percentage points for the percent indicators
 ROUNDING_DECIMALS = 2  # A-3: the CSV precision
 WORST_CASES = 10  # CMP-02: the 10 worst cases per indicator and date
 BLANK_DY_REFERENCE = 0.0  # A-4: a blank DY in Status Invest is 0.00 (production fills it, preprocessing.py:280-285)
+RECONSTRUIVEL = "reconstruível"
+COM_RESSALVAS = "com ressalvas"
+NAO_RECONSTRUIVEL = "não reconstruível"
+SEM_REFERENCIA = "sem referência"
+_RANK = {NAO_RECONSTRUIVEL: 0, COM_RESSALVAS: 1, RECONSTRUIVEL: 2}  # VER-02: the worse verdict has the lower rank
 
 
 @dataclass
@@ -116,3 +121,44 @@ def summarize(field: str, pairs: Iterable[tuple[str, float | None, float | None,
     worst = sorted(diffs, key=lambda item: (-item[0], item[1]))[:WORST_CASES]
     stats.worst = [{"ticker": ticker, "reference": ref, "rebuilt": calc, "diff": delta} for delta, ticker, ref, calc in worst]
     return stats
+
+
+def verdict(pct: float | None, denominator: int) -> str:
+    """The verdict of one indicator at one date from its share within tolerance (VER-01)."""
+    if denominator == 0 or pct is None:
+        return SEM_REFERENCIA
+    if pct >= 90:
+        return RECONSTRUIVEL
+    if pct >= 70:
+        return COM_RESSALVAS
+    return NAO_RECONSTRUIVEL
+
+
+def worst(verdicts: Iterable[str]) -> str:
+    """The worst of some verdicts; "sem referência" is ignored unless no other verdict is present (VER-02)."""
+    ranked = [_RANK[item] for item in verdicts if item in _RANK]
+    if not ranked:
+        return SEM_REFERENCIA
+    return next(name for name, rank in _RANK.items() if rank == min(ranked))
+
+
+def overall(first: str, second: str) -> str:
+    """The indicator or group verdict over two dates: the worse of the two (VER-02)."""
+    return worst([first, second])
+
+
+def class_verdict(verdicts: Mapping[str, Mapping[str, str]]) -> dict[str, object]:
+    """The class verdict from the 16 METRIC_GROUPS fields (VER-03, A-5).
+
+    verdicts[field] holds the overall verdicts of that field: "non_financial" (unclassified
+    tickers included), "non_financial_without_unclassified" and "financial". The class is the worst
+    of the non-financial verdicts; the financial group is reported apart and never changes it.
+    """
+    class_value = worst(verdicts[field]["non_financial"] for field in SCORE_FIELDS)
+    without_unclassified = worst(verdicts[field]["non_financial_without_unclassified"] for field in SCORE_FIELDS)
+    return {
+        "class": class_value,
+        "class_without_unclassified": without_unclassified,
+        "differs": class_value != without_unclassified,
+        "financial": worst(verdicts[field]["financial"] for field in SCORE_FIELDS),
+    }
