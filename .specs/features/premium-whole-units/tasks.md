@@ -315,14 +315,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] `test_model_versions_record_fii_selection_v2` updated as in the Test Strategy; `BASIC_GOLDEN_JSON` test untouched and green
-- [ ] Gate check passes: `(cd api && PYTHONPATH=.:../py $PY -m unittest tests.test_premium_policy)`
-- [ ] Test count: module count unchanged
+- [x] `test_model_versions_record_fii_selection_v2` updated as in the Test Strategy; `BASIC_GOLDEN_JSON` test untouched and green
+- [x] Gate check passes: `(cd api && PYTHONPATH=.:../py $PY -m unittest tests.test_premium_policy)`
+- [x] Test count: module count unchanged
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(policy): record whole-units-v1 in the Premium model versions (#57)`
+
+**Status**: ✅ Done - `tests.test_premium_policy` 38 OK (218 s, count unchanged; `BASIC_GOLDEN_JSON` test untouched and green). Test also pins `POLICY_VERSION == "premium-policy-v4"` and the resolved policy version.
 
 ---
 
