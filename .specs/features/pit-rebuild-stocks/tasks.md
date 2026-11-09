@@ -160,9 +160,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_fields.py`: `SCORE_FIELDS` equals the 16 names of `METRIC_GROUPS` in group order and `ALL_FIELDS` has 19; a temp config with an extra metric yields 17 score fields (proves it is read, not copied); `config` is not in `sys.modules` after importing `pit_rebuild.fields` in a subprocess; `tolerance_kind` returns `pp` for exactly the 8 A-2 fields.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_fields.py`
-- [ ] Test count: ≥ 4 tests pass
+- [x] `tests/test_pit_rebuild_fields.py`: `SCORE_FIELDS` equals the 16 names of `METRIC_GROUPS` in group order and `ALL_FIELDS` has 19; a temp config with an extra metric yields 17 score fields (proves it is read, not copied); `config` is not in `sys.modules` after importing `pit_rebuild.fields` in a subprocess; `tolerance_kind` returns `pp` for exactly the 8 A-2 fields.
+- [x] Gate check passes: Quick for `test_pit_rebuild_fields.py`
+- [x] Test count: ≥ 4 tests pass
 
 **Tests**: unit
 **Gate**: quick
