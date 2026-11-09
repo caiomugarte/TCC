@@ -242,18 +242,26 @@
 - **Trade-off**: The remainder loop can push a cheap ticker past its own target to use the cash; a floor-0 ticker can still get one unit (KNRI11/KNCR11 on run `3289af79` prices). Stock tie-breaks follow alphabetical selector order. After a revert, stored whole-unit results fail the pre-change `extra="forbid"` schema unless the schema commit is kept.
 - **Scope**: `api/app/services/whole_units.py`, `api/app/services/status_invest_inputs.py`, `api/app/adapters/premium_optimization.py`, `api/app/services/premium_executor.py`, `api/app/services/premium_policy.py`, `api/app/schemas/recommendation.py`, `api/app/routers/recommendations.py`, `web/`; #47 (re-runs inherit it). Feature: `.specs/features/premium-whole-units/`.
 - **Date**: 2026-11-09
-- **Status**: active - pending the orchestrator's spec review (defaults A-2, A-4, A-5..A-8)
+- **Status**: active - spec review approved; the orchestrator accepted defaults A-2, A-4, A-5..A-8 (2026-11-09)
 
 ## Handoff
 
 - **Feature**: premium-whole-units (issue #57) - `.specs/features/premium-whole-units/`
-- **Phase / Task**: SPECIFY, DESIGN and TASKS written (13 tasks in 4 phases, none heavy; high-risk `api/app/adapters/**`: T7, T8). Next: orchestrator spec review, then Execute batch b1 (Phase 1, T1-T5).
-- **Completed**: none.
+- **Phase / Task**: EXECUTE. Batch b1 (Phase 1 T1-T5, Phase 2 T6-T8) done. Next: batch b2 = Phase 3 (T9-T11) + Phase 4 (T12-T13), then the Verifier.
+- **Completed** (commit - task): `c649dcf` T1, `6eef239` T2, `1cf4ed3` T3, `f732afd` T4, `495834e` T5, `c91752e` T6, `800125a` T7, `297e023` T8.
 - **In-progress** (file:line): none.
-- **Next step**: review spec defaults A-2, A-4, A-5..A-8 (listed at the end of `tasks.md`); then T1.
+- **Next step**: T9 in `api/app/services/premium_executor.py`: `_declares_whole_units(policy_json)` (import `WHOLE_UNITS_MODEL_VERSION` from `app.services.premium_policy`, `:104`) and `runner_kwargs["whole_units"] = True` only when declared.
 - **Blockers**: none.
 - **Uncommitted files**: none.
 - **Branch**: t3/issue-57 (base `origin/develop` `af1080e`; PR base `develop`).
-- **Baseline at `af1080e`**: API suite 174 OK in 212 s (measured 2026-11-09); web static 9 pass (measured); root suite 587 OK, 2 skipped (from the #56 handoff, no root change since).
+- **Counts after b1** (Phase 2 Build gate, 2026-11-09): API 211 OK (247 s); root 587 OK, 2 skipped (240 s); web static 9 pass; `compileall` OK. b2 targets: API 218 after T11, web 13 after T13.
+- **What b2 must know**:
+  - The adapter's whole-unit step lives in `_buy_list` / `_whole_unit_rows` (`api/app/adapters/premium_optimization.py`) and runs after both selectors; keyword `whole_units` (default `False`) and `price_loader` (default `load_selector_prices`). The loader-error mapping and the spec-review N3 wrap (`ValueError` → `engine_error`) are already in T7; T8 is test-only.
+  - Off path output equals the `af1080e` golden (`PRE_CHANGE_GOLDEN` in `api/tests/test_premium_optimization.py`); `stocks_dropped` / `fiis_dropped` keys exist only when whole units are on, so readers must use `.get(..., [])` (the router already does).
+  - Test helpers ready for T11: `priced_inputs(directory, stock_rows, fii_rows)` writes real temp CSVs with their SHA-256 (`api/tests/test_premium_optimization.py`), `LOT_TEST_1_FIIS` holds the run-`3289af79` FII prices and expected quantities. Selector tickers must have a `PRECO` row in those CSVs or the run fails `engine_error`.
+  - `load_selector_prices` (`api/app/services/status_invest_inputs.py`) reads the bytes once, hashes them and parses the same buffer (spec review N2).
+  - Spec review N5 (executor) is open for b2.
+  - Route tests call the route functions directly (no `TestClient` in `api/tests`; the in-memory SQLite session is not shareable with the TestClient worker thread). T11's "through the route" can follow the same convention.
+  - Do not run another adapter scenario against `/tmp/prumo-test-run` while the API suite runs: the first Phase 1 Build run showed one API error that did not reproduce and overlapped such a scratch run.
 - **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. `web/node_modules` is absent in this worktree: symlink the main checkout's before `npm run typecheck`. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
 - **Previous handoff**: fii-segment-cap (issue #56) merged in `af1080e` (#58). protection-zone (#46) T17 is still DEFERRED pending a November snapshot. Observation carried over: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run".
