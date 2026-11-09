@@ -244,6 +244,14 @@
 - **Date**: 2026-11-09
 - **Status**: active - spec review approved; the orchestrator accepted defaults A-2, A-4, A-5..A-8 (2026-11-09)
 
+### AD-031
+- **Decision**: Point-in-time rule for CVM filings in stock-indicator rebuilds (issue #59). A DFP/ITR filing is usable at date `d` only when the `DT_RECEB` of its latest version (the version whose values the CVM yearly zips carry) is `<= d`; otherwise the rebuild falls back to the company's previous usable filing and counts the ticker as `refiled_after_d`. Quotes enter only from COTAHIST sessions `<= d`, dividends only with ex-date `<= d`. A dated input after `d` reaching the computation is an integrity error (exit 4), never a warning.
+- **Reason**: The CVM yearly zips keep only each filing's latest version while the index lists every version with its `DT_RECEB` (verified on `dfp_cia_aberta_2025.zip`: 76 companies with >1 version in the index, 0 in `DRE_con`). Using a restated version on a date before its delivery would leak the future; the strict rule keeps the issue's PIT criterion literally true.
+- **Trade-off**: Re-filed companies are rebuilt one period stale on dates between the first and the latest delivery. Recovering superseded versions from CVM RAD (`LINK_DOC`) is left to the full 2012-2026 rebuild.
+- **Scope**: `py/pit_rebuild/` (`.specs/features/pit-rebuild-stocks/`); the full-rebuild follow-up of #59 inherits it.
+- **Date**: 2026-11-09
+- **Status**: proposed - pending human approval of the `pit-rebuild-stocks` spec and design
+
 ## Handoff
 
 - **Feature**: premium-whole-units (issue #57) - `.specs/features/premium-whole-units/`
