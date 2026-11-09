@@ -460,9 +460,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_coverage.py` with `tests/fixtures/pit_rebuild/listing_dfp.html` (nginx autoindex shape, 2010-2026): earliest DFP 2010; with ITR 2011 the `ROE` earliest year is 2012 and `CAGR RECEITAS 5 ANOS` 2015, `PEG RATIO` 2013, `P/VP` (balance + price) the later of DFP/ITR and COTAHIST earliest; COTAHIST probe `{2005: False, 2006: True, …}` gives `{year: 2006, at_probe_floor: False}` and `{2005: True, …}` gives `{year: 2005, at_probe_floor: True}` (never an earlier year); `full_rebuild_years` with DFP 2010 / ITR 2011 / FCA 2010 / COTAHIST 2005 gives DFP 2010-2026, ITR 2011-2026, FCA 2010-2026, COTAHIST 2011-2026; `effort` with load `{COTAHIST: (10 s, 100 MB)}`, full COTAHIST bytes 1,600 MB, compute 5 s over 2 dates gives load 160 s, compute 2.5 s/date × 180 = 450 s, total 610 s (the load is not multiplied by 180); a kind with 0 measured bytes gives total `None`; `dy_coverage` with B3 used by 1 ticker takes DY's earliest year from B3 and with B3 used by none from Yahoo, each with its retention text.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_coverage.py`
-- [ ] Test count: ≥ 8 tests pass
+- [x] `tests/test_pit_rebuild_coverage.py` with `tests/fixtures/pit_rebuild/listing_dfp.html` (nginx autoindex shape, 2010-2026): earliest DFP 2010; with ITR 2011 the `ROE` earliest year is 2012 and `CAGR RECEITAS 5 ANOS` 2015, `PEG RATIO` 2013, `P/VP` (balance + price) the later of DFP/ITR and COTAHIST earliest; COTAHIST probe `{2005: False, 2006: True, …}` gives `{year: 2006, at_probe_floor: False}` and `{2005: True, …}` gives `{year: 2005, at_probe_floor: True}` (never an earlier year); `full_rebuild_years` with DFP 2010 / ITR 2011 / FCA 2010 / COTAHIST 2005 gives DFP 2010-2026, ITR 2011-2026, FCA 2010-2026, COTAHIST 2011-2026; `effort` with load `{COTAHIST: (10 s, 100 MB)}`, full COTAHIST bytes 1,600 MB, compute 5 s over 2 dates gives load 160 s, compute 2.5 s/date × 180 = 450 s, total 610 s (the load is not multiplied by 180); a kind with 0 measured bytes gives total `None`; `dy_coverage` with B3 used by 1 ticker takes DY's earliest year from B3 and with B3 used by none from Yahoo, each with its retention text.
+- [x] Gate check passes: Quick for `test_pit_rebuild_coverage.py`
+- [x] Test count: ≥ 8 tests pass (11 tests pass)
 
 **Tests**: unit
 **Gate**: quick
