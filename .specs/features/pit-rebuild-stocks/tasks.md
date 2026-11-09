@@ -235,9 +235,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_sources.py`: for `[2026-08-07, 2026-11-06]` the plan holds DFP 2019-2026, ITR 2024-2026, FCA 2010-2026, COTAHIST 2025-2026 and the cadastro, each once; for `[2020-03-31]` DFP starts at 2013; the B3 company URL decodes to `{"issuingCompany":"PETR","language":"pt-br"}` and `b3_cash_url("PETROBRAS", 2)` to `{"language":"pt-br","pageNumber":2,"pageSize":120,"tradingName":"PETROBRAS"}`; the Yahoo URL has `period1=946684800`, `interval=1d`, `events=div` and no `range`; every URL is `https`.
-- [ ] Gate check passes: Build (last task of Phase 1)
-- [ ] Test count: ≥ 4 tests pass
+- [x] `tests/test_pit_rebuild_sources.py`: for `[2026-08-07, 2026-11-06]` the plan holds DFP 2019-2026, ITR 2024-2026, FCA 2010-2026, COTAHIST 2025-2026 and the cadastro, each once; for `[2020-03-31]` DFP starts at 2013; the B3 company URL decodes to `{"issuingCompany":"PETR","language":"pt-br"}` and `b3_cash_url("PETROBRAS", 2)` to `{"language":"pt-br","pageNumber":2,"pageSize":120,"tradingName":"PETROBRAS"}`; the Yahoo URL has `period1=946684800`, `interval=1d`, `events=div` and no `range`; every URL is `https`.
+- [x] Gate check passes: Build (last task of Phase 1)
+- [x] Test count: ≥ 4 tests pass
 
 **Tests**: unit
 **Gate**: build
