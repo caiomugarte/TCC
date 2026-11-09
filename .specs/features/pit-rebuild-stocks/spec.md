@@ -192,8 +192,8 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | IND-02 | P1 rebuild | Tasks (T3) | Done (T3) |
 | IND-03 | P1 rebuild | Tasks (T12) | Done (T12) |
 | IND-04 | P1 rebuild | Tasks (T8, T9, T11, T12, T16, T17) | In Tasks |
-| CMP-01 | P1 rebuild | Tasks (T3, T13) | In Tasks |
-| CMP-02 | P1 rebuild | Tasks (T4, T13) | In Tasks |
+| CMP-01 | P1 rebuild | Tasks (T3, T13) | Done (T3, T13) |
+| CMP-02 | P1 rebuild | Tasks (T4, T13) | Done (T4, T13) |
 | VER-01 | P1 rebuild | Tasks (T14) | In Tasks |
 | VER-02 | P1 rebuild | Tasks (T14) | In Tasks |
 | VER-03 | P1 rebuild | Tasks (T14, T16, T20) | In Tasks |

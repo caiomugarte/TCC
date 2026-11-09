@@ -410,9 +410,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_compare.py`: relative at exactly 5.00 % within and 5.01 % outside; p.p. at exactly 0.50 within and 0.51 outside; rounding to 2 decimals before comparing (`10.004` vs `10.00`); zero reference within only when rounded calc is `0.00`; missing calc counted in the denominator and outside; blank reference of a non-DY field (e.g. `P/L`) outside the denominator and counted in `reference_blank`; blank `DY` reference with rebuilt DY `3.0` is in the denominator and outside tolerance; blank `DY` with rebuilt `0.50` within and `0.51` outside; blank `DY` with no rebuilt value in the denominator and outside; `reference_blank_as_zero` counts the blank-DY tickers; p90 of `1..10` is 9 and of `1..11` is 10; worst list capped at 10 and tie-broken by ticker.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_compare.py`
-- [ ] Test count: ≥ 12 tests pass
+- [x] `tests/test_pit_rebuild_compare.py`: relative at exactly 5.00 % within and 5.01 % outside; p.p. at exactly 0.50 within and 0.51 outside; rounding to 2 decimals before comparing (`10.004` vs `10.00`); zero reference within only when rounded calc is `0.00`; missing calc counted in the denominator and outside; blank reference of a non-DY field (e.g. `P/L`) outside the denominator and counted in `reference_blank`; blank `DY` reference with rebuilt DY `3.0` is in the denominator and outside tolerance; blank `DY` with rebuilt `0.50` within and `0.51` outside; blank `DY` with no rebuilt value in the denominator and outside; `reference_blank_as_zero` counts the blank-DY tickers; p90 of `1..10` is 9 and of `1..11` is 10; worst list capped at 10 and tie-broken by ticker.
+- [x] Gate check passes: Quick for `test_pit_rebuild_compare.py`
+- [x] Test count: ≥ 12 tests pass (13 tests pass)
 
 **Tests**: unit
 **Gate**: quick
