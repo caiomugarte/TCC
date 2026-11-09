@@ -1353,5 +1353,242 @@ class WholeUnitAdapterTests(unittest.TestCase):
 
 
 
+# Output of the fixture run below under the pre-change adapter (af1080e),
+# captured from a scratch copy of that commit; whole units off must keep it.
+PRE_CHANGE_GOLDEN = {'policy': {'allocation': {'volatility_cap': 0.2,
+                                               'drawdown_cap': 0.3,
+                                               'crypto_risk_contribution_cap': 0.5,
+                                               'hhi_penalty': 0.1,
+                                               'risk_adjusted_weights': {'return': 0.7},
+                                               'class_constraints': {'minimum_class_weight': 0.0,
+                                                                     'minimum_weights': {},
+                                                                     'maximum_weights': {},
+                                                                     'hhi_max': None}},
+                                'stocks': {'selection_preset': 'fixture',
+                                           'n_assets': 2,
+                                           'factor_weights': {'liquidez': 1.0},
+                                           'liquidity_and_size_filters': {},
+                                           'lambda_hhi': 0.2,
+                                           'system_ga_config': {'population': 4,
+                                                                'generations': 2,
+                                                                'run_count': 1}},
+                                'fiis': {'selection_preset': 'fixture',
+                                         'n_assets': 2,
+                                         'factor_weights': {'liquidity': 1.0},
+                                         'liquidity_and_size_filters': {},
+                                         'lambda_hhi': 0.2,
+                                         'system_ga_config': {'population': 4,
+                                                              'generations': 2,
+                                                              'run_count': 1}},
+                                'provenance': {'policy_version': 'premium-policy-v1',
+                                               'model_versions': {'allocation': 'allocation-fixture'},
+                                               'source_snapshot_ids': ['manifest-fixture'],
+                                               'source_snapshot_hashes': {},
+                                               'cutoff_date': '2026-07-21',
+                                               'random_seed': 19}},
+                     'classes': [{'key': 'brazilian_stocks',
+                                  'label': 'Ações brasileiras',
+                                  'target_weight': 0.4,
+                                  'target_amount_brl': 40000.0,
+                                  'metrics': {'annualized_return': 0.12}},
+                                 {'key': 'fiis',
+                                  'label': 'FIIs',
+                                  'target_weight': 0.2,
+                                  'target_amount_brl': 20000.0,
+                                  'metrics': {'annualized_return': 0.12}},
+                                 {'key': 'international',
+                                  'label': 'Exposição internacional',
+                                  'target_weight': 0.1,
+                                  'target_amount_brl': 10000.0,
+                                  'metrics': {'annualized_return': 0.12}},
+                                 {'key': 'fixed_income',
+                                  'label': 'Renda fixa',
+                                  'target_weight': 0.2,
+                                  'target_amount_brl': 20000.0,
+                                  'metrics': {'annualized_return': 0.12}},
+                                 {'key': 'crypto',
+                                  'label': 'Criptoativos',
+                                  'target_weight': 0.1,
+                                  'target_amount_brl': 10000.0,
+                                  'metrics': {'annualized_return': 0.12}}],
+                     'stocks': [{'ticker': 'AAA3',
+                                 'sleeve_weight': 0.5,
+                                 'portfolio_weight': 0.2,
+                                 'target_amount_brl': 20000.0,
+                                 'reasons': []},
+                                {'ticker': 'BBB3',
+                                 'sleeve_weight': 0.5,
+                                 'portfolio_weight': 0.2,
+                                 'target_amount_brl': 20000.0,
+                                 'reasons': []}],
+                     'fiis': [{'ticker': 'AAA11',
+                               'sleeve_weight': 0.5,
+                               'portfolio_weight': 0.1,
+                               'target_amount_brl': 10000.0,
+                               'reasons': []},
+                              {'ticker': 'BBB11',
+                               'sleeve_weight': 0.5,
+                               'portfolio_weight': 0.1,
+                               'target_amount_brl': 10000.0,
+                               'reasons': []}],
+                     'assumptions': ['Resultado Premium bruto, baseado em snapshots imutáveis e '
+                                     'regras versionadas.',
+                                     'Ações brasileiras e FIIs são sleeves selecionados pelos '
+                                     'parâmetros resolvidos do perfil.',
+                                     'Valores em BRL representam alvos de capital investível, não '
+                                     'ordens de execução.'],
+                     'risks': ['Dados históricos e proxies não garantem resultados futuros.',
+                               'Custos, impostos, spreads e execução não fazem parte deste '
+                               'cálculo.',
+                               'Restrições de perfil ou dados insuficientes podem tornar uma '
+                               'execução indisponível.'],
+                     'provenance': {'policy_version': 'premium-policy-v1',
+                                    'model_versions': {'allocation': 'allocation-fixture'},
+                                    'random_seed': 19,
+                                    'manifest_id': 'manifest-fixture',
+                                    'allocation_history': {'manifest_id': 'manifest-fixture',
+                                                           'manifest_version': None,
+                                                           'cutoff_date': '2026-07-21',
+                                                           'source_snapshot_ids': ['manifest-fixture'],
+                                                           'source_snapshot_hashes': {}},
+                                    'allocation_method': {'method': 'equal-weight-risky-v1',
+                                                          'risky_share': 0.8},
+                                    'selector_sources': {'stocks': {'provider': 'statusinvest',
+                                                                    'retrieved_at': '2026-07-21T00:00:00Z',
+                                                                    'sha256': 'stock-hash'},
+                                                         'fiis': {'provider': 'statusinvest',
+                                                                  'retrieved_at': '2026-07-21T00:00:00Z',
+                                                                  'sha256': 'fii-hash'}}},
+                     'diagnostics': {'allocation': None, 'selectors': {'stocks': {}, 'fiis': {}}}}
+
+
+def fixture_run(**kwargs):
+    return run_premium_optimization(
+        policy(),
+        Manifest(),
+        Path("/tmp/prumo-test-run"),
+        100_000,
+        selector_inputs=selector_inputs(),
+        snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+        allocation_engine=lambda *_args, **_kwargs: allocation_result(),
+        stock_engine=lambda **_kwargs: selector_result(["AAA3", "BBB3"]),
+        fii_engine=lambda **_kwargs: selector_result(["AAA11", "BBB11"]),
+        **kwargs,
+    )
+
+
+class WholeUnitGateTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+
+    def dropping_run(self, **kwargs):
+        inputs = priced_inputs(
+            self.directory.name,
+            [("AAA3", "10.00"), ("ZZZ3", "1000.00")],
+            [("AAA11", "10.00"), ("BBB11", "10.00"), ("CCC11", "10.00"), ("DDD11", "500.00")],
+        )
+        result = run_whole_units(
+            self.directory.name,
+            inputs,
+            weights=class_weights(0.4, 0.2),
+            capital=1000,
+            stock_result=selector_result(["AAA3", "ZZZ3"]),
+            fii_result=selector_result(["AAA11", "BBB11", "CCC11", "DDD11"]),
+            **kwargs,
+        )
+        return inputs, result
+
+    def test_default_off_equals_the_pre_change_output(self):
+        def loader(*_args):
+            raise AssertionError("prices must not be read with whole units off")
+
+        for label, kwargs in (("omitted", {}), ("false", {"whole_units": False})):
+            with self.subTest(whole_units=label):
+                self.assertEqual(fixture_run(price_loader=loader, **kwargs), PRE_CHANGE_GOLDEN)
+
+    def test_on_and_off_share_weights_targets_tickers_and_seed(self):
+        _, off = self.dropping_run()
+        _, on = self.dropping_run(whole_units=True)
+
+        self.assertEqual(
+            [(c["key"], c["target_weight"], c["target_amount_brl"]) for c in on["classes"]],
+            [(c["key"], c["target_weight"], c["target_amount_brl"]) for c in off["classes"]],
+        )
+        shared = ("ticker", "sleeve_weight", "portfolio_weight", "target_amount_brl")
+        for key in ("stocks", "fiis"):
+            with self.subTest(key=key):
+                on_rows = {e["ticker"]: e for e in [*on[key], *on[f"{key}_dropped"]]}
+                self.assertEqual(sorted(on_rows), sorted(e["ticker"] for e in off[key]))
+                for entry in off[key]:
+                    self.assertEqual(
+                        {field: on_rows[entry["ticker"]][field] for field in shared},
+                        {field: entry[field] for field in shared},
+                    )
+        self.assertEqual(on["provenance"]["random_seed"], off["provenance"]["random_seed"])
+        self.assertEqual(on["policy"], off["policy"])
+        self.assertEqual(on["policy"]["provenance"]["policy_version"], "premium-policy-v1")
+
+    def test_loader_receives_the_run_selector_snapshots(self):
+        calls = []
+
+        def spy_loader(snapshot, tickers):
+            calls.append((snapshot, list(tickers)))
+            return load_selector_prices(snapshot, tickers)
+
+        inputs, _ = self.dropping_run(whole_units=True, price_loader=spy_loader)
+
+        self.assertEqual(
+            calls,
+            [
+                (inputs.stocks, ["AAA3", "ZZZ3"]),
+                (inputs.fiis, ["AAA11", "BBB11", "CCC11", "DDD11"]),
+            ],
+        )
+        self.assertIs(calls[0][0], inputs.stocks)
+        self.assertIs(calls[1][0], inputs.fiis)
+
+    def test_changed_csv_fails_with_snapshot_changed(self):
+        inputs = priced_inputs(self.directory.name, [("AAA3", "10.00")], [("AAA11", "10.00")])
+        inputs.fiis.path.write_bytes(b"TICKER,PRECO\nAAA11,10.01\n")
+
+        with self.assertRaises(PremiumOptimizationError) as raised:
+            run_whole_units(
+                self.directory.name,
+                inputs,
+                weights=class_weights(0.4, 0.2),
+                capital=1000,
+                stock_result=selector_result(["AAA3"]),
+                fii_result=selector_result(["AAA11"]),
+                whole_units=True,
+            )
+
+        self.assertEqual(raised.exception.code, "snapshot_changed")
+
+    def test_missing_price_fails_with_engine_error(self):
+        inputs = priced_inputs(self.directory.name, [("AAA3", "10.00")], [("AAA11", "10.00")])
+        cases = {
+            "ticker absent from the CSV": {"fii_result": selector_result(["AAA11", "BBB11"])},
+            "loader returns no price for a ticker": {
+                "fii_result": selector_result(["AAA11"]),
+                "price_loader": lambda _snapshot, _tickers: {"AAA3": 1000},
+            },
+        }
+        for label, kwargs in cases.items():
+            with self.subTest(case=label):
+                with self.assertRaises(PremiumOptimizationError) as raised:
+                    run_whole_units(
+                        self.directory.name,
+                        inputs,
+                        weights=class_weights(0.4, 0.2),
+                        capital=1000,
+                        stock_result=selector_result(["AAA3"]),
+                        whole_units=True,
+                        **kwargs,
+                    )
+
+                self.assertEqual(raised.exception.code, "engine_error")
+
+
 if __name__ == "__main__":
     unittest.main()

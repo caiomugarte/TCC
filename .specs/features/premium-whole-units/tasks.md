@@ -360,7 +360,7 @@ T12 → T13
 
 ### T8: Keep the off path identical and map price failures
 
-**What**: Golden test of the default-off output, on/off equality of weights/targets/tickers/seed, loader-argument spy, `snapshot_changed` / `engine_error` mapping of the loader errors.
+**What**: Golden test of the default-off output, on/off equality of weights/targets/tickers/seed, loader-argument spy, `snapshot_changed` / `engine_error` mapping of the loader errors. The mapping code itself landed in T7 with the wiring (including spec review N3: `ValueError` from `allocate_whole_units` → `engine_error`); T8 is test-only and pins it.
 **Where**: `api/app/adapters/premium_optimization.py`
 **Depends on**: T7
 **Reuses**: existing fixture `policy()`, `allocation_result()`, `selector_result()`
@@ -374,14 +374,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] `WholeUnitGateTests` (five tests) added to `api/tests/test_premium_optimization.py`; the golden dict is the fixture's output under the `af1080e` adapter (load `git show af1080e:api/app/adapters/premium_optimization.py` from a scratch copy, never by switching branches) pasted as a literal
-- [ ] Gate check passes: Build gate (last task of Phase 2); root suite still 587 OK (research tools unchanged)
-- [ ] Test count: API 206 + 5 = 211 OK
+- [x] `WholeUnitGateTests` (five tests) added to `api/tests/test_premium_optimization.py`; the golden dict is the fixture's output under the `af1080e` adapter (load `git show af1080e:api/app/adapters/premium_optimization.py` from a scratch copy, never by switching branches) pasted as a literal
+- [x] Gate check passes: Build gate (last task of Phase 2); root suite still 587 OK (research tools unchanged)
+- [x] Test count: API 206 + 5 = 211 OK
 
 **Tests**: unit
 **Gate**: build
 
 **Commit**: `test(api): pin the whole-unit gate and its price failures (#57)`
+
+**Status**: ✅ Done - Build gate: compileall OK; root 587 OK (2 skipped, 240 s); API 211 OK (247 s); web static 9 pass. Golden captured from `git archive af1080e api/app api/tests` in a scratch dir (no branch switch). `test_missing_price_fails_with_engine_error` also covers the N3 wrap (loader returning no price for a selected ticker). Scratch mutants killed: `whole_units` default `True`, assumption always added, `snapshot_changed` mapped to `engine_error`, N3 wrap removed, default price on a loader error, loader called with other ticker lists, dropped target zeroed.
 
 ---
 

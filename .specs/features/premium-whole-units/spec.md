@@ -163,9 +163,9 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 | -------------- | ----- | ----- | ------ |
 | LOT-01 | P1 buy list | Tasks (T7) | Implemented |
 | LOT-02 | P1 buy list | Tasks (T3) | Implemented |
-| LOT-03 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
-| LOT-04 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
-| LOT-05 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
+| LOT-03 | P1 buy list | Tasks (T3, T8) | Implemented |
+| LOT-04 | P1 buy list | Tasks (T3, T8) | Implemented |
+| LOT-05 | P1 buy list | Tasks (T3, T8) | Implemented |
 | LOT-06 | P1 buy list | Tasks (T4) | Implemented |
 | LOT-07 | P1 buy list | Tasks (T4) | Implemented |
 | LOT-08 | P1 buy list | Tasks (T4) | Implemented |
@@ -177,14 +177,14 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 | LOT-14 | P1 buy list | Tasks (T5, T7) | Implemented |
 | LOT-15 | P1 buy list | Tasks (T5) | Implemented |
 | LOT-16 | P1 buy list | Tasks (T7) | Implemented |
-| LOT-17 | P1 buy list | Tasks (T7) | Pending |
+| LOT-17 | P1 buy list | Tasks (T7) | Implemented |
 | LOT-18 | P1 incumbents | Tasks (T10) | Pending |
 | LOT-19 | P1 incumbents | Tasks (T10) | Pending |
 | LOT-20 | P1 incumbents | Tasks (T10, T11) | Pending |
 | LOT-21 | P1 old results | Tasks (T1, T2) | In progress (T1, T2; T11 end to end) |
 | LOT-22 | P1 old results | Tasks (T2) | Implemented |
 | LOT-23 | P1 old results | Tasks (T1) | Implemented |
-| LOT-24 | P1 old results | Tasks (T6, T7, T9) | In progress (T6, T7; T8, T9) |
+| LOT-24 | P1 old results | Tasks (T6, T7, T9) | In progress (T6, T7, T8; T9) |
 | LOT-25 | P1 screen | Tasks (T13) | Pending |
 | LOT-26 | P1 screen | Tasks (T13) | Pending |
 | LOT-27 | P1 screen | Tasks (T13) | Pending |
