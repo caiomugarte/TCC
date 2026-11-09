@@ -135,9 +135,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_safety.py`: one test per forbidden root (`data`, `snapshots`, `baselines`, a nested child, a symlink pointing into `data`) raises exit 2; `docs/validation` and a temp dir pass; a failure injected on the second `os.replace` leaves both pre-existing targets byte-identical and no temp file behind; success writes both files.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_safety.py`
-- [ ] Test count: ≥ 7 tests pass
+- [x] `tests/test_pit_rebuild_safety.py`: one test per forbidden root (`data`, `snapshots`, `baselines`, a nested child, a symlink pointing into `data`) raises exit 2; `docs/validation` and a temp dir pass; a failure injected on the second `os.replace` leaves both pre-existing targets byte-identical and no temp file behind; success writes both files.
+- [x] Gate check passes: Quick for `test_pit_rebuild_safety.py`
+- [x] Test count: ≥ 7 tests pass
 
 **Tests**: unit
 **Gate**: quick
