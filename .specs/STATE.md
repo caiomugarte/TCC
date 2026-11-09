@@ -255,13 +255,15 @@
 ## Handoff
 
 - **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
-- **Phase / Task**: SPECIFY, DESIGN and TASKS drafted (2026-11-09, delegation `iw-59-spec-r1`); EXECUTE not started. `validate_spec.py` 0/0; `validate_tasks.py` 0 errors, 1 expected warning (T19 docs-only, matrix says none).
-- **Pending human checkpoint**: approve spec defaults A-1..A-14, design approach A (stdlib package, `fetch` + `report`), AD-031 (proposed) and the task list (T1-T20, counted 21; T20 heavy real run). Execute only after that approval.
+- **Phase / Task**: SPECIFY, DESIGN and TASKS revised (2026-11-09, delegation `iw-59-spec-r2`) after an independent review returned CHANGES_REQUIRED (S1-S9); EXECUTE not started. `validate_spec.py` 0/0; `validate_tasks.py` 0 errors, 1 expected warning (T19 docs-only, matrix says none).
+- **Pending human checkpoint**: approve spec defaults A-1..A-16, design approach A (stdlib package, `fetch` + `report`), AD-031 (proposed) and the task list (T1-T20, counted 22; T17 and T20 heavy). Execute only after that approval.
 - **Completed**: spec.md, design.md, tasks.md, AD-031. No production code.
+- **r2 changes**: blank Status Invest `DY` = 0.00 inside the denominator, as production does (`py/core/preprocessing.py:280-285`; 66/269 and 69/274 eligible); ITR Q2/Q3 `DRE` keeps the earliest-`DT_INI_EXERC` (year-to-date) row per key; dividends from B3 `GetListedCashDividends` (full paginated history) with Yahoo when the history fails, is empty, incomplete or starts after `d − 365`, and one window `d − 365 < ex_date ≤ d` with B3 ex-date = next COTAHIST session; COTAHIST probe floor reported as `≤ 2005`; effort splits one-off load (scaled by bytes) from per-date compute (× 180); unmapped `Financeiro e Outros` tickers are `unclassified` and the class verdict is also reported without them; T11 depends on T7; T17 heavy.
 - **In-progress** (file:line): none.
 - **Next step**: human review of the three artifacts; then Execute Phase 1 (T1-T6).
 - **Blockers**: none.
-- **Unverified points carried into Execute**: ITR zip member names assumed equal to DFP's (listing checked, members not); B3 `GetListedSupplementCompany` is an undocumented endpoint (worked on 2026-11-09 for `PETR`); Status Invest formulas (design.md table) and the 30-session liquidity window are readings to be measured, not facts.
+- **Verified on 2026-11-09**: ITR zip members equal DFP's (19, incl. `composicao_capital`; index header with `DT_RECEB`/`VERSAO`), so the earlier flag is closed; B3 `GetListedSupplementCompany` embeds only ~8 months of `cashDividends` (field `lastDatePrior`), while `GetListedCashDividends` returns PETROBRAS 1996-03-21 … 2026-08-21 with `typeStock` matching COTAHIST `ESPECI` (`ON`, `PN`, `PNA`, `UNT`); Yahoo needs `period1`/`period2` (`range=max` buckets dividends by month).
+- **Unverified points carried into Execute**: both B3 endpoints are undocumented and may change; Status Invest formulas (design.md table) and the 30-session liquidity window are readings to be measured, not facts.
 - **Branch**: t3/issue-59 (base `develop`). Nothing pushed.
 - **Previous handoff**: premium-whole-units (issue #57) merged into `develop` via #61 (`9f65467`). protection-zone (#46) T17 is still DEFERRED pending a November snapshot. Observation carried over: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run".
 - **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest); system `python3` 3.14.4 without pandas runs the stdlib-only `pit_rebuild` tests. Run from the worktree root. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
