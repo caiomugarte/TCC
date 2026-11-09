@@ -284,14 +284,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] Eight T5 tests of the Test Strategy added to `api/tests/test_whole_units.py`
-- [ ] Gate check passes: Build gate (last task of Phase 1)
-- [ ] Test count: API 179 + 6 (T3) + 7 (T4) + 8 = 200 OK; root 587 OK
+- [x] Eight T5 tests of the Test Strategy added to `api/tests/test_whole_units.py`
+- [x] Gate check passes: Build gate (last task of Phase 1)
+- [x] Test count: API 179 + 6 (T3) + 7 (T4) + 8 = 200 OK; root 587 OK
 
 **Tests**: unit
 **Gate**: build
 
 **Commit**: `feat(api): drop tickers that do not fit and keep at least 3 FIIs (#57)`
+
+**Status**: ✅ Done - Build gate: compileall OK; root 587 OK (2 skipped); API 200 OK (211.9 s); web static 9 pass. `tests.test_whole_units` 15 OK. Scratch mutants killed: worst-placed, 2 quotas, minimum always applied, minimum for stocks, `over_target` not written, negative residual. LOT-14 text made explicit about stocks and FIIs (spec review N1). A first Build run showed 1 API error that did not reproduce; it overlapped a scratch adapter run writing to the shared `/tmp/prumo-test-run` workspace.
 
 ---
 

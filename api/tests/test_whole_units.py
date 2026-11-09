@@ -153,5 +153,127 @@ class FloorAndRemainderTests(unittest.TestCase):
                     allocate_whole_units(**{**valid, **override})
 
 
+class DropAndMinimumTests(unittest.TestCase):
+    def test_ticker_that_never_fits_ends_at_zero_and_its_target_funds_the_others(self):
+        allocation = allocate(
+            {"AAA3": 1000, "BBB3": 2000, "CCC3": 25_000},
+            {"AAA3": 10_000, "BBB3": 10_000, "CCC3": 10_000},
+            30_000,
+        )
+
+        self.assertEqual(quantities(allocation), (16, 7, 0))
+        self.assertEqual([line.ticker for line in allocation.lines], ["AAA3", "BBB3", "CCC3"])
+        self.assertEqual(allocation.spent_cents, 30_000)
+        self.assertEqual(allocation.cash_residual_cents, 0)
+        self.assertFalse(any(line.forced for line in allocation.lines))
+
+    def test_no_renormalisation_after_a_drop(self):
+        allocation = allocate(
+            {"A": 6000, "B": 7000, "C": 500},
+            {"A": 3334, "B": 3333, "C": 3333},
+            10_000,
+        )
+
+        self.assertEqual(quantities(allocation), (1, 0, 8))
+        self.assertEqual(allocation.cash_residual_cents, 0)
+
+    def test_fii_minimum_buys_one_quota_of_the_best_placed_dropped(self):
+        allocation = allocate(
+            {"F1": 2000, "F2": 3000, "F3": 12_000, "F4": 15_000},
+            {"F1": 2500, "F2": 2500, "F3": 2500, "F4": 2500},
+            10_000,
+            minimum_count=3,
+        )
+
+        self.assertEqual(quantities(allocation), (2, 2, 1, 0))
+        self.assertEqual([line.forced for line in allocation.lines], [False, False, True, False])
+        self.assertEqual(allocation.spent_cents, 22_000)
+        self.assertEqual(allocation.over_target_cents, 12_000)
+        self.assertEqual(allocation.cash_residual_cents, 0)
+
+    def test_minimum_is_not_applied_when_three_are_bought(self):
+        allocation = allocate(
+            {"F1": 1000, "F2": 1000, "F3": 1000, "F4": 50_000},
+            {"F1": 2500, "F2": 2500, "F3": 2500, "F4": 2500},
+            10_000,
+            minimum_count=3,
+        )
+
+        self.assertEqual(quantities(allocation), (4, 3, 3, 0))
+        self.assertFalse(any(line.forced for line in allocation.lines))
+        self.assertEqual(allocation.over_target_cents, 0)
+        self.assertEqual(allocation.cash_residual_cents, 0)
+
+    def test_minimum_when_no_fii_fits(self):
+        allocation = allocate(
+            {"F1": 20_000, "F2": 30_000, "F3": 40_000, "F4": 50_000},
+            {"F1": 2500, "F2": 2500, "F3": 2500, "F4": 2500},
+            10_000,
+            minimum_count=3,
+        )
+
+        self.assertEqual(quantities(allocation), (1, 1, 1, 0))
+        self.assertEqual([line.forced for line in allocation.lines], [True, True, True, False])
+        self.assertEqual(allocation.spent_cents, 90_000)
+        self.assertEqual(allocation.over_target_cents, 80_000)
+        self.assertEqual(allocation.cash_residual_cents, 0)
+
+    def test_minimum_is_capped_by_the_selected_count(self):
+        allocation = allocate(
+            {"F1": 20_000, "F2": 30_000},
+            {"F1": 5000, "F2": 5000},
+            10_000,
+            minimum_count=3,
+        )
+
+        self.assertEqual(quantities(allocation), (1, 1))
+        self.assertEqual([line.forced for line in allocation.lines], [True, True])
+        self.assertEqual(allocation.over_target_cents, 40_000)
+
+    def test_stocks_get_no_minimum(self):
+        allocation = allocate(
+            {"AAA3": 20_000, "BBB3": 30_000, "CCC3": 40_000},
+            {"AAA3": 4000, "BBB3": 3000, "CCC3": 3000},
+            10_000,
+        )
+
+        self.assertEqual(quantities(allocation), (0, 0, 0))
+        self.assertFalse(any(line.forced for line in allocation.lines))
+        self.assertEqual(allocation.spent_cents, 0)
+        self.assertEqual(allocation.cash_residual_cents, 10_000)
+        self.assertEqual(allocation.over_target_cents, 0)
+
+    def test_total_within_target_except_the_minimum(self):
+        for seed in range(200):
+            tickers, targets, prices, class_target = random_case(seed)
+            with self.subTest(seed=seed):
+                plain = allocate_whole_units(tickers, targets, prices, class_target)
+                allocation = allocate_whole_units(
+                    tickers, targets, prices, class_target, minimum_count=3
+                )
+
+                spent = allocation.spent_cents
+                self.assertEqual(
+                    spent + allocation.cash_residual_cents - allocation.over_target_cents,
+                    class_target,
+                )
+                bought = sum(1 for line in plain.lines if line.quantity > 0)
+                missing = max(0, min(3, len(tickers)) - bought)
+                zero_lines = [line.ticker for line in plain.lines if line.quantity == 0]
+                expected_forced = zero_lines[:missing]
+                forced = [line.ticker for line in allocation.lines if line.forced]
+                self.assertEqual(forced, expected_forced)
+                for before, after in zip(plain.lines, allocation.lines):
+                    expected = 1 if after.forced else before.quantity
+                    self.assertEqual(after.quantity, expected)
+                if forced:
+                    self.assertGreater(spent, class_target)
+                    self.assertEqual(allocation.over_target_cents, spent - class_target)
+                    self.assertEqual(allocation.cash_residual_cents, 0)
+                else:
+                    self.assertLessEqual(spent, class_target)
+                    self.assertEqual(allocation.over_target_cents, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

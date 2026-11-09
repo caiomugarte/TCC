@@ -78,7 +78,7 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 11. LOT-11: Bought entries SHALL keep the selector order and their existing `sleeve_weight`, `portfolio_weight`, `target_amount_brl` and `reasons`.
 12. LOT-12: Targets SHALL NOT be re-normalised after a drop; a dropped ticker's target stays in the remainder cash of LOT-07.
 13. LOT-13: IF after LOT-10 fewer than `min(3, number of FIIs selected)` FIIs have quantity ≥ 1 THEN the system SHALL buy exactly 1 quota of the best-placed dropped FIIs (selector order) until that count is reached, even above the class target; each such FII SHALL move back to `fiis` with quantity 1 and the reason `mínimo de 3 FIIs` appended.
-14. LOT-14: The `brazilian_stocks` and `fiis` entries of `classes` SHALL carry `cash_residual_brl = max(0, target − Σ amount_brl)` and `over_target_brl = max(0, Σ amount_brl − target)`, both in cents; `over_target_brl > 0` SHALL occur only under LOT-13.
+14. LOT-14: WHERE whole units are on, the classes that get a buy list (stocks and FIIs, that is the `brazilian_stocks` and `fiis` entries of `classes`) SHALL carry `cash_residual_brl = max(0, target − Σ amount_brl)` and `over_target_brl = max(0, Σ amount_brl − target)`, both in cents; `over_target_brl > 0` SHALL occur only under LOT-13.
 15. LOT-15: The rule SHALL NOT apply a minimum count to stocks.
 16. LOT-16: WHERE whole units are on THEN `assumptions` SHALL contain the sentence `Quantidades calculadas com o preço da coleta Status Invest desta execução; a cotação na hora da compra pode ser diferente.`
 17. LOT-17: Class weights, `target_amount_brl` of classes and tickers, selected tickers, the GA seed and `policy_version` SHALL be identical with and without whole units for the same inputs.
@@ -169,13 +169,13 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 | LOT-06 | P1 buy list | Tasks (T4) | Implemented |
 | LOT-07 | P1 buy list | Tasks (T4) | Implemented |
 | LOT-08 | P1 buy list | Tasks (T4) | Implemented |
-| LOT-09 | P1 buy list | Tasks (T4, T5) | In progress (T4; T5) |
-| LOT-10 | P1 buy list | Tasks (T5, T7) | Pending |
+| LOT-09 | P1 buy list | Tasks (T4, T5) | Implemented |
+| LOT-10 | P1 buy list | Tasks (T5, T7) | In progress (T5; T7) |
 | LOT-11 | P1 buy list | Tasks (T7) | Pending |
-| LOT-12 | P1 buy list | Tasks (T5) | Pending |
-| LOT-13 | P1 buy list | Tasks (T5, T7) | Pending |
-| LOT-14 | P1 buy list | Tasks (T5, T7) | Pending |
-| LOT-15 | P1 buy list | Tasks (T5) | Pending |
+| LOT-12 | P1 buy list | Tasks (T5) | Implemented |
+| LOT-13 | P1 buy list | Tasks (T5, T7) | In progress (T5; T7) |
+| LOT-14 | P1 buy list | Tasks (T5, T7) | In progress (T5; T7) |
+| LOT-15 | P1 buy list | Tasks (T5) | Implemented |
 | LOT-16 | P1 buy list | Tasks (T7) | Pending |
 | LOT-17 | P1 buy list | Tasks (T7) | Pending |
 | LOT-18 | P1 incumbents | Tasks (T10) | Pending |

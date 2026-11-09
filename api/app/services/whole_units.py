@@ -89,8 +89,20 @@ def allocate_whole_units(
         quantity[chosen] += 1
         remaining -= price_cents[chosen]
 
+    # The FII minimum buys one unit of the best-placed tickers left at zero,
+    # even above the class target; no remainder loop runs after it.
+    forced: set[str] = set()
+    missing = min(minimum_count, len(order)) - sum(1 for t in order if quantity[t] > 0)
+    for ticker in order:
+        if missing <= 0:
+            break
+        if quantity[ticker] == 0:
+            quantity[ticker] = 1
+            forced.add(ticker)
+            missing -= 1
+
     lines = tuple(
-        UnitLine(t, price_cents[t], target_cents[t], quantity[t], False) for t in order
+        UnitLine(t, price_cents[t], target_cents[t], quantity[t], t in forced) for t in order
     )
     spent = sum(line.quantity * line.price_cents for line in lines)
     return WholeUnitAllocation(
