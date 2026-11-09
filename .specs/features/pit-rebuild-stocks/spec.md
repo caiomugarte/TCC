@@ -187,10 +187,10 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | PIT-03 | P1 rebuild | Tasks (T7) | Done (T7) |
 | MAP-01 | P1 rebuild | Tasks (T4, T11, T18) | In Tasks |
 | MAP-02 | P1 rebuild | Tasks (T11, T16) | In Tasks |
-| MAP-03 | P1 rebuild | Tasks (T11, T12) | In Tasks |
-| IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12) | In Tasks |
+| MAP-03 | P1 rebuild | Tasks (T11, T12) | Done (T11, T12) |
+| IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12) | Done (T8, T9, T10, T12) |
 | IND-02 | P1 rebuild | Tasks (T3) | Done (T3) |
-| IND-03 | P1 rebuild | Tasks (T12) | In Tasks |
+| IND-03 | P1 rebuild | Tasks (T12) | Done (T12) |
 | IND-04 | P1 rebuild | Tasks (T8, T9, T11, T12, T16, T17) | In Tasks |
 | CMP-01 | P1 rebuild | Tasks (T3, T13) | In Tasks |
 | CMP-02 | P1 rebuild | Tasks (T4, T13) | In Tasks |
