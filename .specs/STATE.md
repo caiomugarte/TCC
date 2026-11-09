@@ -255,16 +255,25 @@
 ## Handoff
 
 - **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
-- **Phase / Task**: SPECIFY, DESIGN and TASKS revised again (2026-11-09, delegation `iw-59-spec-r4`) after the round-3 review returned CHANGES_REQUIRED (S15-S20); EXECUTE not started. `validate_spec.py` 0/0; `validate_tasks.py` 0 errors, 1 expected warning (T19 docs-only, matrix says none).
-- **Human checkpoint**: approved on 2026-11-09 (spec defaults A-1..A-19, design approach A, AD-031, task list T1-T20, counted 23). Execute in batches b1 = Phase 1 (T1-T6), b2 = Phases 2+3 (T7-T16), b3 = Phase 4 (T17-T20).
-- **Completed**: spec.md, design.md, tasks.md, AD-031. No production code.
-- **r3 changes**: `fetch` gets the B3 company record for the root of every eligible ticker before mapping, so A-9's fallback has data (S10); `VALOR DE MERCADO` = `N_ON × p_ON + N_PREF × p_(most liquid preferred)` with issued shares, COTAHIST loaded for every class and unit component of mapped companies, fallback counted (S11, A-17); CVM share counts scaled ×1000 when B3's count says so (A-18, found while checking S11); confirmed-empty B3 history + Yahoo failure gives DY 0 (`b3_empty_yahoo_failed`, S12); no ex-date before the first loaded session (S13); `SETOR` is a required SI column (S14). New AC IND-04.
-- **r4 changes**: AD-031 and new spec A-19 list every input that is not point-in-time (B3 share count, cadastro code and `SETOR_ATIV`, FCA rows, B3 `codeCVM` and `tradingName`, dividend amounts) with its role, why it is acceptable for 2026 and the full-rebuild check; the report records them as `parameters.non_pit_inputs` and the A-18 rule as `parameters.share_scale_rule` (S15, S20; T16 asserts both); `quote_tickers` test gives each source a ticker only it supplies (S16, T11); T17's fixture checks `share_scale.x1000`, `unverified` and the scaled `VALOR DE MERCADO` end to end (S17); a filing with share total `<= 0` or no `composicao_capital` row gives no share count and reason `no_share_count` (S18, T8, T12); CPLE removed as A-17 evidence (S19).
+- **Phase / Task**: EXECUTE Phase 1 done (batch b1, T1-T6). Next: T7, the first task of Phase 2. Batch b2 = Phases 2+3 (T7-T16); batch b3 = Phase 4 (T17-T20). The feature-level Verifier has not run; it runs after T20.
+- **Human checkpoint**: approved on 2026-11-09 (spec defaults A-1..A-19, design approach A, AD-031, task list T1-T20, counted 23).
+- **Completed (Phase 1, branch t3/issue-59)**:
+  - T1 `c7b395e` error classes and exit codes (3 tests)
+  - T2 `349e964` write guard and atomic writes (8 tests)
+  - T3 `7711eaf` field list read from `config.py` with ast; spec IND-02 set to Done (6 tests)
+  - T4 `f4f7b16` Status Invest loader and eligibility; fixture `tests/fixtures/pit_rebuild/si_small.csv` (11 tests)
+  - T5 `c7c8802` hash-checked cache with offline mode; spec SRC-02 set to Done; helper `tests/pit_rebuild_support.py` (10 tests)
+  - fix `887306f` T1 and T2 files made clean for the v0 isolation and bytecode scans (found at the T6 gate)
+  - T6 `06b99a8` source URLs and per-date file plan (7 tests)
+  - Gates: `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"` gives 45 OK. Root suite `$PY -m unittest discover -s tests -p "test_*.py"` gives 632 OK, 2 skipped (587 existing + 45 new).
+- **Gate note**: the literal Build gate `git diff --exit-code develop -- data snapshots baselines py/core api py/config.py py/pit_validation.py` exits 1. The local `develop` ref is `af1080e`, older than `origin/develop` (`9f65467`, merge of #61), which this file records as develop. The same paths are unchanged against `origin/develop` and against HEAD (both exit 0). Not changed here: fast-forward the local `develop`, or run this gate against `origin/develop`.
 - **In-progress** (file:line): none.
-- **Next step**: human review of the three artifacts; then Execute Phase 1 (T1-T6).
-- **Blockers**: none.
-- **Verified on 2026-11-09**: Status Invest's `VALOR DE MERCADO` equals B3 issued ON count × ON price + issued PREF count × most-liquid-preferred price within 1e-7 on 14 companies (CPLE dropped as evidence: one preferred share, each of CPLE5/CPLE6 with price and liquidity unchanged between the two dates; SI matches CPLE5 on 08-07 and CPLE6 on 11-06) (2026-11-06 CSV); its `VPA` divides by issued shares (10 of 13 companies with >= 3 % treasury); 39 of 252 mapped companies file `composicao_capital` in thousands (EUCATEX, CEMIG, IRANI vs B3 counts); AZUL: B3 `GetListedCashDividends` `totalRecords: 0`, Yahoo "No data found". Earlier: ITR members equal DFP's; `GetListedCashDividends` full history; Yahoo needs `period1`/`period2`.
-- **Unverified points carried into Execute**: both B3 endpoints are undocumented and may change; Status Invest formulas other than `VALOR DE MERCADO` (design.md table) and the 30-session liquidity window are readings to be measured, not facts; unit companies (ENGI, SULA) do not follow the `VALOR DE MERCADO` rule in SI's own numbers.
+- **Next step**: T7, `py/pit_rebuild/cvm.py` (`load_filings` and PIT selection).
+- **Blockers**: none in code.
+- **Pitfalls found in Phase 1**:
+  - `tests/test_v0_zz_manifest_gates.py` treats a `sys.path.insert` as a bundle import in any test file whose string constants contain `baselines`, unless `sys.dont_write_bytecode = True` comes first (AD-013). Production code must not contain `baselines/` (`tests/test_v0_legacy_isolation.py`, AD-014).
+  - `py/config.py` declares `METRIC_GROUPS` as an annotated assignment; `fields.metric_groups` handles that form.
+- **Unverified points carried into Execute**: both B3 endpoints are undocumented and may change. The Status Invest formulas other than `VALOR DE MERCADO`, and the 30-session liquidity window, are readings to be measured, not facts. Unit companies (ENGI, SULA) do not follow the `VALOR DE MERCADO` rule in SI's own numbers. Verified facts and their evidence are in spec A-17 and A-18 and in design "Sources".
 - **Branch**: t3/issue-59 (base `develop`). Nothing pushed.
 - **Previous handoff**: premium-whole-units (issue #57) merged into `develop` via #61 (`9f65467`). protection-zone (#46) T17 is still DEFERRED pending a November snapshot. Observation carried over: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run".
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest); system `python3` 3.14.4 without pandas runs the stdlib-only `pit_rebuild` tests. Run from the worktree root. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest); system `python3` 3.14.4 without pandas runs the stdlib-only `pit_rebuild` tests. Run from the worktree root. The root suite takes about 5 minutes. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
