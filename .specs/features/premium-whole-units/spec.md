@@ -166,10 +166,10 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 | LOT-03 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
 | LOT-04 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
 | LOT-05 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
-| LOT-06 | P1 buy list | Tasks (T4) | Pending |
-| LOT-07 | P1 buy list | Tasks (T4) | Pending |
-| LOT-08 | P1 buy list | Tasks (T4) | Pending |
-| LOT-09 | P1 buy list | Tasks (T4, T5) | Pending |
+| LOT-06 | P1 buy list | Tasks (T4) | Implemented |
+| LOT-07 | P1 buy list | Tasks (T4) | Implemented |
+| LOT-08 | P1 buy list | Tasks (T4) | Implemented |
+| LOT-09 | P1 buy list | Tasks (T4, T5) | In progress (T4; T5) |
 | LOT-10 | P1 buy list | Tasks (T5, T7) | Pending |
 | LOT-11 | P1 buy list | Tasks (T7) | Pending |
 | LOT-12 | P1 buy list | Tasks (T5) | Pending |

@@ -64,7 +64,7 @@ Every named test fails when the behaviour it names is removed (REVIEW.md). Price
 | `test_status_invest_inputs :: test_equal_duplicate_rows_are_accepted` | two rows 10.00 → 1000 | edge | duplicate always rejected |
 | `test_status_invest_inputs :: test_price_is_quantised_half_up` | `10.005` → 1001, `10.004` → 1000 | A-12 | truncation / float |
 | `test_status_invest_inputs :: test_reading_prices_opens_no_socket` | `socket.socket` patched to raise → call succeeds | LOT-03 | network fetch |
-| `test_whole_units :: test_floor_when_no_unit_fits_the_remainder` | targets 100/100, prices 30.00/45.00, class 200 → (3, 2), residual 20.00 | LOT-06, LOT-08 | floor → round |
+| `test_whole_units :: test_floor_when_no_unit_fits_the_remainder` | targets 100/100, prices 30.00/60.00, class 200 → floor (3, 1), remainder (4, 1), residual 20.00 (spec review N4: 30/45 gave the same quantities under round) | LOT-06, LOT-07, LOT-08 | floor → round (3, 2) |
 | `test_whole_units :: test_remainder_goes_to_the_largest_deficit_that_fits` | A 7.00 / B 8.00 / C 53.00, targets 50/100/150, class 300 → (10, 15, 2), residual 4.00 | LOT-07 | first-fit or cheapest-first → (14, 12, 2); relative deficit → (9, 16, 2) |
 | `test_whole_units :: test_a_unit_that_fills_the_class_exactly_is_bought` | A 11.00 / B 12.00 / C 70.00, targets 100 each, class 300 → (10, 10, 1), residual 0 | LOT-07, edge | `price < remaining` |
 | `test_whole_units :: test_equal_deficits_go_to_the_earlier_ticker` | A and B price 10.00, target 15.00 each, class 30.00 → (2, 1) | LOT-07 | tie to the later ticker |
@@ -254,15 +254,17 @@ T12 → T13
 
 **Done when**:
 
-- [ ] New `api/tests/test_whole_units.py` with the seven T4 tests (floor, largest deficit, exact fill, tie, KNRI11/KNCR11, no-minimum enumeration, invalid inputs)
-- [ ] KNRI11/KNCR11 test asserts the LOT-TEST-1 quantities exactly
-- [ ] Gate check passes: `(cd api && PYTHONPATH=.:../py $PY -m unittest tests.test_whole_units)`
-- [ ] Test count: 7 new tests pass
+- [x] New `api/tests/test_whole_units.py` with the seven T4 tests (floor, largest deficit, exact fill, tie, KNRI11/KNCR11, no-minimum enumeration, invalid inputs)
+- [x] KNRI11/KNCR11 test asserts the LOT-TEST-1 quantities exactly
+- [x] Gate check passes: `(cd api && PYTHONPATH=.:../py $PY -m unittest tests.test_whole_units)`
+- [x] Test count: 7 new tests pass
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): round class targets to whole units by price (#57)`
+
+**Status**: ✅ Done - `tests.test_whole_units` 7 OK. Scratch mutants killed: `<` vs `<=`, stop-at-first-misfit, first-fit, cheapest, relative deficit, tie-later, floor→round, bool price, sum guard.
 
 ---
 
