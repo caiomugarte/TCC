@@ -523,14 +523,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] Three view static tests of the Test Strategy added
-- [ ] Gate check passes: Build gate (last task)
-- [ ] Test count: web 10 + 3 = 13 pass; API 218 OK; root 587 OK
+- [x] Three view static tests of the Test Strategy added
+- [x] Gate check passes: Build gate (last task)
+- [x] Test count: web 11 + 3 = 14 pass (the plan counted 10 before T12's name test); API 218 OK; root 587 OK
 
 **Tests**: unit (static source)
 **Gate**: build
 
 **Commit**: `feat(web): show the Premium buy list with quantities and cash (#57)`
+
+**Status**: ✅ Done - Build gate: compileall OK; root 587 OK (2 skipped, 182.0 s); API 218 OK (205.8 s); web 14 pass; `npm run typecheck` exit 0. Mutants killed: price-note gate removed, legacy branch removed, reason text copied into `web/`, BRL formatter replaced. Layout note: the rows, dropped list and class cash are separate components, and the sleeve maps stay inline in the view, because the b1 test "both plans render classes, stock and FII sleeves" asserts `completed.stocks.map` in the view.
 
 ---
 

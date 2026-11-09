@@ -15,7 +15,14 @@ import {
   startPremiumRecommendation,
 } from "@/lib/api-client";
 import { CRYPTO_SUGGESTION_WARNING } from "@/lib/api-types";
-import type { Plan, Recommendation, RecommendationStatus } from "@/lib/api-types";
+import type {
+  AllocationClass,
+  DroppedConstituent,
+  Plan,
+  Recommendation,
+  RecommendationConstituent,
+  RecommendationStatus,
+} from "@/lib/api-types";
 
 const percentage = new Intl.NumberFormat("pt-BR", {
   style: "percent",
@@ -25,6 +32,15 @@ const dateTime = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
   timeStyle: "short",
 });
+const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+function money(value: number | null | undefined): string {
+  return value == null ? "—" : brl.format(value);
+}
+
+function hasQuantity(item: RecommendationConstituent): boolean {
+  return typeof item.quantity === "number";
+}
 
 function statusInvestRetrievedAt(recommendation: Recommendation): string {
   const sources = recommendation.provenance?.selector_sources;
@@ -45,6 +61,41 @@ function errorMessage(cause: unknown): string {
   return cause instanceof ApiClientError
     ? cause.message
     : "Não foi possível carregar sua recomendação.";
+}
+
+function SleeveRow({ item }: { item: RecommendationConstituent }) {
+  return (
+    <li>
+      {hasQuantity(item)
+        ? `${item.ticker} · ${item.quantity} × ${money(item.priceBrl)} = ${money(item.amountBrl)}`
+        : `${item.ticker}: ${percentage.format(item.portfolioWeight)}`}
+    </li>
+  );
+}
+
+function DroppedList({ items }: { items: DroppedConstituent[] }) {
+  if (items.length === 0) return null;
+  return (
+    <>
+      <h4>Fora da lista de compra</h4>
+      <ul>
+        {items.map((item) => (
+          <li key={item.ticker}>
+            {item.ticker} · {money(item.priceBrl)} · {item.reasons.join(" · ")}
+          </li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
+function ClassCash({ classItem }: { classItem: AllocationClass | undefined }) {
+  return (
+    <>
+      {classItem?.cashResidualBrl != null && <p>Sobra em caixa: {money(classItem.cashResidualBrl)}</p>}
+      {(classItem?.overTargetBrl ?? 0) > 0 && <p>Acima do alvo: {money(classItem?.overTargetBrl)}</p>}
+    </>
+  );
 }
 
 export function RecommendationView() {
@@ -231,19 +282,29 @@ export function RecommendationView() {
               <h3>Ações brasileiras</h3>
               <ul>
                 {completed.stocks.map((item) => (
-                  <li key={item.ticker}>{item.ticker}: {percentage.format(item.portfolioWeight)}</li>
+                  <SleeveRow key={item.ticker} item={item} />
                 ))}
               </ul>
+              <DroppedList items={completed.stocksDropped} />
+              <ClassCash classItem={completed.classes.find((item) => item.key === "brazilian_stocks")} />
             </div>
             <div>
               <h3>FIIs</h3>
               <ul>
                 {completed.fiis.map((item) => (
-                  <li key={item.ticker}>{item.ticker}: {percentage.format(item.portfolioWeight)}</li>
+                  <SleeveRow key={item.ticker} item={item} />
                 ))}
               </ul>
+              <DroppedList items={completed.fiisDropped} />
+              <ClassCash classItem={completed.classes.find((item) => item.key === "fiis")} />
             </div>
           </div>
+
+          {[...completed.stocks, ...completed.fiis].some(hasQuantity) && (
+            <div className="notice">
+              Quantidades calculadas com os preços da coleta Status Invest desta execução ({statusInvestRetrievedAt(completed)}). São referência, não cotação ao vivo.
+            </div>
+          )}
 
           <div className="card split-card">
             <div><h3>Premissas</h3><ul>{completed.assumptions.map((item) => <li key={item}>{item}</li>)}</ul></div>

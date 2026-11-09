@@ -185,11 +185,11 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 | LOT-22 | P1 old results | Tasks (T2) | Implemented |
 | LOT-23 | P1 old results | Tasks (T1) | Implemented |
 | LOT-24 | P1 old results | Tasks (T6, T7, T9) | Implemented |
-| LOT-25 | P1 screen | Tasks (T13) | Pending |
-| LOT-26 | P1 screen | Tasks (T13) | Pending |
-| LOT-27 | P1 screen | Tasks (T13) | Pending |
-| LOT-28 | P1 screen | Tasks (T13) | Pending |
-| LOT-29 | P1 screen | Tasks (T12, T13) | In progress (T12 types; T13 view) |
+| LOT-25 | P1 screen | Tasks (T13) | Implemented |
+| LOT-26 | P1 screen | Tasks (T13) | Implemented |
+| LOT-27 | P1 screen | Tasks (T13) | Implemented |
+| LOT-28 | P1 screen | Tasks (T13) | Implemented |
+| LOT-29 | P1 screen | Tasks (T12, T13) | Implemented |
 
 **Coverage:** 29 total, 29 mapped to tasks, 0 unmapped.
 

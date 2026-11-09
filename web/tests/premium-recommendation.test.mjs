@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
+import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 const clientSource = await readFile(new URL("../lib/api-client.ts", import.meta.url), "utf8");
 const typesSource = await readFile(new URL("../lib/api-types.ts", import.meta.url), "utf8");
@@ -119,6 +121,47 @@ test("whole-unit fields are typed for both shapes", () => {
   const recommendation = typeBody("Recommendation");
   assert.match(recommendation, /stocksDropped: DroppedConstituent\[\];/);
   assert.match(recommendation, /fiisDropped: DroppedConstituent\[\];/);
+});
+
+const webRoot = fileURLToPath(new URL("..", import.meta.url));
+
+async function webSourceFiles(directory) {
+  const files = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    if (["node_modules", ".next", "tests"].includes(entry.name)) continue;
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...(await webSourceFiles(path)));
+    else if (/\.(ts|tsx)$/.test(entry.name)) files.push(path);
+  }
+  return files;
+}
+
+test("buy list renders quantity, price, amount and class cash", () => {
+  assert.match(viewSource, /new Intl\.NumberFormat\("pt-BR", \{ style: "currency", currency: "BRL" \}\)/);
+  assert.match(viewSource, /\$\{item\.quantity\} × \$\{money\(item\.priceBrl\)\} = \$\{money\(item\.amountBrl\)\}/);
+  assert.match(viewSource, /Sobra em caixa: \{money\(classItem\.cashResidualBrl\)\}/);
+  assert.match(viewSource, /Acima do alvo: \{money\(classItem\?\.overTargetBrl\)\}/);
+});
+
+test("dropped tickers render the API reasons", async () => {
+  assert.match(viewSource, /<DroppedList items=\{completed\.stocksDropped\} \/>/);
+  assert.match(viewSource, /<DroppedList items=\{completed\.fiisDropped\} \/>/);
+  assert.match(viewSource, /item\.reasons\.join\(" · "\)/);
+  for (const file of await webSourceFiles(webRoot)) {
+    assert.doesNotMatch(
+      await readFile(file, "utf8"),
+      /não coube no capital|mínimo de 3 FIIs/,
+      `${file} copies a reason the API sends`,
+    );
+  }
+});
+
+test("snapshot price note and legacy fallback", () => {
+  assert.match(viewSource, /\[\.\.\.completed\.stocks, \.\.\.completed\.fiis\]\.some\(hasQuantity\)/);
+  assert.match(viewSource, /function hasQuantity\(item: RecommendationConstituent\): boolean \{\s*return typeof item\.quantity === "number";/);
+  assert.match(viewSource, /Quantidades calculadas com os preços da coleta Status Invest desta execução \(\{statusInvestRetrievedAt\(completed\)\}\)/);
+  assert.match(viewSource, /\{hasQuantity\(item\)\s+\? `\$\{item\.ticker\} · \$\{item\.quantity\}/);
+  assert.match(viewSource, /: `\$\{item\.ticker\}: \$\{percentage\.format\(item\.portfolioWeight\)\}`\}/);
 });
 
 test("whole-unit field names match the API schema aliases (REVIEW.md copied-name rule)", () => {
