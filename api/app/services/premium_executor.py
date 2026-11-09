@@ -26,7 +26,11 @@ def _close_session(session: Any) -> None:
 
 
 def _incumbent_tickers(result_json: object, key: str) -> list[str] | None:
-    """Tickers of one class of a completed run; None when the data is unreadable."""
+    """Tickers of one class of a completed run; None when the data is unreadable.
+
+    Entries without a quantity (pre-change) or with an int quantity >= 1 are kept;
+    quantity 0 is skipped; any other quantity makes the class unreadable (LOT-18, LOT-19).
+    """
 
     if not isinstance(result_json, Mapping):
         return None
@@ -35,7 +39,15 @@ def _incumbent_tickers(result_json: object, key: str) -> list[str] | None:
         return None
     tickers: list[str] = []
     for entry in entries:
-        ticker = entry.get("ticker") if isinstance(entry, Mapping) else None
+        if not isinstance(entry, Mapping):
+            return None
+        quantity = entry.get("quantity")
+        if quantity is not None:
+            if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity < 0:
+                return None
+            if quantity == 0:
+                continue
+        ticker = entry.get("ticker")
         if not isinstance(ticker, str) or not ticker.strip():
             return None
         normalized = ticker.strip().upper()

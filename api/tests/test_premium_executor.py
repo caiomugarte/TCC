@@ -559,6 +559,67 @@ class PremiumExecutorIncumbentTests(unittest.TestCase):
         self.assertEqual(self.execute(run, self.recording_runner(calls)), "completed")
         self.assertNotIn("incumbents", calls[0])
 
+    def test_incumbents_skip_zero_quantity_and_keep_legacy_entries(self):
+        previous = self.completed_run(
+            {
+                "stocks": [{"ticker": "BBSE3", "quantity": 0}, {"ticker": "ITSA4", "quantity": 2}],
+                "fiis": [
+                    {"ticker": "HGLG11"},
+                    {"ticker": "KNRI11", "quantity": None},
+                    {"ticker": "XPML11", "quantity": 1},
+                    {"ticker": "BTLG11", "quantity": 0},
+                ],
+            }
+        )
+        run = self.zone_run()
+        calls = []
+
+        self.assertEqual(self.execute(run, self.recording_runner(calls)), "completed")
+        self.assertEqual(
+            calls[0]["incumbents"],
+            {"run_id": previous.id, "stocks": ["ITSA4"], "fiis": ["HGLG11", "KNRI11", "XPML11"]},
+        )
+
+    def test_malformed_quantity_makes_the_class_unreadable(self):
+        for quantity in (-1, 1.5, True, "2"):
+            with self.subTest(quantity=quantity):
+                previous = self.completed_run(
+                    {
+                        "stocks": [{"ticker": "BBSE3", "quantity": quantity}],
+                        "fiis": [{"ticker": "HGLG11", "quantity": 1}],
+                    }
+                )
+                run = self.zone_run()
+                calls = []
+
+                self.assertEqual(self.execute(run, self.recording_runner(calls)), "completed")
+                self.assertEqual(
+                    calls[0]["incumbents"],
+                    {"run_id": previous.id, "stocks": None, "fiis": ["HGLG11"]},
+                )
+                with self.sessions() as cleanup:
+                    for stale in (previous, run):
+                        cleanup.delete(cleanup.get(type(stale), stale.id))
+                    cleanup.commit()
+
+    def test_dropped_lists_are_not_incumbents(self):
+        previous = self.completed_run(
+            {
+                "stocks": [{"ticker": "BBSE3", "quantity": 2}],
+                "fiis": [{"ticker": "HGLG11", "quantity": 1}],
+                "stocks_dropped": [{"ticker": "ITSA4", "reasons": ["não coube no capital"]}],
+                "fiis_dropped": [{"ticker": "KNRI11", "reasons": ["não coube no capital"]}],
+            }
+        )
+        run = self.zone_run()
+        calls = []
+
+        self.assertEqual(self.execute(run, self.recording_runner(calls)), "completed")
+        self.assertEqual(
+            calls[0]["incumbents"],
+            {"run_id": previous.id, "stocks": ["BBSE3"], "fiis": ["HGLG11"]},
+        )
+
 
 WHOLE_UNITS_POLICY = {
     "plan": "premium",

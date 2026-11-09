@@ -434,14 +434,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] Three incumbent tests of the Test Strategy added (one subTest per malformed value)
-- [ ] Gate check passes: Full gate
-- [ ] Test count: API 213 + 3 = 216 OK
+- [x] Three incumbent tests of the Test Strategy added (one subTest per malformed value)
+- [x] Gate check passes: Full gate
+- [x] Test count: API 213 + 3 = 216 OK
 
 **Tests**: unit
 **Gate**: full
 
 **Commit**: `feat(api): protect only bought tickers in the next Premium run (#57)`
+
+**Status**: ✅ Done - Full gate 216 OK (205.7 s). Mutants killed: bool counted as int, zero-quantity entry kept, `*_dropped` lists read as incumbents. The dropped-lists test was green before the change, because the reader never touched `*_dropped`; the mutant shows it now guards LOT-20.
 
 ---
 
