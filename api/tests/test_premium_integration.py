@@ -16,6 +16,7 @@ from app.services.premium_executor import PremiumExecutor
 from app.services.premium_recommendation import PremiumRecommendationService
 from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
 from app.repositories.recommendations import RecommendationRepository
+from app.routers.recommendations import read_recommendation
 from app.schemas.recommendation import PremiumRecommendationRequest
 from core.protection_zone import select_with_fallback
 
@@ -583,6 +584,167 @@ class SegmentCapIntegrationTests(unittest.TestCase):
         fii_config = self.engine_calls["fiis"][0]["selection_config"]
         self.assertNotIn("max_per_segment", fii_config)
         self.assertEqual(set(fii_config), PRE_CHANGE_SELECTOR_CONFIG_KEYS)
+
+
+WHOLE_UNIT_FIIS = ["WUA11", "WUB11", "WUC11", "WUD11"]
+WHOLE_UNIT_PRICES = {
+    "stocks": {"AAA3": "1.00", "BBB3": "1.00"},
+    # WUD11 cannot be bought once the other three FIIs take their share of the class.
+    "fiis": {"WUA11": "10.00", "WUB11": "10.00", "WUC11": "10.00", "WUD11": "6000.00"},
+}
+
+
+def fixed_selector(tickers):
+    """Fake engine: selects ``tickers`` in this order and applies the core zone to incumbents."""
+
+    frequencies = {ticker: round(0.95 - 0.05 * index, 2) for index, ticker in enumerate(tickers)}
+
+    def engine(**kwargs):
+        config = kwargs.get("config", kwargs.get("selection_config"))
+        selection, record = select_with_fallback(
+            kwargs.get("incumbents", []),
+            frequencies,
+            {ticker: 0.5 for ticker in tickers},
+            len(tickers),
+            config.get("protection_zone") or {"K": 0, "delta": 0.0},
+            eligible=set(tickers),
+            dedup_base_company=False,
+            hhi_of=lambda _tickers: 0.0,
+            hhi_max=None,
+        )
+        selected = list(selection.tickers)
+        result = {
+            "selected_tickers": selected,
+            "sleeve_weights": {ticker: 1 / len(selected) for ticker in selected},
+        }
+        if kwargs.get("incumbents"):
+            result["protection_zone"] = record
+        return result
+
+    return engine
+
+
+class WholeUnitIntegrationTests(unittest.TestCase):
+    """LOT-18, LOT-20, LOT-21: whole-unit runs through the executor, the store and the route."""
+
+    setUp = ProtectionZoneIntegrationTests.setUp
+    tearDown = PremiumIntegrationTests.tearDown
+    create_and_wait = ProtectionZoneIntegrationTests.create_and_wait
+
+    def runner(
+        self, policy_value, manifest, workspace, capital, *, selector_inputs=None, incumbents=None, whole_units=False
+    ):
+        def recording(key, engine):
+            def wrapped(**kwargs):
+                self.engine_calls.setdefault(key, []).append(kwargs)
+                return engine(**kwargs)
+
+            return wrapped
+
+        kwargs = {} if incumbents is None else {"incumbents": incumbents}
+        return run_premium_optimization(
+            policy_value,
+            manifest,
+            workspace,
+            capital,
+            selector_inputs=selector_inputs,
+            snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+            allocation_engine=lambda *_args, **_kwargs: {
+                "weights": {
+                    "brazilian_stocks": 0.4,
+                    "fiis": 0.2,
+                    "international_equity": 0.1,
+                    "fixed_income": 0.2,
+                    "crypto": 0.1,
+                }
+            },
+            stock_engine=recording("stocks", fixed_selector(["AAA3", "BBB3"])),
+            fii_engine=recording("fiis", fixed_selector(WHOLE_UNIT_FIIS)),
+            whole_units=whole_units,
+            **kwargs,
+        )
+
+    def services(self):
+        self.engine_calls = {}
+        manifest = Manifest()
+        executor = PremiumExecutor(
+            session_factory=self.sessions,
+            manifest_loader=lambda _provenance: manifest,
+            manifest_validator=lambda value: value,
+            status_invest_inputs_loader=lambda workspace: priced_selector_inputs(workspace, WHOLE_UNIT_PRICES),
+            optimization_runner=self.runner,
+            workspace_root=Path(self.temp.name) / "workspaces",
+        )
+        service = PremiumRecommendationService(
+            manifest_loader=lambda: manifest,
+            manifest_validator=lambda value: value,
+            executor=executor,
+        )
+        return executor, service
+
+    def test_ticker_dropped_in_run_one_is_not_an_incumbent_in_run_two(self):
+        executor, service = self.services()
+        try:
+            first = self.create_and_wait(executor, service)
+            second = self.create_and_wait(executor, service, force=True)
+        finally:
+            executor.shutdown()
+
+        self.assertNotEqual(second.id, first.id)
+        self.assertNotIn("incumbents", self.engine_calls["fiis"][0])
+        self.assertEqual(self.engine_calls["fiis"][1]["incumbents"], ["WUA11", "WUB11", "WUC11"])
+
+        self.session.expire_all()
+        response = read_recommendation(first.id, self.account, self.session)
+        self.assertEqual(
+            {item.ticker: item.quantity for item in response.fiis},
+            {"WUA11": 667, "WUB11": 667, "WUC11": 666},
+        )
+        self.assertEqual([item.price_brl for item in response.fiis], [10.0, 10.0, 10.0])
+        self.assertEqual([item.ticker for item in response.fiis_dropped], ["WUD11"])
+        self.assertEqual(response.fiis_dropped[0].reasons[-1], "não coube no capital")
+        fii_class = next(item for item in first.result_json["classes"] if item["key"] == "fiis")
+        self.assertEqual(fii_class["cash_residual_brl"], 0.0)
+        self.assertEqual(fii_class["over_target_brl"], 0.0)
+
+    def test_stored_pre_change_result_reads_and_feeds_incumbents(self):
+        class QueueOnly:
+            def submit(self, _run_id):
+                return None
+
+        manifest = Manifest()
+        queued = PremiumRecommendationService(
+            manifest_loader=lambda: manifest,
+            manifest_validator=lambda value: value,
+            executor=QueueOnly(),
+        )
+        run = queued.create_run(self.account, PremiumRecommendationRequest(), self.session)
+        # Queued before the deploy: the stored policy does not declare whole units.
+        stored_policy = copy.deepcopy(run.policy_json)
+        del stored_policy["provenance"]["model_versions"]["whole_units"]
+        run.policy_json = stored_policy
+        self.session.commit()
+
+        executor, service = self.services()
+        try:
+            executor.execute_run(run.id)
+            self.create_and_wait(executor, service, force=True)
+        finally:
+            executor.shutdown()
+
+        with self.sessions() as check:
+            first = check.get(RecommendationRun, run.id)
+            self.assertEqual(first.status, "completed")
+            self.assertNotIn("quantity", first.result_json["fiis"][0])
+            self.assertNotIn("fiis_dropped", first.result_json)
+            stored_tickers = sorted(item["ticker"] for item in first.result_json["fiis"])
+
+        self.assertEqual(stored_tickers, sorted(WHOLE_UNIT_FIIS))
+        self.assertEqual(sorted(self.engine_calls["fiis"][1]["incumbents"]), stored_tickers)
+        self.session.expire_all()
+        response = read_recommendation(run.id, self.account, self.session)
+        self.assertIsNone(response.fiis[0].quantity)
+        self.assertEqual(response.fiis_dropped, [])
 
 
 if __name__ == "__main__":

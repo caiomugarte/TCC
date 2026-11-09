@@ -463,14 +463,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] Both tests pass, including issue test (e) through the route
-- [ ] Gate check passes: Build gate (last task of Phase 3)
-- [ ] Test count: API 216 + 2 = 218 OK; root 587 OK
+- [x] Both tests pass, including issue test (e) through the route
+- [x] Gate check passes: Build gate (last task of Phase 3)
+- [x] Test count: API 216 + 2 = 218 OK; root 587 OK
 
 **Tests**: integration
 **Gate**: build
 
 **Commit**: `test(api): cover whole-unit runs and stored results end to end (#57)`
+
+**Status**: ✅ Done - Build gate: compileall OK; root 587 OK (2 skipped, 182.8 s); API 218 OK (204.7 s); web static 9 pass. Mutants killed: executor never requests whole units; incumbents read `*_dropped`; a missing quantity read as 0 (legacy entries lose incumbency). The pre-change result comes from the real pipeline: the run is queued with a stored policy that lacks the declaration, then executed.
 
 ---
 
