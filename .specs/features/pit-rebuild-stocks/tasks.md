@@ -110,9 +110,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_errors.py`: each class's `exit_code`; `PITLeakError` is an `IntegrityError` and its message names ticker, date and offending date; the `__init__` docstring lists codes 0, 1, 2, 3, 4, 5.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_errors.py`
-- [ ] Test count: 3 tests pass
+- [x] `tests/test_pit_rebuild_errors.py`: each class's `exit_code`; `PITLeakError` is an `IntegrityError` and its message names ticker, date and offending date; the `__init__` docstring lists codes 0, 1, 2, 3, 4, 5.
+- [x] Gate check passes: Quick for `test_pit_rebuild_errors.py`
+- [x] Test count: 3 tests pass
 
 **Tests**: unit
 **Gate**: quick
