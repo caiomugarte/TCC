@@ -162,10 +162,10 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
 | LOT-01 | P1 buy list | Tasks (T7) | Pending |
-| LOT-02 | P1 buy list | Tasks (T3) | Pending |
-| LOT-03 | P1 buy list | Tasks (T3, T8) | Pending |
-| LOT-04 | P1 buy list | Tasks (T3, T8) | Pending |
-| LOT-05 | P1 buy list | Tasks (T3, T8) | Pending |
+| LOT-02 | P1 buy list | Tasks (T3) | Implemented |
+| LOT-03 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
+| LOT-04 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
+| LOT-05 | P1 buy list | Tasks (T3, T8) | In progress (T3; T8) |
 | LOT-06 | P1 buy list | Tasks (T4) | Pending |
 | LOT-07 | P1 buy list | Tasks (T4) | Pending |
 | LOT-08 | P1 buy list | Tasks (T4) | Pending |

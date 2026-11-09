@@ -93,8 +93,8 @@ graph TD
   - `load_selector_prices(snapshot: SourceSnapshot, tickers: Sequence[str]) -> dict[str, int]` (cents, keyed by the upper-cased ticker).
   - `class SelectorSnapshotChangedError(RuntimeError)` — recomputed SHA-256 ≠ `snapshot.sha256` (LOT-03, LOT-04).
   - `class SelectorPriceError(ValueError)` — missing file/column/row, bad value, conflicting duplicates (LOT-05).
-- **Behaviour**: `file_sha256(snapshot.path)` first; then `csv.DictReader` with `encoding="utf-8-sig"` (same as `_validate_csv`, `:49`); key `TICKER.strip().upper()`; `Decimal(PRECO.strip())`, reject `is_finite() is False` or ≤ 0, `quantize(Decimal("0.01"), ROUND_HALF_UP)`, `int(value * 100)`. Rows of tickers not asked for are not validated.
-- **Dependencies**: `snapshot_manifest.file_sha256`.
+- **Behaviour**: read the file's bytes once; hash those bytes (`hashlib.sha256(data).hexdigest()`, same digest as `file_sha256`) and compare with `snapshot.sha256`; then parse the same buffer with `csv.DictReader(io.StringIO(data.decode("utf-8-sig")))` (same decoding as `_validate_csv`, `:49`), so the parsed prices are provably the hashed bytes. An unreadable file raises `SelectorPriceError`. Key `TICKER.strip().upper()`; `Decimal(PRECO.strip())`, reject `is_finite() is False` or ≤ 0, `quantize(Decimal("0.01"), ROUND_HALF_UP)`, `int(value * 100)`. Rows of tickers not asked for are not validated.
+- **Dependencies**: `hashlib`, `csv`, `io` (stdlib).
 
 ### Adapter wiring (`api/app/adapters/premium_optimization.py`, sensitive path)
 

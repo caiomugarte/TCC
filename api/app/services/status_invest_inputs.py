@@ -3,8 +3,11 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+import hashlib
+import io
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Sequence
 
 from snapshot_manifest import file_sha256
 
@@ -14,6 +17,14 @@ STATUS_INVEST_TIMEOUT_SECONDS = 30
 
 class StatusInvestInputError(RuntimeError):
     code = "status_invest_input_failed"
+
+
+class SelectorSnapshotChangedError(RuntimeError):
+    """The selector CSV bytes no longer match the SHA-256 recorded for the run."""
+
+
+class SelectorPriceError(ValueError):
+    """A selected ticker has no usable PRECO in the run's selector CSV."""
 
 
 @dataclass(frozen=True)
@@ -109,3 +120,49 @@ def refresh_inputs(
         role, error = failures[0]
         raise StatusInvestInputError(f"Status Invest {role} input failed validation") from error
     return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
+
+
+def _price_cents(ticker: str, raw: str | None) -> tuple[Decimal, int]:
+    try:
+        value = Decimal((raw or "").strip())
+    except InvalidOperation:
+        raise SelectorPriceError(f"{ticker}: PRECO {raw!r} is not a number") from None
+    if not value.is_finite():
+        raise SelectorPriceError(f"{ticker}: PRECO {raw!r} is not finite")
+    cents = int(value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP) * 100)
+    if cents <= 0:
+        raise SelectorPriceError(f"{ticker}: PRECO {raw!r} is not positive")
+    return value, cents
+
+
+def load_selector_prices(snapshot: SourceSnapshot, tickers: Sequence[str]) -> dict[str, int]:
+    """Return the PRECO of each ticker, in cents, from the run's hashed selector CSV.
+
+    The bytes are read once; the same bytes are hashed against the recorded
+    SHA-256 and then parsed, so every price comes from the hashed file.
+    """
+
+    try:
+        data = Path(snapshot.path).read_bytes()
+    except OSError as exc:
+        raise SelectorPriceError(f"selector CSV {snapshot.path} could not be read") from exc
+    if hashlib.sha256(data).hexdigest() != snapshot.sha256:
+        raise SelectorSnapshotChangedError(f"selector CSV {snapshot.path} changed after the run recorded it")
+    wanted = [str(ticker).strip().upper() for ticker in tickers]
+    reader = csv.DictReader(io.StringIO(data.decode("utf-8-sig"), newline=""))
+    has_price_column = "PRECO" in (reader.fieldnames or [])
+    found: dict[str, tuple[Decimal, int]] = {}
+    for row in reader:
+        ticker = str(row.get("TICKER") or "").strip().upper()
+        if ticker not in wanted:
+            continue
+        if not has_price_column:
+            raise SelectorPriceError(f"{ticker}: selector CSV has no PRECO column")
+        value, cents = _price_cents(ticker, row.get("PRECO"))
+        if ticker in found and found[ticker][0] != value:
+            raise SelectorPriceError(f"{ticker}: conflicting PRECO values in duplicate rows")
+        found.setdefault(ticker, (value, cents))
+    missing = [ticker for ticker in wanted if ticker not in found]
+    if missing:
+        raise SelectorPriceError(f"{', '.join(missing)}: no row in the selector CSV")
+    return {ticker: found[ticker][1] for ticker in wanted}

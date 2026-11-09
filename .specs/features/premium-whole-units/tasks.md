@@ -214,7 +214,7 @@ T12 → T13
 **What**: `load_selector_prices(snapshot, tickers) -> dict[str, int]` plus `SelectorSnapshotChangedError` and `SelectorPriceError` (design.md behaviour).
 **Where**: `api/app/services/status_invest_inputs.py`
 **Depends on**: None
-**Reuses**: `file_sha256`, the `utf-8-sig` `csv.DictReader` of `_validate_csv`
+**Reuses**: the `utf-8-sig` `csv.DictReader` of `_validate_csv`; the bytes are read once, hashed and parsed from the same buffer (spec review N2)
 **Requirement**: LOT-02, LOT-03, LOT-04, LOT-05
 **High risk (`api/app/adapters/**`)**: no
 
@@ -225,14 +225,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] Six loader tests of the Test Strategy added to `api/tests/test_status_invest_inputs.py`, the LOT-TEST-1 rows used for the happy path
-- [ ] Gate check passes: `(cd api && PYTHONPATH=.:../py $PY -m unittest tests.test_status_invest_inputs)`
-- [ ] Test count: existing module count + 6
+- [x] Six loader tests of the Test Strategy added to `api/tests/test_status_invest_inputs.py`, the LOT-TEST-1 rows used for the happy path
+- [x] Gate check passes: `(cd api && PYTHONPATH=.:../py $PY -m unittest tests.test_status_invest_inputs)`
+- [x] Test count: existing module count + 6
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): read selector prices from the hashed Status Invest CSV (#57)`
+
+**Status**: ✅ Done - `tests.test_status_invest_inputs` 12 OK (6 existing + 6 new). Bad-price test also covers an unreadable file (design guard).
 
 ---
 
