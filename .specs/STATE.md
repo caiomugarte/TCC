@@ -247,21 +247,21 @@
 ## Handoff
 
 - **Feature**: premium-whole-units (issue #57) - `.specs/features/premium-whole-units/`
-- **Phase / Task**: EXECUTE. Batch b1 (Phase 1 T1-T5, Phase 2 T6-T8) done. Next: batch b2 = Phase 3 (T9-T11) + Phase 4 (T12-T13), then the Verifier.
-- **Completed** (commit - task): `c649dcf` T1, `6eef239` T2, `1cf4ed3` T3, `f732afd` T4, `495834e` T5, `c91752e` T6, `800125a` T7, `297e023` T8.
+- **Phase / Task**: EXECUTE complete for T1-T13 (b1: Phases 1-2; b2: Phases 3-4). Feature implemented; pending the Verifier, which the orchestrator dispatches (no Verifier run in b2). `validate_state.py premium-whole-units` fails until `validation.md` exists, as expected.
+- **Completed** (commit - task): `c649dcf` T1, `6eef239` T2, `1cf4ed3` T3, `f732afd` T4, `495834e` T5, `c91752e` T6, `800125a` T7, `297e023` T8, `fd7defc` T9, `55eebea` T10, `0d3eba7` T11, `c60c07b` T12, `413c744` T13.
 - **In-progress** (file:line): none.
-- **Next step**: T9 in `api/app/services/premium_executor.py`: `_declares_whole_units(policy_json)` (import `WHOLE_UNITS_MODEL_VERSION` from `app.services.premium_policy`, `:104`) and `runner_kwargs["whole_units"] = True` only when declared.
+- **Next step**: Verifier (spec-anchored check, discrimination sensor, `validation.md`). Mutation targets are in `tasks.md` (Test Strategy); the implementer already killed the ones listed under deviations.
 - **Blockers**: none.
-- **Uncommitted files**: none.
-- **Branch**: t3/issue-57 (base `origin/develop` `af1080e`; PR base `develop`).
-- **Counts after b1** (Phase 2 Build gate, 2026-11-09): API 211 OK (247 s); root 587 OK, 2 skipped (240 s); web static 9 pass; `compileall` OK. b2 targets: API 218 after T11, web 13 after T13.
-- **What b2 must know**:
-  - The adapter's whole-unit step lives in `_buy_list` / `_whole_unit_rows` (`api/app/adapters/premium_optimization.py`) and runs after both selectors; keyword `whole_units` (default `False`) and `price_loader` (default `load_selector_prices`). The loader-error mapping and the spec-review N3 wrap (`ValueError` → `engine_error`) are already in T7; T8 is test-only.
-  - Off path output equals the `af1080e` golden (`PRE_CHANGE_GOLDEN` in `api/tests/test_premium_optimization.py`); `stocks_dropped` / `fiis_dropped` keys exist only when whole units are on, so readers must use `.get(..., [])` (the router already does).
-  - Test helpers ready for T11: `priced_inputs(directory, stock_rows, fii_rows)` writes real temp CSVs with their SHA-256 (`api/tests/test_premium_optimization.py`), `LOT_TEST_1_FIIS` holds the run-`3289af79` FII prices and expected quantities. Selector tickers must have a `PRECO` row in those CSVs or the run fails `engine_error`.
-  - `load_selector_prices` (`api/app/services/status_invest_inputs.py`) reads the bytes once, hashes them and parses the same buffer (spec review N2).
-  - Spec review N5 (executor) is open for b2.
-  - Route tests call the route functions directly (no `TestClient` in `api/tests`; the in-memory SQLite session is not shareable with the TestClient worker thread). T11's "through the route" can follow the same convention.
-  - Do not run another adapter scenario against `/tmp/prumo-test-run` while the API suite runs: the first Phase 1 Build run showed one API error that did not reproduce and overlapped such a scratch run.
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. `web/node_modules` is absent in this worktree: symlink the main checkout's before `npm run typecheck`. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
+- **Uncommitted files**: `web/node_modules`, a symlink to the main checkout. Untracked and not ignored by git (the `node_modules/` pattern matches directories only). Never stage it.
+- **Branch**: t3/issue-57 (base `origin/develop` `af1080e`; PR base `develop`). Nothing pushed.
+- **Counts at the end of b2** (2026-11-09): API 218 OK (205.8 s); root 587 OK, 2 skipped (182.0 s); web static 14 pass; `npm run typecheck` exit 0; `compileall` OK.
+- **Deviations for the Verifier**:
+  - N5 is implemented: the executor passes `whole_units` only when `run.plan == "premium"` and the policy declares `whole-units-v1` (`api/app/services/premium_executor.py`). Spec A-3 and design.md say so.
+  - T9 changed four existing integration tests outside the named list: in `api/tests/test_premium_integration.py`, the zone and cap runners accept and forward `whole_units`, and their selector inputs are priced CSVs (`priced_selector_inputs`). Assertions are unchanged. Reason: the real Premium policy declares the flag, so the old fixtures failed with `engine_error`.
+  - T12 has two static tests, not one: the REVIEW.md copied-name rule needs a comparison of web type names with the API aliases. The web count is 14, not 13.
+  - No API reason string is copied into `web/`. The T13 test walks `web/**/*.ts(x)` and asserts that "não coube no capital" and "mínimo de 3 FIIs" are absent.
+  - The sleeve maps stay inline in the view. The b1 test "both plans render classes, stock and FII sleeves" asserts `completed.stocks.map`.
+  - `test_dropped_lists_are_not_incumbents` passes on the pre-change code by construction. It guards LOT-20.
+  - Mutants the implementer already caught (the Verifier's sensor may still add more): executor plan check removed; flag always on; zero quantity kept; bool counted as int; `*_dropped` read as incumbents; missing quantity read as zero; adapter wiring off; web type dropped and renamed; API field renamed; price-note gate removed; legacy branch removed; reason copied into `web/`; BRL formatter replaced.
 - **Previous handoff**: fii-segment-cap (issue #56) merged in `af1080e` (#58). protection-zone (#46) T17 is still DEFERRED pending a November snapshot. Observation carried over: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run".
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
