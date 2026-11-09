@@ -11,7 +11,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Spec**: `.specs/features/pit-rebuild-stocks/spec.md`
 **Design**: `.specs/features/pit-rebuild-stocks/design.md`
 **Decision record**: AD-031 in `.specs/STATE.md` (proposed)
-**Status**: Draft r2 (review findings S1-S9 addressed; execute only after the human approves spec A-1..A-16, the design approach and AD-031)
+**Status**: Draft r3 (review findings S1-S14 addressed; execute only after the human approves spec A-1..A-18, the design approach and AD-031)
 
 ---
 
@@ -51,9 +51,9 @@ Phases run in order; tasks within a phase run in order. A heavy task counts as t
 | 1. Foundation and network boundary | T1-T6 | 6 | none | Low: plumbing, but SAFE-01 and the hash check live here. | mid |
 | 2. Source parsers and mapping | T7-T11 | 5 | none | Medium: PIT selection, ITR year-to-date rows, dividend source rule and real file layouts. | high reasoning (T7, T8, T10, T11), mid (T9) |
 | 3. Computation, comparison and report | T12-T16 | 5 | none | Medium: formulas, tolerance and verdict rules decide the result. | high reasoning |
-| 4. CLI, docs and real run | T17-T20 | 6 (T17 and T20 heavy) | none | Medium: exit-code table; the real run downloads several GB of zips and parses COTAHIST. | high (T17, T20), mid (T18, T19) |
+| 4. CLI, docs and real run | T17-T20 | 7 (T17, T18 and T20 heavy) | none | Medium: exit-code table; fetch order (B3 records before mapping); the real run downloads several GB of zips and parses COTAHIST. | high (T17, T18, T20), mid (T19) |
 
-No task touches a REVIEW.md sensitive path (`py/core/**`, `api/**`, `py/snapshot_*.py`, `data/allocation*/**`, `baselines/**`). Total 20 tasks, counted 22.
+No task touches a REVIEW.md sensitive path (`py/core/**`, `api/**`, `py/snapshot_*.py`, `data/allocation*/**`, `baselines/**`). Total 20 tasks, counted 23.
 
 ### Phase 1: Foundation and network boundary
 
@@ -171,11 +171,11 @@ T19 → T20
 
 ### T4: Load a Status Invest CSV read-only and select the eligible universe
 
-**What**: `load(path)` (exit 3 absent; exit 4 on a missing required column or a duplicated ticker; blank → `None`; sha256 recorded) and `eligible(csv)` with `ELIGIBILITY = {"cap_min": 200_000_000, "liq_min": 50_000}` (A-1).
+**What**: `REQUIRED_COLUMNS` (`TICKER`, `SETOR`, the 19 fields) and `load(path)` (exit 3 absent; exit 4 on a missing required column or a duplicated ticker; blank → `None`; `SETOR` kept per ticker; sha256 recorded) and `eligible(csv)` with `ELIGIBILITY = {"cap_min": 200_000_000, "liq_min": 50_000}` (A-1).
 **Where**: `py/pit_rebuild/status_invest.py`
 **Depends on**: None
 **Reuses**: eligibility rule of `py/core/preprocessing.py:103-106` (restated)
-**Requirement**: SAFE-02, MAP-01 (denominator), A-1
+**Requirement**: SAFE-02, MAP-01 (denominator), MAP-02 (`SETOR` input), A-1
 **Sensitive area**: no
 
 **Tools**:
@@ -185,9 +185,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_status_invest.py` with fixture `tests/fixtures/pit_rebuild/si_small.csv`: boundaries (cap exactly 200,000,000 and liq exactly 50,000 eligible; 199,999,999.99 or 49,999.99 not; blank not); missing column exit 4 naming it; duplicated ticker exit 4 naming it; absent path exit 3; file bytes and mtime unchanged after `load`; a text read of `api/app/services/premium_policy.py` finds the `arrojado` anchor `cap_min`/`liq_min` equal to `ELIGIBILITY`; on `data/raw/status_invest_fundamentals.csv` `eligible` returns 269 tickers, of which 66 have a blank `DY` loaded as `None` (the raw blank is kept; A-4's DY-as-zero rule lives in `compare.reference`, T13).
+- [ ] `tests/test_pit_rebuild_status_invest.py` with fixture `tests/fixtures/pit_rebuild/si_small.csv`: boundaries (cap exactly 200,000,000 and liq exactly 50,000 eligible; 199,999,999.99 or 49,999.99 not; blank not); missing column exit 4 naming it (one subtest for `TICKER`, one for `SETOR`, one for `VALOR DE MERCADO`); duplicated ticker exit 4 naming it; absent path exit 3; file bytes and mtime unchanged after `load`; a text read of `api/app/services/premium_policy.py` finds the `arrojado` anchor `cap_min`/`liq_min` equal to `ELIGIBILITY`; on `data/raw/status_invest_fundamentals.csv` `eligible` returns 269 tickers, of which 66 have a blank `DY` loaded as `None` (the raw blank is kept; A-4's DY-as-zero rule lives in `compare.reference`, T13).
 - [ ] Gate check passes: Quick for `test_pit_rebuild_status_invest.py`
-- [ ] Test count: ≥ 7 tests pass
+- [ ] Test count: ≥ 8 tests pass
 
 **Tests**: unit
 **Gate**: quick
@@ -271,11 +271,11 @@ T19 → T20
 
 ### T8: Trailing-12-month, fiscal-year, balance and share accessors
 
-**What**: `ttm`, `ttm_year_before`, `annual`, `balance`, `shares` (outstanding per class and total) on top of T7, each returning the value with its `dt_receb`.
+**What**: `ttm`, `ttm_year_before`, `annual`, `balance`, `shares` (issued per class and total, treasury included, A-17) and `share_scale` (A-18) on top of T7, each value returned with its `dt_receb`.
 **Where**: `py/pit_rebuild/cvm.py`
 **Depends on**: T7
 **Reuses**: T7 `FilingStore`
-**Requirement**: IND-01, PIT-01
+**Requirement**: IND-01, IND-04, PIT-01
 **Sensitive area**: no
 
 **Tools**:
@@ -285,9 +285,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cvm.py` extended: TTM after an ITR = `FY_prev + YTD − YTD_prev` on hand-computed fixture numbers, using the Q2 fixture whose three-month rows are written last (the expected value differs from the one the three-month rows would give); TTM for the June-start fiscal year uses the DFP whose period ends 2025-05-31; TTM after a DFP = annual value; missing `FY_prev` → `None`; `annual(..., years_back=5)` reads the DFP five fiscal years back and `None` when absent; `shares` subtracts treasury per class; every returned item carries a `dt_receb ≤ d`.
+- [ ] `tests/test_pit_rebuild_cvm.py` extended: TTM after an ITR = `FY_prev + YTD − YTD_prev` on hand-computed fixture numbers, using the Q2 fixture whose three-month rows are written last (the expected value differs from the one the three-month rows would give); TTM for the June-start fiscal year uses the DFP whose period ends 2025-05-31; TTM after a DFP = annual value; missing `FY_prev` → `None`; `annual(..., years_back=5)` reads the DFP five fiscal years back and `None` when absent; `shares` returns `CAP_INTEGR` per class with treasury **not** subtracted (fixture with ON treasury 2,526,656 of 705,260,684 returns 705,260,684) from the newest usable filing, an ITR when it is newer than the DFP; `share_scale(31_258+61_361, 92_619_256)` → `(1000, True)`, `share_scale(1_253_079_108, 1_253_079_108)` → `(1, True)`, `share_scale(n, None)` and `share_scale(n, 0)` → `(1, False)`; every returned item carries a `dt_receb ≤ d`.
 - [ ] Gate check passes: Quick for `test_pit_rebuild_cvm.py`
-- [ ] Test count: ≥ 14 tests pass in the file (T7's plus ≥ 6)
+- [ ] Test count: ≥ 16 tests pass in the file (T7's plus ≥ 8)
 
 **Tests**: unit
 **Gate**: quick
@@ -296,11 +296,11 @@ T19 → T20
 
 ### T9: Parse COTAHIST and read price, liquidity and ISIN at `d`
 
-**What**: `load(zip_paths, tickers)` (fixed-width positions verified in design.md; `TIPREG 01`, `TPMERC 010`, `CODBDI 02`; `FATCOT`), `quote_at`, `avg_volume` (30 sessions), `isin`.
+**What**: `load(zip_paths, tickers)` (fixed-width positions verified in design.md; `TIPREG 01`, `TPMERC 010`, `CODBDI 02`; `FATCOT`), `quote_at`, `avg_volume` (30 sessions), `isin`, `share_class`, `next_session` (lower and upper horizon, A-16) and `class_prices` (A-17).
 **Where**: `py/pit_rebuild/cotahist.py`
 **Depends on**: None (Phase 1 done)
 **Reuses**: `tests/pit_rebuild_support.py`
-**Requirement**: PIT-01, IND-01 (`PRECO`, `LIQUIDEZ MEDIA DIARIA`), A-7, A-15 (`ESPECI`), A-16 (session calendar)
+**Requirement**: PIT-01, IND-01 (`PRECO`, `LIQUIDEZ MEDIA DIARIA`), IND-04, A-7, A-15 (`ESPECI`), A-16 (session calendar), A-17
 **Sensitive area**: no
 
 **Tools**:
@@ -310,9 +310,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cotahist.py` with `tests/fixtures/pit_rebuild/cotahist.txt` (real line layout, including the 2026-11-06 PETR4 line values 45.36 / `BRPETRACNPR6`): a session on `d` is used and one on `d + 1` is not; `TPMERC` other than `010` and `CODBDI` other than `02` are ignored; `avg_volume` over 30 sessions and over fewer when fewer exist; last session more than 30 calendar days before `d` → `None` (`no_quote`); `FATCOT 1000` divides the price; `share_class` returns the first `ESPECI` token (`PN` for PETR4, `UNT` for TAEE11, `PNA` for a `PNA     N2` line); `next_session` of a Friday returns the following Monday session from the calendar of all tickers, and `None` after the last loaded session.
+- [ ] `tests/test_pit_rebuild_cotahist.py` with `tests/fixtures/pit_rebuild/cotahist.txt` (real line layout, including the 2026-11-06 PETR4 line values 45.36 / `BRPETRACNPR6`): a session on `d` is used and one on `d + 1` is not; `TPMERC` other than `010` and `CODBDI` other than `02` are ignored; `avg_volume` over 30 sessions and over fewer when fewer exist; last session more than 30 calendar days before `d` → `None` (`no_quote`); `FATCOT 1000` divides the price; `share_class` returns the first `ESPECI` token (`PN` for PETR4, `UNT` for TAEE11, `PNA` for a `PNA     N2` line); `next_session` of a Friday returns the following Monday session from the calendar of all tickers, `None` after the last loaded session, and `None` for a day before the first loaded session (a 2020 day with the calendar starting 2025-01-02, A-16); `load` with `{EUCA3, EUCA4}` keeps both tickers' lines and drops a third ticker's; `class_prices` on a company with `ON` (`USIM3`), `PNA` (`USIM5`, high volume, 7.15) and `PNB` (`USIM6`, low volume, 8.65) returns `ON` → `USIM3` and `PREF` → `USIM5` at 7.15, skips a `UNT` line, breaks a volume tie by ticker, and returns `PREF` → `None` when the only preferred ticker's last session is more than 30 days before `d`.
 - [ ] Gate check passes: Quick for `test_pit_rebuild_cotahist.py`
-- [ ] Test count: ≥ 8 tests pass
+- [ ] Test count: ≥ 11 tests pass
 
 **Tests**: unit
 **Gate**: quick
@@ -321,7 +321,7 @@ T19 → T20
 
 ### T10: Parse B3 and Yahoo dividends and sum the 12 months to `d`
 
-**What**: `parse_b3_company`, `parse_b3_cash` (pages, completeness), `parse_yahoo`, `choose_source` (A-15), `b3_ex_dates`, `in_window` and `dps_12m` (A-16; leak guard), class matching by `typeStock`, unit DPS from `UNT` records or from class DPS and composition.
+**What**: `parse_b3_company` (`tradingName`, `codeCVM`, `totalNumberShares`), `parse_b3_cash` (pages, completeness), `parse_yahoo`, `choose_source` (A-15), `resolve` (Yahoo failure after `b3_empty`), `b3_ex_dates`, `in_window` and `dps_12m` (A-16; leak guard), class matching by `typeStock`, unit DPS from `UNT` records or from class DPS and composition.
 **Where**: `py/pit_rebuild/dividends.py`
 **Depends on**: None (Phase 1 done)
 **Reuses**: T1 `PITLeakError`
@@ -335,9 +335,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_dividends.py` with fixtures trimmed from real cached responses (keys exactly as in design.md "Sources"): `b3_company_petr.json` (`GetListedSupplementCompany`: `tradingName` with trailing spaces, `codeCVM`), `b3_cash_petrobras_p1.json` and `_p2.json` (`GetListedCashDividends`: `page` + `results` with `typeStock`, `valueCash`, `lastDatePriorEx`), `yahoo_petr4.json` (`events.dividends`). Asserts: `tradingName` stripped; `,` decimals and `dd/mm/yyyy` parsed; both pages present → `complete`, page 2 missing or `totalRecords` larger → not complete; `in_window`: ex-date `= d` counts, `= d − 364` counts, `= d − 365` does not, `= d + 1` does not; B3 ex-date = next session (`lastDatePriorEx` Friday `d − 3` → Monday session `d` → counts; `lastDatePriorEx = d` → next session after `d` → does not count); Yahoo ex-date from the epoch; `choose_source` returns `b3_failed`, `b3_empty`, `b3_incomplete` and `b3_short_history` each from its own input, and `b3` when the earliest record is exactly `d − 365 days`; records matched by `typeStock` (`PN` records do not enter `ON`); a `UNT` ticker uses `UNT` records when present and `1×ON + 2×PN` for `1 ON / 2 PN` when absent; a record with ex-date after `d` passed straight to the sum raises exit 4.
+- [ ] `tests/test_pit_rebuild_dividends.py` with fixtures trimmed from real cached responses (keys exactly as in design.md "Sources"): `b3_company_petr.json` (`GetListedSupplementCompany`: `tradingName` with trailing spaces, `codeCVM`), `b3_cash_petrobras_p1.json` and `_p2.json` (`GetListedCashDividends`: `page` + `results` with `typeStock`, `valueCash`, `lastDatePriorEx`), `yahoo_petr4.json` (`events.dividends`). Asserts: `tradingName` stripped, `totalNumberShares` `"92.619.256"` → 92619256, an empty company list → `None`; `,` decimals and `dd/mm/yyyy` parsed; both pages present → `complete`, page 2 missing or `totalRecords` larger → not complete; `in_window`: ex-date `= d` counts, `= d − 364` counts, `= d − 365` does not, `= d + 1` does not; B3 ex-date = next session (`lastDatePriorEx` Friday `d − 3` → Monday session `d` → counts; `lastDatePriorEx = d` → next session after `d` → does not count); Yahoo ex-date from the epoch; `choose_source` returns `b3_failed`, `b3_empty`, `b3_incomplete` and `b3_short_history` each from its own input, and `b3` when the earliest record is exactly `d − 365 days`; records matched by `typeStock` (`PN` records do not enter `ON`); a `UNT` ticker uses `UNT` records when present and `1×ON + 2×PN` for `1 ON / 2 PN` when absent; a record with ex-date after `d` passed straight to the sum raises exit 4; `resolve` after `b3_empty` with Yahoo failed returns source `b3`, reason `b3_empty_yahoo_failed` and DPS 0 (AZUL-shaped fixture `b3_cash_azul_empty.json`, `totalRecords: 0`), after `b3_failed` with Yahoo failed returns `none`/`no_dividend_source`, and with Yahoo parsed returns `yahoo` and the original reason; a B3 record with `lastDatePriorEx` 2020-03-02 and a calendar starting 2025-01-02 gets no ex-date and adds nothing to `dps_12m` at `d = 2026-01-01` (A-16 lower cut).
 - [ ] Gate check passes: Quick for `test_pit_rebuild_dividends.py`
-- [ ] Test count: ≥ 10 tests pass
+- [ ] Test count: ≥ 14 tests pass
 
 **Tests**: unit
 **Gate**: quick
@@ -346,11 +346,11 @@ T19 → T20
 
 ### T11: Map tickers to CVM companies and classify the financial group
 
-**What**: `load_fca`, `parse_composition`, `map_tickers` (FCA over years, cadastro, B3 `codeCVM` fallback; reasons of MAP-01), `classify` (A-10 rules, including `si_setor` and `unclassified` for unmapped tickers).
+**What**: `load_fca`, `parse_composition`, `map_tickers` (FCA over years, cadastro, B3 `codeCVM` fallback from the records of every eligible root; reasons of MAP-01), `quote_tickers` (A-17), `classify` (A-10 rules, including `si_setor` and `unclassified` for unmapped tickers).
 **Where**: `py/pit_rebuild/mapping.py`
 **Depends on**: T7
 **Reuses**: T7 `load_cadastro`
-**Requirement**: MAP-01, MAP-02, MAP-03
+**Requirement**: MAP-01, MAP-02, MAP-03, IND-04
 **Sensitive area**: no
 
 **Tools**:
@@ -360,9 +360,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_mapping.py` with `tests/fixtures/pit_rebuild/fca/` (two years; a ticker only in the older year; `TAEE11` `1 ON / 2 PN`; `KLBN11` `1 KLBN3 + 4 KLBN4`; an unparseable unit): mapping from an older FCA year; B3 fallback when absent from FCA; each reason `not_in_fca_or_b3`, `no_cvm_code`, `unit_composition_unparsed` produced by its own input; `parse_composition` returns `{ON:1, PN:2}` and `{KLBN3:1, KLBN4:4}`; `classify` by `SETOR_ATIV` (each of the 7 values) and by DRE `3.01` containing `Intermediação Financeira`, with the rule recorded; an unmapped ticker with Status Invest `SETOR` `Consumo Cíclico` is `non_financial` with rule `si_setor`; an unmapped ticker with `SETOR` `Financeiro e Outros` is `unclassified`; a mapped ticker with `SETOR` `Financeiro e Outros` but a non-financial `SETOR_ATIV` and DRE `3.01` stays `non_financial` (SETOR never puts a mapped ticker in the financial group).
+- [ ] `tests/test_pit_rebuild_mapping.py` with `tests/fixtures/pit_rebuild/fca/` (two years; a ticker only in the older year; `TAEE11` `1 ON / 2 PN`; `KLBN11` `1 KLBN3 + 4 KLBN4`; an unparseable unit): mapping from an older FCA year; B3 fallback when absent from every FCA year (the B3 record of the ticker's root resolves `codeCVM`, cadastro gives the CNPJ); each reason `not_in_fca_or_b3`, `no_cvm_code`, `unit_composition_unparsed` produced by its own input; `parse_composition` returns `{ON:1, PN:2}` and `{KLBN3:1, KLBN4:4}`; `classify` by `SETOR_ATIV` (each of the 7 values) and by DRE `3.01` containing `Intermediação Financeira`, with the rule recorded; an unmapped ticker with Status Invest `SETOR` `Consumo Cíclico` is `non_financial` with rule `si_setor`; an unmapped ticker with `SETOR` `Financeiro e Outros` is `unclassified`; a mapped ticker with `SETOR` `Financeiro e Outros` but a non-financial `SETOR_ATIV` and DRE `3.01` stays `non_financial` (SETOR never puts a mapped ticker in the financial group); `quote_tickers` with eligible `{EUCA4, KLBN11}`, FCA listing `EUCA3`/`EUCA4` for EUCATEX and SI tickers `{EUCA3, EUCA4, KLBN3, KLBN4, KLBN11, PETR4}` returns `{EUCA3, EUCA4, KLBN3, KLBN4, KLBN11}` (non-eligible same-company class and unit components in, unrelated ticker out).
 - [ ] Gate check passes: Build (last task of Phase 2)
-- [ ] Test count: ≥ 10 tests pass
+- [ ] Test count: ≥ 12 tests pass
 
 **Tests**: unit
 **Gate**: build
@@ -371,11 +371,11 @@ T19 → T20
 
 ### T12: Compute the 19 fields for one ticker at `d`
 
-**What**: `FORMULAS` (design.md table) and `compute(inputs, d)` with per-field `None` + reason (IND-03), unit price per share (MAP-03), multi-class `VALOR DE MERCADO`, signed ratios, `short_history`, and the PIT leak guard.
+**What**: `FORMULAS` (design.md table) and `compute(inputs, d)` with per-field `None` + reason (IND-03), unit price per share (MAP-03), `VALOR DE MERCADO` and the per-share divisor by A-17/A-18 (with the `vm_price_fallback` flag), signed ratios, `short_history`, and the PIT leak guard.
 **Where**: `py/pit_rebuild/indicators.py`
 **Depends on**: None (Phase 2 done)
 **Reuses**: T3 `ALL_FIELDS`
-**Requirement**: IND-01, IND-03, MAP-03, PIT-02
+**Requirement**: IND-01, IND-03, IND-04, MAP-03, PIT-02
 **Sensitive area**: no
 
 **Tools**:
@@ -385,9 +385,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_indicators.py`: one hand-computed expected value per field (19 asserts on one synthetic company), and a second ticker of the same company (PN) with the same `VALOR DE MERCADO` and `EV/EBIT` but a different `P/L` and `PSR`; unit `k = 3` divides `p` in `P/L`, `P/VP`, `PSR`; class without a quote uses the traded class's price in `VALOR DE MERCADO`; negative `LL` gives a negative `P/L`; zero `PC` leaves `LIQ. CORRENTE` empty with reason; CAGR with base ≤ 0 empty; missing FY−5 → `short_history`; an input with `dt_receb > d` raises exit 4; `set(FORMULAS) == set(ALL_FIELDS)`.
+- [ ] `tests/test_pit_rebuild_indicators.py`: one hand-computed expected value per field (19 asserts on one synthetic company), and a second ticker of the same company (PN) with the same `VALOR DE MERCADO` and `EV/EBIT` but a different `P/L` and `PSR`; unit `k = 3` divides `p` in `P/L`, `P/VP`, `PSR`; `VALOR DE MERCADO` with `N_ON` 705,260,684, `N_PREF` 547,818,424, `p_ON` 6.25 and class prices `PREF` → `USIM5` 7.15 equals 8,324,781,006.60 (the SI value of 2026-08-07; pricing the preferred shares at `USIM6` 8.65 would give 9,146,508,642.60, so the test fails if the wrong preferred ticker is used); a company with `PREF` `None` and `N_PREF > 0` prices the preferred shares at `p_ON` and sets `vm_price_fallback`; both classes `None` → no value, reason `no_quote`; counts with share scale 1000 multiply `VALOR DE MERCADO` and divide `P/L`'s per-share earnings accordingly; negative `LL` gives a negative `P/L`; zero `PC` leaves `LIQ. CORRENTE` empty with reason; CAGR with base ≤ 0 empty; missing FY−5 → `short_history`; an input with `dt_receb > d` raises exit 4; `set(FORMULAS) == set(ALL_FIELDS)`.
 - [ ] Gate check passes: Quick for `test_pit_rebuild_indicators.py`
-- [ ] Test count: ≥ 10 tests pass
+- [ ] Test count: ≥ 13 tests pass
 
 **Tests**: unit
 **Gate**: quick
@@ -475,7 +475,7 @@ T19 → T20
 **Where**: `py/pit_rebuild/report.py`
 **Depends on**: T14, T15
 **Reuses**: `docs/validation/class-allocation-oos.md` section style
-**Requirement**: RPT-02, RPT-03, RPT-04, VER-03, VER-04, MAP-02, COV-02
+**Requirement**: RPT-02, RPT-03, RPT-04, VER-03, VER-04, MAP-02, COV-02, IND-04
 **Sensitive area**: no
 
 **Tools**:
@@ -485,9 +485,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_report.py`: every raw file appears with URL, sha256 and bytes; both SI CSVs with path, sha256, date; parameters hold thresholds with their source lines, tolerances, `percent_fields`, `liquidity_sessions`, all 19 formulas; one Yahoo-sourced ticker sets `dividends.source = "secondary"` with counts per date and per reason and the caveat, zero sets `primary`; the unclassified list, `class_without_unclassified` and `class_differs` are in the JSON and the Markdown verdict line shows both class verdicts when they differ; COTAHIST at the probe floor renders `≤ 2005 (limite da sondagem)`; DY coverage shows each source with its retention; `render_markdown` is deterministic and changing one number in the dict changes the Markdown (proves it reads the dict, RPT-04); `encode_json` is sorted, indented, newline-terminated.
+- [ ] `tests/test_pit_rebuild_report.py`: every raw file appears with URL, sha256 and bytes; both SI CSVs with path, sha256, date; parameters hold thresholds with their source lines, tolerances, `percent_fields`, `liquidity_sessions`, all 19 formulas; one Yahoo-sourced ticker sets `dividends.source = "secondary"` with counts per date and per reason and the caveat, zero sets `primary`; `mapping.mapped_via_b3`, `mapping.vm_price_fallback` (count and companies), `mapping.share_scale` (`x1000`, `unverified`) and `dividends.b3_empty_yahoo_failed` are in the JSON per date and rendered in the Markdown; the unclassified list, `class_without_unclassified` and `class_differs` are in the JSON and the Markdown verdict line shows both class verdicts when they differ; COTAHIST at the probe floor renders `≤ 2005 (limite da sondagem)`; DY coverage shows each source with its retention; `render_markdown` is deterministic and changing one number in the dict changes the Markdown (proves it reads the dict, RPT-04); `encode_json` is sorted, indented, newline-terminated.
 - [ ] Gate check passes: Build (last task of Phase 3)
-- [ ] Test count: ≥ 8 tests pass
+- [ ] Test count: ≥ 9 tests pass
 
 **Tests**: unit
 **Gate**: build
@@ -500,7 +500,7 @@ T19 → T20
 **Where**: `py/pit_rebuild/cli.py`
 **Depends on**: None (Phase 3 done)
 **Reuses**: `py/pit_validation.py:1418-1432` `main`; `tests/test_pit_validation.py:355-374` out-dir snapshot
-**Requirement**: CLI-01, CLI-02, CLI-03, CLI-04, CLI-05, SAFE-01, SAFE-02, RPT-01, RPT-05, PIT-01, COV-03
+**Requirement**: CLI-01, CLI-02, CLI-03, CLI-04, CLI-05, SAFE-01, SAFE-02, RPT-01, RPT-05, PIT-01, COV-03, IND-04
 **Sensitive area**: no
 
 **Tools**:
@@ -510,22 +510,22 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cli.py`, all through `main([...])` on a fixture cache with two dates and two small SI CSVs, opener that fails the test if called: exit 0 writes both files with the hand-computed class verdict; exit 1 with an unwritable out-dir; exit 2 for a bad date, a repeated date, a `--date`/`--si` count mismatch and each forbidden out-dir/cache-dir root (one subtest each, nothing written); exit 3 for a missing `--si` and a missing cache dir; exit 4 for a tampered cached file, an SI CSV missing a column and a fixture filing whose `DT_RECEB` is forced past `d` into the computation; exit 5 for a required file absent with `--offline`; every failure leaves pre-existing report files byte-identical and prints one stderr line; SI CSV bytes unchanged; a hash snapshot of `data/`, `snapshots/`, `baselines/` is identical before and after the suite; `python3 py/pit_rebuild report --help` exits 0 in a subprocess; with an injected `clock` that advances a known step per call, the JSON's `effort.load` and `compute_seconds_per_date` equal the hand-computed values.
+- [ ] `tests/test_pit_rebuild_cli.py`, all through `main([...])` on a fixture cache with two dates and two small SI CSVs, opener that fails the test if called: exit 0 writes both files with the hand-computed class verdict; exit 1 with an unwritable out-dir; exit 2 for a bad date, a repeated date, a `--date`/`--si` count mismatch and each forbidden out-dir/cache-dir root (one subtest each, nothing written); exit 3 for a missing `--si` and a missing cache dir; exit 4 for a tampered cached file, an SI CSV missing a column and a fixture filing whose `DT_RECEB` is forced past `d` into the computation; exit 5 for a required file absent with `--offline`; every failure leaves pre-existing report files byte-identical and prints one stderr line; SI CSV bytes unchanged; a hash snapshot of `data/`, `snapshots/`, `baselines/` is identical before and after the suite; `python3 py/pit_rebuild report --help` exits 0 in a subprocess; with an injected `clock` that advances a known step per call, the JSON's `effort.load` and `compute_seconds_per_date` equal the hand-computed values; the fixture cache has a company whose only eligible ticker is its PN (`EUCA4`-shaped) with a non-eligible ON ticker quoted at a different price, and the exit-0 JSON gives that company's `VALOR DE MERCADO` from the ON ticker's own close (fails if the COTAHIST load keeps only eligible tickers), plus a company whose preferred ticker has no session in the 30 days before `d`, counted once in `mapping.vm_price_fallback`.
 - [ ] Gate check passes: Full
-- [ ] Test count: ≥ 10 tests pass in `test_pit_rebuild_cli.py`
+- [ ] Test count: ≥ 12 tests pass in `test_pit_rebuild_cli.py`
 
 **Tests**: integration
 **Gate**: full
 
 ---
 
-### T18: `fetch` subcommand with dividend fallback and coverage probes
+### T18: `fetch` subcommand with dividend fallback and coverage probes (HEAVY, counts as 2)
 
-**What**: `fetch` orchestration: plan files (T6) → download required files → SI load, COTAHIST parse and mapping on cached files → per mapped root the B3 company record, then every page of `GetListedCashDividends` by its `tradingName` → Yahoo (`period1`/`period2`) for each eligible ticker that `choose_source` sends to Yahoo at any requested date → CVM listings, COTAHIST HEAD probes 2005-2012 and `Content-Length` of every yearly file in `full_rebuild_years` → manifest.
+**What**: `fetch` orchestration in design.md's order: plan files (T6) → download required files → SI load → the B3 company record for the root of **every** eligible ticker of every date → CVM/FCA parse and `map_tickers` with those records → `quote_tickers` and the COTAHIST parse → every page of `GetListedCashDividends` for each `tradingName` resolved for a mapped company → Yahoo (`period1`/`period2`) for each eligible ticker that `choose_source` sends to Yahoo at any requested date → CVM listings, COTAHIST HEAD probes 2005-2012 and `Content-Length` of every yearly file in `full_rebuild_years` → manifest.
 **Where**: `py/pit_rebuild/cli.py`
 **Depends on**: T17
 **Reuses**: T5 `Cache`, T6 `plan_files`, T10 parsers, T11 `map_tickers`
-**Requirement**: SRC-01, SRC-04, SRC-05, COV-01, COV-03, CLI-05
+**Requirement**: SRC-01, SRC-04, SRC-05, MAP-01, COV-01, COV-03, CLI-05
 **Sensitive area**: no
 
 **Tools**:
@@ -535,9 +535,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cli.py` extended with a fake opener serving the fixture files: `fetch` requests every planned URL once and writes the manifest; a second `fetch` makes no GET for cached files; a B3 cash-dividend history spread over two pages fetches both pages; a B3 company record returning HTTP 500, a cash history with `totalRecords: 0`, and a history whose page 2 fails each trigger one Yahoo request per eligible ticker of that company, with reasons `b3_failed`, `b3_empty`, `b3_incomplete`; a complete history whose earliest `lastDatePriorEx` is after `d − 365 days` triggers the Yahoo request and the following `report --offline` takes that ticker's DY from Yahoo with reason `b3_short_history` and marks DY secondary; a complete history reaching `d − 365` makes no Yahoo request and records `b3`; a failing required COTAHIST URL exits 5 naming it and keeps already cached files; `fetch` then `report --offline` exits 0 end to end.
+- [ ] `tests/test_pit_rebuild_cli.py` extended with a fake opener serving the fixture files: `fetch` requests every planned URL once and writes the manifest; a second `fetch` makes no GET for cached files; a B3 cash-dividend history spread over two pages fetches both pages; a B3 company record returning HTTP 500, a cash history with `totalRecords: 0`, and a history whose page 2 fails each trigger one Yahoo request per eligible ticker of that company, with reasons `b3_failed`, `b3_empty`, `b3_incomplete`; a complete history whose earliest `lastDatePriorEx` is after `d − 365 days` triggers the Yahoo request and the following `report --offline` takes that ticker's DY from Yahoo with reason `b3_short_history` and marks DY secondary; a complete history reaching `d − 365` makes no Yahoo request and records `b3`; a failing required COTAHIST URL exits 5 naming it and keeps already cached files; `fetch` then `report --offline` exits 0 end to end; a ticker absent from every FCA fixture year but present in a B3 company fixture (its root's `codeCVM` in the cadastro fixture) gets its B3 record requested by `fetch` and, after `report --offline`, is mapped (listed in `mapping.mapped_via_b3`, not unmapped with `not_in_fca_or_b3`) and has rebuilt fields; an AZUL-shaped company (B3 record resolved, `GetListedCashDividends` `totalRecords: 0`, Yahoo answering 404) gets DY `0.00` from `report --offline` with source `b3`, reason `b3_empty_yahoo_failed`, counted under `b3` in `dividends.by_source` and not under `none`.
 - [ ] Gate check passes: Full
-- [ ] Test count: ≥ 18 tests pass in `test_pit_rebuild_cli.py` (T17's plus ≥ 8)
+- [ ] Test count: ≥ 22 tests pass in `test_pit_rebuild_cli.py` (T17's plus ≥ 10)
 
 **Tests**: integration
 **Gate**: full
@@ -643,7 +643,7 @@ Execution is strictly sequential, task by task in number order.
 | T15 | one module: coverage | ✅ Granular |
 | T16 | one module: report | ✅ Granular |
 | T17 | `cli.py` report path + exit codes + timing | ⚠️ Heavy (counts 2); cohesive (one entry point), kept whole so each exit code is tested through the real path in the task that creates it |
-| T18 | `cli.py` fetch path | ✅ Granular |
+| T18 | `cli.py` fetch path (B3 records before mapping, quote set, dividends, probes) | ⚠️ Heavy (counts 2); cohesive (one subcommand), kept whole so the fetch order is tested end to end with `report --offline` |
 | T19 | one doc section | ✅ Granular |
 | T20 | real run + artifact test | ✅ Granular (heavy) |
 
