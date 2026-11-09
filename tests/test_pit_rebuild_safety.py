@@ -12,6 +12,8 @@ from pathlib import Path
 from unittest import mock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# This file names the frozen trees; keep bytecode out of them as the bundle tests do (AD-013).
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 
 from pit_rebuild.errors import ArgumentError  # noqa: E402
