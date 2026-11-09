@@ -56,6 +56,8 @@ export type AllocationClass = {
   targetWeight: number;
   targetAmountBrl: number;
   metrics?: Record<string, unknown>;
+  cashResidualBrl?: number | null;
+  overTargetBrl?: number | null;
 };
 
 export type RecommendationConstituent = {
@@ -63,6 +65,19 @@ export type RecommendationConstituent = {
   sleeveWeight: number;
   portfolioWeight: number;
   targetAmountBrl: number;
+  reasons: string[];
+  priceBrl: number | null;
+  quantity: number | null;
+  amountBrl: number | null;
+  effectivePortfolioWeight: number | null;
+};
+
+export type DroppedConstituent = {
+  ticker: string;
+  sleeveWeight: number;
+  portfolioWeight: number;
+  targetAmountBrl: number;
+  priceBrl: number;
   reasons: string[];
 };
 
@@ -92,6 +107,8 @@ export type Recommendation = {
   failureMessage: string | null;
   stocks: RecommendationConstituent[];
   fiis: RecommendationConstituent[];
+  stocksDropped: DroppedConstituent[];
+  fiisDropped: DroppedConstituent[];
   policy: Record<string, unknown> | null;
   provenance: RecommendationProvenance | null;
 };

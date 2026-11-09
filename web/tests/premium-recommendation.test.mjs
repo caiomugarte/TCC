@@ -80,3 +80,61 @@ test("in-progress copy stays truthful and polling stops only on terminal status 
   assert.match(viewSource, /if \(next\.status === "completed" \|\| next\.status === "failed"\) return;/);
   assert.match(viewSource, /requestRef\.current \+= 1/);
 });
+
+const apiSchemaSource = await readFile(new URL("../../api/app/schemas/recommendation.py", import.meta.url), "utf8");
+
+function typeBody(name) {
+  const match = typesSource.match(new RegExp(`export type ${name} = \\{([\\s\\S]*?)\\n\\};`));
+  assert.ok(match, `${name} is declared in api-types.ts`);
+  return match[1];
+}
+
+function apiClassBody(name) {
+  const header = `\nclass ${name}(`;
+  const start = apiSchemaSource.indexOf(header);
+  assert.ok(start >= 0, `class ${name} is declared in the API schema`);
+  const rest = apiSchemaSource.slice(start + header.length);
+  const end = rest.search(/\n(?=\S)/);
+  return end < 0 ? rest : rest.slice(0, end);
+}
+
+// Same rule as to_camel in api/app/schemas/profile.py (the API alias generator).
+function toCamel(snake) {
+  const [head, ...tail] = snake.split("_");
+  return head + tail.map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join("");
+}
+
+test("whole-unit fields are typed for both shapes", () => {
+  const constituent = typeBody("RecommendationConstituent");
+  assert.match(constituent, /priceBrl: number \| null;/);
+  assert.match(constituent, /quantity: number \| null;/);
+  assert.match(constituent, /amountBrl: number \| null;/);
+  assert.match(constituent, /effectivePortfolioWeight: number \| null;/);
+  const allocation = typeBody("AllocationClass");
+  assert.match(allocation, /cashResidualBrl\?: number \| null;/);
+  assert.match(allocation, /overTargetBrl\?: number \| null;/);
+  const dropped = typeBody("DroppedConstituent");
+  assert.match(dropped, /priceBrl: number;/);
+  assert.match(dropped, /reasons: string\[\];/);
+  const recommendation = typeBody("Recommendation");
+  assert.match(recommendation, /stocksDropped: DroppedConstituent\[\];/);
+  assert.match(recommendation, /fiisDropped: DroppedConstituent\[\];/);
+});
+
+test("whole-unit field names match the API schema aliases (REVIEW.md copied-name rule)", () => {
+  // Each pair: the web type, the API class, and the snake_case fields the API declares.
+  const pairs = [
+    ["RecommendationConstituent", "RecommendationConstituent", ["price_brl", "quantity", "amount_brl", "effective_portfolio_weight"]],
+    ["AllocationClass", "AllocationClass", ["cash_residual_brl", "over_target_brl"]],
+    ["DroppedConstituent", "DroppedConstituent", ["ticker", "sleeve_weight", "portfolio_weight", "target_amount_brl", "price_brl", "reasons"]],
+    ["Recommendation", "RecommendationResponse", ["stocks_dropped", "fiis_dropped"]],
+  ];
+  for (const [webType, apiClass, fields] of pairs) {
+    const web = typeBody(webType);
+    const api = apiClassBody(apiClass);
+    for (const field of fields) {
+      assert.match(api, new RegExp(`^    ${field}:`, "m"), `${apiClass}.${field} is declared by the API`);
+      assert.match(web, new RegExp(`^  ${toCamel(field)}\\??:`, "m"), `${webType}.${toCamel(field)} is typed in api-types.ts`);
+    }
+  }
+});

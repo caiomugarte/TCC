@@ -189,7 +189,7 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 | LOT-26 | P1 screen | Tasks (T13) | Pending |
 | LOT-27 | P1 screen | Tasks (T13) | Pending |
 | LOT-28 | P1 screen | Tasks (T13) | Pending |
-| LOT-29 | P1 screen | Tasks (T12, T13) | Pending |
+| LOT-29 | P1 screen | Tasks (T12, T13) | In progress (T12 types; T13 view) |
 
 **Coverage:** 29 total, 29 mapped to tasks, 0 unmapped.
 

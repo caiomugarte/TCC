@@ -494,14 +494,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] Static test "whole-unit fields are typed for both shapes" added to `web/tests/premium-recommendation.test.mjs`
-- [ ] Gate check passes: Web gate (typecheck green before T13: the new fields are nullable)
-- [ ] Test count: 9 + 1 = 10 pass
+- [x] Static test "whole-unit fields are typed for both shapes" added to `web/tests/premium-recommendation.test.mjs`
+- [x] Gate check passes: Web gate (typecheck green before T13: the new fields are nullable)
+- [x] Test count: 9 + 2 = 11 pass (the second static test compares the names with the API aliases, the REVIEW.md copied-name rule; the plan counted one test)
 
 **Tests**: unit (static source)
 **Gate**: web
 
 **Commit**: `feat(web): type the whole-unit buy list fields (#57)`
+
+**Status**: ✅ Done - Web gate: `node --test` 11 pass (9 + 2); `npm run typecheck` exit 0. Mutants killed: web type dropped, web field renamed, API field renamed (caught by the name comparison, which reads `api/app/schemas/recommendation.py`). `web/node_modules` is a symlink to the main checkout; git does not ignore it, so it stays unstaged.
 
 ---
 
