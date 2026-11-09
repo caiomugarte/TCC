@@ -13,6 +13,7 @@ from app.services.premium_policy import (
     POLICY_VERSION,
     STOCK_RULES,
     SYSTEM_GA_CONFIG,
+    WHOLE_UNITS_MODEL_VERSION,
     PremiumPolicyError,
     _selector_policy,
     resolve_basic_policy,
@@ -424,9 +425,17 @@ class SegmentCapPolicyTests(unittest.TestCase):
             "allocation": "allocation-v1",
             "stocks": "stock-selection-v1",
             "fiis": "fii-selection-v2",
+            "whole_units": "whole-units-v1",
         }
-        basic_versions = {**premium_versions, "fiis": "fii-selection-v1"}
+        basic_versions = {
+            "allocation": "allocation-v1",
+            "stocks": "stock-selection-v1",
+            "fiis": "fii-selection-v1",
+        }
+        self.assertEqual(POLICY_VERSION, "premium-policy-v4")
+        self.assertEqual(WHOLE_UNITS_MODEL_VERSION, "whole-units-v1")
         premium = resolve_premium_policy(profile())
+        self.assertEqual(premium.provenance.policy_version, "premium-policy-v4")
         self.assertEqual(dict(premium.provenance.model_versions), premium_versions)
         self.assertEqual(
             json.loads(premium.to_json())["provenance"]["model_versions"], premium_versions

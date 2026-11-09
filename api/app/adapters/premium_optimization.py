@@ -5,7 +5,7 @@ import math
 from pathlib import Path
 import sys
 from types import MappingProxyType
-from typing import Any, Callable, Mapping
+from typing import Any, Callable, Mapping, Sequence
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PY_ROOT = PROJECT_ROOT / "py"
@@ -14,7 +14,19 @@ if str(PY_ROOT) not in sys.path:
 
 # Import after the sys.path mutation: status_invest_inputs imports modules
 # that live in py/ (snapshot_manifest), which must already be importable.
-from app.services.status_invest_inputs import StatusInvestInputs  # noqa: E402
+from app.services.status_invest_inputs import (  # noqa: E402
+    SelectorPriceError,
+    SelectorSnapshotChangedError,
+    SourceSnapshot,
+    StatusInvestInputs,
+    load_selector_prices,
+)
+from app.services.whole_units import (  # noqa: E402
+    FII_MINIMUM_HOLDINGS,
+    REASON_DID_NOT_FIT,
+    REASON_FII_MINIMUM,
+    allocate_whole_units,
+)
 
 from allocation_config import ASSET_CLASSES  # noqa: E402
 from fii_selection import FiiUniverseInfeasibleError  # noqa: E402
@@ -523,6 +535,99 @@ def _constituents(
     return constituents
 
 
+WHOLE_UNITS_ASSUMPTION = (
+    "Quantidades calculadas com o preço da coleta Status Invest desta execução; "
+    "a cotação na hora da compra pode ser diferente."
+)
+
+
+def _whole_unit_rows(
+    rows: list[dict[str, Any]],
+    class_target_brl: float,
+    capital_brl: float,
+    prices: Mapping[str, int],
+    *,
+    minimum_count: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, float]]:
+    """Split one class's target rows into bought and dropped whole-unit rows."""
+
+    try:
+        allocation = allocate_whole_units(
+            [row["ticker"] for row in rows],
+            {row["ticker"]: int(round(float(row["target_amount_brl"]) * 100)) for row in rows},
+            prices,
+            int(round(float(class_target_brl) * 100)),
+            minimum_count=minimum_count,
+        )
+    except ValueError as exc:
+        raise PremiumOptimizationError(f"whole-unit allocation failed: {exc}", "engine_error") from exc
+    bought: list[dict[str, Any]] = []
+    dropped: list[dict[str, Any]] = []
+    for row, line in zip(rows, allocation.lines):
+        price_brl = line.price_cents / 100
+        if line.quantity == 0:
+            dropped.append(
+                {
+                    "ticker": row["ticker"],
+                    "sleeve_weight": row["sleeve_weight"],
+                    "portfolio_weight": row["portfolio_weight"],
+                    "target_amount_brl": row["target_amount_brl"],
+                    "price_brl": price_brl,
+                    "reasons": [*row["reasons"], REASON_DID_NOT_FIT],
+                }
+            )
+            continue
+        amount_brl = line.quantity * line.price_cents / 100
+        bought.append(
+            {
+                **row,
+                "reasons": [*row["reasons"], REASON_FII_MINIMUM] if line.forced else row["reasons"],
+                "price_brl": price_brl,
+                "quantity": line.quantity,
+                "amount_brl": amount_brl,
+                "effective_portfolio_weight": round(amount_brl / float(capital_brl), 6),
+            }
+        )
+    residual = {
+        "cash_residual_brl": allocation.cash_residual_cents / 100,
+        "over_target_brl": allocation.over_target_cents / 100,
+    }
+    return bought, dropped, residual
+
+
+def _buy_list(
+    class_item: dict[str, Any],
+    rows: list[dict[str, Any]],
+    snapshot: SourceSnapshot,
+    price_loader: Callable[[SourceSnapshot, Sequence[str]], Mapping[str, int]],
+    capital_brl: float,
+    *,
+    minimum_count: int,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Whole-unit rows of one class; writes the class residual and excess in place."""
+
+    if not rows:
+        class_item.update(
+            {"cash_residual_brl": float(class_item["target_amount_brl"]), "over_target_brl": 0.0}
+        )
+        return [], []
+    try:
+        prices = price_loader(snapshot, [row["ticker"] for row in rows])
+    except SelectorSnapshotChangedError as exc:
+        raise PremiumOptimizationError(str(exc), "snapshot_changed") from exc
+    except SelectorPriceError as exc:
+        raise PremiumOptimizationError(str(exc), "engine_error") from exc
+    bought, dropped, residual = _whole_unit_rows(
+        rows,
+        float(class_item["target_amount_brl"]),
+        capital_brl,
+        prices,
+        minimum_count=minimum_count,
+    )
+    class_item.update(residual)
+    return bought, dropped
+
+
 def run_premium_optimization(
     policy: object,
     manifest: object,
@@ -536,8 +641,14 @@ def run_premium_optimization(
     fii_engine: Callable[..., Mapping[str, Any]] = _default_fii_engine,
     seed: int | None = None,
     incumbents: Mapping[str, Any] | None = None,
+    whole_units: bool = False,
+    price_loader: Callable[[SourceSnapshot, Sequence[str]], Mapping[str, int]] = load_selector_prices,
 ) -> dict[str, Any]:
-    """Run the three explicit Premium engines and compose one API result."""
+    """Run the three explicit Premium engines and compose one API result.
+
+    With ``whole_units`` the stock and FII rows become a whole-unit buy list
+    priced from the run's own hashed selector CSVs (whole-units-v1).
+    """
 
     if not math.isfinite(float(investable_capital_brl)) or investable_capital_brl <= 0:
         raise PremiumOptimizationError("investable capital must be positive", "policy_invalid")
@@ -689,6 +800,26 @@ def run_premium_optimization(
         )
         fiis = []
 
+    whole_unit_result: dict[str, Any] = {}
+    if whole_units:
+        stocks, stocks_dropped = _buy_list(
+            class_by_engine["brazilian_stocks"],
+            stocks,
+            selector_inputs.stocks,
+            price_loader,
+            float(investable_capital_brl),
+            minimum_count=0,
+        )
+        fiis, fiis_dropped = _buy_list(
+            class_by_engine["fiis"],
+            fiis,
+            selector_inputs.fiis,
+            price_loader,
+            float(investable_capital_brl),
+            minimum_count=FII_MINIMUM_HOLDINGS,
+        )
+        whole_unit_result = {"stocks_dropped": stocks_dropped, "fiis_dropped": fiis_dropped}
+
     policy_provenance = _policy_section(policy, "provenance")
     manifest_id = _manifest_value(manifest, "manifest_id")
     allocation_history = {
@@ -717,16 +848,20 @@ def run_premium_optimization(
             "incumbent_run_id": incumbents.get("run_id") if incumbents else None,
             **{key: record for key, record in zone_records.items() if record is not None},
         }
+    assumptions = [
+        "Resultado Premium bruto, baseado em snapshots imutáveis e regras versionadas.",
+        "Ações brasileiras e FIIs são sleeves selecionados pelos parâmetros resolvidos do perfil.",
+        "Valores em BRL representam alvos de capital investível, não ordens de execução.",
+    ]
+    if whole_units:
+        assumptions.append(WHOLE_UNITS_ASSUMPTION)
     return {
         "policy": policy_dict,
         "classes": classes,
         "stocks": stocks,
         "fiis": fiis,
-        "assumptions": [
-            "Resultado Premium bruto, baseado em snapshots imutáveis e regras versionadas.",
-            "Ações brasileiras e FIIs são sleeves selecionados pelos parâmetros resolvidos do perfil.",
-            "Valores em BRL representam alvos de capital investível, não ordens de execução.",
-        ],
+        **whole_unit_result,
+        "assumptions": assumptions,
         "risks": [
             "Dados históricos e proxies não garantem resultados futuros.",
             "Custos, impostos, spreads e execução não fazem parte deste cálculo.",

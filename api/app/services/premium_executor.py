@@ -11,6 +11,7 @@ from app.adapters.premium_optimization import PremiumOptimizationError, run_prem
 from app.db.models import ProfileRecord
 from app.db.session import SessionLocal
 from app.repositories.recommendations import RecommendationRepository, RecommendationStateError
+from app.services.premium_policy import WHOLE_UNITS_MODEL_VERSION
 from app.services.status_invest_inputs import StatusInvestInputError, StatusInvestInputs, refresh_inputs
 
 
@@ -25,7 +26,11 @@ def _close_session(session: Any) -> None:
 
 
 def _incumbent_tickers(result_json: object, key: str) -> list[str] | None:
-    """Tickers of one class of a completed run; None when the data is unreadable."""
+    """Tickers of one class of a completed run; None when the data is unreadable.
+
+    Entries without a quantity (pre-change) or with an int quantity >= 1 are kept;
+    quantity 0 is skipped; any other quantity makes the class unreadable (LOT-18, LOT-19).
+    """
 
     if not isinstance(result_json, Mapping):
         return None
@@ -34,7 +39,15 @@ def _incumbent_tickers(result_json: object, key: str) -> list[str] | None:
         return None
     tickers: list[str] = []
     for entry in entries:
-        ticker = entry.get("ticker") if isinstance(entry, Mapping) else None
+        if not isinstance(entry, Mapping):
+            return None
+        quantity = entry.get("quantity")
+        if quantity is not None:
+            if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity < 0:
+                return None
+            if quantity == 0:
+                continue
+        ticker = entry.get("ticker")
         if not isinstance(ticker, str) or not ticker.strip():
             return None
         normalized = ticker.strip().upper()
@@ -50,6 +63,19 @@ def _declares_protection_zone(policy: object) -> bool:
         isinstance(policy.get(key), Mapping)
         and policy[key].get("protection_zone") is not None
         for key in ("stocks", "fiis")
+    )
+
+
+def _declares_whole_units(policy: object) -> bool:
+    if not isinstance(policy, Mapping):
+        return False
+    provenance = policy.get("provenance")
+    if not isinstance(provenance, Mapping):
+        return False
+    model_versions = provenance.get("model_versions")
+    return (
+        isinstance(model_versions, Mapping)
+        and model_versions.get("whole_units") == WHOLE_UNITS_MODEL_VERSION
     )
 
 
@@ -115,6 +141,7 @@ class PremiumExecutor:
             repository.mark_running(run_id)
             session.commit()
             policy = run.policy_json
+            whole_units = run.plan == "premium" and _declares_whole_units(policy)
             provenance = dict(run.provenance_json or {})
             profile = session.get(ProfileRecord, run.profile_id)
             if profile is None:
@@ -137,6 +164,8 @@ class PremiumExecutor:
             runner_kwargs: dict[str, Any] = {"selector_inputs": selector_inputs}
             if incumbents is not None:
                 runner_kwargs["incumbents"] = incumbents
+            if whole_units:
+                runner_kwargs["whole_units"] = True
             result = self.optimization_runner(
                 policy,
                 manifest,

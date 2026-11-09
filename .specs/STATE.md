@@ -236,18 +236,32 @@
 - **Date**: 2026-11-06
 - **Status**: active
 
+### AD-030
+- **Decision**: Whole-unit buy list contract for Premium (issue #57). When a run's persisted policy declares `provenance.model_versions.whole_units == "whole-units-v1"` (Premium only; `premium-policy-v4` and its seed unchanged), `PremiumExecutor` passes `whole_units=True` to `run_premium_optimization` (default `False`, so research tools and Basic are unchanged). Prices are `PRECO` from the run's Status Invest selector CSV, used only after its SHA-256 is recomputed and equals `provenance.selector_sources.<class>.sha256`. Per class, in integer cents: floor of each ticker's target; then, while any unit fits the remaining class cash, one unit to the ticker with the largest BRL deficit (`target − quantity × price`) among those that fit, ties to selector order (skip, not stop); one pass, no re-normalisation. Tickers left at 0 move to `stocks_dropped` / `fiis_dropped` with reason `não coube no capital`; if fewer than `min(3, n)` FIIs are bought, 1 quota of the best-placed dropped FIIs is bought (reason `mínimo de 3 FIIs`). Classes record `cash_residual_brl` and `over_target_brl` (non-zero only under the FII minimum). Protection-zone incumbents (AD-026) are entries of `stocks` / `fiis` with no `quantity` (legacy) or an integer `quantity` ≥ 1.
+- **Reason**: Issue #57 `## Decisões` (price-based rounding, 3-FII minimum, class total ≤ target, snapshot price). Gating from the persisted policy records the method per run; keeping the adapter default off keeps the research tools' selection measurements and the Basic result byte-identical.
+- **Trade-off**: The remainder loop can push a cheap ticker past its own target to use the cash; a floor-0 ticker can still get one unit (KNRI11/KNCR11 on run `3289af79` prices). Stock tie-breaks follow alphabetical selector order. After a revert, stored whole-unit results fail the pre-change `extra="forbid"` schema unless the schema commit is kept.
+- **Scope**: `api/app/services/whole_units.py`, `api/app/services/status_invest_inputs.py`, `api/app/adapters/premium_optimization.py`, `api/app/services/premium_executor.py`, `api/app/services/premium_policy.py`, `api/app/schemas/recommendation.py`, `api/app/routers/recommendations.py`, `web/`; #47 (re-runs inherit it). Feature: `.specs/features/premium-whole-units/`.
+- **Date**: 2026-11-09
+- **Status**: active - spec review approved; the orchestrator accepted defaults A-2, A-4, A-5..A-8 (2026-11-09)
+
 ## Handoff
 
-- **Feature**: fii-segment-cap (issue #56) - `.specs/features/fii-segment-cap/`
-- **Phase / Task**: EXECUTE complete: all 14 tasks committed (b1 T1-T8, b2 T9-T14). Next: the independent Verifier (spec-anchored check + discrimination sensor, writes `validation.md`), run by the orchestrator.
-- **Completed**: T1 `9be45a7`; T2 `c5e23ac`; T3 `4016f7d`; T4 `13aae9e`; T5 `8ffd46b`; T6 `a9be058`; T7 `130f1a3`; T8 `49d46cf`; T9 `ac0ca82` policy field + `FII_MAX_PER_SEGMENT`; T10 `8cce51e` FII anchors 4/5/6, Basic 10/12/15; T11 `452f8f4` `premium-policy-v4` + `fii-selection-v2`; T12 `92dcd9f` real-data v4 executability; T13 `244080f` adapter forwarding; T14 `a81a57f` end-to-end v4 and stored-v3 runs.
+- **Feature**: premium-whole-units (issue #57) - `.specs/features/premium-whole-units/`
+- **Phase / Task**: EXECUTE complete for T1-T13 (b1: Phases 1-2; b2: Phases 3-4). Verified 2026-11-09 by an independent Verifier (`iw-57-verify-r1`): PASS, 0 blocking, 4 nonblocking (G1-G4 in `validation.md`). `validate_state.py premium-whole-units` exits 0.
+- **Completed** (commit - task): `c649dcf` T1, `6eef239` T2, `1cf4ed3` T3, `f732afd` T4, `495834e` T5, `c91752e` T6, `800125a` T7, `297e023` T8, `fd7defc` T9, `55eebea` T10, `0d3eba7` T11, `c60c07b` T12, `413c744` T13.
 - **In-progress** (file:line): none.
-- **Next step**: dispatch the Verifier over `a61164a..HEAD`; then `validate_state.py fii-segment-cap`.
-- **Deviations in b2**: (1) T10 moved two pins A-12 names only by file: the FII half of `test_protection_zone_turnover :: test_measure_writes_both_reports_with_the_turnover_per_class` (K 8, k_offset 3, turnover 2, exits 10, FNEW1 replaces the 0.85 incumbent) and `test_multirun_convergence :: FixtureRunTests.test_lot_shape_and_runs` (5 FII tickers). (2) T12's owner-profile tests take about 62 s each, so the API suite went from about 75 s to about 210 s; capped vs uncapped FII stage 1.31x (below the 1.5x follow-up threshold). (3) The tasks.md test-strategy row for the 13-incumbent test now says the protection-walk mutant falls back with `fallback_hhi` instead of raising (spec review S6, confirmed on a scratch copy).
-- **Not touched (observation)**: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run"; out of scope for #56 (no task), worth a one-line follow-up.
-- **Blockers**: none. Q1 and Q2 keep their defaults (spec A-2, A-10); Q3 closed by AD-029.
-- **Uncommitted files**: none.
-- **Branch**: t3/issue-56 (base `origin/develop`; PR base `develop`).
-- **Test counts after b2**: root suite 587 OK (2 skipped; no new root tests in b2), API suite 174 OK (160 + 14 new).
+- **Next step**: PR to `develop`. Optional follow-ups from `validation.md`: G1/G2 tighten the web regex tests (FII and stock `ClassCash` call sites, the `overTargetBrl > 0` gate, the dropped-row unit price); G3 add the latest route to the legacy-read test; G4 chain the `refresh_inputs` hash into `load_selector_prices` in one test. Sensor: API 26/26 non-equivalent mutants killed (M12, zero-weight class residual, is equivalent because class weights are rounded to 6 decimals before the 1e-9 gate); web 1/5 killed.
+- **Blockers**: none.
+- **Uncommitted files**: `web/node_modules`, a symlink to the main checkout. Untracked and not ignored by git (the `node_modules/` pattern matches directories only). Never stage it.
+- **Branch**: t3/issue-57 (base `origin/develop` `af1080e`; PR base `develop`). Nothing pushed.
+- **Counts at the end of b2** (2026-11-09): API 218 OK (205.8 s); root 587 OK, 2 skipped (182.0 s); web static 14 pass; `npm run typecheck` exit 0; `compileall` OK.
+- **Deviations for the Verifier**:
+  - N5 is implemented: the executor passes `whole_units` only when `run.plan == "premium"` and the policy declares `whole-units-v1` (`api/app/services/premium_executor.py`). Spec A-3 and design.md say so.
+  - T9 changed four existing integration tests outside the named list: in `api/tests/test_premium_integration.py`, the zone and cap runners accept and forward `whole_units`, and their selector inputs are priced CSVs (`priced_selector_inputs`). Assertions are unchanged. Reason: the real Premium policy declares the flag, so the old fixtures failed with `engine_error`.
+  - T12 has two static tests, not one: the REVIEW.md copied-name rule needs a comparison of web type names with the API aliases. The web count is 14, not 13.
+  - No API reason string is copied into `web/`. The T13 test walks `web/**/*.ts(x)` and asserts that "não coube no capital" and "mínimo de 3 FIIs" are absent.
+  - The sleeve maps stay inline in the view. The b1 test "both plans render classes, stock and FII sleeves" asserts `completed.stocks.map`.
+  - `test_dropped_lists_are_not_incumbents` passes on the pre-change code by construction. It guards LOT-20.
+  - Mutants the implementer already caught (the Verifier's sensor may still add more): executor plan check removed; flag always on; zero quantity kept; bool counted as int; `*_dropped` read as incumbents; missing quantity read as zero; adapter wiring off; web type dropped and renamed; API field renamed; price-note gate removed; legacy branch removed; reason copied into `web/`; BRL formatter replaced.
+- **Previous handoff**: fii-segment-cap (issue #56) merged in `af1080e` (#58). protection-zone (#46) T17 is still DEFERRED pending a November snapshot. Observation carried over: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run".
 - **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). Run from the worktree root. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
-- **Previous handoff**: protection-zone (issue #46) merged in PR #54; its T17 (October-to-November turnover measurement) is still DEFERRED pending a November snapshot.

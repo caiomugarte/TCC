@@ -31,6 +31,8 @@ class AllocationClass(ProfileSchema):
     target_weight: float = Field(ge=0, le=1)
     target_amount_brl: float = Field(ge=0)
     metrics: dict[str, Any] = Field(default_factory=dict)
+    cash_residual_brl: float | None = Field(default=None, ge=0)
+    over_target_brl: float | None = Field(default=None, ge=0)
 
 
 class RecommendationConstituent(ProfileSchema):
@@ -38,6 +40,19 @@ class RecommendationConstituent(ProfileSchema):
     sleeve_weight: float = Field(ge=0, le=1)
     portfolio_weight: float = Field(ge=0, le=1)
     target_amount_brl: float = Field(ge=0)
+    reasons: list[str] = Field(default_factory=list)
+    price_brl: float | None = Field(default=None, gt=0)
+    quantity: int | None = Field(default=None, ge=1)
+    amount_brl: float | None = Field(default=None, ge=0)
+    effective_portfolio_weight: float | None = Field(default=None, ge=0)
+
+
+class DroppedConstituent(ProfileSchema):
+    ticker: str
+    sleeve_weight: float = Field(ge=0, le=1)
+    portfolio_weight: float = Field(ge=0, le=1)
+    target_amount_brl: float = Field(ge=0)
+    price_brl: float = Field(gt=0)
     reasons: list[str] = Field(default_factory=list)
 
 
@@ -63,5 +78,7 @@ class RecommendationResponse(ProfileSchema):
     failure_message: str | None = None
     stocks: list[RecommendationConstituent] = Field(default_factory=list)
     fiis: list[RecommendationConstituent] = Field(default_factory=list)
+    stocks_dropped: list[DroppedConstituent] = Field(default_factory=list)
+    fiis_dropped: list[DroppedConstituent] = Field(default_factory=list)
     policy: dict[str, Any] | None = None
     provenance: dict[str, Any] | None = None

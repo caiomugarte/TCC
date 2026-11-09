@@ -633,6 +633,74 @@ class ProductRouteTests(unittest.TestCase):
         self.assertEqual(latest.id, completed.id)
         self.assertEqual(status.status, "queued")
 
+    def test_pre_change_result_json_reads_with_null_whole_unit_fields(self):
+        profile = self.save_valid_profile()
+        self.session.add(Entitlement(account_id=self.account.id, plan="premium", status="active"))
+        record = self.save_completed_run(profile, plan="premium", result=COMPLETED_BASIC_RESULT)
+
+        for route, response in (
+            ("by id", read_recommendation(record.id, self.account, self.session)),
+            ("latest completed", read_latest_completed_recommendation(self.account, self.session)),
+        ):
+            with self.subTest(route=route):
+                body = response.model_dump(mode="json", by_alias=True)
+                self.assertEqual(body["id"], record.id)
+                self.assertEqual(body["status"], "completed")
+                self.assertIsNone(body["fiis"][0]["quantity"])
+                self.assertIsNone(body["fiis"][0]["priceBrl"])
+                self.assertIsNone(body["stocks"][0]["amountBrl"])
+                self.assertIsNone(body["stocks"][0]["effectivePortfolioWeight"])
+                self.assertIsNone(body["classes"][1]["cashResidualBrl"])
+                self.assertIsNone(body["classes"][1]["overTargetBrl"])
+                self.assertEqual(body["stocksDropped"], [])
+                self.assertEqual(body["fiisDropped"], [])
+
+    def test_whole_unit_result_json_exposes_new_fields(self):
+        profile = self.save_valid_profile()
+        dropped = {
+            "ticker": "KNRI11",
+            "sleeve_weight": 0.1,
+            "portfolio_weight": 0.013,
+            "target_amount_brl": 100.0,
+            "price_brl": 147.89,
+            "reasons": ["mantido", "não coube no capital"],
+        }
+        result = {
+            **COMPLETED_BASIC_RESULT,
+            "classes": [
+                {**COMPLETED_BASIC_RESULT["classes"][0], "cash_residual_brl": 12.5, "over_target_brl": 0.0},
+                {**COMPLETED_BASIC_RESULT["classes"][1], "cash_residual_brl": 0.0, "over_target_brl": 120.0},
+            ],
+            "fiis": [
+                {
+                    **COMPLETED_BASIC_RESULT["fiis"][0],
+                    "price_brl": 100.0,
+                    "quantity": 200,
+                    "amount_brl": 20_000.0,
+                    "effective_portfolio_weight": 0.2,
+                }
+            ],
+            "stocks_dropped": [{**dropped, "ticker": "BBB3", "reasons": ["não coube no capital"]}],
+            "fiis_dropped": [dropped],
+        }
+        record = self.save_completed_run(profile, plan="premium", result=result)
+
+        body = read_recommendation(record.id, self.account, self.session).model_dump(
+            mode="json", by_alias=True
+        )
+
+        fii = body["fiis"][0]
+        self.assertEqual(
+            (fii["priceBrl"], fii["quantity"], fii["amountBrl"], fii["effectivePortfolioWeight"]),
+            (100.0, 200, 20_000.0, 0.2),
+        )
+        self.assertEqual(body["classes"][0]["cashResidualBrl"], 12.5)
+        self.assertEqual(body["classes"][1]["overTargetBrl"], 120.0)
+        self.assertEqual([item["ticker"] for item in body["stocksDropped"]], ["BBB3"])
+        self.assertEqual(body["fiisDropped"][0]["ticker"], "KNRI11")
+        self.assertEqual(body["fiisDropped"][0]["priceBrl"], 147.89)
+        self.assertEqual(body["fiisDropped"][0]["reasons"][-1], "não coube no capital")
+
     def test_portfolio_normalizes_values_and_preserves_history(self):
         first = save_portfolio(
             PortfolioInput(currency="BRL", classes={
