@@ -247,10 +247,10 @@
 ## Handoff
 
 - **Feature**: premium-whole-units (issue #57) - `.specs/features/premium-whole-units/`
-- **Phase / Task**: EXECUTE complete for T1-T13 (b1: Phases 1-2; b2: Phases 3-4). Feature implemented; pending the Verifier, which the orchestrator dispatches (no Verifier run in b2). `validate_state.py premium-whole-units` fails until `validation.md` exists, as expected.
+- **Phase / Task**: EXECUTE complete for T1-T13 (b1: Phases 1-2; b2: Phases 3-4). Verified 2026-11-09 by an independent Verifier (`iw-57-verify-r1`): PASS, 0 blocking, 4 nonblocking (G1-G4 in `validation.md`). `validate_state.py premium-whole-units` exits 0.
 - **Completed** (commit - task): `c649dcf` T1, `6eef239` T2, `1cf4ed3` T3, `f732afd` T4, `495834e` T5, `c91752e` T6, `800125a` T7, `297e023` T8, `fd7defc` T9, `55eebea` T10, `0d3eba7` T11, `c60c07b` T12, `413c744` T13.
 - **In-progress** (file:line): none.
-- **Next step**: Verifier (spec-anchored check, discrimination sensor, `validation.md`). Mutation targets are in `tasks.md` (Test Strategy); the implementer already killed the ones listed under deviations.
+- **Next step**: PR to `develop`. Optional follow-ups from `validation.md`: G1/G2 tighten the web regex tests (FII and stock `ClassCash` call sites, the `overTargetBrl > 0` gate, the dropped-row unit price); G3 add the latest route to the legacy-read test; G4 chain the `refresh_inputs` hash into `load_selector_prices` in one test. Sensor: API 26/26 non-equivalent mutants killed (M12, zero-weight class residual, is equivalent because class weights are rounded to 6 decimals before the 1e-9 gate); web 1/5 killed.
 - **Blockers**: none.
 - **Uncommitted files**: `web/node_modules`, a symlink to the main checkout. Untracked and not ignored by git (the `node_modules/` pattern matches directories only). Never stage it.
 - **Branch**: t3/issue-57 (base `origin/develop` `af1080e`; PR base `develop`). Nothing pushed.

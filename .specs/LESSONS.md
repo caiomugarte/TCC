@@ -32,6 +32,12 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: M46 api/app/services/premium_executor.py:176 (api)
 - last seen: 2026-11-05T01:03:16Z
 
+### L-004 - Source-regex web tests must assert every call site and every rendered field a UI criterion names, not one shared component body
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `web` · harmful: 0
+- features: premium-whole-units
+- evidence: validation.md W1/W3/W4/W5 (web/components/recommendation/recommendation-view.tsx:84,96,289,299) (web)
+- last seen: 2026-11-09T17:49:05Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

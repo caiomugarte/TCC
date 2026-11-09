@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 4,
+  "next_id": 5,
   "lessons": [
     {
       "id": "L-001",
@@ -58,6 +58,24 @@
       ],
       "created": "2026-11-05T01:03:16Z",
       "last_seen": "2026-11-05T01:03:16Z"
+    },
+    {
+      "id": "L-004",
+      "key": "surviving_mutant::source regex web tests must assert every call site and every rendered field a ui criterion names not one shared component body",
+      "text": "Source-regex web tests must assert every call site and every rendered field a UI criterion names, not one shared component body",
+      "signal": "surviving_mutant",
+      "scope": "web",
+      "status": "candidate",
+      "features": [
+        "premium-whole-units"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "validation.md W1/W3/W4/W5 (web/components/recommendation/recommendation-view.tsx:84,96,289,299) (web)"
+      ],
+      "created": "2026-11-09T17:49:05Z",
+      "last_seen": "2026-11-09T17:49:05Z"
     }
   ]
 }

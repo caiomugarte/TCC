@@ -161,35 +161,35 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 
 | Requirement ID | Story | Phase | Status |
 | -------------- | ----- | ----- | ------ |
-| LOT-01 | P1 buy list | Tasks (T7) | Implemented |
-| LOT-02 | P1 buy list | Tasks (T3) | Implemented |
-| LOT-03 | P1 buy list | Tasks (T3, T8) | Implemented |
-| LOT-04 | P1 buy list | Tasks (T3, T8) | Implemented |
-| LOT-05 | P1 buy list | Tasks (T3, T8) | Implemented |
-| LOT-06 | P1 buy list | Tasks (T4) | Implemented |
-| LOT-07 | P1 buy list | Tasks (T4) | Implemented |
-| LOT-08 | P1 buy list | Tasks (T4) | Implemented |
-| LOT-09 | P1 buy list | Tasks (T4, T5) | Implemented |
-| LOT-10 | P1 buy list | Tasks (T5, T7) | Implemented |
-| LOT-11 | P1 buy list | Tasks (T7) | Implemented |
-| LOT-12 | P1 buy list | Tasks (T5) | Implemented |
-| LOT-13 | P1 buy list | Tasks (T5, T7) | Implemented |
-| LOT-14 | P1 buy list | Tasks (T5, T7) | Implemented |
-| LOT-15 | P1 buy list | Tasks (T5) | Implemented |
-| LOT-16 | P1 buy list | Tasks (T7) | Implemented |
-| LOT-17 | P1 buy list | Tasks (T7) | Implemented |
-| LOT-18 | P1 incumbents | Tasks (T10) | Implemented |
-| LOT-19 | P1 incumbents | Tasks (T10) | Implemented |
-| LOT-20 | P1 incumbents | Tasks (T10, T11) | Implemented |
-| LOT-21 | P1 old results | Tasks (T1, T2, T11) | Implemented |
-| LOT-22 | P1 old results | Tasks (T2) | Implemented |
-| LOT-23 | P1 old results | Tasks (T1) | Implemented |
-| LOT-24 | P1 old results | Tasks (T6, T7, T9) | Implemented |
-| LOT-25 | P1 screen | Tasks (T13) | Implemented |
-| LOT-26 | P1 screen | Tasks (T13) | Implemented |
-| LOT-27 | P1 screen | Tasks (T13) | Implemented |
-| LOT-28 | P1 screen | Tasks (T13) | Implemented |
-| LOT-29 | P1 screen | Tasks (T12, T13) | Implemented |
+| LOT-01 | P1 buy list | Tasks (T7) | Verified |
+| LOT-02 | P1 buy list | Tasks (T3) | Verified |
+| LOT-03 | P1 buy list | Tasks (T3, T8) | Verified |
+| LOT-04 | P1 buy list | Tasks (T3, T8) | Verified |
+| LOT-05 | P1 buy list | Tasks (T3, T8) | Verified |
+| LOT-06 | P1 buy list | Tasks (T4) | Verified |
+| LOT-07 | P1 buy list | Tasks (T4) | Verified |
+| LOT-08 | P1 buy list | Tasks (T4) | Verified |
+| LOT-09 | P1 buy list | Tasks (T4, T5) | Verified |
+| LOT-10 | P1 buy list | Tasks (T5, T7) | Verified |
+| LOT-11 | P1 buy list | Tasks (T7) | Verified |
+| LOT-12 | P1 buy list | Tasks (T5) | Verified |
+| LOT-13 | P1 buy list | Tasks (T5, T7) | Verified |
+| LOT-14 | P1 buy list | Tasks (T5, T7) | Verified |
+| LOT-15 | P1 buy list | Tasks (T5) | Verified |
+| LOT-16 | P1 buy list | Tasks (T7) | Verified |
+| LOT-17 | P1 buy list | Tasks (T7) | Verified |
+| LOT-18 | P1 incumbents | Tasks (T10) | Verified |
+| LOT-19 | P1 incumbents | Tasks (T10) | Verified |
+| LOT-20 | P1 incumbents | Tasks (T10, T11) | Verified |
+| LOT-21 | P1 old results | Tasks (T1, T2, T11) | Verified |
+| LOT-22 | P1 old results | Tasks (T2) | Verified |
+| LOT-23 | P1 old results | Tasks (T1) | Verified |
+| LOT-24 | P1 old results | Tasks (T6, T7, T9) | Verified |
+| LOT-25 | P1 screen | Tasks (T13) | Verified |
+| LOT-26 | P1 screen | Tasks (T13) | Verified |
+| LOT-27 | P1 screen | Tasks (T13) | Verified |
+| LOT-28 | P1 screen | Tasks (T13) | Verified |
+| LOT-29 | P1 screen | Tasks (T12, T13) | Verified |
 
 **Coverage:** 29 total, 29 mapped to tasks, 0 unmapped.
 
