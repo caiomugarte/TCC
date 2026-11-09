@@ -185,9 +185,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_status_invest.py` with fixture `tests/fixtures/pit_rebuild/si_small.csv`: boundaries (cap exactly 200,000,000 and liq exactly 50,000 eligible; 199,999,999.99 or 49,999.99 not; blank not); missing column exit 4 naming it (one subtest for `TICKER`, one for `SETOR`, one for `VALOR DE MERCADO`); duplicated ticker exit 4 naming it; absent path exit 3; file bytes and mtime unchanged after `load`; a text read of `api/app/services/premium_policy.py` finds the `arrojado` anchor `cap_min`/`liq_min` equal to `ELIGIBILITY`; on `data/raw/status_invest_fundamentals.csv` `eligible` returns 269 tickers, of which 66 have a blank `DY` loaded as `None` (the raw blank is kept; A-4's DY-as-zero rule lives in `compare.reference`, T13).
-- [ ] Gate check passes: Quick for `test_pit_rebuild_status_invest.py`
-- [ ] Test count: ≥ 8 tests pass
+- [x] `tests/test_pit_rebuild_status_invest.py` with fixture `tests/fixtures/pit_rebuild/si_small.csv`: boundaries (cap exactly 200,000,000 and liq exactly 50,000 eligible; 199,999,999.99 or 49,999.99 not; blank not); missing column exit 4 naming it (one subtest for `TICKER`, one for `SETOR`, one for `VALOR DE MERCADO`); duplicated ticker exit 4 naming it; absent path exit 3; file bytes and mtime unchanged after `load`; a text read of `api/app/services/premium_policy.py` finds the `arrojado` anchor `cap_min`/`liq_min` equal to `ELIGIBILITY`; on `data/raw/status_invest_fundamentals.csv` `eligible` returns 269 tickers, of which 66 have a blank `DY` loaded as `None` (the raw blank is kept; A-4's DY-as-zero rule lives in `compare.reference`, T13).
+- [x] Gate check passes: Quick for `test_pit_rebuild_status_invest.py`
+- [x] Test count: ≥ 8 tests pass
 
 **Tests**: unit
 **Gate**: quick
