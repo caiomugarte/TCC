@@ -184,7 +184,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | SRC-05 | P1 rebuild | Tasks (T10, T18) | In Tasks |
 | PIT-01 | P1 rebuild | Tasks (T7, T8, T9, T17) | In Tasks |
 | PIT-02 | P1 rebuild | Tasks (T1, T10, T12, T17) | In Tasks |
-| PIT-03 | P1 rebuild | Tasks (T7) | In Tasks |
+| PIT-03 | P1 rebuild | Tasks (T7) | Done (T7) |
 | MAP-01 | P1 rebuild | Tasks (T4, T11, T18) | In Tasks |
 | MAP-02 | P1 rebuild | Tasks (T11, T16) | In Tasks |
 | MAP-03 | P1 rebuild | Tasks (T11, T12) | In Tasks |

@@ -260,9 +260,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cvm.py` with text fixtures in `tests/fixtures/pit_rebuild/cvm/` (two companies, latin-1, `;`, real headers from design.md; ITR members named `itr_cia_aberta_*` as verified): a filing with `DT_RECEB == d` is usable, `d + 1` is not; a Q2 ITR `DRE_con` with two `ÚLTIMO` rows for `3.01` (year-to-date `DT_INI_EXERC` 2025-01-01 and three-month 2025-04-01, the three-month row written last) loads the year-to-date value, and the same for `PENÚLTIMO`; a company with fiscal year starting 2025-06-01 keeps its `DT_INI_EXERC` 2025-06-01 row for `DT_REFER` 2025-11-30; a company whose 2026-Q2 ITR has v1 delivered before `d` and v2 after `d` falls back to Q1 and is flagged `refiled_after_d`; `MIL` values are ×1000; `_ind` is used when `_con` is absent and recorded as `statement: individual`; cadastro yields `CD_CVM` and `SETOR_ATIV`.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_cvm.py`
-- [ ] Test count: ≥ 8 tests pass
+- [x] `tests/test_pit_rebuild_cvm.py` with text fixtures in `tests/fixtures/pit_rebuild/cvm/` (two companies, latin-1, `;`, real headers from design.md; ITR members named `itr_cia_aberta_*` as verified): a filing with `DT_RECEB == d` is usable, `d + 1` is not; a Q2 ITR `DRE_con` with two `ÚLTIMO` rows for `3.01` (year-to-date `DT_INI_EXERC` 2025-01-01 and three-month 2025-04-01, the three-month row written last) loads the year-to-date value, and the same for `PENÚLTIMO`; a company with fiscal year starting 2025-06-01 keeps its `DT_INI_EXERC` 2025-06-01 row for `DT_REFER` 2025-11-30; a company whose 2026-Q2 ITR has v1 delivered before `d` and v2 after `d` falls back to Q1 and is flagged `refiled_after_d`; `MIL` values are ×1000; `_ind` is used when `_con` is absent and recorded as `statement: individual`; cadastro yields `CD_CVM` and `SETOR_ATIV`.
+- [x] Gate check passes: Quick for `test_pit_rebuild_cvm.py`
+- [x] Test count: ≥ 8 tests pass (8 tests pass)
 
 **Tests**: unit
 **Gate**: quick
