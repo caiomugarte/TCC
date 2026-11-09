@@ -344,15 +344,17 @@ T12 → T13
 
 **Done when**:
 
-- [ ] `WholeUnitAdapterTests` (six tests of the Test Strategy) added to `api/tests/test_premium_optimization.py`, using temp CSVs whose SHA-256 is computed from the written bytes
-- [ ] Every emitted constituent, dropped entry and class validates through the T1 schema models
-- [ ] Gate check passes: Full gate
-- [ ] Test count: API 200 + 6 = 206 OK
+- [x] `WholeUnitAdapterTests` (six tests of the Test Strategy) added to `api/tests/test_premium_optimization.py`, using temp CSVs whose SHA-256 is computed from the written bytes
+- [x] Every emitted constituent, dropped entry and class validates through the T1 schema models
+- [x] Gate check passes: Full gate
+- [x] Test count: API 200 + 6 = 206 OK
 
 **Tests**: unit
 **Gate**: full
 
 **Commit**: `feat(api): deliver whole-unit quantities in the Premium result (#57)`
+
+**Status**: ✅ Done - Full gate: API 206 OK (207.9 s). Every emitted constituent, dropped entry and class validated through the T1 models. The loader-error mapping (`snapshot_changed` / `engine_error`) and the N3 `ValueError` → `engine_error` wrap landed here with the wiring; T8 pins them. Scratch mutants killed: minimum reason missing, dropped kept in list, selector reason lost, `over_target_brl` not written, assumption missing, weight over class target instead of capital, FII minimum off, stock minimum on, zero-weight class reading prices.
 
 ---
 

@@ -104,6 +104,7 @@ graph TD
 - **Behaviour when `whole_units` is True**:
   - After `_constituents(...)` for a class: `prices = price_loader(selector_inputs.<class>, [row["ticker"] for row in rows])`; map `SelectorSnapshotChangedError` → `PremiumOptimizationError(..., "snapshot_changed")`, `SelectorPriceError` → `PremiumOptimizationError(..., "engine_error")`.
   - `allocate_whole_units(tickers, {t: round(row.target_amount_brl * 100)}, prices, round(class.target_amount_brl * 100), minimum_count=FII_MINIMUM_HOLDINGS if fiis else 0)`.
+  - `allocate_whole_units` raising `ValueError` → `PremiumOptimizationError(..., "engine_error")`.
   - Bought row = existing row + `price_brl`, `quantity`, `amount_brl` (`quantity * price_cents / 100`), `effective_portfolio_weight` (`round(amount / capital, 6)`); a forced line appends `REASON_FII_MINIMUM` to `reasons`.
   - Dropped row = `{ticker, sleeve_weight, portfolio_weight, target_amount_brl, price_brl, reasons: [*row.reasons, REASON_DID_NOT_FIT]}`.
   - The `brazilian_stocks` and `fiis` class dicts get `cash_residual_brl` and `over_target_brl`; a class whose weight is ≤ 1e-9 gets `cash_residual_brl = target_amount_brl`, `over_target_brl = 0.0` and no price read.
@@ -165,7 +166,7 @@ Invariant per class: `Σ amount_brl + cash_residual_brl − over_target_brl == t
 | -------------- | -------- | ----------- |
 | Selector CSV bytes differ from the recorded SHA-256 | `SelectorSnapshotChangedError` → `PremiumOptimizationError("snapshot_changed")` → `_fail` | "Os dados Premium foram alterados e a execução foi cancelada." |
 | Selected ticker without a usable `PRECO` | `SelectorPriceError` → `PremiumOptimizationError("engine_error")` | "A execução Premium não produziu um resultado." |
-| Invalid input to `allocate_whole_units` (programming error) | `ValueError` → caught by the adapter's generic path as `engine_error` | Same as above. |
+| Invalid input to `allocate_whole_units` (programming error, for example a price loader that returns no price for a selected ticker) | `_whole_unit_rows` wraps the `ValueError` in `PremiumOptimizationError(..., "engine_error")` (spec review N3: the whole-unit step runs after the selector `try` blocks, so no generic path would catch it) | Same as above. |
 | Old `result_json` without new keys | Schema defaults `None` / `[]`; view falls back to today's render | Old result opens as before. |
 | Malformed `quantity` in a previous run | Class incumbents `None` → zone status `incumbents_unreadable`; run completes | No protection for that class this month (AD-026 behaviour). |
 

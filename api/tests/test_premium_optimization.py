@@ -1,4 +1,6 @@
+import hashlib
 import random
+import tempfile
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
@@ -14,8 +16,17 @@ from app.adapters.premium_optimization import (
     _selector_config,
     run_premium_optimization,
 )
+from app.schemas.recommendation import (
+    AllocationClass,
+    DroppedConstituent,
+    RecommendationConstituent,
+)
 from app.services.premium_policy import resolve_recommendation_policy
-from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from app.services.status_invest_inputs import (
+    SourceSnapshot,
+    StatusInvestInputs,
+    load_selector_prices,
+)
 from core.allocation import DailyReturn
 from core.protection_zone import select_with_fallback
 from fii_selection import FiiSelectionError, FiiUniverseInfeasibleError
@@ -1073,6 +1084,273 @@ class SegmentCapForwardingTests(unittest.TestCase):
                 self.assertNotIn("max_per_segment", config)
         basic = resolved_policy("basic").to_dict()["fiis"]
         self.assertNotIn("max_per_segment", _selector_config(basic))
+
+
+# Run 3289af79 FII selector order and PRECO (fiis.csv, retrieved 2026-11-06T12:29:37Z).
+LOT_TEST_1_FIIS = (
+    ("MXRF11", "8.64", 12),
+    ("KNCR11", "102.16", 1),
+    ("BTLG11", "97.51", 1),
+    ("BPML11", "80.63", 1),
+    ("GGRC11", "8.35", 12),
+    ("ALZR11", "9.54", 11),
+    ("XPML11", "96.00", 1),
+    ("KNRI11", "147.89", 1),
+    ("RECT11", "31.82", 3),
+    ("BRCR11", "38.28", 2),
+    ("KNUQ11", "94.98", 1),
+    ("RBRF11", "6.53", 15),
+    ("CPTS11", "7.00", 14),
+)
+WHOLE_UNIT_ASSUMPTION = (
+    "Quantidades calculadas com o preço da coleta Status Invest desta execução; "
+    "a cotação na hora da compra pode ser diferente."
+)
+PRE_CHANGE_ASSUMPTIONS = [
+    "Resultado Premium bruto, baseado em snapshots imutáveis e regras versionadas.",
+    "Ações brasileiras e FIIs são sleeves selecionados pelos parâmetros resolvidos do perfil.",
+    "Valores em BRL representam alvos de capital investível, não ordens de execução.",
+]
+
+
+def _price_snapshot(path: Path, rows) -> SourceSnapshot:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = ("TICKER,PRECO\n" + "".join(f"{ticker},{price}\n" for ticker, price in rows)).encode(
+        "utf-8"
+    )
+    path.write_bytes(data)
+    return SourceSnapshot(path, "statusinvest", "2026-11-06T12:29:37Z", hashlib.sha256(data).hexdigest())
+
+
+def priced_inputs(directory, stock_rows, fii_rows) -> StatusInvestInputs:
+    root = Path(directory) / "status-invest"
+    return StatusInvestInputs(
+        stocks=_price_snapshot(root / "stocks.csv", stock_rows),
+        fiis=_price_snapshot(root / "fiis.csv", fii_rows),
+    )
+
+
+def class_weights(stocks, fiis):
+    rest = round(1.0 - stocks - fiis, 6)
+    return {
+        "brazilian_stocks": stocks,
+        "fiis": fiis,
+        "international_equity": round(rest / 2, 6),
+        "fixed_income": round(rest - round(rest / 2, 6), 6),
+        "crypto": 0.0,
+    }
+
+
+def run_whole_units(directory, inputs, *, weights, capital, stock_result, fii_result, **kwargs):
+    return run_premium_optimization(
+        policy(),
+        Manifest(),
+        Path(directory) / "run",
+        capital,
+        selector_inputs=inputs,
+        snapshot_loader=lambda _manifest: SimpleNamespace(rows=(), metadata={}),
+        allocation_engine=lambda *_args, **_kwargs: allocation_result(weights),
+        stock_engine=lambda **_kwargs: stock_result,
+        fii_engine=lambda **_kwargs: fii_result,
+        **kwargs,
+    )
+
+
+def class_item(result, key):
+    return next(item for item in result["classes"] if item["key"] == key)
+
+
+def cents(value) -> int:
+    return int(round(float(value) * 100))
+
+
+class WholeUnitAdapterTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self.directory.cleanup)
+
+    def assert_schema_valid(self, result):
+        for key in ("stocks", "fiis"):
+            for entry in result[key]:
+                RecommendationConstituent(**entry)
+        for key in ("stocks_dropped", "fiis_dropped"):
+            for entry in result[key]:
+                DroppedConstituent(**entry)
+        for entry in result["classes"]:
+            AllocationClass(**entry)
+
+    def knri11_run(self):
+        inputs = priced_inputs(
+            self.directory.name,
+            [("AAA3", "10.00"), ("BBB3", "20.00")],
+            [(ticker, price) for ticker, price, _ in LOT_TEST_1_FIIS],
+        )
+        return run_whole_units(
+            self.directory.name,
+            inputs,
+            weights=class_weights(0.27, 0.13),
+            capital=10_000,
+            stock_result=selector_result(["AAA3", "BBB3"]),
+            fii_result=selector_result([ticker for ticker, _, _ in LOT_TEST_1_FIIS]),
+            whole_units=True,
+        )
+
+    def minimum_run(self):
+        inputs = priced_inputs(
+            self.directory.name,
+            [("AAA3", "10.00")],
+            [("FFA11", "20.00"), ("FFB11", "30.00"), ("FFC11", "120.00"), ("FFD11", "150.00")],
+        )
+        return run_whole_units(
+            self.directory.name,
+            inputs,
+            weights=class_weights(0.4, 0.1),
+            capital=1000,
+            stock_result=selector_result(["AAA3"]),
+            fii_result=selector_result(["FFA11", "FFB11", "FFC11", "FFD11"]),
+            whole_units=True,
+        )
+
+    def test_knri11_kncr11_run_from_the_hashed_csv(self):
+        result = self.knri11_run()
+
+        fiis = {entry["ticker"]: entry for entry in result["fiis"]}
+        self.assertEqual(
+            [entry["ticker"] for entry in result["fiis"]],
+            [ticker for ticker, _, _ in LOT_TEST_1_FIIS],
+        )
+        for ticker, price, quantity in LOT_TEST_1_FIIS:
+            with self.subTest(ticker=ticker):
+                self.assertEqual(fiis[ticker]["price_brl"], float(price))
+                self.assertEqual(fiis[ticker]["quantity"], quantity)
+                self.assertEqual(cents(fiis[ticker]["amount_brl"]), quantity * cents(price))
+                self.assertEqual(fiis[ticker]["target_amount_brl"], 100.0)
+                self.assertEqual(fiis[ticker]["reasons"], [])
+        self.assertEqual(fiis["KNRI11"]["amount_brl"], 147.89)
+        self.assertEqual(fiis["KNRI11"]["effective_portfolio_weight"], 0.014789)
+        self.assertEqual(fiis["MXRF11"]["amount_brl"], 103.68)
+        self.assertEqual(fiis["MXRF11"]["effective_portfolio_weight"], 0.010368)
+        fii_class = class_item(result, "fiis")
+        self.assertEqual(fii_class["target_amount_brl"], 1300.0)
+        self.assertEqual(fii_class["cash_residual_brl"], 4.04)
+        self.assertEqual(fii_class["over_target_brl"], 0.0)
+        self.assertEqual(result["fiis_dropped"], [])
+        self.assert_schema_valid(result)
+
+    def test_dropped_ticker_leaves_the_list_with_its_reasons(self):
+        inputs = priced_inputs(
+            self.directory.name,
+            [("AAA3", "10.00"), ("ZZZ3", "1000.00")],
+            [("AAA11", "10.00"), ("BBB11", "10.00"), ("CCC11", "10.00"), ("DDD11", "500.00")],
+        )
+        fii_result = {
+            **selector_result(["AAA11", "BBB11", "CCC11", "DDD11"]),
+            "exclusion_reasons": {"DDD11": ["mantido"]},
+        }
+
+        result = run_whole_units(
+            self.directory.name,
+            inputs,
+            weights=class_weights(0.4, 0.2),
+            capital=1000,
+            stock_result=selector_result(["AAA3", "ZZZ3"]),
+            fii_result=fii_result,
+            whole_units=True,
+        )
+
+        self.assertEqual([entry["ticker"] for entry in result["fiis"]], ["AAA11", "BBB11", "CCC11"])
+        self.assertEqual(
+            result["fiis_dropped"],
+            [
+                {
+                    "ticker": "DDD11",
+                    "sleeve_weight": 0.25,
+                    "portfolio_weight": 0.05,
+                    "target_amount_brl": 50.0,
+                    "price_brl": 500.0,
+                    "reasons": ["mantido", "não coube no capital"],
+                }
+            ],
+        )
+        self.assertEqual([(e["ticker"], e["quantity"]) for e in result["stocks"]], [("AAA3", 40)])
+        self.assertEqual(
+            result["stocks_dropped"],
+            [
+                {
+                    "ticker": "ZZZ3",
+                    "sleeve_weight": 0.5,
+                    "portfolio_weight": 0.2,
+                    "target_amount_brl": 200.0,
+                    "price_brl": 1000.0,
+                    "reasons": ["não coube no capital"],
+                }
+            ],
+        )
+        self.assert_schema_valid(result)
+
+    def test_forced_fii_has_the_minimum_reason_and_the_class_records_the_excess(self):
+        result = self.minimum_run()
+
+        self.assertEqual(
+            [(e["ticker"], e["quantity"], e["reasons"]) for e in result["fiis"]],
+            [
+                ("FFA11", 2, []),
+                ("FFB11", 2, []),
+                ("FFC11", 1, ["mínimo de 3 FIIs"]),
+            ],
+        )
+        self.assertEqual([e["ticker"] for e in result["fiis_dropped"]], ["FFD11"])
+        fii_class = class_item(result, "fiis")
+        self.assertEqual(fii_class["over_target_brl"], 120.0)
+        self.assertEqual(fii_class["cash_residual_brl"], 0.0)
+        self.assertEqual(result["fiis"][2]["effective_portfolio_weight"], 0.12)
+        self.assert_schema_valid(result)
+
+    def test_zero_weight_class_reads_no_prices(self):
+        inputs = priced_inputs(self.directory.name, [("AAA3", "10.00")], [("AAA11", "10.00")])
+        calls = []
+
+        def spy_loader(snapshot, tickers):
+            calls.append((snapshot, list(tickers)))
+            return load_selector_prices(snapshot, tickers)
+
+        result = run_whole_units(
+            self.directory.name,
+            inputs,
+            weights=class_weights(0.0, 0.6),
+            capital=1000,
+            stock_result=selector_result(["AAA3"]),
+            fii_result=selector_result(["AAA11"]),
+            whole_units=True,
+            price_loader=spy_loader,
+        )
+
+        self.assertEqual(calls, [(inputs.fiis, ["AAA11"])])
+        stock_class = class_item(result, "brazilian_stocks")
+        self.assertEqual(stock_class["cash_residual_brl"], stock_class["target_amount_brl"])
+        self.assertEqual(stock_class["over_target_brl"], 0.0)
+        self.assertEqual(result["stocks"], [])
+        self.assertEqual(result["stocks_dropped"], [])
+        self.assertEqual([(e["ticker"], e["quantity"]) for e in result["fiis"]], [("AAA11", 60)])
+        self.assert_schema_valid(result)
+
+    def test_assumption_sentence_is_added(self):
+        result = self.knri11_run()
+
+        self.assertEqual(result["assumptions"], [*PRE_CHANGE_ASSUMPTIONS, WHOLE_UNIT_ASSUMPTION])
+
+    def test_amounts_residual_and_excess_add_up_to_the_target(self):
+        for label, run in (("knri11", self.knri11_run), ("minimum", self.minimum_run)):
+            result = run()
+            for class_key, list_key in (("brazilian_stocks", "stocks"), ("fiis", "fiis")):
+                with self.subTest(run=label, class_key=class_key):
+                    item = class_item(result, class_key)
+                    spent = sum(cents(entry["amount_brl"]) for entry in result[list_key])
+                    self.assertEqual(
+                        spent + cents(item["cash_residual_brl"]) - cents(item["over_target_brl"]),
+                        cents(item["target_amount_brl"]),
+                    )
+
 
 
 if __name__ == "__main__":
