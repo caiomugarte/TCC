@@ -1,4 +1,5 @@
 import copy
+import hashlib
 import tempfile
 import unittest
 from datetime import datetime, timezone
@@ -59,6 +60,31 @@ def _default_selector_inputs():
             "fii-hash",
         ),
     )
+
+
+CHEAP_PRICES = {
+    "stocks": {**{f"S{index:02d}": "1.00" for index in range(20)}, "AAA3": "1.00", "BBB3": "1.00"},
+    "fiis": {**{f"F{index:02d}": "1.00" for index in range(20)}, "AAA11": "1.00", "BBB11": "1.00"},
+}
+
+
+def priced_selector_inputs(workspace, prices=CHEAP_PRICES):
+    """Selector CSVs with a PRECO per ticker; the hashes come from the bytes written."""
+
+    source_root = Path(workspace) / "status-invest"
+    source_root.mkdir(parents=True, exist_ok=True)
+    snapshots = {}
+    for role in ("stocks", "fiis"):
+        path = source_root / f"{role}.csv"
+        rows = "".join(f"{ticker},{price}\n" for ticker, price in prices[role].items())
+        path.write_text(f"TICKER,PRECO\n{rows}", encoding="utf-8")
+        snapshots[role] = SourceSnapshot(
+            path=path.resolve(),
+            provider="statusinvest",
+            retrieved_at="2026-07-21T00:00:00Z",
+            sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+        )
+    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
 def policy(profile, **kwargs):
@@ -313,7 +339,9 @@ class ProtectionZoneIntegrationTests(unittest.TestCase):
             tickers.reverse()
         return {ticker: round(0.95 - 0.05 * index, 2) for index, ticker in enumerate(tickers)}
 
-    def zone_runner(self, policy_value, manifest, workspace, capital, *, selector_inputs=None, incumbents=None):
+    def zone_runner(
+        self, policy_value, manifest, workspace, capital, *, selector_inputs=None, incumbents=None, whole_units=False
+    ):
         kwargs = {} if incumbents is None else {"incumbents": incumbents}
         return run_premium_optimization(
             policy_value,
@@ -333,6 +361,7 @@ class ProtectionZoneIntegrationTests(unittest.TestCase):
             },
             stock_engine=zone_selector("S", self.frequencies_for),
             fii_engine=zone_selector("F", self.frequencies_for),
+            whole_units=whole_units,
             **kwargs,
         )
 
@@ -342,7 +371,7 @@ class ProtectionZoneIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=lambda _workspace: _default_selector_inputs(),
+            status_invest_inputs_loader=priced_selector_inputs,
             optimization_runner=self.zone_runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
@@ -442,7 +471,9 @@ class SegmentCapIntegrationTests(unittest.TestCase):
     tearDown = PremiumIntegrationTests.tearDown
     frequencies_for = staticmethod(ProtectionZoneIntegrationTests.frequencies_for)
 
-    def recording_runner(self, policy_value, manifest, workspace, capital, *, selector_inputs=None, incumbents=None):
+    def recording_runner(
+        self, policy_value, manifest, workspace, capital, *, selector_inputs=None, incumbents=None, whole_units=False
+    ):
         def recording(key, engine):
             def wrapped(**kwargs):
                 self.engine_calls.setdefault(key, []).append(kwargs)
@@ -469,6 +500,7 @@ class SegmentCapIntegrationTests(unittest.TestCase):
             },
             stock_engine=recording("stocks", zone_selector("S", self.frequencies_for)),
             fii_engine=recording("fiis", zone_selector("F", self.frequencies_for)),
+            whole_units=whole_units,
             **kwargs,
         )
 
@@ -478,7 +510,7 @@ class SegmentCapIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=lambda _workspace: _default_selector_inputs(),
+            status_invest_inputs_loader=priced_selector_inputs,
             optimization_runner=self.recording_runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )

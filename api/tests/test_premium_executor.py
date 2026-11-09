@@ -560,5 +560,59 @@ class PremiumExecutorIncumbentTests(unittest.TestCase):
         self.assertNotIn("incumbents", calls[0])
 
 
+WHOLE_UNITS_POLICY = {
+    "plan": "premium",
+    "provenance": {"model_versions": {"allocation": "allocation-v1", "whole_units": "whole-units-v1"}},
+}
+
+
+class PremiumExecutorWholeUnitTests(unittest.TestCase):
+    """A-2, A-3: whole units run only for Premium runs whose policy declares them."""
+
+    setUp = PremiumExecutorTests.setUp
+    tearDown = PremiumExecutorTests.tearDown
+    result = staticmethod(PremiumExecutorTests.result)
+    execute = PremiumExecutorIncumbentTests.execute
+    recording_runner = PremiumExecutorIncumbentTests.recording_runner
+
+    def policy_run(self, plan, policy):
+        run = RecommendationRepository(self.session).create_queued(
+            account_id=self.account.id,
+            profile_id=self.profile.id,
+            plan=plan,
+            policy=policy,
+            provenance={"manifest_id": "manifest-fixture", "manifest": {"fixture": True}},
+        )
+        self.session.commit()
+        return run
+
+    def test_declared_whole_units_reaches_the_runner(self):
+        run = self.policy_run("premium", WHOLE_UNITS_POLICY)
+        calls = []
+
+        self.assertEqual(self.execute(run, self.recording_runner(calls)), "completed")
+        self.assertIs(calls[0]["whole_units"], True)
+
+    def test_basic_or_undeclared_policy_never_passes_the_flag(self):
+        cases = {
+            "basic run that declares whole units": ("basic", WHOLE_UNITS_POLICY),
+            "premium policy without the key": (
+                "premium",
+                {"plan": "premium", "provenance": {"model_versions": {"allocation": "allocation-v1"}}},
+            ),
+            "premium policy with another value": (
+                "premium",
+                {"plan": "premium", "provenance": {"model_versions": {"whole_units": "whole-units-v0"}}},
+            ),
+            "premium policy without provenance": ("premium", {"plan": "premium"}),
+        }
+        for label, (plan, policy) in cases.items():
+            with self.subTest(case=label):
+                run = self.policy_run(plan, policy)
+                calls = []
+                self.assertEqual(self.execute(run, self.recording_runner(calls)), "completed")
+                self.assertNotIn("whole_units", calls[0])
+
+
 if __name__ == "__main__":
     unittest.main()

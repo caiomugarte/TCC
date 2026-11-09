@@ -11,6 +11,7 @@ from app.adapters.premium_optimization import PremiumOptimizationError, run_prem
 from app.db.models import ProfileRecord
 from app.db.session import SessionLocal
 from app.repositories.recommendations import RecommendationRepository, RecommendationStateError
+from app.services.premium_policy import WHOLE_UNITS_MODEL_VERSION
 from app.services.status_invest_inputs import StatusInvestInputError, StatusInvestInputs, refresh_inputs
 
 
@@ -50,6 +51,19 @@ def _declares_protection_zone(policy: object) -> bool:
         isinstance(policy.get(key), Mapping)
         and policy[key].get("protection_zone") is not None
         for key in ("stocks", "fiis")
+    )
+
+
+def _declares_whole_units(policy: object) -> bool:
+    if not isinstance(policy, Mapping):
+        return False
+    provenance = policy.get("provenance")
+    if not isinstance(provenance, Mapping):
+        return False
+    model_versions = provenance.get("model_versions")
+    return (
+        isinstance(model_versions, Mapping)
+        and model_versions.get("whole_units") == WHOLE_UNITS_MODEL_VERSION
     )
 
 
@@ -115,6 +129,7 @@ class PremiumExecutor:
             repository.mark_running(run_id)
             session.commit()
             policy = run.policy_json
+            whole_units = run.plan == "premium" and _declares_whole_units(policy)
             provenance = dict(run.provenance_json or {})
             profile = session.get(ProfileRecord, run.profile_id)
             if profile is None:
@@ -137,6 +152,8 @@ class PremiumExecutor:
             runner_kwargs: dict[str, Any] = {"selector_inputs": selector_inputs}
             if incumbents is not None:
                 runner_kwargs["incumbents"] = incumbents
+            if whole_units:
+                runner_kwargs["whole_units"] = True
             result = self.optimization_runner(
                 policy,
                 manifest,

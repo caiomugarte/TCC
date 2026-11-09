@@ -405,14 +405,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] Two executor flag tests of the Test Strategy added
-- [ ] Gate check passes: Full gate
-- [ ] Test count: API 211 + 2 = 213 OK
+- [x] Two executor flag tests of the Test Strategy added
+- [x] Gate check passes: Full gate
+- [x] Test count: API 211 + 2 = 213 OK
 
 **Tests**: unit
 **Gate**: full
 
 **Commit**: `feat(api): run Premium whole units when the policy declares them (#57)`
+
+**Status**: ✅ Done - Full gate 213 OK (206.8 s). Mutants killed: plan check dropped (N5: the Basic-with-declaration subcase fails), flag always on (four subcases fail). Also changed, outside the named tests: `test_premium_integration.py` helpers for the four existing zone and cap tests now read priced selector CSVs and forward `whole_units`; their assertions are unchanged, because the real Premium policy declares the flag and would otherwise fail `engine_error`.
 
 ---
 

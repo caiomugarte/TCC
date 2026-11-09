@@ -11,7 +11,7 @@ The selectors and the class allocation run exactly as today. After each selector
 
 ```mermaid
 graph TD
-    P[policy_json.provenance.model_versions.whole_units] -->|declares whole-units-v1| X[PremiumExecutor.execute_run]
+    P[premium plan + policy_json.provenance.model_versions.whole_units] -->|declares whole-units-v1| X[PremiumExecutor.execute_run]
     X -->|whole_units=True| A[run_premium_optimization]
     A --> S[stock / FII selectors - unchanged]
     S --> C[_constituents - targets, unchanged]
@@ -31,7 +31,7 @@ graph TD
 
 | Approach | Summary | Verdict |
 | -------- | ------- | ------- |
-| **A. Executor-gated post-processing step (recommended, chosen)** | Pure `allocate_whole_units` in a new service module; price loader beside `SourceSnapshot`; adapter applies both when `whole_units=True`; executor sets the flag from `model_versions`. | Selection, seed and research tools untouched; the persisted policy names the method; the pure function is testable without engines. |
+| **A. Executor-gated post-processing step (recommended, chosen)** | Pure `allocate_whole_units` in a new service module; price loader beside `SourceSnapshot`; adapter applies both when `whole_units=True`; executor sets the flag from the run's plan and `model_versions`. | Selection, seed and research tools untouched; the persisted policy names the method; the pure function is testable without engines. |
 | B. Adapter always on, gated by reading `model_versions` itself | Same algorithm, but the adapter decides from the policy it receives. | Research tools pass the resolved Premium policy and read `result["stocks"]` as the selection (`scripts/benchmark_premium.py:333-334`, `scripts/protection_zone_turnover.py:101-102`): dropped tickers would vanish from their measurements, and every adapter test using `resolved_policy("premium")` with fake CSV paths would need prices. |
 | C. Fixed-floor or price-filter selection change | Filter expensive FIIs or set a BRL floor before the GA. | Rejected by the issue's `## Decisões`. |
 
@@ -47,7 +47,7 @@ graph TD
 | `_constituents` | `api/app/adapters/premium_optimization.py:490-523` | Keeps building the target rows; a new `_whole_unit_rows` takes its output and splits it into bought/dropped rows. |
 | `SourceSnapshot` / `file_sha256` | `api/app/services/status_invest_inputs.py:19-31`, `:9` | The price loader reads `snapshot.path` and compares `file_sha256(path)` with `snapshot.sha256`. |
 | `_declares_protection_zone` pattern | `api/app/services/premium_executor.py:46-53` | `_declares_whole_units(policy_json)` mirrors it. |
-| Keyword passed only when needed | `api/app/services/premium_executor.py:137-146` | `runner_kwargs["whole_units"] = True` only when declared, so fixed-signature runners keep working (`test_no_prior_run_calls_a_fixed_signature_runner_as_today`). |
+| Keyword passed only when needed | `api/app/services/premium_executor.py:137-146` | `runner_kwargs["whole_units"] = True` only when the plan is `premium` and the policy declares it, so fixed-signature runners keep working (`test_no_prior_run_calls_a_fixed_signature_runner_as_today`). |
 | `_incumbent_tickers` | `api/app/services/premium_executor.py:27-43` | Extended with the `quantity` rule (LOT-18, LOT-19). |
 | `PREMIUM_MODEL_VERSIONS` | `api/app/services/premium_policy.py:102-107` | Add `"whole_units": "whole-units-v1"`; write `BASIC_MODEL_VERSIONS` out explicitly. |
 | Static web tests | `web/tests/premium-recommendation.test.mjs` | Same regex-over-source style for the new render paths. |
@@ -114,7 +114,7 @@ graph TD
 ### Executor (`api/app/services/premium_executor.py`)
 
 - `_declares_whole_units(policy: object) -> bool`: `policy["provenance"]["model_versions"]["whole_units"] == WHOLE_UNITS_MODEL_VERSION` with every level checked as a `Mapping`.
-- `execute_run`: adds `runner_kwargs["whole_units"] = True` only when declared (Basic never declares it, A-2).
+- `execute_run`: `whole_units = run.plan == "premium" and _declares_whole_units(policy)`, read in the same block as the policy; adds `runner_kwargs["whole_units"] = True` only when it is true. A Basic run never gets the flag, even when its policy declares the key (N5, A-2).
 - `_incumbent_tickers`: LOT-18/LOT-19 rule per entry, before the existing ticker check.
 
 ### Policy (`api/app/services/premium_policy.py`)
