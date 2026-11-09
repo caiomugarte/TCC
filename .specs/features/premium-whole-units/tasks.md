@@ -197,13 +197,15 @@ T12 → T13
 
 **Done when**:
 
-- [ ] Two route tests of the Test Strategy added to `api/tests/test_product_routes.py`
-- [ ] Gate check passes: Full gate, 174 + 3 + 2 = 179 tests OK
+- [x] Two route tests of the Test Strategy added to `api/tests/test_product_routes.py`
+- [x] Gate check passes: Full gate, 174 + 3 + 2 = 179 tests OK
 
 **Tests**: integration
 **Gate**: full
 
 **Commit**: `feat(api): return the dropped tickers of a whole-unit result (#57)`
+
+**Status**: ✅ Done - Full gate 179 OK (205.8 s). Route tests call the route functions directly and assert the `model_dump(mode="json", by_alias=True)` body (repo convention: no TestClient in `api/tests`; the in-memory SQLite session is not shareable across the TestClient worker thread).
 
 ---
 

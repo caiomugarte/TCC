@@ -33,6 +33,8 @@ def _response_with_profile(record: RecommendationRun, profile: ProfileRecord) ->
     risks = result.get("risks", record.risks) if completed else []
     stocks = result.get("stocks", []) if completed else []
     fiis = result.get("fiis", []) if completed else []
+    stocks_dropped = result.get("stocks_dropped", []) if completed else []
+    fiis_dropped = result.get("fiis_dropped", []) if completed else []
     policy = record.policy_json if isinstance(record.policy_json, dict) else None
     provenance = result.get("provenance") if completed else None
     return RecommendationResponse(
@@ -54,6 +56,8 @@ def _response_with_profile(record: RecommendationRun, profile: ProfileRecord) ->
         failure_message=record.failure_message,
         stocks=stocks,
         fiis=fiis,
+        stocks_dropped=stocks_dropped,
+        fiis_dropped=fiis_dropped,
         policy=policy,
         provenance=provenance if isinstance(provenance, dict) else None,
     )
