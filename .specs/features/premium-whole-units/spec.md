@@ -181,9 +181,9 @@ Decisions from the issue's `## Decisões` are settled and not repeated as assump
 | LOT-18 | P1 incumbents | Tasks (T10) | Pending |
 | LOT-19 | P1 incumbents | Tasks (T10) | Pending |
 | LOT-20 | P1 incumbents | Tasks (T10, T11) | Pending |
-| LOT-21 | P1 old results | Tasks (T1, T2) | Pending |
-| LOT-22 | P1 old results | Tasks (T2) | Pending |
-| LOT-23 | P1 old results | Tasks (T1) | Pending |
+| LOT-21 | P1 old results | Tasks (T1, T2) | In progress (T1) |
+| LOT-22 | P1 old results | Tasks (T2) | In progress (T1) |
+| LOT-23 | P1 old results | Tasks (T1) | Implemented |
 | LOT-24 | P1 old results | Tasks (T6, T7, T9) | Pending |
 | LOT-25 | P1 screen | Tasks (T13) | Pending |
 | LOT-26 | P1 screen | Tasks (T13) | Pending |

@@ -168,14 +168,16 @@ T12 → T13
 
 **Done when**:
 
-- [ ] New `api/tests/test_recommendation_schema.py` with the three schema tests of the Test Strategy
-- [ ] Gate check passes: `(cd api && PYTHONPATH=.:../py $PY -m unittest tests.test_recommendation_schema)`
-- [ ] Test count: 3 new tests pass
+- [x] New `api/tests/test_recommendation_schema.py` with the three schema tests of the Test Strategy
+- [x] Gate check passes: `(cd api && PYTHONPATH=.:../py $PY -m unittest tests.test_recommendation_schema)`
+- [x] Test count: 3 new tests pass
 
 **Tests**: unit
 **Gate**: quick
 
 **Commit**: `feat(api): accept whole-unit fields in the recommendation response (#57)`
+
+**Status**: ✅ Done - `tests.test_recommendation_schema` 3 OK.
 
 ---
 
