@@ -186,7 +186,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | PIT-02 | P1 rebuild | Tasks (T1, T10, T12, T17) | In Tasks |
 | PIT-03 | P1 rebuild | Tasks (T7) | Done (T7) |
 | MAP-01 | P1 rebuild | Tasks (T4, T11, T18) | In Tasks |
-| MAP-02 | P1 rebuild | Tasks (T11, T16) | In Tasks |
+| MAP-02 | P1 rebuild | Tasks (T11, T16) | Done (T11, T16) |
 | MAP-03 | P1 rebuild | Tasks (T11, T12) | Done (T11, T12) |
 | IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12) | Done (T8, T9, T10, T12) |
 | IND-02 | P1 rebuild | Tasks (T3) | Done (T3) |
@@ -197,10 +197,10 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | VER-01 | P1 rebuild | Tasks (T14) | Done (T14) |
 | VER-02 | P1 rebuild | Tasks (T14) | Done (T14) |
 | VER-03 | P1 rebuild | Tasks (T14, T16, T20) | In Tasks |
-| VER-04 | P1 rebuild | Tasks (T16) | In Tasks |
+| VER-04 | P1 rebuild | Tasks (T16) | Done (T16) |
 | RPT-01 | P1 report | Tasks (T2, T17) | In Tasks |
-| RPT-02 | P1 report | Tasks (T16) | In Tasks |
-| RPT-03 | P1 report | Tasks (T16) | In Tasks |
+| RPT-02 | P1 report | Tasks (T16) | Done (T16) |
+| RPT-03 | P1 report | Tasks (T16) | Done (T16) |
 | RPT-04 | P1 report | Tasks (T16, T20) | In Tasks |
 | RPT-05 | P1 report | Tasks (T2, T17) | In Tasks |
 | RPT-06 | P1 report | Tasks (T19, T20) | In Tasks |
@@ -212,7 +212,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | SAFE-01 | P1 CLI | Tasks (T2, T17) | In Tasks |
 | SAFE-02 | P1 CLI | Tasks (T4, T17) | In Tasks |
 | COV-01 | P2 coverage | Tasks (T15, T18) | In Tasks |
-| COV-02 | P2 coverage | Tasks (T15, T16) | In Tasks |
+| COV-02 | P2 coverage | Tasks (T15, T16) | Done (T15, T16) |
 | COV-03 | P2 coverage | Tasks (T15, T17, T20) | In Tasks |
 
 **ID format:** `[CATEGORY]-[NUMBER]`.
