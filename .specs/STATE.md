@@ -262,21 +262,29 @@
 
 ## Handoff
 - **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
-- **Phase / Task**: EXECUTE Phase 5, next task T21. The spec, design and tasks carry the r5 amendment the human approved on 2026-11-10 (AD-032). T20 is superseded by T32 and stays unchecked. The feature-level Verifier has not run; it runs after T32.
-- **Completed (branch t3/issue-59)**: T1-T19 (T17 `78316b3`, T18 `151906a`, T19 `20ca78c`); fix `4ec8665` (`cvm.load_filings(accounts=...)`, peak memory 6.4 GB to 1.4 GB); the r5 amendment of spec, design, tasks and this file (docs commit after `a7d5179`).
-- **Gates at 4ec8665**: pit suite 212 OK; root suite 799 OK, 2 skipped (`$PY` = `/home/caio/Documents/projetos/TCC/.venv/bin/python`). Protected paths unchanged against `origin/develop` 9f65467.
-- **Plan**: Phase 5 = T21-T27 (pure modules, 7 counted): cotahist codes/21 sessions/stale prices/stale references; unit grammar; B3 record filters and split adjustment; CVM statement choice, per-row net income, power-of-ten scale; r5 formulas; DY coverage from raw dates; B3 query name. Phase 6 = T28-T32 (9 counted): report v2 with sensitivities; CLI wiring; CLI `--collected-on`, as-of check and sensitivities; README; real run. Each task names the r4 tests whose expectations change (T9, T11, T12, T15, T16, T17 tests).
-- **Real-run cache** (`.cache/pit-rebuild`, from T20's fetch): 575 files, 377 MB. `COTAHIST_A2026.ZIP` already holds 2026-11-05; B3 `stockDividends` are inside the cached company records (verified 2026-11-10). T32's fetch should add only the B3 cash pages of the six `/` trading names (AMBEV, CURY, IMC, KLABIN, LIGHT, OUROFINO) and Yahoo files of tickers newly sent to Yahoo. T32 sends exactly one live probe for `AMBEV SA` first and records the result here.
-- **Open checks for T32's output**: ESPA3/LAVV3 (10x market value) and LWSA3/NGRD3 (P/L sign flips) should clear with F13 and F7; confirm in the report. The 61 companies on the x1000 scale (against 39 in the VPA check) are not explained; T32's `share_scale.scaled` residuals make them checkable.
+- **Phase / Task**: EXECUTE Phase 5 done (T21-T27). Next task T28 (Phase 6). The feature-level Verifier has not run; it runs after T32.
+- **Completed (branch t3/issue-59)**: T1-T19 (T17 `78316b3`, T18 `151906a`, T19 `20ca78c`); Phase 5: T21 `8ed343f`, T22 `1767024`, T23 `0bdf99b`, T24 `9222952`, T25 `d390b41`, T26 `4fe7364`, T27 `37c9407`. T20 is superseded by T32 and stays unchecked.
+- **Gates at 37c9407**: pit suite 265 OK; root suite 852 OK, 2 skipped (`$PY` = `/home/caio/Documents/projetos/TCC/.venv/bin/python`; 799 at `4ec8665` plus the 53 new pit tests); `compileall` OK; protected paths unchanged against `origin/develop` 9f65467.
+- **Phase 5 deviations, for the human to confirm**:
+  - (a) A-9's ticker pattern `[A-Z]{4}\d{1,2}` cannot read the real FCA string `1 ENG3 e 4 ENGI4`, which T22 expects as `{ENG3: 1, ENGI4: 4}`. `mapping._TICKER` now takes 3 or 4 letters. The spec pattern needs correcting. `cli.py:57` still has the 4-letter pattern; align it in T29.
+  - (b) F14 and F5 flipped r4 tests that no Phase 5 task names: `test_pit_rebuild_cli` `test_preferred_price_of_a_company_is_its_own_quote_not_the_preferred_one` (SEMP's stale PN is no longer a fallback) and `test_share_scale_lists_the_thousands_company...` (VALOR DE MERCADO within 11 to 10); and `test_pit_rebuild_report` `liquidity_sessions` 30 to 21 (T28 asserts 21 too). `cli.py` keeps the r4 class-price rule through `_r4_class_price` until T29. T29 removes it and moves the SEMP-type case to `vm_stale_class_price`.
+  - (c) The ZETA11 row of both FCA fixtures changes from `2 ON e 1 PN` to `1 ON e duas PN`, which r5 still leaves unparsed.
+  - (d) T12's base company has PL_ctrl equal to PL; the 19-field test sets PL_ctrl to 6e6. ROIC and CAGR LUCROS keep their numbers on that company (IR negative; LL ratio 2). Their r5 change is tested by the IR ±30 and CAGR tests.
+  - (e) Edge choices: a repeated REST CAP DIN record counts once as a capital return and then as a duplicate; a complete history made only of capital returns is `b3_short_history`; `share_scale` returns the float factor of the power of ten.
+- **What reaches the CLI before T29-T30**: `_r4_class_price` (r4 class prices); `pl_ctrl` = 2.03 less 2.03.09 (2.03.09 loaded); `ll_fy` removed from `_company_inputs`; CAGR LUCROS reads the r4 per-company account; DY coverage gets each ticker's earliest ex-date (`dy_dates`), not the raw date; `parse_b3_cash` applies the F16 filters (no test flipped); `share_scale` factors apply to counts (`n_on = shares × factor`, not rounded); `_b3_dividends` does not pass events, ISINs or `d` (no split adjustment in real runs); `reference_stale` and `last_trade` are not wired.
 - **In-progress (file:line)**: none.
-- **Next step**: T21 in `py/pit_rebuild/cotahist.py` with `tests/test_pit_rebuild_cotahist.py` (replace `test_only_standard_lot_cash_market_records_are_kept`).
+- **Next step**: T28 (`report.py`: schema v2, sensitivities, Markdown) per tasks.md.
 - **Blockers**: none.
 - **Uncommitted files**: none.
 - **Branch**: t3/issue-59 (base develop; gates compare against origin/develop 9f65467). Nothing pushed.
-- **Outside this repo**: the owner's wiki (`~/brain`) should record the COTAHIST `CODBDI` codes (02/07/08), the FCA unit-composition formats, the B3 `stockDividends` factor semantics and the `/` trading-name problem. Not done here, because it needs a push.
-- **Pitfalls (carried from Phase 4)**:
+- **Outside this repo**: the owner's wiki (`~/brain`) should record the COTAHIST `CODBDI` codes (02/07/08), the FCA unit-composition formats (including `ENG3`), the B3 `stockDividends` factor semantics and the `/` trading-name problem. Not done: it needs a push, and the Phase 5 brief limited the work to the worktree.
+- **Real-run cache** (`.cache/pit-rebuild`, from T20's fetch): 575 files, 377 MB. `COTAHIST_A2026.ZIP` already holds 2026-11-05; B3 `stockDividends` are inside the cached company records (verified 2026-11-10). T32's fetch should add only the B3 cash pages of the six `/` trading names (AMBEV, CURY, IMC, KLABIN, LIGHT, OUROFINO) and Yahoo files of tickers newly sent to Yahoo. T32 sends exactly one live probe for `AMBEV SA` first and records the result here.
+- **Open checks for T32's output**: ESPA3/LAVV3 (10x market value) and LWSA3/NGRD3 (P/L sign flips) should clear with F13 and F7; confirm in the report. The 61 companies on the x1000 scale (against 39 in the VPA check) are not explained; T32's `share_scale.scaled` residuals make them checkable.
+- **Pitfalls (carried)**:
   - `check_commit.py` warns above 72 characters.
   - `mkstemp` writes the cache and the report files with mode 0600; git's file mode is unaffected.
   - The report records the 2026-11-06 CSV path as given, which is the absolute path in the main checkout.
   - `tests/test_pit_rebuild_cli.py` names the frozen bundle, so it sets `sys.dont_write_bytecode` before its path inserts. The isolation guard reads module docstrings too, so `py/` must not contain the literal `baselines/`.
   - Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message containing the word "make".
+  - `tests/fixtures/pit_rebuild/cotahist.txt` has 19 rows added in Phase 5. Sessions were added on 2025-08-18, 2026-06-02, 06-05, 06-09, 06-10, 07-02, 07-03, 07-06, 07-08, 07-11, 07-14 and 08-19. Do not add a session between 2026-08-21 and 2026-08-24, or after 2026-11-06: the calendar tests depend on that.
+  - `class_prices` returns `(ticker, close, session_day)` per class.
