@@ -109,14 +109,19 @@ class FilingStore:
         return sorted(self._periods.get(cnpj, {}).values(), key=lambda p: p.filing.dt_refer)
 
 
-def load_filings(zip_paths: Iterable[Path], kind: str) -> FilingStore:
-    """Read the DFP or ITR zips of one kind (PIT-01, A-6, IND-01)."""
+def load_filings(zip_paths: Iterable[Path], kind: str, accounts: Iterable[str] | None = None) -> FilingStore:
+    """Read the DFP or ITR zips of one kind (PIT-01, A-6, IND-01).
+
+    accounts, when given, keeps the statement rows of those CD_CONTA only. The values of the kept
+    accounts are the same as with every account; the rest of the statements are not held in memory.
+    """
     if kind not in (DFP, ITR):
         raise ValueError(f"unknown filing kind: {kind}")
     prefix = kind.lower()
     paths = [Path(p) for p in zip_paths]
     latest = _latest_versions(paths, prefix)
-    statements, compositions = _collect_statements(paths, prefix, latest)
+    wanted = None if accounts is None else frozenset(accounts)
+    statements, compositions = _collect_statements(paths, prefix, latest, wanted)
     periods: dict[str, dict[date, _Period]] = {}
     for (cnpj, dt_refer), (versao, dt_receb) in latest.items():
         key = (cnpj, dt_refer)
@@ -330,7 +335,12 @@ def _latest_versions(paths: list[Path], prefix: str) -> dict[tuple[str, date], t
     return latest
 
 
-def _collect_statements(paths: list[Path], prefix: str, latest: dict[tuple[str, date], tuple[int, date]]):
+def _collect_statements(
+    paths: list[Path],
+    prefix: str,
+    latest: dict[tuple[str, date], tuple[int, date]],
+    accounts: frozenset[str] | None = None,
+):
     statements: dict[tuple[str, date], dict[tuple[str, str], list[tuple[str, dict[str, str]]]]] = {}
     compositions: dict[tuple[str, date], tuple[str, dict[str, str]]] = {}
     for path in paths:
@@ -343,6 +353,8 @@ def _collect_statements(paths: list[Path], prefix: str, latest: dict[tuple[str, 
                     for row in _rows(archive, full_name, member, columns):
                         key = (row["CNPJ_CIA"].strip(), _date(row["DT_REFER"], member))
                         if key not in latest or _int(row["VERSAO"], member) != latest[key][0]:
+                            continue
+                        if accounts is not None and row["CD_CONTA"].strip() not in accounts:
                             continue
                         statements.setdefault(key, {}).setdefault((scope, stmt), []).append((member, row))
                     continue

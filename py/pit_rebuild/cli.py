@@ -47,6 +47,10 @@ PROBE_YEARS = range(2005, 2013)  # COV-01: COTAHIST probe, 2005 to 2012
 KINDS = ("DFP", "ITR", "FCA", "CADASTRO", "COTAHIST")
 LISTINGS = {"DFP": sources.DFP_LISTING, "ITR": sources.ITR_LISTING, "FCA": sources.FCA_LISTING}
 GROUP_KEYS = ("non_financial", "non_financial_without_unclassified", "financial")
+# The statement accounts the rebuild reads (design: Indicator formulas); other rows are not loaded.
+STATEMENT_ACCOUNTS = frozenset(
+    {"1", "1.01", "1.01.01", "1.01.02", "2.01", "2.01.04", "2.02.01", "2.03", "3.01", "3.05", "3.08", "3.11", "3.11.01"}
+)
 SOURCES = ("b3", "yahoo", "none")
 YAHOO_REASONS = ("b3_failed", "b3_empty", "b3_incomplete", "b3_short_history")
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
@@ -178,8 +182,8 @@ def _acquire(cache: Cache, dates: Sequence[date], si_paths: Sequence[Path], cloc
     timings: dict[str, tuple[float, int]] = {}
     fca = _timed(clock, timings, "FCA", files["FCA"], lambda: mapping.load_fca(files["FCA"]))
     cadastro = _timed(clock, timings, "CADASTRO", files["CADASTRO"], lambda: cvm.load_cadastro(files["CADASTRO"][0]))
-    dfp = _timed(clock, timings, "DFP", files["DFP"], lambda: cvm.load_filings(files["DFP"], cvm.DFP))
-    itr = _timed(clock, timings, "ITR", files["ITR"], lambda: cvm.load_filings(files["ITR"], cvm.ITR))
+    dfp = _timed(clock, timings, "DFP", files["DFP"], lambda: cvm.load_filings(files["DFP"], cvm.DFP, STATEMENT_ACCOUNTS))
+    itr = _timed(clock, timings, "ITR", files["ITR"], lambda: cvm.load_filings(files["ITR"], cvm.ITR, STATEMENT_ACCOUNTS))
     mapped = {day: mapping.map_tickers(eligible[day], fca, cadastro, b3, day) for day in dates}
     si_tickers = {ticker for day in dates for ticker in si[day].rows}
     wanted: set[str] = set()

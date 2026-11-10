@@ -139,6 +139,29 @@ class FilingStoreTests(StoreCase):
         self.assertIn("DT_RECEB", ctx.exception.reason)
 
 
+class AccountFilterTests(StoreCase):
+    """load_filings(accounts=...) holds only the rows of those accounts and gives them the same values (IND-01)."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        tmp = Path(cls._tmp.name)
+        cls.dfp_31 = cvm.load_filings([zip_folder(FIXTURES / "dfp", tmp / "dfp_31.zip")], cvm.DFP, accounts={"3.01"})
+        cls.itr_31 = cvm.load_filings([zip_folder(FIXTURES / "itr", tmp / "itr_31.zip")], cvm.ITR, accounts={"3.01"})
+
+    def test_a_kept_account_gives_the_same_ttm_as_the_full_load(self):
+        # The ALFA case of test_ttm_after_an_itr: 12000 + 6000 - 5000 = 13000.
+        full = cvm.ttm(self.dfp, self.itr, ALFA, date(2025, 8, 14), "3.01")
+        filtered = cvm.ttm(self.dfp_31, self.itr_31, ALFA, date(2025, 8, 14), "3.01")
+        self.assertEqual(full, cvm.Dated(13000.0, date(2025, 8, 10)))
+        self.assertEqual(filtered, full)
+
+    def test_an_account_left_out_is_absent_from_the_filtered_load(self):
+        day = date(2025, 8, 14)
+        self.assertIsNotNone(cvm.balance(self.dfp, self.itr, ALFA, day, "1"))
+        self.assertIsNone(cvm.balance(self.dfp_31, self.itr_31, ALFA, day, "1"))
+
+
 class AccessorTests(StoreCase):
     def test_ttm_after_an_itr_is_fy_prev_plus_ytd_minus_prior_ytd(self):
         # ALFA at 2025-08-14: ITR 2025-06-30 (received 2025-08-10): 12000 + 6000 - 5000.
