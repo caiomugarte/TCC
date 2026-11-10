@@ -262,35 +262,36 @@
 
 ## Handoff
 - **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
-- **Phase / Task**: EXECUTE Phase 6 done (T28-T32), the delegated batch. The feature-level Verifier has NOT run (the brief said not to run it). Next: the orchestrator's Verifier (`validate.md`), then `validate_state.py`.
-- **Completed (branch t3/issue-59)**: Phase 5 as before (T21-T27). Phase 6: T28 `4495613` (report schema v2, sensitivities), T29 `267f565` (CLI r5 wiring; 48 CLI tests), T30 `f02b674` (`--collected-on`, `--filings-cutoff`, as-of check, sensitivities; 57 CLI tests), T31 `86c01b1` (README section), T32 `1f21839` (real artifact and `tests/test_pit_rebuild_artifact.py`, 8 tests). Commits outside the task list: `f52f9a0` (A-9 ticker key of 3 or 4 letters in spec.md and design.md, as the orchestrator decided) and `611e839` (the Markdown is rendered in a fixed order; the artifact test showed it depended on dict build order). T20 stays unchecked, superseded by T32.
-- **Gates at 1f21839**: pit suite 311 OK; root suite 898 OK, 2 skipped (`$PY` = `/home/caio/Documents/projetos/TCC/.venv/bin/python`); `compileall` OK; protected paths unchanged against `origin/develop` 9f65467.
-- **Real run (T32, tool commit `611e839`)**: fetch 55 s, exit 0, 10 new cache files (126,075 bytes; the cache holds 586 files, 377 MB); report 45 s, exit 0, no cache file changed; `data/`, `snapshots/` and `baselines/` unchanged; sha256 of `data/raw/status_invest_fundamentals.csv` `ceeed0b1…` and of the 2026-11-06 CSV `87c15cb5…`, both unchanged.
-- **Probe (SRC-07, one request)**: `GetListedCashDividends` page 1 for `AMBEV SA` returned HTTP 200, 40 records on one page, all `ON`. B3 answers the normalized name, and the six `/` names return records (AMBEV 40, CURY 20, IMC 4, KLABIN 219 over two pages, LIGHT 24, OUROFINO 25). The payload carries no company name, so the identity rests on the values. The probe and the fetch each requested AMBEV page 1 once.
-- **Results (committed JSON)**: official class `não reconstruível` (without unclassified: the same); financial group `não reconstruível`. 2026-08-07, non-financial, against the diagnosis: P/L 79.2 (79), P/VP 82.6 (83), ROE 85.6 (86), ROA 87.3 (88), LIQ. CORRENTE 89.8 (90), CAGR LUCROS 86.9 (87), ROIC 48.7 (49), PEG RATIO 68.1 (68), PRECO 91.5 (92), LIQUIDEZ 86.9 (87). Sensitivities, not the verdict: D-A `não reconstruível` (23 and 17 tickers excluded), D-B `não reconstruível`, D-C `não reconstruível`. The as-of session equals the date for both CSVs.
-- **Open checks, now answered by the report**: ESPA3 and LAVV3 are out of the ten worst VALOR DE MERCADO cases on both dates, and LWSA3 and NGRD3 are out of the ten worst P/L cases. Both were T20 defects.
-- **For the human to confirm**:
-  - (a) Scale residuals left as the A-18 limit, visible in `share_scale.scaled`, not fixed here: SBSP3 (factor 10, residual 1.99), LIGT3 (factor 10, residual 2.31), and cd_cvm 25550 at ×1000 with residual 0.175 (the factor cap 10³ binds, or the data is wrong).
-  - (b) The ×1000 group has 62 companies on 2026-08-07 and 61 on 2026-11-05 (the brief's "61 against 39").
-  - (c) Three extra B3 histories (AMBIPAR, BR PARTNERS, PARANAPANEMA) were fetched: F1 made their tickers computable, and their names have no `/`.
-  - (d) Test expectations changed by r5, each hand-computed in its test: EUCX `x1000` becomes `scaled` (residual 92 619 000 / 92 619 256); SEMP4 is in `vm_stale_class_price` (VM 290 M, within count 11 to 10, fallback 1 to 0).
+- **Phase / Task**: Verifier r1 fixes done (Phase 7, T33-T36). Next: the Verifier re-run (`validate.md`, author != verifier; not run here), then `validate_state.py`, which needs the new `validation.md`.
+- **Verifier r1 (`validation.md`, FAIL: 2 blocking, 3 nonblocking)**: the four gaps the fix plan covers are closed by test-only commits, plus one docstring line. The Verifier's report is untouched.
+  - G1 (blocking): T33 `e1d3826`, `PeriodReceiptBoundaryTests` in `tests/test_pit_rebuild_cvm.py`: the older filing read by `annual(years_back=5)`, `ttm_year_before` and the TTM read, received on d + 1 (no value) and on d (used). 6 tests.
+  - G2 (blocking): T34 `1613e09`, `AnnualBaseReceiptTests`: a DFP received after d does not move `annual()`'s base; on d it is the base. 2 tests.
+  - N1 (nonblocking): T35 `90ec292`, `ScaledShareCountTests` in `tests/test_pit_rebuild_cli.py`: `cli._company` rounds the scaled counts (3 000 001 and 1 000 000). 1 test.
+  - N3 (nonblocking): T36 `046bb93`: the first docstring example uses `--date 2026-11-05`.
+- **Discrimination** (scratch copies of `py/` and `tests/`, never the worktree): removing the cut at `cvm.py:291` fails the three d + 1 tests, and `<=` to `<` there fails the three on-d tests. At `cvm.py:208` (G2) each mutant fails its one test. Removing `round` at `cli.py:443` fails N1, and so does `int`. The restored copies pass every time.
+- **Gates at 046bb93**: pit suite 320 OK; root suite 907 OK, 2 skipped (898 before plus the 9 new tests); `compileall` OK; protected paths unchanged against `origin/develop` 9f65467 (`git diff --exit-code` 0).
+- **Results**: unchanged. The only production change is the N3 docstring line. `docs/validation/pit-rebuild-stocks.{json,md}` and `validation.md` are untouched.
+- **For the human to confirm** (still open from the previous Handoff):
+  - (a) Scale residuals left at the A-18 limit, visible in `share_scale.scaled`: SBSP3 (factor 10, residual 1.99), LIGT3 (factor 10, residual 2.31), cd_cvm 25550 at x1000 (residual 0.175).
+  - (b) The x1000 group has 62 companies on 2026-08-07 and 61 on 2026-11-05.
+  - (c) Three extra B3 histories (AMBIPAR, BR PARTNERS, PARANAPANEMA) were fetched.
+  - (d) Test expectations changed by r5, each hand-computed in its test: EUCX `x1000` becomes `scaled`; SEMP4 is in `vm_stale_class_price`.
   - (e) The exit-code table is compared by code, not wording (README pt-BR, docstring English).
-  - (f) The Phase 5 items (c) to (e) of the previous Handoff (ZETA11 fixture row, T12's PL_ctrl, edge choices) are unchanged and still await the human.
-- **Verifier**: not run (per the brief). `validate_state.py` needs `validation.md`, so it cannot pass yet.
+  - (f) The Phase 5 items of the earlier Handoff (ZETA11 fixture row, T12's PL_ctrl, edge choices) still await the human.
 - **In-progress (file:line)**: none.
-- **Next step**: the orchestrator runs the feature-level Verifier (author ≠ verifier, `validate.md`), then decides (a). Push, PR and the wiki need an explicit go-ahead.
-- **Blockers**: none for the implementation.
 - **Uncommitted files**: none.
 - **Branch**: t3/issue-59 (base develop; gates compare against origin/develop 9f65467). Nothing pushed; no PR.
-- **Outside this repo**: the owner's wiki (`~/brain`) should record the COTAHIST `CODBDI` codes (02/07/08), the FCA unit-composition formats (including `ENG3`), the B3 `stockDividends` split semantics, and that B3 answers the normalized `/` names. Not done: it needs a push, which this brief forbids.
+- **Outside this repo**: `~/brain` was not updated (this batch was limited to the worktree). It needs the COTAHIST `CODBDI` codes (02/07/08), the FCA unit-composition formats (including `ENG3`), the B3 `stockDividends` split semantics, B3 answering the normalized `/` names, and the #59 status in `projetos/prumo.md`, which still says the SPEC is in review. Push and wiki edits need an explicit go-ahead.
+- **Lesson proposed by the Verifier** (not recorded here; the orchestrator runs `lessons.py`): when a PIT rule is applied in several helpers, test the boundary through each helper that selects a filing.
 - **Pitfalls (carried)**:
   - `check_commit.py` warns above 72 characters.
   - `mkstemp` writes the cache and the report files with mode 0600; git's file mode is unaffected.
-  - The report records the 2026-11-06 CSV path as given, which is the absolute path in the main checkout.
+  - The report records the 2026-11-06 CSV path as given, the absolute path in the main checkout.
   - `tests/test_pit_rebuild_cli.py` names the frozen bundle, so it sets `sys.dont_write_bytecode` before its path inserts. The isolation guard reads module docstrings too, so `py/` must not contain the literal `baselines/`.
   - Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message containing the word "make".
-  - `tests/fixtures/pit_rebuild/cotahist.txt` has 19 rows added in Phase 5. Sessions were added on 2025-08-18, 2026-06-02, 06-05, 06-09, 06-10, 07-02, 07-03, 07-06, 07-08, 07-11, 07-14 and 08-19. Do not add a session between 2026-08-21 and 2026-08-24, or after 2026-11-06: the calendar tests depend on that.
+  - `tests/fixtures/pit_rebuild/cotahist.txt` has 19 rows added in Phase 5. Do not add a session between 2026-08-21 and 2026-08-24, or after 2026-11-06: the calendar tests depend on that.
   - `class_prices` returns `(ticker, close, session_day)` per class.
-  - The shape universe (`write_shape_universe`, T29/T30) is built in temp dirs, and the shared universe is unchanged. `ShapeReportTests` and `ShapeAsOfTests` rely on its hand-computed sessions and prices.
+  - The shape universe (`write_shape_universe`) is built in temp dirs; `ShapeReportTests` and `ShapeAsOfTests` rely on its hand-computed sessions and prices.
   - The Markdown is rendered in a fixed order (`_canonical`, sorted keys), so the artifact bytes do not depend on dict build order.
-  - The T20 cash pages under the raw names (`b3_cash_AMBEV_S_A_p1.json` and the other `/` names) are no longer read. They stay in the cache.
+  - The T20 cash pages under the raw names are no longer read; they stay in the cache.
+  - In a gate, `git diff --stat` exits 0 whatever it finds. Use `git diff --exit-code`.

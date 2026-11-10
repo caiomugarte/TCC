@@ -11,7 +11,7 @@ Implement these tasks with the `tlc-spec-driven` skill: **activate it by name an
 **Spec**: `.specs/features/pit-rebuild-stocks/spec.md`
 **Design**: `.specs/features/pit-rebuild-stocks/design.md`
 **Decision record**: AD-031 and AD-032 in `.specs/STATE.md` (both accepted by the human)
-**Status**: r5 (2026-11-10). r4 approved 2026-11-09; T1-T19 done; T20 superseded by T32. Phases 5 and 6 (T21-T32) implement the r5 amendment the human approved on 2026-11-10 (spec "Amendment r5", design "Amendment r5", AD-032).
+**Status**: r5 (2026-11-10). r4 approved 2026-11-09; T1-T19 done; T20 superseded by T32. Phases 5 and 6 (T21-T32) implement the r5 amendment the human approved on 2026-11-10 (spec "Amendment r5", design "Amendment r5", AD-032). Verifier r1 (validation.md, FAIL: G1 and G2 blocking, N1 and N3 nonblocking) is closed by Phase 7 (T33-T36: test-only, plus one docstring line); the next step is a re-verify.
 
 ---
 
