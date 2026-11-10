@@ -1,6 +1,69 @@
 # PIT Rebuild Feasibility for Stocks Validation
 
-## Validation: FAIL — 2 blocking, 3 nonblocking
+## Validation: PASS — 0 blocking, 1 nonblocking (round 2)
+
+| Field | Value |
+| --- | --- |
+| Date | 2026-11-10 |
+| Feature | `pit-rebuild-stocks` (issue #59), delegation `iw-59-verify-r2` |
+| Diff range | `2f67070..09953c0` (5 commits: `e1d3826`, `1613e09`, `90ec292`, `046bb93`, `09953c0`) |
+| Scope | Convergence check on the round 1 gaps. Round 1 (below, unchanged) established the other 46 requirements, 10 issue ACs, exit codes, reproducibility, verdicts and safety; this round checks that the fixes close G1, G2, N1 and N3 and change nothing else. |
+| Worktree state | `git status --porcelain` empty before and after. Mutants ran in a detached scratch `git worktree` of `09953c0` under the session scratchpad, removed with `git worktree remove --force`; porcelain matched the baseline afterwards and `git worktree list` holds no scratch entry. |
+
+Both blocking gaps are closed: each of my four PIT mutants at `py/pit_rebuild/cvm.py:208` and `:291` now fails the new tests, and the real code passes them. The rounding mutant (N1) is killed too, and the docstring example (N3) is fixed. The only open item is N2, an optional wording note.
+
+### Round 2 discrimination sensor
+
+The same mutants as round 1 (M03, M05, M24), plus the `≤` → `<` boundary variants and a truncation variant, applied one at a time to the scratch copy.
+
+| # | File:line | Mutation | Tests that fail | Killed? |
+| --- | --- | --- | --- | --- |
+| M03 | `py/pit_rebuild/cvm.py:291` | `_usable_period` returns the period without the `DT_RECEB ≤ d` filter | 3: `tests/test_pit_rebuild_cvm.py:443`, `:452`, `:461` (the `…received_after_d` cases) | ✅ |
+| M03b | `py/pit_rebuild/cvm.py:291` | `dt_receb <= d` → `dt_receb < d` | 3: `tests/test_pit_rebuild_cvm.py:448`, `:456`, `:465` (the `…received_on_d` cases) | ✅ |
+| M05 | `py/pit_rebuild/cvm.py:208` | `annual()` base taken from every DFP, filter removed | 1: `tests/test_pit_rebuild_cvm.py:492` | ✅ |
+| M05b | `py/pit_rebuild/cvm.py:208` | `dt_receb <= d` → `dt_receb < d` | 1: `tests/test_pit_rebuild_cvm.py:498` | ✅ |
+| M24 | `py/pit_rebuild/cli.py:443` | scaled counts not rounded | 1: `tests/test_pit_rebuild_cli.py:1159` | ✅ |
+| M24b | `py/pit_rebuild/cli.py:443` | `round` → `int` (truncation) | 1: `tests/test_pit_rebuild_cli.py:1159` | ✅ |
+
+**Result**: 6/6 killed (PASS). On the real code `PeriodReceiptBoundaryTests`, `AnnualBaseReceiptTests` and `ScaledShareCountTests` run 9 tests, OK. With round 1's 60 kills, every mutant in PIT selection and verdict aggregation is now killed.
+
+### Spec-anchored check of the new tests
+
+- **G1** (`tests/test_pit_rebuild_cvm.py:394-468`): each helper that calls `_usable_period` is cut at d by the older period's own `DT_RECEB`. A receipt at d + 1 gives `None` (`:446` `assertIsNone(cvm.annual(..., years_back=5))`, `:454` `ttm_year_before`, `:463` `ttm`), and a receipt on d is used, dated d (`:450` `Dated(800.0, D)`, `:459` `Dated(850.0, D)` = 800 + 450 − 400, `:468` `Dated(1100.0, D)` = 1000 + 600 − 500). These are the PIT-01 outcomes (`DT_RECEB ≤ d`), and I recomputed the sums by hand.
+- **G2** (`tests/test_pit_rebuild_cvm.py:471-502`): when DFP 2025 arrives at d + 1, the base is DFP 2024 (`:495` `Dated(800.0, 2025-03-20)`) and five years back is DFP 2019 (`:496` `Dated(100.0, 2020-03-20)`). When it arrives on d, the base is DFP 2025 (`:500`) and five years back is DFP 2020 (`Dated(200.0, 2021-03-20)`). This is exactly the round 1 fix plan.
+- **N1** (`tests/test_pit_rebuild_cli.py:1122-1159`): counts 30 000 007 and 10 000 003 at f = 0.1 against a B3 total of 4 000 001 give 3 000 001 and 1 000 000 (A-18: round to whole shares). The test asserts the factor (`:1158`) and both counts (`:1159`); both plain `float` and `int` truncation fail it.
+- **N3**: `py/pit_rebuild/cli.py:6` now reads `--date 2026-11-05` for the snapshot, matching A-11 and the second example (`:11`). The exit-code table (`py/pit_rebuild/cli.py:18-24`) is unchanged: `git diff -U0 2f67070..HEAD -- py` holds only that one line.
+
+### Scope of the fix commits
+
+- `git diff --numstat 2f67070..HEAD`: `py/pit_rebuild/cli.py` 1/1 (the docstring line), `tests/test_pit_rebuild_cli.py` +43/−2, `tests/test_pit_rebuild_cvm.py` +111/−0, `.specs/STATE.md`, `.specs/features/pit-rebuild-stocks/tasks.md`. No other production line changed, and no test was deleted or weakened (the two removed lines in `test_pit_rebuild_cli.py` are import lines that were widened).
+- `git diff --exit-code 2f67070..HEAD -- docs/` is empty, so `docs/validation/pit-rebuild-stocks.{json,md}` are unchanged. A docstring edit cannot change the computation, so round 1's reproducibility result still holds.
+- `git diff --exit-code origin/develop -- data snapshots baselines py/core api` is empty.
+
+### Round 2 gate
+
+- `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`: `Ran 320 tests … OK` (311 in round 1, plus 9 new).
+- `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest discover -s tests -p "test_*.py"`: `Ran 907 tests … OK (skipped=2)`, exit 0. That is 898 at Handoff `1f21839` plus the 9 new tests; the 2 skips predate the feature.
+
+### Gap status after round 2
+
+| ID | Round 1 severity | Status | Evidence |
+| --- | --- | --- | --- |
+| G1 | blocking | ✅ Closed | M03 and M03b killed by `tests/test_pit_rebuild_cvm.py:443-468` |
+| G2 | blocking | ✅ Closed | M05 and M05b killed by `tests/test_pit_rebuild_cvm.py:492-502` |
+| N1 | nonblocking | ✅ Closed | M24 and M24b killed by `tests/test_pit_rebuild_cli.py:1159` |
+| N2 | nonblocking | ⏳ Open, optional | Not addressed. The `refiled_after_d` key name reads like refiling, but it follows PIT-03 and the Markdown wording is accurate. It doesn't block. |
+| N3 | nonblocking | ✅ Closed | `py/pit_rebuild/cli.py:6` |
+
+**Requirement traceability (proposed; the brief forbids editing `spec.md`)**: PIT-01 → ✅ Verified. All 46 requirements → ✅ Verified.
+
+**Lessons**: the round 1 lesson still applies (test a PIT boundary through each helper that selects a filing). The brief limits writes to this file, so `lessons.py` was not run; the orchestrator should record it.
+
+---
+
+# Round 1 record (`iw-59-verify-r1`, commit `2f67070`)
+
+## Round 1 verdict: FAIL — 2 blocking, 3 nonblocking
 
 | Field | Value |
 | --- | --- |
@@ -239,7 +302,7 @@ I recomputed these values with my own parsers (COTAHIST fixed-width, CVM CSV and
 | M62 | `py/pit_rebuild/indicators.py:253` | CAGR exponent 1/4 | ✅ |
 | M63 | `py/pit_rebuild/cvm.py:316` | TTM without the prior YTD | ✅ |
 
-**Sensor result**: 60 of 63 mutants killed (FAIL). Every mutant in the verdict aggregation and the sensitivity isolation (M44–M59) is killed. Two mutants in the PIT filing selection survive (M03, M05), and so does one in share-count rounding (M24).
+**Round 1 sensor outcome**: 60 of 63 mutants killed (FAIL). Every mutant in the verdict aggregation and the sensitivity isolation (M44–M59) is killed. Two mutants in the PIT filing selection survive (M03, M05), and so does one in share-count rounding (M24).
 
 **The survivors change real output.** I ran the real `report --offline` (the same arguments as above, output in the scratchpad) with each PIT mutant:
 
