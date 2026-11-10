@@ -13,7 +13,6 @@ value is outside tolerance and is listed with its reason.
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field as dataclass_field
-import math
 import statistics
 
 from .fields import SCORE_FIELDS, tolerance_kind

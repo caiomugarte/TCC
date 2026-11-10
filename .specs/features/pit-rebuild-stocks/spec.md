@@ -179,11 +179,11 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | -------------- | ----- | ----- | ------ |
 | SRC-01 | P1 rebuild | Tasks (T5, T6, T18) | In Tasks |
 | SRC-02 | P1 rebuild | Tasks (T5) | Done (T5) |
-| SRC-03 | P1 rebuild | Tasks (T5, T17) | In Tasks |
+| SRC-03 | P1 rebuild | Tasks (T5, T17) | Done (T5, T17) |
 | SRC-04 | P1 rebuild | Tasks (T5, T18) | In Tasks |
 | SRC-05 | P1 rebuild | Tasks (T10, T18) | In Tasks |
-| PIT-01 | P1 rebuild | Tasks (T7, T8, T9, T17) | In Tasks |
-| PIT-02 | P1 rebuild | Tasks (T1, T10, T12, T17) | In Tasks |
+| PIT-01 | P1 rebuild | Tasks (T7, T8, T9, T17) | Done (T7, T8, T9, T17) |
+| PIT-02 | P1 rebuild | Tasks (T1, T10, T12, T17) | Done (T1, T10, T12, T17) |
 | PIT-03 | P1 rebuild | Tasks (T7) | Done (T7) |
 | MAP-01 | P1 rebuild | Tasks (T4, T11, T18) | In Tasks |
 | MAP-02 | P1 rebuild | Tasks (T11, T16) | Done (T11, T16) |
@@ -191,26 +191,26 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12) | Done (T8, T9, T10, T12) |
 | IND-02 | P1 rebuild | Tasks (T3) | Done (T3) |
 | IND-03 | P1 rebuild | Tasks (T12) | Done (T12) |
-| IND-04 | P1 rebuild | Tasks (T8, T9, T11, T12, T16, T17) | In Tasks |
+| IND-04 | P1 rebuild | Tasks (T8, T9, T11, T12, T16, T17) | Done (T8, T9, T11, T12, T16, T17) |
 | CMP-01 | P1 rebuild | Tasks (T3, T13) | Done (T3, T13) |
 | CMP-02 | P1 rebuild | Tasks (T4, T13) | Done (T4, T13) |
 | VER-01 | P1 rebuild | Tasks (T14) | Done (T14) |
 | VER-02 | P1 rebuild | Tasks (T14) | Done (T14) |
 | VER-03 | P1 rebuild | Tasks (T14, T16, T20) | In Tasks |
 | VER-04 | P1 rebuild | Tasks (T16) | Done (T16) |
-| RPT-01 | P1 report | Tasks (T2, T17) | In Tasks |
+| RPT-01 | P1 report | Tasks (T2, T17) | Done (T2, T17) |
 | RPT-02 | P1 report | Tasks (T16) | Done (T16) |
 | RPT-03 | P1 report | Tasks (T16) | Done (T16) |
 | RPT-04 | P1 report | Tasks (T16, T20) | In Tasks |
-| RPT-05 | P1 report | Tasks (T2, T17) | In Tasks |
+| RPT-05 | P1 report | Tasks (T2, T17) | Done (T2, T17) |
 | RPT-06 | P1 report | Tasks (T19, T20) | In Tasks |
 | CLI-01 | P1 CLI | Tasks (T1, T17, T19) | In Tasks |
-| CLI-02 | P1 CLI | Tasks (T5, T17) | In Tasks |
-| CLI-03 | P1 CLI | Tasks (T17) | In Tasks |
-| CLI-04 | P1 CLI | Tasks (T17) | In Tasks |
+| CLI-02 | P1 CLI | Tasks (T5, T17) | Done (T5, T17) |
+| CLI-03 | P1 CLI | Tasks (T17) | Done (T17) |
+| CLI-04 | P1 CLI | Tasks (T17) | Done (T17) |
 | CLI-05 | P1 CLI | Tasks (T17, T18) | In Tasks |
-| SAFE-01 | P1 CLI | Tasks (T2, T17) | In Tasks |
-| SAFE-02 | P1 CLI | Tasks (T4, T17) | In Tasks |
+| SAFE-01 | P1 CLI | Tasks (T2, T17) | Done (T2, T17) |
+| SAFE-02 | P1 CLI | Tasks (T4, T17) | Done (T4, T17) |
 | COV-01 | P2 coverage | Tasks (T15, T18) | In Tasks |
 | COV-02 | P2 coverage | Tasks (T15, T16) | Done (T15, T16) |
 | COV-03 | P2 coverage | Tasks (T15, T17, T20) | In Tasks |

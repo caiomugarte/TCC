@@ -15,6 +15,8 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import time
+import urllib.error
 import urllib.request
 import zipfile
 
@@ -28,10 +30,11 @@ USER_AGENT = "Mozilla/5.0 (X11; Linux x86_64)"
 class Cache:
     """Files of one cache directory, each verified against manifest.json."""
 
-    def __init__(self, root: Path, offline: bool, opener=urllib.request.urlopen):
+    def __init__(self, root: Path, offline: bool, opener=urllib.request.urlopen, pause_seconds: float = 0.0):
         self.root = Path(root)
         self.offline = offline
         self._opener = opener
+        self._pause_seconds = pause_seconds
         self._manifest = self._read_manifest()
         self.used: list[dict] = []
 
@@ -72,6 +75,7 @@ class Cache:
         recorded = self._manifest["sizes"].get(url)
         if recorded is not None or self.offline:
             return recorded
+        self._wait()
         try:
             with self._opener(_request(url, "HEAD"), timeout=TIMEOUT_SECONDS) as response:
                 length = response.headers.get("Content-Length")
@@ -83,7 +87,38 @@ class Cache:
         self._write_manifest()
         return int(length)
 
+    def probe(self, url: str) -> bool:
+        """Whether url exists on the server: HEAD answers 200 (True) or 404 (False), recorded in manifest.json.
+
+        Any other failure raises SourceError, because an unknown answer is not an absent file (COV-01).
+        Offline, only a recorded answer is returned.
+        """
+        probes = self._manifest.setdefault("probes", {})
+        if url in probes:
+            return probes[url]
+        if self.offline:
+            raise SourceError(url, "probe not in the cache and --offline is set")
+        self._wait()
+        try:
+            with self._opener(_request(url, "HEAD"), timeout=TIMEOUT_SECONDS):
+                present = True
+        except urllib.error.HTTPError as exc:
+            if exc.code != 404:
+                raise SourceError(url, f"probe failed: HTTP {exc.code}") from exc
+            present = False
+        except (OSError, http.client.HTTPException) as exc:
+            raise SourceError(url, f"probe failed: {exc}") from exc
+        probes[url] = present
+        self._write_manifest()
+        return present
+
+    def _wait(self) -> None:
+        """Pause between two requests to the same servers (sequential, polite pacing)."""
+        if self._pause_seconds > 0:
+            time.sleep(self._pause_seconds)
+
     def _download(self, url: str, name: str) -> bytes:
+        self._wait()
         try:
             with self._opener(_request(url), timeout=TIMEOUT_SECONDS) as response:
                 data = response.read()
@@ -94,6 +129,11 @@ class Cache:
                 zipfile.ZipFile(io.BytesIO(data)).close()
             except (zipfile.BadZipFile, OSError) as exc:
                 raise SourceError(url, "response is not a zip file") from exc
+        if name.lower().endswith(".json"):
+            try:
+                json.loads(data)
+            except ValueError as exc:
+                raise SourceError(url, "response is not JSON") from exc
         return data
 
     def _store(self, url: str, name: str, data: bytes) -> Path:

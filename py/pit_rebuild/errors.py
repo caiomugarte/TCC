@@ -44,3 +44,9 @@ class SourceError(RebuildError):
     """A required download failed, or a required file is absent offline."""
 
     exit_code = 5
+
+
+class OutputError(RebuildError):
+    """The report files could not be written (CLI-01, RPT-05)."""
+
+    exit_code = 1
