@@ -8,7 +8,7 @@ checked in the spec (A-17): 8,324,781,006.60 with USIM5 at 7.15, not 9,146,508,6
 
 import sys
 import unittest
-from dataclasses import replace
+from dataclasses import fields as dataclass_fields, replace
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -27,20 +27,20 @@ SYNTHETIC = {
     "VALOR DE MERCADO": 14_000_000.0,
     "LIQUIDEZ MEDIA DIARIA": 50_000.0,
     "P/L": 10.0,  # 10 / (1.5e6 / 1.5e6)
-    "P/VP": 2.0,  # 10 / (7.5e6 / 1.5e6)
+    "P/VP": 2.5,  # 10 / (6e6 / 1.5e6): PL_ctrl 6e6 = PL 7.5e6 less 1.5e6 of non-controlling interests (A-21, F8)
     "PSR": 1.25,  # 10 / (12e6 / 1.5e6)
     "EV/EBIT": 17_000_000 / 3_000_000,  # (14e6 + DL 3e6) / EBIT 3e6
     "DY": 5.0,  # 100 × 0.5 / 10
-    "ROE": 20.0,  # 100 × 1.5e6 / 7.5e6
+    "ROE": 25.0,  # 100 × 1.5e6 / abs(PL_ctrl 6e6) (F8, F9); r4 used PL 7.5e6 and gave 20
     "ROA": 7.5,  # 100 × 1.5e6 / 20e6
-    "ROIC": 100 * 2_400_000 / 11_500_000,  # 100 × (3e6 - 0.6e6) / (7.5e6 + 4e6)
+    "ROIC": 100 * 2_400_000 / 11_500_000,  # 100 × (3e6 - abs(-0.6e6)) / (7.5e6 + 4e6) (F11); IR is negative, so r4 gives the same
     "MARG. LIQUIDA": 12.5,  # 100 × 1.5e6 / 12e6
     "MARGEM EBIT": 25.0,  # 100 × 3e6 / 12e6
     "LIQ. CORRENTE": 2.0,  # 6e6 / 3e6
     "DIVIDA LIQUIDA / EBIT": 1.0,  # 3e6 / 3e6
-    "DIV. LIQ. / PATRI.": 0.4,  # 3e6 / 7.5e6
+    "DIV. LIQ. / PATRI.": 0.5,  # 3e6 / 6e6 (PL_ctrl, F8); r4 used PL and gave 0.4
     "CAGR RECEITAS 5 ANOS": 100 * (2 ** 0.2 - 1),  # 12e6 / 6e6
-    "CAGR LUCROS 5 ANOS": 100 * (2 ** 0.2 - 1),  # 1.5e6 / 0.75e6
+    "CAGR LUCROS 5 ANOS": 100 * (2 ** 0.2 - 1),  # LL_TTM 1.5e6 over LL_FY−5 0.75e6 (F10); the same ratio as r4 gave
     "PEG RATIO": 0.5,  # 10 / (100 × (1.5e6 / 1.25e6 - 1))
 }
 
@@ -60,6 +60,7 @@ def synthetic(**changes) -> TickerInputs:
         ir=Input(-600_000.0, D),
         ll_1y=Input(1_250_000.0, D),
         pl=Input(7_500_000.0, D),
+        pl_ctrl=Input(7_500_000.0, D),  # no non-controlling interests in the base company
         at=Input(20_000_000.0, D),
         ac=Input(6_000_000.0, D),
         pc=Input(3_000_000.0, D),
@@ -67,7 +68,6 @@ def synthetic(**changes) -> TickerInputs:
         cash=Input(1_000_000.0, D),
         rec_fy=Input(12_000_000.0, D),
         rec_fy5=Input(6_000_000.0, D),
-        ll_fy=Input(1_500_000.0, D),
         ll_fy5=Input(750_000.0, D),
         dividends=[Dividend(0.5, D - timedelta(days=10))],
     )
@@ -76,7 +76,8 @@ def synthetic(**changes) -> TickerInputs:
 
 class FieldValueTests(unittest.TestCase):
     def test_each_of_the_19_fields_matches_its_hand_computed_value(self):
-        result = indicators.compute(synthetic(), D)
+        # PL_ctrl 6e6 (1.5e6 of non-controlling interests) gives the r5 values of ROE, P/VP and DIV. LIQ. / PATRI.
+        result = indicators.compute(synthetic(pl_ctrl=Input(6_000_000.0, D)), D)
         self.assertEqual(list(result), list(ALL_FIELDS))
         for field, expected in SYNTHETIC.items():
             with self.subTest(field=field):
@@ -102,6 +103,52 @@ class FieldValueTests(unittest.TestCase):
         self.assertAlmostEqual(unit["PSR"].value, 1.25)
         self.assertAlmostEqual(unit["VALOR DE MERCADO"].value, 14_000_000.0)  # company value, not divided by k
         self.assertAlmostEqual(unit["DY"].value, 5.0)  # per-unit dividends over the unit price
+
+
+class ControllersEquityAndCagrTests(unittest.TestCase):
+    """The r5 formulas that read PL_ctrl (F8, F9), IR's sign (F11) and LL_TTM in CAGR LUCROS (F10)."""
+
+    def test_roe_divides_by_the_absolute_controllers_equity_so_a_negative_equity_keeps_the_sign_of_the_profit(self):
+        # 100 × 120 / |−400| = 30 and 100 × (−120) / |−400| = −30.
+        self.assertAlmostEqual(indicators.compute(synthetic(pl_ctrl=Input(-400.0, D), ll=Input(120.0, D)), D)["ROE"].value, 30.0)
+        self.assertAlmostEqual(indicators.compute(synthetic(pl_ctrl=Input(-400.0, D), ll=Input(-120.0, D)), D)["ROE"].value, -30.0)
+
+    def test_ir_of_plus_30_and_minus_30_give_the_same_roic_100_times_ebit_minus_30_over_pl_plus_db(self):
+        # EBIT 3e6, PL 7.5e6, DB 4e6: 100 × (3e6 − 30) / (7.5e6 + 4e6).
+        expected = 100 * (3_000_000 - 30) / (7_500_000 + 4_000_000)
+        for ir in (30.0, -30.0):
+            with self.subTest(ir=ir):
+                self.assertAlmostEqual(indicators.compute(synthetic(ir=Input(ir, D)), D)["ROIC"].value, expected, places=9)
+
+    def test_without_pl_ctrl_roe_pvp_and_div_liq_have_no_value_with_the_input_named_and_roic_keeps_its_value(self):
+        result = indicators.compute(synthetic(pl_ctrl=None), D)
+        for field in ("ROE", "P/VP", "DIV. LIQ. / PATRI."):
+            with self.subTest(field=field):
+                self.assertEqual((result[field].value, result[field].reason), (None, "missing_input: PL_ctrl"))
+        self.assertAlmostEqual(result["ROIC"].value, SYNTHETIC["ROIC"], places=6)
+
+    def test_cagr_lucros_is_100_times_ll_ttm_over_the_fiscal_year_five_years_back_and_follows_ll_ttm(self):
+        # 100 × ((120 / 60)^(1/5) − 1); doubling only LL (TTM) gives 100 × ((240 / 60)^(1/5) − 1).
+        first = indicators.compute(synthetic(ll=Input(120.0, D), ll_fy5=Input(60.0, D)), D)["CAGR LUCROS 5 ANOS"].value
+        second = indicators.compute(synthetic(ll=Input(240.0, D), ll_fy5=Input(60.0, D)), D)["CAGR LUCROS 5 ANOS"].value
+        self.assertAlmostEqual(first, 100 * ((120 / 60) ** (1 / 5) - 1), places=9)
+        self.assertAlmostEqual(second, 100 * ((240 / 60) ** (1 / 5) - 1), places=9)
+
+    def test_cagr_lucros_with_a_non_positive_ttm_net_income_is_non_positive_base(self):
+        result = indicators.compute(synthetic(ll=Input(-120.0, D), ll_fy5=Input(60.0, D)), D)["CAGR LUCROS 5 ANOS"]
+        self.assertEqual((result.value, result.reason), (None, "non_positive_base"))
+
+    def test_the_formula_text_names_pl_ctrl_abs_ir_ll_ttm_and_21_sessions(self):
+        self.assertIn("PL_ctrl", indicators.FORMULAS["ROE"])
+        self.assertIn("abs(PL_ctrl)", indicators.FORMULAS["ROE"])
+        self.assertIn("abs(IR)", indicators.FORMULAS["ROIC"])
+        self.assertIn("LL_TTM", indicators.FORMULAS["CAGR LUCROS 5 ANOS"])
+        self.assertIn("21 sessões", indicators.FORMULAS["LIQUIDEZ MEDIA DIARIA"])
+
+    def test_tickerinputs_has_pl_ctrl_and_no_ll_fy_field(self):
+        names = {item.name for item in dataclass_fields(TickerInputs)}
+        self.assertIn("pl_ctrl", names)
+        self.assertNotIn("ll_fy", names)
 
 
 class MarketValueTests(unittest.TestCase):

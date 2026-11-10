@@ -49,7 +49,7 @@ LISTINGS = {"DFP": sources.DFP_LISTING, "ITR": sources.ITR_LISTING, "FCA": sourc
 GROUP_KEYS = ("non_financial", "non_financial_without_unclassified", "financial")
 # The statement accounts the rebuild reads (design: Indicator formulas); other rows are not loaded.
 STATEMENT_ACCOUNTS = frozenset(
-    {"1", "1.01", "1.01.01", "1.01.02", "2.01", "2.01.04", "2.02.01", "2.03", "3.01", "3.05", "3.08", "3.11", "3.11.01"}
+    {"1", "1.01", "1.01.01", "1.01.02", "2.01", "2.01.04", "2.02.01", "2.03", "2.03.09", "3.01", "3.05", "3.08", "3.11", "3.11.01"}
 )
 SOURCES = ("b3", "yahoo", "none")
 YAHOO_REASONS = ("b3_failed", "b3_empty", "b3_incomplete", "b3_short_history")
@@ -316,6 +316,15 @@ def _sum_inputs(items: list[Input | None]) -> Input | None:
     return Input(sum(item.value for item in items), max(item.when for item in items))
 
 
+def _controllers_equity(pl: Input | None, minority: Input | None) -> Input | None:
+    """PL_ctrl = 2.03 − (2.03.09 or 0), None when 2.03 is absent (A-21, F8)."""
+    if pl is None:
+        return None
+    if minority is None:
+        return pl
+    return Input(pl.value - minority.value, max(pl.when, minority.when))
+
+
 def _company_inputs(acq: _Acquired, cnpj: str, day: date) -> dict:
     dfp, itr = acq.dfp, acq.itr
     account = "3.11.01" if cvm.ttm(dfp, itr, cnpj, day, "3.11.01") is not None else "3.11"
@@ -333,6 +342,7 @@ def _company_inputs(acq: _Acquired, cnpj: str, day: date) -> dict:
         "ir": flow("3.08"),
         "ll_1y": _dated(cvm.ttm_year_before(dfp, itr, cnpj, day, account)),
         "pl": balance("2.03"),
+        "pl_ctrl": _controllers_equity(balance("2.03"), balance("2.03.09")),
         "at": balance("1"),
         "ac": balance("1.01"),
         "pc": balance("2.01"),
@@ -340,7 +350,6 @@ def _company_inputs(acq: _Acquired, cnpj: str, day: date) -> dict:
         "cash": _sum_inputs([balance("1.01.01"), balance("1.01.02")]),
         "rec_fy": _dated(cvm.annual(dfp, cnpj, day, "3.01", 0)),
         "rec_fy5": _dated(cvm.annual(dfp, cnpj, day, "3.01", 5)),
-        "ll_fy": _dated(cvm.annual(dfp, cnpj, day, account, 0)),
         "ll_fy5": _dated(cvm.annual(dfp, cnpj, day, account, 5)),
     }
 

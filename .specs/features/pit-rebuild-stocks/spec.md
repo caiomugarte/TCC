@@ -241,7 +241,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | MAP-01 | P1 rebuild | Tasks (T4, T11, T18, T22) | Done (T4, T11, T18, T22) |
 | MAP-02 | P1 rebuild | Tasks (T11, T16) | Done (T11, T16) |
 | MAP-03 | P1 rebuild | Tasks (T11, T12, T22, T29) | In Tasks (amended r5; T22 done) |
-| IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12, T21, T24, T25, T29) | In Tasks (amended r5; T21, T24 done) |
+| IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12, T21, T24, T25, T29) | In Tasks (amended r5; T21, T24, T25 done) |
 | IND-02 | P1 rebuild | Tasks (T3) | Done (T3) |
 | IND-03 | P1 rebuild | Tasks (T12) | Done (T12) |
 | IND-04 | P1 rebuild | Tasks (T8, T9, T11, T12, T16, T17, T21, T24, T28, T29) | In Tasks (amended r5; T21, T24 done) |
@@ -253,7 +253,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | VER-04 | P1 rebuild | Tasks (T16) | Done (T16) |
 | RPT-01 | P1 report | Tasks (T2, T17) | Done (T2, T17) |
 | RPT-02 | P1 report | Tasks (T16, T28, T30) | In Tasks (amended r5) |
-| RPT-03 | P1 report | Tasks (T16, T25, T28) | In Tasks (amended r5) |
+| RPT-03 | P1 report | Tasks (T16, T25, T28) | In Tasks (amended r5; T25 done) |
 | RPT-04 | P1 report | Tasks (T16, T28, T32) | In Tasks |
 | RPT-05 | P1 report | Tasks (T2, T17) | Done (T2, T17) |
 | RPT-06 | P1 report | Tasks (T19, T31, T32) | In Tasks (amended r5; T20 superseded by T32) |
@@ -271,7 +271,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | SRC-06 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |
 | SRC-07 | P1 rebuild | Tasks (T27, T28, T29, T32) | In Tasks (r5) |
 | IND-05 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |
-| IND-06 | P1 rebuild | Tasks (T24, T25, T29) | In Tasks (r5; T24 done) |
+| IND-06 | P1 rebuild | Tasks (T24, T25, T29) | In Tasks (r5; T24, T25 done) |
 | VER-05 | P1 rebuild | Tasks (T21, T28, T30) | In Tasks (r5; T21 done) |
 | VER-06 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5) |
 | VER-07 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5) |

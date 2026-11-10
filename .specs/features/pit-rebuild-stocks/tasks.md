@@ -760,14 +760,16 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_indicators.py`: T12's `test_each_of_the_19_fields_matches_its_hand_computed_value` gets new expected values for `ROE`, `P/VP`, `DIV. LIQ. / PATRI.`, `ROIC` and `CAGR LUCROS 5 ANOS` (approved r5 expectation change) on a synthetic company with `PL` 1000, `PL_ctrl` 800, `LL` (TTM) 120, `LL_FY−5` 60, `IR` −30, each hand-computed in the test's comment; the other 14 expected values do not change.
-- [ ] `PL_ctrl` −400 with `LL` 120 → `ROE` 30.00 (positive); `LL` −120 with `PL_ctrl` −400 → −30.00.
-- [ ] `IR` +30 and `IR` −30 give the same `ROIC`, both `100 × (EBIT − 30) / (PL + DB)`.
-- [ ] `pl_ctrl` `None` → `ROE`, `P/VP` and `DIV. LIQ. / PATRI.` have no value with a `missing_input` reason while `ROIC` keeps its value.
-- [ ] `CAGR LUCROS 5 ANOS` = `100 × ((120 / 60)^(1/5) − 1)` and changes when only `LL` (TTM) changes; `LL` (TTM) ≤ 0 → `non_positive_base`; no `LL_FY−5` → `short_history`.
-- [ ] `FORMULAS["ROE"]` names `PL_ctrl` and `abs`, `FORMULAS["ROIC"]` names `abs(IR)`, `FORMULAS["CAGR LUCROS 5 ANOS"]` names `LL_TTM`, `FORMULAS["LIQUIDEZ MEDIA DIARIA"]` names 21 sessions; `TickerInputs` has no `ll_fy` field.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_indicators.py`
-- [ ] Test count: ≥ 23 tests pass in the file (T12's 18 plus ≥ 5)
+- [x] `tests/test_pit_rebuild_indicators.py`: T12's `test_each_of_the_19_fields_matches_its_hand_computed_value` gets new expected values for `ROE`, `P/VP`, `DIV. LIQ. / PATRI.`, `ROIC` and `CAGR LUCROS 5 ANOS` (approved r5 expectation change) on a synthetic company with `PL` 1000, `PL_ctrl` 800, `LL` (TTM) 120, `LL_FY−5` 60, `IR` −30, each hand-computed in the test's comment; the other 14 expected values do not change.
+- [x] `PL_ctrl` −400 with `LL` 120 → `ROE` 30.00 (positive); `LL` −120 with `PL_ctrl` −400 → −30.00.
+- [x] `IR` +30 and `IR` −30 give the same `ROIC`, both `100 × (EBIT − 30) / (PL + DB)`.
+- [x] `pl_ctrl` `None` → `ROE`, `P/VP` and `DIV. LIQ. / PATRI.` have no value with a `missing_input` reason while `ROIC` keeps its value.
+- [x] `CAGR LUCROS 5 ANOS` = `100 × ((120 / 60)^(1/5) − 1)` and changes when only `LL` (TTM) changes; `LL` (TTM) ≤ 0 → `non_positive_base`; no `LL_FY−5` → `short_history`.
+- [x] `FORMULAS["ROE"]` names `PL_ctrl` and `abs`, `FORMULAS["ROIC"]` names `abs(IR)`, `FORMULAS["CAGR LUCROS 5 ANOS"]` names `LL_TTM`, `FORMULAS["LIQUIDEZ MEDIA DIARIA"]` names 21 sessions; `TickerInputs` has no `ll_fy` field.
+- [x] Gate check passes: Quick for `test_pit_rebuild_indicators.py` (25 OK: 18 r4 tests kept, 7 new; pit suite 260 OK; compileall OK)
+- [x] Test count: ≥ 23 tests pass in the file (T12's 18 plus ≥ 5) - 25 pass
+
+> Done (T25). On T12's company ROIC and CAGR LUCROS keep their numbers: IR is negative there, and LL_TTM over LL_FY−5 has the r4 ratio 2. Their r5 changes are tested by the IR ±30 and CAGR tests. The base company keeps PL_ctrl equal to PL (no non-controlling interests), so the other r4 tests keep their values; the 19-field test sets PL_ctrl to 6e6, the 80 % of PL that the task's 800/1000 example gives. `cli.py` builds `pl_ctrl` as 2.03 less 2.03.09 (and loads 2.03.09), and no longer passes `ll_fy`; its CAGR LUCROS still reads the r4 per-company account until T29.
 
 **Tests**: unit
 **Gate**: quick
