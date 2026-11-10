@@ -19,7 +19,9 @@ numbers, so every expectation below is worked out by hand from the fixture value
 Each test copies a cache populated once for the class, so tests that damage files do not interfere.
 """
 
+import base64
 import contextlib
+import csv
 import hashlib
 import io
 import json
@@ -30,9 +32,10 @@ import sys
 import tempfile
 import unittest
 import urllib.error
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from unittest import mock
+from urllib.parse import unquote
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # This file names the frozen bundle (the protected trees), so no bytecode is written before the imports (AD-013).
@@ -168,24 +171,30 @@ class ReportSuccessTests(ReportCase):
         self.assertTrue((self.out / REPORT).is_file())
 
     def test_preferred_price_of_a_company_is_its_own_quote_not_the_preferred_one(self):
-        # EUCA4's VM = 20 M x 5.00 (EUCA3, not eligible, quoted) + 30 M x 8.00 = 340 M. If the ON share were
-        # priced at the PN quote, VM would be 400 M, outside 5 %, and the within count would be 10.
+        # EUCA4's VM = 20 M x 5.00 (EUCA3, not eligible, quoted) + 30 M x 8.00 = 340 M, within 5 %.
+        # SEMP (r5, F14): SEMP4 last traded 9.00 on 2026-05-29, 70 days before 2026-08-07. Its class is priced at
+        # that close, not at the ON quote, and listed in vm_stale_class_price: VM = 10 M x 20.00 + 10 M x 9.00
+        # = 290 M against the reference 400 M (-27.5 %), so SEMP3 is out and the within count is 10, not 11.
         report = self.success()
         vm = report["dates"][ISO1]["fields"]["VALOR DE MERCADO"]["non_financial"]
-        self.assertEqual((vm["denominator"], vm["within"]), (15, 11))
-        # SEMP's PN has no quote in the 30 days before the date: it is counted once, priced at the ON quote.
-        fallback = report["dates"][ISO1]["mapping"]["vm_price_fallback"]
-        self.assertEqual(fallback["count"], 1)
-        self.assertEqual(fallback["companies"], [{"cd_cvm": "1006", "class_without_quote": "PREF", "price_from": "SEMP3"}])
+        self.assertEqual((vm["denominator"], vm["within"]), (15, 10))
+        mapping = report["dates"][ISO1]["mapping"]
+        self.assertEqual(mapping["vm_price_fallback"]["count"], 0)
+        self.assertEqual(mapping["vm_stale_class_price"], [{"cd_cvm": "1006", "class": "PREF", "ticker": "SEMP4", "session": "2026-05-29"}])
 
     def test_share_scale_lists_the_thousands_company_and_the_one_without_b3_record(self):
         report = self.success()
         for iso in (ISO1, ISO2):
             scale = report["dates"][iso]["mapping"]["share_scale"]
-            self.assertEqual(scale["x1000"], ["1003"], iso)  # EUCX: CVM counts in thousands, B3 count 92.619.256
+            # EUCX: CVM counts in thousands (31 258 and 61 361), B3 count 92 619 256: factor 10^3, residual
+            # 92 619 000 / 92 619 256 (the counts are scaled and rounded, A-18)
+            self.assertEqual([row["cd_cvm"] for row in scale["scaled"]], ["1003"], iso)
+            self.assertEqual(scale["scaled"][0]["factor"], 1000, iso)
+            self.assertAlmostEqual(scale["scaled"][0]["residual"], 92_619_000 / 92_619_256, places=9, msg=iso)
             self.assertEqual(scale["unverified"], ["1005"], iso)  # NOBX: no B3 record, counts used as filed
-        # the thousands company is priced in full units: 31 258 000 x 3.00 + 61 361 000 x 2.00 = 216 496 000
-        self.assertEqual(report["dates"][ISO1]["fields"]["VALOR DE MERCADO"]["non_financial"]["within"], 11)
+        # EUCX's VM is 31 258 000 x 3.00 + 61 361 000 x 2.00 = 216 496 000, the reference, so it is within. The count
+        # of 10 (11 in r4) is SEMP alone moving out, on its stale PN close (see the SEMP test above).
+        self.assertEqual(report["dates"][ISO1]["fields"]["VALOR DE MERCADO"]["non_financial"]["within"], 10)
 
     def test_company_without_share_count_has_no_value_with_reason_and_is_in_no_scale_list(self):
         report = self.success()
@@ -194,7 +203,7 @@ class ReportSuccessTests(ReportCase):
             for field in ("VALOR DE MERCADO", "P/L", "P/VP", "PSR", "EV/EBIT", "PEG RATIO"):
                 missing = day["fields"][field]["non_financial"]["missing"]
                 self.assertIn({"ticker": "COBR3", "reason": "no_share_count"}, missing, (iso, field))
-            self.assertNotIn("1004", day["mapping"]["share_scale"]["x1000"])
+            self.assertNotIn("1004", [row["cd_cvm"] for row in day["mapping"]["share_scale"]["scaled"]])
             self.assertNotIn("1004", day["mapping"]["share_scale"]["unverified"])
 
     def test_mapping_reasons_and_classification_per_date(self):
@@ -563,6 +572,365 @@ class FetchTests(unittest.TestCase):
 
     def report_dividends(self) -> dict:
         return json.loads((self.out / REPORT).read_text(encoding="utf-8"))["dividends"]
+
+
+# --- shape universe (T29): one small company per r5 shape, hand-computed; no network -----------------------
+
+SHAPE_SESSIONS = [day for day in (date(2026, 5, 1) + timedelta(days=n) for n in range(100)) if day.weekday() < 5 and day <= D1]
+SHAPE_COMPANIES = {  # root: (CNPJ, CD_CVM, name, ON shares, PN shares)
+    "CODB": ("21.000.000/0001-21", "2001", "CODB S.A.", 1_000_000, 0),
+    "UNIT": ("22.000.000/0001-22", "2002", "UNIT S.A.", 50_000_000, 50_000_000),
+    "MINO": ("23.000.000/0001-23", "2003", "MINO S.A.", 50_000_000, 50_000_000),
+    "ZERO": ("24.000.000/0001-24", "2004", "ZERO S.A.", 50_000_000, 50_000_000),
+    "TIMX": ("25.000.000/0001-25", "2005", "TIMX S.A.", 50_000_000, 50_000_000),
+    "ESPA": ("26.000.000/0001-26", "2006", "ESPA S.A.", 50_000_000, 50_000_000),
+    "EMAE": ("27.000.000/0001-27", "2007", "EMAE S.A.", 50_000_000, 50_000_000),
+    "NOPR": ("28.000.000/0001-28", "2008", "NOPR S.A.", 50_000_000, 50_000_000),
+    "SBSP": ("29.000.000/0001-29", "2009", "SBSP S.A.", 100_000_000, 0),
+    "DUPL": ("30.000.000/0001-30", "2010", "DUPL S.A.", 100_000_000, 0),
+    "FOOX": ("31.000.000/0001-31", "2011", "FOO S.A.", 100_000_000, 0),
+}
+# ticker, company root, ESPECI, close on every session, ISIN (12 columns)
+SHAPE_QUOTES = [
+    ("UNIT11", "UNIT", "UNT", 33.0, "BRUNIT11CNOR"),
+    ("MINO3", "MINO", "ON", 10.0, "BRMINO3CNOR1"),
+    ("ZERO3", "ZERO", "ON", 10.0, "BRZERO3CNOR1"),
+    ("TIMX3", "TIMX", "ON", 10.0, "BRTIMX3CNOR1"),
+    ("ESPA3", "ESPA", "ON", 10.0, "BRESPA3CNOR1"),
+    ("ESPA4", "ESPA", "PN", 12.0, "BRESPA4CNOR1"),
+    ("EMAE4", "EMAE", "PN", 10.0, "BREMAE4CNOR1"),
+    ("NOP3", "NOPR", "ON", 10.0, "BRNOP3CNOR1"),
+    ("SBSP3", "SBSP", "ON", 10.0, "BRSBSP3CNOR5"),
+    ("DUPL3", "DUPL", "ON", 10.0, "BRDUPL3CNOR1"),
+    ("FOOX3", "FOOX", "ON", 10.0, "BRFOOX3CNOR1"),
+]
+# FCA rows: ticker, root, valor mobiliario, composition (units only)
+SHAPE_FCA = [
+    ("CODB3", "CODB", "Ações Ordinárias", ""),
+    ("UNIT11", "UNIT", "Units", "1 ON e 2 PN"),
+    ("MINO3", "MINO", "Ações Ordinárias", ""),
+    ("ZERO3", "ZERO", "Ações Ordinárias", ""),
+    ("TIMX3", "TIMX", "Ações Ordinárias", ""),
+    ("ESPA3", "ESPA", "Ações Ordinárias", ""),
+    ("ESPA4", "ESPA", "Ações Preferenciais", ""),
+    ("EMAE3", "EMAE", "Ações Ordinárias", ""),
+    ("EMAE4", "EMAE", "Ações Preferenciais", ""),
+    ("NOP3", "NOPR", "Ações Ordinárias", ""),
+    ("NOP4", "NOPR", "Ações Preferenciais", ""),
+    ("SBSP3", "SBSP", "Ações Ordinárias", ""),
+    ("DUPL3", "DUPL", "Ações Ordinárias", ""),
+    ("FOOX3", "FOOX", "Ações Ordinárias", ""),
+]
+# Status Invest rows of the eligible tickers (VM and liquidity make them eligible; the reference values are off on purpose)
+SHAPE_SI = [
+    {"TICKER": "CODB3", "VALOR DE MERCADO": 500_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "PRECO": 1.0},
+    {"TICKER": "UNIT11", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 20.0},
+    {"TICKER": "MINO3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "ROE": 1.0, "P/VP": 1.0},
+    {"TICKER": "ZERO3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 1.0},
+    {"TICKER": "TIMX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 1.0},
+    {"TICKER": "ESPA3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "ESPA4", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "EMAE4", "VALOR DE MERCADO": 500_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "NOP3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "SBSP3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "DY": 1.0},
+    {"TICKER": "DUPL3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "DY": 1.0},
+    {"TICKER": "FOOX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+]
+SHAPE_DFP_STATEMENTS = {  # root: (BPP rows, consolidated DRE rows, individual DRE rows)
+    "MINO": ([("2.03", 200_000_000.0), ("2.03.09", 50_000_000.0)], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
+    "UNIT": ([], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
+    "ZERO": ([], [("3.11", -100_000_000.0), ("3.11.01", 0.0)], []),
+    "TIMX": ([], [("3.01", 0.0), ("3.11", 0.0)], [("3.01", 1_000_000_000.0), ("3.11", 100_000_000.0)]),
+}
+
+
+def _cotahist_line(day: date, ticker: str, codbdi: str, especi: str, close: float, voltot: float, isin: str) -> str:
+    """One 245-column COTAHIST record in the layout cotahist._parse reads (TIPREG 01, TPMERC 010, FATCOT 1)."""
+    line = [" "] * 245
+
+    def put(column: int, text: str) -> None:  # 1-based columns, as the layout is documented
+        line[column - 1 : column - 1 + len(text)] = list(text)
+
+    put(1, "01")
+    put(3, day.strftime("%Y%m%d"))
+    put(11, codbdi)
+    put(13, ticker.ljust(12))
+    put(25, "010")
+    put(40, especi.ljust(10))
+    put(109, f"{round(close * 100):013d}")
+    put(171, f"{round(voltot * 100):018d}")
+    put(211, "0000001")
+    put(231, isin.ljust(12))
+    return "".join(line)
+
+
+def _shape_cotahist_2026() -> str:
+    lines = []
+    last = len(SHAPE_SESSIONS)
+    for index, day in enumerate(SHAPE_SESSIONS, start=1):
+        # CODB3 is CODBDI 08 only: its VOLTOT on session j is 1 000 000 + 100 000 j and its last close is 30.00
+        lines.append(_cotahist_line(day, "CODB3", "08", "ON", 30.0 if index == last else 20.0, 1_000_000.0 + 100_000.0 * index, "BRCODB3CNOR1"))
+        for ticker, _root, especi, close, isin in SHAPE_QUOTES:
+            lines.append(_cotahist_line(day, ticker, "02", especi, close, 1_000_000.0, isin))
+    lines.append(_cotahist_line(date(2026, 8, 10), "NOP4", "02", "PN", 10.0, 1_000_000.0, "BRNOP4CNOR1"))  # after d only
+    return "\n".join(lines) + "\n"
+
+
+def _shape_cotahist_2025() -> str:
+    return _cotahist_line(date(2025, 8, 18), "EMAE3", "02", "ON", 150.0, 1_000_000.0, "BREMAE3CNOR1") + "\n"
+
+
+def _latin1(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(text.encode("latin-1"))
+
+
+def _shape_b3_pages(root: Path) -> None:
+    def page(results: list, total: int) -> str:
+        return json.dumps({"page": {"pageNumber": 1, "pageSize": 120, "totalRecords": total, "totalPages": 1}, "results": results})
+
+    dividend = {"typeStock": "ON", "valueCash": "0,50", "lastDatePriorEx": "10/05/2026", "corporateAction": "DIVIDENDO"}
+    capital = {"typeStock": "ON", "valueCash": "9,99", "lastDatePriorEx": "10/06/2026", "corporateAction": "REST CAP DIN"}
+    old = {"typeStock": "ON", "valueCash": "0,10", "lastDatePriorEx": "01/05/2025", "corporateAction": "DIVIDENDO"}
+    sbsp = {"typeStock": "ON", "valueCash": "5,00", "lastDatePriorEx": "01/06/2026", "corporateAction": "DIVIDENDO"}
+    _latin1(root / "b3" / "cash" / "SBSP_p1.json", page([sbsp, old], 2))
+    _latin1(root / "b3" / "cash" / "DUPL_p1.json", page([dividend, dict(dividend), capital, old], 4))
+    _latin1(root / "b3" / "cash" / "FOOX_p1.json", page([], 0))
+    companies = {
+        "SBSP": {"tradingName": "SBSP S.A.", "code": "SBSP", "codeCVM": "2009", "totalNumberShares": "100.000.000",
+                 "stockDividends": [{"label": "DESDOBRAMENTO", "factor": "400", "isinCode": "BRSBSP3CNOR5", "lastDatePrior": "10/07/2026"}]},
+        "DUPL": {"tradingName": "DUPL S.A.", "code": "DUPL", "codeCVM": "2010", "totalNumberShares": "100.000.000"},
+        "FOOX": {"tradingName": "FOO S/A", "code": "FOOX", "codeCVM": "2011", "totalNumberShares": "100.000.000"},
+        "ESPA": {"tradingName": "ESPA S.A.", "code": "ESPA", "codeCVM": "2006", "totalNumberShares": "10.000.000"},
+    }
+    for root_name, body in companies.items():
+        _latin1(root / "b3" / f"company_{root_name}.json", json.dumps([body]))
+
+
+def write_shape_universe(root: Path) -> Path:
+    """A fixture universe with one company per r5 shape (tasks T29). The shared universe is not touched."""
+    si_header = (UNIVERSE / "si_2026-08-07.csv").read_text(encoding="utf-8").splitlines()[0]
+    bpp_header = (UNIVERSE / "dfp" / "2025" / "dfp_cia_aberta_BPP_con_2025.csv").read_text(encoding="latin-1").splitlines()[0]
+    dre_header = (UNIVERSE / "dfp" / "2025" / "dfp_cia_aberta_DRE_con_2025.csv").read_text(encoding="latin-1").splitlines()[0]
+    cnpj = {key: value[0] for key, value in SHAPE_COMPANIES.items()}
+    name = {key: value[2] for key, value in SHAPE_COMPANIES.items()}
+    cd = {key: value[1] for key, value in SHAPE_COMPANIES.items()}
+    root.mkdir(parents=True, exist_ok=True)
+    _latin1(
+        root / "cad_cia_aberta.csv",
+        "CNPJ_CIA;DENOM_SOCIAL;SIT;CD_CVM;SETOR_ATIV\n"
+        + "".join(f"{cnpj[k]};{name[k]};ATIVO;{cd[k]};Comercio\n" for k in SHAPE_COMPANIES),
+    )
+    si_columns = si_header.split(",")
+    si_rows = [{**{column: "" for column in si_columns}, "SETOR": "Comercio", **row} for row in SHAPE_SI]
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=si_columns)
+    writer.writeheader()
+    writer.writerows(si_rows)
+    _latin1(root / "si_2026-08-07.csv", buffer.getvalue())
+    dfp = root / "dfp" / "2025"
+    _latin1(
+        dfp / "dfp_cia_aberta_2025.csv",
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+        + "".join(f"{cnpj[k]};2025-12-31;1;{name[k]};{cd[k]};DFP;1;2026-03-01 18:00:00;\n" for k in SHAPE_COMPANIES),
+    )
+    _latin1(
+        dfp / "dfp_cia_aberta_composicao_capital_2025.csv",
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
+        "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
+        + "".join(
+            f"{cnpj[k]};2025-12-31;1;{name[k]};{value[3]};{value[4]};{value[3] + value[4]};0;0;0\n"
+            for k, value in SHAPE_COMPANIES.items()
+        ),
+    )
+
+    def statement_rows(index: int) -> str:
+        rows = []
+        for key, (bpp, consolidated, individual) in SHAPE_DFP_STATEMENTS.items():
+            for account, value in (bpp if index == 0 else []) + (consolidated if index == 1 else []) + (individual if index == 2 else []):
+                rows.append((key, account, value))
+        return rows
+
+    bpp_rows = "".join(
+        f"{cnpj[key]};2025-12-31;1;{name[key]};{cd[key]};UNIDADE;ÚLTIMO;{account};Conta {account};{value:.2f};S\n"
+        for key, account, value in statement_rows(0)
+    )
+    _latin1(dfp / "dfp_cia_aberta_BPP_con_2025.csv", bpp_header + "\n" + bpp_rows)
+    dre_con = "".join(
+        f"{cnpj[key]};2025-12-31;1;{name[key]};{cd[key]};UNIDADE;ÚLTIMO;2025-01-01;2025-12-31;{account};Conta {account};{value:.2f};S\n"
+        for key, account, value in statement_rows(1)
+    )
+    _latin1(dfp / "dfp_cia_aberta_DRE_con_2025.csv", dre_header + "\n" + dre_con)
+    dre_ind = "".join(
+        f"{cnpj[key]};2025-12-31;1;{name[key]};{cd[key]};UNIDADE;ÚLTIMO;2025-01-01;2025-12-31;{account};Conta {account};{value:.2f};S\n"
+        for key, account, value in statement_rows(2)
+    )
+    _latin1(dfp / "dfp_cia_aberta_DRE_ind_2025.csv", dre_header + "\n" + dre_ind)
+    fca_rows = []
+    for ticker, company_root, valor, composition in SHAPE_FCA:
+        fca_rows.append(f"{cnpj[company_root]};2025-12-31;1;{valor};{ticker};{composition}\n")
+    _latin1(
+        root / "fca" / "2025" / "fca_cia_aberta_valor_mobiliario_2025.csv",
+        "CNPJ_Companhia;Data_Referencia;Versao;Valor_Mobiliario;Codigo_Negociacao;Composicao_BDR_Unit\n" + "".join(fca_rows),
+    )
+    _latin1(root / "cotahist" / "2025.txt", _shape_cotahist_2025())
+    _latin1(root / "cotahist" / "2026.txt", _shape_cotahist_2026())
+    _shape_b3_pages(root)  # the B3 company records and the cash pages of SBSP, DUPL, FOOX and ESPA
+    return root
+
+
+def worst_value(report_object: dict, field: str, ticker: str, group: str = "non_financial") -> float:
+    """The rebuilt value of one ticker among the worst cases of a field (the ten largest differences)."""
+    rows = report_object["dates"][ISO1]["fields"][field][group]["worst"]
+    return {row["ticker"]: row["rebuilt"] for row in rows}[ticker]
+
+
+class ShapeReportTests(unittest.TestCase):
+    """One report over the shape universe, shared by the class: each test checks one r5 shape."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        base = Path(cls._tmp.name)
+        cls.universe = write_shape_universe(base / "universe")
+        cls.cache = base / "cache"
+        cls.out = base / "out"
+        populate_cache(cls.cache, (D1,), cls.universe)
+        code, err = run(
+            ["report", "--date", ISO1, "--si", str(cls.universe / "si_2026-08-07.csv"), "--cache-dir", str(cls.cache),
+             "--out-dir", str(cls.out), "--offline"]
+        )
+        if code != 0:
+            raise RuntimeError(f"the shape report exited {code}: {err}")
+        cls.report = json.loads((cls.out / REPORT).read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def unmapped(self) -> set[str]:
+        return {row["ticker"] for row in self.report["dates"][ISO1]["mapping"]["unmapped"]}
+
+    def test_a_quote_only_on_codbdi_08_is_mapped_priced_and_averaged_over_21_sessions(self):
+        self.assertNotIn("CODB3", self.unmapped())
+        self.assertEqual(worst_value(self.report, "PRECO", "CODB3"), 30.0)  # the close of 2026-08-07
+        n = len(SHAPE_SESSIONS)
+        # VOLTOT of session j is 1 000 000 + 100 000 j; the last 21 sessions are j = N - 20 .. N, whose mean is
+        # 1 000 000 + 100 000 (N - 10)
+        self.assertEqual(worst_value(self.report, "LIQUIDEZ MEDIA DIARIA", "CODB3"), 1_000_000 + 100_000 * (n - 10))
+
+    def test_a_unit_with_composition_1_on_e_2_pn_is_mapped_and_its_pl_divides_the_price_by_k_3(self):
+        self.assertNotIn("UNIT11", self.unmapped())
+        # 33.00 / k = 3 is 11.00 per unit share; LL 100 M over 100 M shares is 1.00 per share: P/L = 11.00
+        self.assertEqual(worst_value(self.report, "P/L", "UNIT11"), 11.0)
+
+    def test_the_controllers_equity_takes_out_the_minority_interests_in_roe_and_pvp(self):
+        # MINO: PL 200 M less 2.03.09 of 50 M is 150 M. ROE = 100 x 100 M / 150 M = 66.67; P/VP = 10.00 / (150 M / 100 M) = 6.67
+        self.assertEqual(worst_value(self.report, "ROE", "MINO3"), 66.67)
+        self.assertEqual(worst_value(self.report, "P/VP", "MINO3"), 6.67)
+
+    def test_a_zero_3_11_01_row_takes_the_3_11_figure_and_its_sign_for_pl(self):
+        # ZERO: 3.11.01 is zero, so LL is 3.11 = -100 M over 100 M shares: -1.00 per share, P/L = 10.00 / -1.00
+        self.assertEqual(worst_value(self.report, "P/L", "ZERO3"), -10.0)
+
+    def test_a_company_with_a_zero_consolidated_dre_takes_its_values_from_the_individual_statements(self):
+        # TIMX: the consolidated DRE has 3.01 and 3.11 at zero, so the individual DRE is used (A-21, F18): LL 100 M, P/L 10.00
+        self.assertEqual(worst_value(self.report, "P/L", "TIMX3"), 10.0)
+
+    def test_an_espa_shaped_company_is_scaled_by_a_tenth_and_its_value_uses_the_rounded_counts(self):
+        mapping = self.report["dates"][ISO1]["mapping"]
+        scaled = [row for row in mapping["share_scale"]["scaled"] if row["cd_cvm"] == "2006"]
+        self.assertEqual(len(scaled), 1)
+        self.assertEqual(scaled[0]["factor"], 0.1)
+        self.assertAlmostEqual(scaled[0]["residual"], 1.0, places=9)  # 100 M x 0.1 / 10 M
+        # counts 5 M ON and 5 M PN after the factor: 5 M x 10.00 + 5 M x 12.00 = 110 M
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "ESPA3"), 110_000_000.0)
+
+    def test_a_class_last_traded_before_the_window_is_priced_at_that_close_and_listed_as_stale_not_as_a_fallback(self):
+        mapping = self.report["dates"][ISO1]["mapping"]
+        self.assertIn({"cd_cvm": "2007", "class": "ON", "ticker": "EMAE3", "session": "2025-08-18"}, mapping["vm_stale_class_price"])
+        self.assertNotIn("2007", [row["cd_cvm"] for row in mapping["vm_price_fallback"]["companies"]])
+        # EMAE: 50 M ON at EMAE3's 150.00 from 2025-08-18, plus 50 M PN at EMAE4's 10.00: 7 500 M + 500 M = 8 000 M
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "EMAE4"), 8_000_000_000.0)
+
+    def test_a_class_with_no_session_on_or_before_the_date_is_priced_at_the_other_class_as_a_fallback(self):
+        # NOPR's PN has no session on or before d (its only line is after d), so its class takes NOP3's close.
+        # MINO, ZERO and TIMX have PN shares and no PN ticker at all: the same fallback applies to them.
+        fallback = self.report["dates"][ISO1]["mapping"]["vm_price_fallback"]
+        self.assertIn({"cd_cvm": "2008", "class_without_quote": "PREF", "price_from": "NOP3"}, fallback["companies"])
+        self.assertEqual(fallback["count"], len(fallback["companies"]))
+
+    def test_a_b3_dividend_before_a_split_is_divided_by_the_split_multiplier(self):
+        # SBSP: 5.00 with ex-date 2026-06-02, before the DESDOBRAMENTO 400 (multiplier 5) whose ex-date 2026-07-13 is
+        # on or before d: 5.00 / 5 = 1.00 and DY = 100 x 1.00 / 10.00 = 10.00. Its ISIN is in the quotes: no ISIN missing.
+        self.assertEqual(worst_value(self.report, "DY", "SBSP3"), 10.0)
+        self.assertEqual(self.report["dividends"]["split_adjust_no_isin"], {ISO1: 0})
+
+    def test_repeated_b3_records_count_once_and_a_capital_return_is_not_a_dividend(self):
+        # DUPL: 0.50 twice in the response, counted once; REST CAP DIN 9.99 dropped; 0.10 of 2025-05 is outside the window.
+        # DY = 100 x 0.50 / 10.00 = 5.00
+        self.assertEqual(worst_value(self.report, "DY", "DUPL3"), 5.0)
+        filters = self.report["dividends"]["b3_filters"]
+        self.assertEqual(filters["duplicates"], 1)
+        self.assertEqual(filters["capital_returns"], 1)
+
+    def test_a_slash_name_with_an_empty_complete_history_is_b3_failed_and_is_listed(self):
+        dividends_out = self.report["dividends"]
+        self.assertEqual(dividends_out["slash_names"], [{"trading_name": "FOO S/A", "queried_as": "FOO SA", "total_records": 0}])
+        self.assertGreaterEqual(dividends_out["yahoo_reasons"][ISO1]["b3_failed"], 1)
+        missing = self.report["dates"][ISO1]["fields"]["DY"]["non_financial"]["missing"]
+        self.assertIn({"ticker": "FOOX3", "reason": "no_dividend_source"}, missing)
+        self.assertEqual(dividends_out["b3_empty_yahoo_failed"][ISO1], 0)
+
+
+class ShapeFetchTests(unittest.TestCase):
+    def test_fetch_asks_b3_for_the_query_name_and_never_with_a_slash(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            universe = write_shape_universe(Path(tmp) / "universe")
+            fake = FakeOpener(universe_routes((D1,), universe))
+            code, err = run(
+                ["fetch", "--date", ISO1, "--si", str(universe / "si_2026-08-07.csv"), "--cache-dir", str(Path(tmp) / "cache")],
+                opener=fake,
+            )
+            self.assertEqual(code, 0, err)
+            names = [
+                json.loads(base64.b64decode(unquote(url.rsplit("/", 1)[1])))["tradingName"]
+                for _method, url in fake.requests
+                if "GetListedCashDividends" in url
+            ]
+            self.assertIn("FOO SA", names)
+            self.assertTrue(names and all("/" not in name for name in names))
+
+
+class RawDateAndCounterTests(unittest.TestCase):
+    """The shared universe: DY's raw B3 date, the B3 filter totals, and the empty split and slash counters (COV-02, F16, A-20)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.cache = Path(cls._tmp.name) / "cache"
+        populate_cache(cls.cache, (D1, D2))
+        cls.out = Path(cls._tmp.name) / "out"
+        code, err = run(report_args(cls.cache, cls.out))
+        if code != 0:
+            raise RuntimeError(err)
+        cls.report = json.loads((cls.out / REPORT).read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_the_b3_earliest_raw_date_is_the_first_last_date_prior_ex_plus_one_day_before_the_first_session(self):
+        b3 = self.report["coverage"]["dy"]["by_source"]["b3"]
+        # SOLO's earliest B3 record has lastDatePriorEx 2024-03-15; the raw date is 2024-03-16, before the first COTAHIST session
+        self.assertEqual(b3["earliest_raw_date"], "2024-03-16")
+        self.assertEqual(b3["earliest_year"], 2024)
+
+    def test_the_shared_run_reports_no_slash_name_no_split_without_isin_and_the_b3_filter_totals(self):
+        dividends_out = self.report["dividends"]
+        self.assertEqual(dividends_out["slash_names"], [])
+        self.assertEqual(dividends_out["split_adjust_no_isin"], {ISO1: 0, ISO2: 0})
+        self.assertEqual(dividends_out["b3_filters"], {"raw_records": 4, "duplicates": 0, "capital_returns": 0})
 
 
 if __name__ == "__main__":

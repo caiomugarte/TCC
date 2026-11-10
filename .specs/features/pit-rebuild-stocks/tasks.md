@@ -879,18 +879,18 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cli.py`, through `main([...])` on the fixture cache: T17's `test_share_scale_lists_the_thousands_company_and_the_one_without_b3_record` reads `share_scale.scaled` (EUCX factor 1000 with its hand-computed residual) instead of `x1000` (approved r5 change); EUCX's `VALOR DE MERCADO` is unchanged. Any other r4 expected value that the r5 formulas change is updated in the same commit with its hand computation in the test comment, and the commit body lists each one.
-- [ ] A ticker whose fixture COTAHIST lines are all `CODBDI 08` is mapped with a `PRECO` (not `no_quote`) and its `LIQUIDEZ MEDIA DIARIA` is the mean of its last 21 sessions.
-- [ ] A unit with FCA composition `1 ON e 2 PN` is mapped and its `P/L` uses `k = 3`.
-- [ ] A company with a `2.03.09` row gets `ROE` and `P/VP` from `PL_ctrl` (hand-computed); a company whose DFP has `3.11.01 = 0` and `3.11` non-zero gets `P/L` with `3.11`'s sign; a TIMS-shaped company (zero consolidated DRE) gets its values from `_ind`.
-- [ ] An ESPA-shaped company (CVM total 10× the B3 count) is in `share_scale.scaled` with factor 0.1 and its `VALOR DE MERCADO` uses the rounded scaled counts (hand-computed).
-- [ ] An EMAE-shaped company whose `ON` ticker's last session is 2025-08-18 with `d` 2026-08-07 is in `vm_stale_class_price` with that ticker and session, its `VALOR DE MERCADO` uses that close, and it is not in `vm_price_fallback`; a company with a class that has no session at all `≤ d` is still in `vm_price_fallback`.
-- [ ] An SBSP-shaped company (B3 company record with a `DESDOBRAMENTO` `400` between a dividend's ex-date and `d`) gets `DY` from the amount ÷ 5 (hand-computed).
-- [ ] A history page with a repeated record and a `REST CAP DIN` record: `DY` counts the repeated record once and not the capital return, and `dividends.b3_filters` counts both.
-- [ ] A company whose `tradingName` is `FOO S/A`: `fetch` requests the cash URL whose decoded `tradingName` is `FOO SA` and no requested payload carries `/`; with that history at `totalRecords: 0` and Yahoo answering 404, `report --offline` gives its ticker source `none`, reason `no_dividend_source` and Yahoo reason `b3_failed` (not `b3_empty_yahoo_failed`), and `dividends.slash_names` lists it; the AZUL-shaped case (no `/`) still gives `b3_empty_yahoo_failed`.
-- [ ] `coverage.dy.by_source.b3.earliest_raw_date` is the earliest fixture `lastDatePriorEx` + 1 day, also when that date is before the first loaded COTAHIST session.
-- [ ] Gate check passes: Full (`python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`)
-- [ ] Test count: ≥ 45 tests pass in `test_pit_rebuild_cli.py` (34 plus ≥ 11)
+- [x] `tests/test_pit_rebuild_cli.py`, through `main([...])` on the fixture cache: T17's `test_share_scale_lists_the_thousands_company_and_the_one_without_b3_record` reads `share_scale.scaled` (EUCX factor 1000 with its hand-computed residual) instead of `x1000` (approved r5 change); EUCX's `VALOR DE MERCADO` is unchanged. Any other r4 expected value that the r5 formulas change is updated in the same commit with its hand computation in the test comment, and the commit body lists each one.
+- [x] A ticker whose fixture COTAHIST lines are all `CODBDI 08` is mapped with a `PRECO` (not `no_quote`) and its `LIQUIDEZ MEDIA DIARIA` is the mean of its last 21 sessions.
+- [x] A unit with FCA composition `1 ON e 2 PN` is mapped and its `P/L` uses `k = 3`.
+- [x] A company with a `2.03.09` row gets `ROE` and `P/VP` from `PL_ctrl` (hand-computed); a company whose DFP has `3.11.01 = 0` and `3.11` non-zero gets `P/L` with `3.11`'s sign; a TIMS-shaped company (zero consolidated DRE) gets its values from `_ind`.
+- [x] An ESPA-shaped company (CVM total 10× the B3 count) is in `share_scale.scaled` with factor 0.1 and its `VALOR DE MERCADO` uses the rounded scaled counts (hand-computed).
+- [x] An EMAE-shaped company whose `ON` ticker's last session is 2025-08-18 with `d` 2026-08-07 is in `vm_stale_class_price` with that ticker and session, its `VALOR DE MERCADO` uses that close, and it is not in `vm_price_fallback`; a company with a class that has no session at all `≤ d` is still in `vm_price_fallback`.
+- [x] An SBSP-shaped company (B3 company record with a `DESDOBRAMENTO` `400` between a dividend's ex-date and `d`) gets `DY` from the amount ÷ 5 (hand-computed).
+- [x] A history page with a repeated record and a `REST CAP DIN` record: `DY` counts the repeated record once and not the capital return, and `dividends.b3_filters` counts both.
+- [x] A company whose `tradingName` is `FOO S/A`: `fetch` requests the cash URL whose decoded `tradingName` is `FOO SA` and no requested payload carries `/`; with that history at `totalRecords: 0` and Yahoo answering 404, `report --offline` gives its ticker source `none`, reason `no_dividend_source` and Yahoo reason `b3_failed` (not `b3_empty_yahoo_failed`), and `dividends.slash_names` lists it; the AZUL-shaped case (no `/`) still gives `b3_empty_yahoo_failed`.
+- [x] `coverage.dy.by_source.b3.earliest_raw_date` is the earliest fixture `lastDatePriorEx` + 1 day, also when that date is before the first loaded COTAHIST session.
+- [x] Gate check passes: Full (`python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`) - 293 OK
+- [x] Test count: ≥ 45 tests pass in `test_pit_rebuild_cli.py` (34 plus ≥ 11) - 48 pass
 
 **Tests**: integration
 **Gate**: full

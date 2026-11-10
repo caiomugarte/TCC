@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import argparse
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from datetime import date, timedelta
 import json
@@ -54,7 +54,7 @@ STATEMENT_ACCOUNTS = frozenset(
 SOURCES = ("b3", "yahoo", "none")
 YAHOO_REASONS = ("b3_failed", "b3_empty", "b3_incomplete", "b3_short_history")
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
-_TICKER = re.compile(r"^[A-Z]{4}\d{1,2}$")
+_TICKER = re.compile(r"^[A-Z]{3,4}\d{1,2}$")  # A-9 (r5): a 3- or 4-letter key, as in the FCA string "1 ENG3 e 4 ENGI4"
 _NO_FILINGS = "no_usable_filing"
 _NO_QUOTE = "no_quote"
 
@@ -223,12 +223,13 @@ def _b3_company(cache: Cache, root: str) -> dividends.B3Company | None:
 
 
 def _b3_history(cache: Cache, name: str, acq: _Acquired, clock) -> dividends.B3History | None:
-    """Every page of GetListedCashDividends (SRC-05). Page 1 missing is b3_failed; a missing later page is incomplete."""
+    """Every page of GetListedCashDividends under the query name (A-15, F15). Page 1 missing is b3_failed; a missing later page is incomplete."""
+    query = sources.b3_query_name(name)
     pages: list[bytes] = []
     total = 1
     page = 1
     while page <= total:
-        path = cache.get(sources.b3_cash_url(name, page), b3_cash_name(name, page), required=False)
+        path = cache.get(sources.b3_cash_url(query, page), b3_cash_name(query, page), required=False)
         if path is None:
             break
         pages.append(path.read_bytes())
@@ -286,7 +287,12 @@ def _history_of(acq: _Acquired, ticker: str) -> dividends.B3History | None:
 
 
 def _choice(acq: _Acquired, day: date, ticker: str) -> tuple[str, str | None]:
-    return dividends.choose_source(_history_of(acq, ticker), day)
+    """The dividend source of a ticker at day. A "/" name whose complete history is empty is b3_failed, not b3_empty (F15, A-15)."""
+    company = acq.b3.get(ticker[:4])
+    history = _history_of(acq, ticker)
+    if company is not None and "/" in company.trading_name and history is not None and history.complete and history.total_records == 0:
+        return "yahoo", "b3_failed"
+    return dividends.choose_source(history, day)
 
 
 # --- one date: companies, tickers, dividends, statistics ------------------------------------
@@ -296,12 +302,14 @@ def _choice(acq: _Acquired, day: date, ticker: str) -> tuple[str, str | None]:
 class _Company:
     cnpj: str
     cd_cvm: str
-    n_on: int | None
+    n_on: int | None  # issued ON shares, rounded after the A-18 factor
     n_pref: int | None
-    scale: str | None  # "x1000", "unverified" or None
+    scaled: dict | None  # {cd_cvm, factor, residual} for a verified factor other than 1 (A-18)
+    unverified: bool  # no B3 count: the counts are used as filed (A-18)
     price_on: Input | None
     price_pref: Input | None
-    fallback: dict | None
+    fallback: dict | None  # vm_price_fallback: a class with shares and no session on or before d (A-17)
+    stale: list[dict]  # vm_stale_class_price: a class priced from a session older than 30 days (F14)
     inputs: dict
     dre_desc: str | None
 
@@ -327,7 +335,6 @@ def _controllers_equity(pl: Input | None, minority: Input | None) -> Input | Non
 
 def _company_inputs(acq: _Acquired, cnpj: str, day: date) -> dict:
     dfp, itr = acq.dfp, acq.itr
-    account = "3.11.01" if cvm.ttm(dfp, itr, cnpj, day, "3.11.01") is not None else "3.11"
 
     def flow(name: str) -> Input | None:
         return _dated(cvm.ttm(dfp, itr, cnpj, day, name))
@@ -336,11 +343,11 @@ def _company_inputs(acq: _Acquired, cnpj: str, day: date) -> dict:
         return _dated(cvm.balance(dfp, itr, cnpj, day, name))
 
     return {
-        "ll": flow(account),
+        "ll": flow(cvm.NET_INCOME),
         "rec": flow("3.01"),
         "ebit": flow("3.05"),
         "ir": flow("3.08"),
-        "ll_1y": _dated(cvm.ttm_year_before(dfp, itr, cnpj, day, account)),
+        "ll_1y": _dated(cvm.ttm_year_before(dfp, itr, cnpj, day, cvm.NET_INCOME)),
         "pl": balance("2.03"),
         "pl_ctrl": _controllers_equity(balance("2.03"), balance("2.03.09")),
         "at": balance("1"),
@@ -350,26 +357,22 @@ def _company_inputs(acq: _Acquired, cnpj: str, day: date) -> dict:
         "cash": _sum_inputs([balance("1.01.01"), balance("1.01.02")]),
         "rec_fy": _dated(cvm.annual(dfp, cnpj, day, "3.01", 0)),
         "rec_fy5": _dated(cvm.annual(dfp, cnpj, day, "3.01", 5)),
-        "ll_fy5": _dated(cvm.annual(dfp, cnpj, day, account, 5)),
+        "ll_fy5": _dated(cvm.annual(dfp, cnpj, day, cvm.NET_INCOME, 5)),
     }
 
 
-def _r4_class_price(item, day: date):
-    """A class price only from a ticker with a session within MAX_QUOTE_AGE_DAYS, the r4 rule.
-
-    cotahist.class_prices also returns a stale class price (F14). Until T29 wires it into
-    vm_stale_class_price, the report keeps the r4 rule: a stale class price is no price here.
-    """
-    if item is None or (day - item[2]).days > cotahist.MAX_QUOTE_AGE_DAYS:
-        return None
-    return item
+def _quote_candidates(acq: _Acquired, cnpj: str, tickers: Sequence[str], day: date) -> set[str]:
+    """The tickers whose quotes and ISINs a company may use: its FCA tickers, its eligible tickers and same-root Status Invest tickers (A-17)."""
+    roots = {ticker[:4] for ticker in tickers}
+    return set(acq.fca.tickers_of(cnpj)) | set(tickers) | {t for t in acq.si[day].rows if t[:4] in roots}
 
 
 def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str]) -> _Company:
-    """Share counts with the A-18 scale, the A-17 class prices and the class fallback of one company."""
+    """Share counts with the A-18 scale, the A-17 class prices (F14) and the class fallback of one company."""
     shares = cvm.shares(acq.dfp, acq.itr, cnpj, day)
     n_on = n_pref = None
-    scale = None
+    scaled = None
+    unverified = False
     if shares is not None and shares.on + shares.pref > 0:
         b3_total = None
         for ticker in sorted(tickers):
@@ -377,27 +380,28 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
             if company is not None and company.total_shares:
                 b3_total = company.total_shares
                 break
-        factor, verified = cvm.share_scale(shares.on + shares.pref, b3_total)
-        n_on, n_pref = shares.on * factor, shares.pref * factor
+        total = shares.on + shares.pref
+        factor, verified = cvm.share_scale(total, b3_total)
+        n_on, n_pref = round(shares.on * factor), round(shares.pref * factor)
         if not verified:
-            scale = "unverified"
-        elif factor == 1000:
-            scale = "x1000"
-    roots = {ticker[:4] for ticker in tickers}
-    candidates = set(acq.fca.tickers_of(cnpj)) | set(tickers) | {t for t in acq.si[day].rows if t[:4] in roots}
-    raw_prices = cotahist.class_prices(acq.quotes, candidates, day)
-    prices = {cls: _r4_class_price(item, day) for cls, item in raw_prices.items()}
-    quoted = {}
-    for cls, item in prices.items():
-        quoted[cls] = None if item is None else Input(item[1], item[2])
+            unverified = True
+        elif factor != 1:
+            scaled = {"cd_cvm": cd_cvm, "factor": factor, "residual": total * factor / b3_total}
+    prices = cotahist.class_prices(acq.quotes, _quote_candidates(acq, cnpj, tickers, day), day)
+    quoted = {cls: None if item is None else Input(item[1], item[2]) for cls, item in prices.items()}
+    stale = [
+        {"cd_cvm": cd_cvm, "class": cls, "ticker": item[0], "session": item[2].isoformat()}
+        for cls, item in sorted(prices.items())
+        if item is not None and (day - item[2]).days > cotahist.MAX_QUOTE_AGE_DAYS
+    ]
     fallback = None
     for cls, other, count in (("ON", "PREF", n_on), ("PREF", "ON", n_pref)):
         if count and count > 0 and prices[cls] is None and prices[other] is not None:
             fallback = {"cd_cvm": cd_cvm, "class_without_quote": cls, "price_from": prices[other][0]}
             break
     return _Company(
-        cnpj=cnpj, cd_cvm=cd_cvm, n_on=n_on, n_pref=n_pref, scale=scale,
-        price_on=quoted["ON"], price_pref=quoted["PREF"], fallback=fallback,
+        cnpj=cnpj, cd_cvm=cd_cvm, n_on=n_on, n_pref=n_pref, scaled=scaled, unverified=unverified,
+        price_on=quoted["ON"], price_pref=quoted["PREF"], fallback=fallback, stale=stale,
         inputs=_company_inputs(acq, cnpj, day), dre_desc=cvm.dre_description(acq.dfp, acq.itr, cnpj, day),
     )
 
@@ -407,36 +411,85 @@ def _known_at(dividend_list: list[dividends.Dividend], day: date) -> list[divide
     return [item for item in dividend_list if item.ex_date is None or item.ex_date <= day]
 
 
-def _b3_dividends(acq: _Acquired, ticker: str, item: mapping.Mapped, history: dividends.B3History) -> list | None:
+def _class_isin(quotes: cotahist.Quotes, share_class: str, tickers: Iterable[str]) -> str | None:
+    """The ISIN of a share class: that of the smallest ticker of the company in the class which has one (A-20)."""
+    for ticker in sorted(tickers):
+        if cotahist.share_class(quotes, ticker) == share_class:
+            isin = cotahist.isin(quotes, ticker)
+            if isin is not None:
+                return isin
+    return None
+
+
+def _b3_dividends(
+    acq: _Acquired, ticker: str, item: mapping.Mapped, history: dividends.B3History, day: date, candidates: set[str]
+) -> tuple[list | None, list, int]:
+    """(dividends at day, the B3 records the ticker draws on, classes with records and no ISIN) (A-15, A-20).
+
+    The records are the unit's UNT records when it has them, else the records of its composition classes.
+    Each record is divided by the split multipliers of its ISIN's company events (A-20). A class without an ISIN
+    keeps its amounts as they are, and is counted.
+    """
     q = acq.quotes
+    company = acq.b3.get(ticker[:4])
+    events = company.stock_events if company is not None else ()
 
-    def next_session(day: date) -> date | None:
-        return cotahist.next_session(q, day)
+    def next_session(value: date) -> date | None:
+        return cotahist.next_session(q, value)
 
-    if item.composition is not None:
-        composition: dict[str, int] = {}
-        for key, count in item.composition.items():
-            cls = key if not _TICKER.match(key) else cotahist.share_class(q, key)
-            if cls is None:
-                return None
-            composition[cls] = composition.get(cls, 0) + count
-        return dividends.unit_dividends(history.records, composition, next_session)
-    cls = cotahist.share_class(q, ticker)
-    if cls is None:
-        return None
-    return dividends.b3_ex_dates(dividends.class_records(history.records, cls), next_session)
+    if item.composition is None:
+        cls = cotahist.share_class(q, ticker)
+        if cls is None:
+            return None, [], 0
+        records = dividends.class_records(history.records, cls)
+        isin = cotahist.isin(q, ticker)
+        missing = 1 if records and isin is None else 0
+        return dividends.b3_ex_dates(records, next_session, events=events, isin=isin, d=day), records, missing
+    isins: dict[str, str | None] = {"UNT": cotahist.isin(q, ticker)}
+    composition: dict[str, int] = {}
+    for key, count in item.composition.items():
+        if _TICKER.match(key):
+            cls, isin = cotahist.share_class(q, key), cotahist.isin(q, key)
+        else:
+            cls, isin = key, _class_isin(q, key, candidates)
+        if cls is None:
+            return None, [], 0
+        composition[cls] = composition.get(cls, 0) + count
+        isins.setdefault(cls, isin)
+    units = dividends.class_records(history.records, "UNT")
+    if units:
+        records = units
+        missing = 1 if isins["UNT"] is None else 0
+    else:
+        records = [record for cls in composition for record in dividends.class_records(history.records, cls)]
+        missing = sum(1 for cls in composition if dividends.class_records(history.records, cls) and isins.get(cls) is None)
+    amounts = dividends.unit_dividends(history.records, composition, next_session, events=events, isins=isins, d=day)
+    return amounts, records, missing
 
 
-def _dividends_of(acq: _Acquired, day: date, ticker: str, item: mapping.Mapped):
-    """(source, reason, dividends) of one ticker at day: B3 first, Yahoo for the reasons of A-15 (SRC-05)."""
+@dataclass(frozen=True)
+class _Source:
+    source: str  # "b3", "yahoo" or "none"
+    reason: str | None
+    amounts: list | None  # dividends known at d; None when the ticker has no source
+    raw_date: date | None  # the earliest raw date of the source the ticker uses (COV-02, F3)
+    missing_isin: int  # B3 classes with records and no ISIN, so their split adjustment was skipped
+
+
+def _dividends_of(acq: _Acquired, day: date, ticker: str, item: mapping.Mapped, candidates: set[str]) -> _Source:
+    """The source, reason and dividends of one ticker at day: B3 first, Yahoo for the reasons of A-15 (SRC-05)."""
     choice = _choice(acq, day, ticker)
     if choice[0] == "b3":
-        divs = _b3_dividends(acq, ticker, item, _history_of(acq, ticker))
-        if divs is None:
-            return "none", "no_dividend_source", None
-        return "b3", None, _known_at(divs, day)
+        amounts, records, missing = _b3_dividends(acq, ticker, item, _history_of(acq, ticker), day, candidates)
+        if amounts is None:
+            return _Source("none", "no_dividend_source", None, None, 0)
+        return _Source("b3", None, _known_at(amounts, day), dividends.b3_earliest_raw(records), missing)
     yahoo = acq.yahoo.get(ticker)
-    return dividends.resolve(choice, None, None if yahoo is None else _known_at(yahoo, day))
+    source, reason, amounts = dividends.resolve(choice, None, None if yahoo is None else _known_at(yahoo, day))
+    if source != "yahoo":
+        return _Source(source, reason, amounts, None, 0)  # a confirmed non-payer has no record to date
+    raw = [event.ex_date for event in (yahoo or []) if event.ex_date is not None]
+    return _Source("yahoo", reason, amounts, min(raw, default=None), 0)
 
 
 @dataclass
@@ -460,28 +513,36 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
     companies: dict[str, _Company] = {}
     for cnpj, tickers in members.items():
         companies[cnpj] = _company(acq, day, cnpj, mapped[tickers[0]].cd_cvm, tickers)
+    candidates_of = {cnpj: _quote_candidates(acq, cnpj, tickers, day) for cnpj, tickers in members.items()}
     out = {
         "mapped": 0, "unmapped": [], "refiled_after_d": [], "mapped_via_b3": [],
         "vm_price_fallback": {"count": 0, "companies": []},
-        "share_scale": {"x1000": [], "unverified": []}, "financial": [], "unclassified": [],
+        "vm_stale_class_price": [],
+        "share_scale": {"scaled": [], "unverified": []},
+        "reference_stale": sorted(ticker for ticker in eligible if cotahist.reference_stale(acq.quotes, ticker, day)),
+        "financial": [], "unclassified": [],
     }
-    seen_scale: set[tuple[str, str]] = set()
     for cnpj in sorted(companies):
         company = companies[cnpj]
         if company.fallback is not None:
             out["vm_price_fallback"]["companies"].append(company.fallback)
-        if company.scale is not None and (company.scale, company.cd_cvm) not in seen_scale:
-            seen_scale.add((company.scale, company.cd_cvm))
-            key = "x1000" if company.scale == "x1000" else "unverified"
-            out["share_scale"][key].append(company.cd_cvm)
+        out["vm_stale_class_price"].extend(company.stale)
+        if company.scaled is not None:
+            out["share_scale"]["scaled"].append(company.scaled)
+        if company.unverified:
+            out["share_scale"]["unverified"].append(company.cd_cvm)
     out["vm_price_fallback"]["companies"].sort(key=lambda row: row["cd_cvm"])
     out["vm_price_fallback"]["count"] = len(out["vm_price_fallback"]["companies"])
-    out["share_scale"]["x1000"].sort()
+    out["vm_stale_class_price"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
+    out["share_scale"]["scaled"].sort(key=lambda row: row["cd_cvm"])
     out["share_scale"]["unverified"].sort()
 
     values: dict[str, dict[str, Value]] = {}
     group_of: dict[str, str] = {}
-    counts = {"by_source": {name: 0 for name in SOURCES}, "yahoo_reasons": {r: 0 for r in YAHOO_REASONS}, "b3_empty_yahoo_failed": 0}
+    counts = {
+        "by_source": {name: 0 for name in SOURCES}, "yahoo_reasons": {r: 0 for r in YAHOO_REASONS},
+        "b3_empty_yahoo_failed": 0, "split_adjust_no_isin": 0,
+    }
     dy_dates: dict[str, dict[str, date | None]] = defaultdict(dict)
     for ticker in eligible:
         item = mapped[ticker]
@@ -503,19 +564,18 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
         if cvm.refiled_after_d(acq.dfp, acq.itr, item.cnpj, day):
             out["refiled_after_d"].append(ticker)
         company = companies[item.cnpj]
-        source, dy_reason, divs = _dividends_of(acq, day, ticker, item)
-        counts["by_source"][source] += 1
+        found = _dividends_of(acq, day, ticker, item, candidates_of[item.cnpj])
+        counts["by_source"][found.source] += 1
         choice = _choice(acq, day, ticker)
         if choice[0] == "yahoo":  # every switch to Yahoo counts with its reason, whether Yahoo answered or not
             counts["yahoo_reasons"][choice[1]] += 1
-        if dy_reason == "b3_empty_yahoo_failed":
+        if found.reason == "b3_empty_yahoo_failed":
             counts["b3_empty_yahoo_failed"] += 1
-        if source in ("b3", "yahoo") and divs is not None:
-            # Until T29 the coverage input is each ticker's earliest ex-date; T29 passes the B3 raw dates (COV-02).
-            known = [item_.ex_date for item_ in divs if item_.ex_date is not None]
-            dy_dates[source][ticker] = min(known) if known else None
+        counts["split_adjust_no_isin"] += found.missing_isin
+        if found.source in ("b3", "yahoo") and found.amounts is not None:
+            dy_dates[found.source][ticker] = found.raw_date  # COV-02: the raw date, neither cut by d nor mapped to sessions
         close_day, close = cotahist.quote_at(acq.quotes, ticker, day)
-        last_day = cotahist.quote_at(acq.quotes, ticker, day, max_age_days=100_000)[0]
+        last_day = cotahist.last_trade(acq.quotes, ticker, day)[0]
         composition = item.composition
         inputs = TickerInputs(
             ticker=ticker,
@@ -526,7 +586,7 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
             n_on=company.n_on,
             n_pref=company.n_pref,
             liquidity=Input(cotahist.avg_volume(acq.quotes, ticker, day), last_day),
-            dividends=divs,
+            dividends=found.amounts,
             **company.inputs,
         )
         values[ticker] = compute(inputs, day)
@@ -557,7 +617,7 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
 def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[[], float], tool_commit: str | None) -> dict:
     compute_seconds = 0.0
     per_date: dict[str, dict] = {}
-    dividends_out: dict[str, dict] = {"by_source": {}, "yahoo_reasons": {}, "b3_empty_yahoo_failed": {}}
+    dividends_out: dict[str, dict] = {"by_source": {}, "yahoo_reasons": {}, "b3_empty_yahoo_failed": {}, "split_adjust_no_isin": {}}
     dy_dates: dict[str, dict[str, date | None]] = defaultdict(dict)
     for day in sorted(req.dates):
         start = clock()
@@ -572,12 +632,31 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
         dividends_out["by_source"][iso] = dict(result.dividends["by_source"])
         dividends_out["yahoo_reasons"][iso] = dict(result.dividends["yahoo_reasons"])
         dividends_out["b3_empty_yahoo_failed"][iso] = result.dividends["b3_empty_yahoo_failed"]
+        dividends_out["split_adjust_no_isin"][iso] = result.dividends["split_adjust_no_isin"]
         for source, found in result.dy_dates.items():
             for ticker, first in found.items():
                 known = [day for day in (dy_dates[source].get(ticker), first) if day is not None]
                 dy_dates[source][ticker] = min(known) if known else None
     dy = coverage.dy_coverage({source: dict(dy_dates.get(source, {})) for source in ("b3", "yahoo")})
     coverage_out = _coverage(cache, acq, req, compute_seconds, dy)
+    histories = [history for history in acq.histories.values() if history is not None]
+    dividends_out["b3_filters"] = {
+        "raw_records": sum(history.raw_records for history in histories),
+        "duplicates": sum(history.duplicates for history in histories),
+        "capital_returns": sum(history.capital_returns for history in histories),
+    }
+    dividends_out["slash_names"] = sorted(
+        (
+            {
+                "trading_name": name,
+                "queried_as": sources.b3_query_name(name),
+                "total_records": None if history is None else history.total_records,
+            }
+            for name, history in acq.histories.items()
+            if "/" in name
+        ),
+        key=lambda row: row["trading_name"],
+    )
     raw = list(cache.used)
     return report.build(
         dates=list(req.dates),

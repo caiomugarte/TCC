@@ -81,8 +81,11 @@ def make_zip(members: Mapping[str, bytes | str]) -> bytes:
     return buffer.getvalue()
 
 
-def universe_routes(dates) -> dict[str, FakeResponse]:
-    """The responses the universe fixture serves for every URL the rebuild can request (no network)."""
+def universe_routes(dates, universe: Path = UNIVERSE) -> dict[str, FakeResponse]:
+    """The responses a fixture universe serves for every URL the rebuild can request (no network).
+
+    universe is a directory laid out like tests/fixtures/pit_rebuild/universe; the default is the shared one.
+    """
     from pit_rebuild import sources
 
     period2 = max(dates) + timedelta(days=1)
@@ -92,31 +95,31 @@ def universe_routes(dates) -> dict[str, FakeResponse]:
         routes[url] = FakeResponse(body, {"Content-Length": str(len(body))})
 
     for year in DFP_YEARS:
-        serve(sources.dfp_url(year), _zip_folder(UNIVERSE / "dfp" / str(year)))
+        serve(sources.dfp_url(year), _zip_folder(universe / "dfp" / str(year)))
     for year in ITR_YEARS:
         serve(sources.itr_url(year), make_zip({}))
     for year in FCA_YEARS:
-        serve(sources.fca_url(year), _zip_folder(UNIVERSE / "fca" / str(year)))
+        serve(sources.fca_url(year), _zip_folder(universe / "fca" / str(year)))
     for year in COTAHIST_YEARS:
-        serve(sources.cotahist_url(year), _cotahist_zip(year))
-    serve(sources.CAD_URL, (UNIVERSE / "cad_cia_aberta.csv").read_bytes())
+        serve(sources.cotahist_url(year), _cotahist_zip(year, universe))
+    serve(sources.CAD_URL, (universe / "cad_cia_aberta.csv").read_bytes())
     serve(sources.DFP_LISTING, _listing("DFP", DFP_YEARS))
     serve(sources.ITR_LISTING, _listing("ITR", ITR_YEARS))
     serve(sources.FCA_LISTING, _listing("FCA", FCA_YEARS))
     trading: dict[str, str] = {}
-    for path in sorted((UNIVERSE / "b3").glob("company_*.json")):
+    for path in sorted((universe / "b3").glob("company_*.json")):
         root = path.stem[len("company_"):]
         serve(sources.b3_company_url(root), path.read_bytes())
         trading[root] = json.loads(path.read_bytes())[0]["tradingName"].strip()
-    for path in sorted((UNIVERSE / "b3" / "cash").glob("*_p*.json")):
+    for path in sorted((universe / "b3" / "cash").glob("*_p*.json")):
         root, page = path.stem.rsplit("_p", 1)
         serve(sources.b3_cash_url(trading[root], int(page)), path.read_bytes())
-    for path in sorted((UNIVERSE / "yahoo").glob("*.json")):
+    for path in sorted((universe / "yahoo").glob("*.json")):
         serve(sources.yahoo_url(path.stem, period2), path.read_bytes())
     return routes
 
 
-def populate_cache(root: Path, dates) -> FakeOpener:
+def populate_cache(root: Path, dates, universe: Path = UNIVERSE) -> FakeOpener:
     """Fill root with everything the universe serves, through the real Cache (no network).
 
     The planned files, the optional B3 and Yahoo files, the listings, the Content-Length of
@@ -126,7 +129,7 @@ def populate_cache(root: Path, dates) -> FakeOpener:
     from pit_rebuild import cache as cache_module
     from pit_rebuild import sources
 
-    fake = FakeOpener(universe_routes(dates))
+    fake = FakeOpener(universe_routes(dates, universe))
     store = cache_module.Cache(root, offline=False, opener=fake)
     for url, name in sources.plan_files(dates):
         store.get(url, name)
@@ -151,8 +154,8 @@ def _zip_folder(folder: Path) -> bytes:
     return buffer.getvalue()
 
 
-def _cotahist_zip(year: int) -> bytes:
-    text = UNIVERSE / "cotahist" / f"{year}.txt"
+def _cotahist_zip(year: int, universe: Path = UNIVERSE) -> bytes:
+    text = universe / "cotahist" / f"{year}.txt"
     if not text.is_file():
         return make_zip({})
     return make_zip({f"COTAHIST_A{year}.TXT": text.read_bytes()})

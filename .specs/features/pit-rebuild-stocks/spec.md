@@ -240,11 +240,11 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | PIT-03 | P1 rebuild | Tasks (T7) | Done (T7) |
 | MAP-01 | P1 rebuild | Tasks (T4, T11, T18, T22) | Done (T4, T11, T18, T22) |
 | MAP-02 | P1 rebuild | Tasks (T11, T16) | Done (T11, T16) |
-| MAP-03 | P1 rebuild | Tasks (T11, T12, T22, T29) | In Tasks (amended r5; T22 done) |
-| IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12, T21, T24, T25, T29) | In Tasks (amended r5; T21, T24, T25 done) |
+| MAP-03 | P1 rebuild | Tasks (T11, T12, T22, T29) | In Tasks (amended r5; T22, T29 done) |
+| IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12, T21, T24, T25, T29) | In Tasks (amended r5; T21, T24, T25, T29 done) |
 | IND-02 | P1 rebuild | Tasks (T3) | Done (T3) |
 | IND-03 | P1 rebuild | Tasks (T12) | Done (T12) |
-| IND-04 | P1 rebuild | Tasks (T8, T9, T11, T12, T16, T17, T21, T24, T28, T29) | In Tasks (amended r5; T21, T24, T28 done) |
+| IND-04 | P1 rebuild | Tasks (T8, T9, T11, T12, T16, T17, T21, T24, T28, T29) | In Tasks (amended r5; T21, T24, T28, T29 done) |
 | CMP-01 | P1 rebuild | Tasks (T3, T13) | Done (T3, T13) |
 | CMP-02 | P1 rebuild | Tasks (T4, T13) | Done (T4, T13) |
 | VER-01 | P1 rebuild | Tasks (T14) | Done (T14) |
@@ -265,13 +265,13 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | SAFE-01 | P1 CLI | Tasks (T2, T17) | Done (T2, T17) |
 | SAFE-02 | P1 CLI | Tasks (T4, T17) | Done (T4, T17) |
 | COV-01 | P2 coverage | Tasks (T15, T18) | Done (T15, T18) |
-| COV-02 | P2 coverage | Tasks (T15, T16, T23, T26, T28, T29) | In Tasks (amended r5; T23, T26, T28 done) |
+| COV-02 | P2 coverage | Tasks (T15, T16, T23, T26, T28, T29) | In Tasks (amended r5; T23, T26, T28, T29 done) |
 | COV-03 | P2 coverage | Tasks (T15, T17, T30, T32) | In Tasks |
 | PIT-04 | P1 rebuild | Tasks (T28, T30, T32) | In Tasks (r5; T28 done) |
-| SRC-06 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |
-| SRC-07 | P1 rebuild | Tasks (T27, T28, T29, T32) | In Tasks (r5; T27, T28 done) |
-| IND-05 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |
-| IND-06 | P1 rebuild | Tasks (T24, T25, T29) | In Tasks (r5; T24, T25 done) |
+| SRC-06 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23, T29 done) |
+| SRC-07 | P1 rebuild | Tasks (T27, T28, T29, T32) | In Tasks (r5; T27, T28, T29 done) |
+| IND-05 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23, T29 done) |
+| IND-06 | P1 rebuild | Tasks (T24, T25, T29) | In Tasks (r5; T24, T25, T29 done) |
 | VER-05 | P1 rebuild | Tasks (T21, T28, T30) | In Tasks (r5; T21, T28 done; T30 pending) |
 | VER-06 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5; T28 done) |
 | VER-07 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5; T28 done) |
