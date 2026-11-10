@@ -394,7 +394,10 @@ Valor vazio ou não numérico não é elegível. A regra espelha a produção
   em percentual (`DY`, `ROE`, `ROA`, `ROIC`, `MARG. LIQUIDA`, `MARGEM EBIT`,
   `CAGR RECEITAS 5 ANOS` e `CAGR LUCROS 5 ANOS`) usam 0,5 ponto percentual. O
   valor reconstruído é arredondado a duas casas antes da comparação. Com
-  referência zero, só fica dentro o valor arredondado igual a 0,00.
+  referência zero, só nos indicadores que não estão em percentual fica dentro o
+  valor arredondado igual a 0,00. Nos indicadores em percentual, a regra de 0,5
+  ponto percentual vale também com referência zero: um `DY` vazio, lido como
+  0,00 (A-4), fica dentro com até 0,50 ponto percentual.
 - **Denominador.** São os tickers elegíveis cujo valor do Status Invest não é
   vazio. Um `DY` vazio vale 0,00 e entra no denominador (A-4). Um ticker do
   denominador sem valor reconstruído conta como fora da tolerância, e o motivo
@@ -550,8 +553,13 @@ mediana do ano por ticker (COV-02, F3).
 
 A partir da raiz do repositório. O `fetch` baixa o que as datas precisam e não
 escreve relatório. O `report` calcula a partir do cache. Com `--offline`, o
-`report` não faz nenhuma requisição e sai com código 5 se faltar um arquivo.
-Sem `--offline`, ele baixa o que faltar antes de calcular.
+`report` não faz nenhuma requisição e sai com código 5 se faltar um arquivo
+obrigatório ou uma sondagem da COTAHIST que o cache não registrou. São
+obrigatórios os da CVM (cadastro, DFP, ITR, FCA e as listagens) e os da COTAHIST.
+Os da B3 e os do Yahoo são opcionais: sem eles o relatório sai com código 0 e o
+ticker segue o caminho de proventos descrito em Proventos. Sem `--offline`, ele
+baixa o que faltar antes de calcular, e uma falha num arquivo obrigatório também
+sai com código 5.
 
 ```sh
 python3 py/pit_rebuild fetch \
