@@ -391,5 +391,82 @@ class AccessorTests(StoreCase):
                             self.assertLessEqual(result.dt_receb, d)
 
 
+class PeriodReceiptBoundaryTests(unittest.TestCase):
+    """The helpers that read a period other than the newest one cut it at d by its own DT_RECEB (T33, G1).
+
+    The older filing is received on d + 1 (not used) and on d (used). The newest usable period is covered by
+    _newest_usable; these cases pin the cut in _usable_period, the call that annual, ttm_year_before and the
+    TTM read of the fiscal year before an ITR all make.
+    """
+
+    CNPJ = "10.101.101/0001-01"
+    D = date(2026, 8, 7)
+
+    def annual_store(self, receipt_2020: str) -> cvm.FilingStore:
+        # DFP 2020-12-31, five years before the base DFP 2025-12-31 (received 2026-03-20), is received at receipt_2020.
+        index = (
+            f"{self.CNPJ};2020-12-31;1;CASE S.A.;1;DFP;1;{receipt_2020};\n"
+            f"{self.CNPJ};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n"
+        )
+        rows = (
+            dre_line(self.CNPJ, "2020-12-31", "ÚLTIMO", "2020-01-01", "2020-12-31", "3.01", "800.00")
+            + dre_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "1000.00")
+        )
+        return inline_store("DFP", 2025, index, {"DRE_con": rows})
+
+    def ttm_stores(self, dfp_2025: str = "2026-03-20 18:00:00", itr_2025: str = "2025-08-10 18:00:00"):
+        # ITR 2026-06-30 (received 2026-08-06) is the newest usable period at d. Its fiscal year before is DFP 2025-12-31
+        # (received dfp_2025). ITR 2025-06-30 (received itr_2025) is the period one year before the newest.
+        dfp_index = (
+            f"{self.CNPJ};2024-12-31;1;CASE S.A.;1;DFP;1;2025-03-20 18:00:00;\n"
+            f"{self.CNPJ};2025-12-31;1;CASE S.A.;1;DFP;1;{dfp_2025};\n"
+        )
+        dfp_rows = (
+            dre_line(self.CNPJ, "2024-12-31", "ÚLTIMO", "2024-01-01", "2024-12-31", "3.01", "800.00")
+            + dre_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "1000.00")
+        )
+        itr_index = (
+            f"{self.CNPJ};2025-06-30;1;CASE S.A.;1;ITR;1;{itr_2025};\n"
+            f"{self.CNPJ};2026-06-30;1;CASE S.A.;1;ITR;1;2026-08-06 18:00:00;\n"
+        )
+        itr_rows = (
+            dre_line(self.CNPJ, "2025-06-30", "ÚLTIMO", "2025-01-01", "2025-06-30", "3.01", "450.00")
+            + dre_line(self.CNPJ, "2025-06-30", "PENÚLTIMO", "2024-01-01", "2024-06-30", "3.01", "400.00")
+            + dre_line(self.CNPJ, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.01", "600.00")
+            + dre_line(self.CNPJ, "2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", "3.01", "500.00")
+        )
+        return (
+            inline_store("DFP", 2025, dfp_index, {"DRE_con": dfp_rows}),
+            inline_store("ITR", 2026, itr_index, {"DRE_con": itr_rows}),
+        )
+
+    def test_annual_five_years_back_is_none_when_its_dfp_was_received_after_d(self):
+        store = self.annual_store("2026-08-08 09:00:00")
+        self.assertEqual(cvm.annual(store, self.CNPJ, self.D, "3.01"), cvm.Dated(1000.0, date(2026, 3, 20)))
+        self.assertIsNone(cvm.annual(store, self.CNPJ, self.D, "3.01", years_back=5))
+
+    def test_annual_five_years_back_is_used_when_its_dfp_was_received_on_d(self):
+        store = self.annual_store("2026-08-07 12:00:00")
+        self.assertEqual(cvm.annual(store, self.CNPJ, self.D, "3.01", years_back=5), cvm.Dated(800.0, self.D))
+
+    def test_ttm_year_before_is_none_when_its_itr_was_received_after_d(self):
+        dfp, itr = self.ttm_stores(itr_2025="2026-08-08 09:00:00")
+        self.assertIsNone(cvm.ttm_year_before(dfp, itr, self.CNPJ, self.D, "3.01"))
+
+    def test_ttm_year_before_is_used_when_its_itr_was_received_on_d(self):
+        dfp, itr = self.ttm_stores(itr_2025="2026-08-07 12:00:00")
+        # DFP 2024 (800) + ITR 2025-06-30 YTD (450) - its prior YTD (400)
+        self.assertEqual(cvm.ttm_year_before(dfp, itr, self.CNPJ, self.D, "3.01"), cvm.Dated(850.0, self.D))
+
+    def test_ttm_is_none_when_the_dfp_before_its_itr_was_received_after_d(self):
+        dfp, itr = self.ttm_stores(dfp_2025="2026-08-08 09:00:00")
+        self.assertIsNone(cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"))
+
+    def test_ttm_is_used_when_the_dfp_before_its_itr_was_received_on_d(self):
+        dfp, itr = self.ttm_stores(dfp_2025="2026-08-07 12:00:00")
+        # DFP 2025 (1000) + ITR 2026-06-30 YTD (600) - its prior YTD (500)
+        self.assertEqual(cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"), cvm.Dated(1100.0, self.D))
+
+
 if __name__ == "__main__":
     unittest.main()

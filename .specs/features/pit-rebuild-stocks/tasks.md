@@ -54,8 +54,9 @@ Phases run in order; tasks within a phase run in order. A heavy task counts as t
 | 4. CLI, docs and real run | T17-T20 | 7 (T17, T18 and T20 heavy) | none | Medium: exit-code table; fetch order (B3 records before mapping); the real run downloads several GB of zips and parses COTAHIST. T20 is superseded by T32. | high (T17, T18, T20), mid (T19) |
 | 5. r5 rules in the pure modules | T21-T27 | 7 | none | Medium: each task changes one approved rule and flips the r4 test expectations it names; every r4 test it does not name must still pass. | high reasoning (T23, T24), mid (T21, T22, T25, T26, T27) |
 | 6. r5 report, CLI wiring and the real run | T28-T32 | 9 (T28, T29, T30 and T32 heavy) | none | Medium-high: no sensitivity may reach the official verdict; the real run makes a few online requests (normalized B3 names, one live probe). | high (T28, T29, T30, T32), mid (T31) |
+| 7. Verifier fixes (r1) | T33-T36 | 4 | none | Low: test-only fixes for the Verifier's blocking gaps G1 and G2 and nonblocking N1, plus one docstring line (N3); no production behaviour changes. | mid |
 
-No task touches a REVIEW.md sensitive path (`py/core/**`, `api/**`, `py/snapshot_*.py`, `data/allocation*/**`, `baselines/**`). Total 32 tasks, counted 39 (r4: 20 tasks, counted 23, T20 superseded; r5: 12 tasks, counted 16).
+No task touches a REVIEW.md sensitive path (`py/core/**`, `api/**`, `py/snapshot_*.py`, `data/allocation*/**`, `baselines/**`). Total 36 tasks, counted 43 (r4: 20 tasks, counted 23, T20 superseded; r5: 12 tasks, counted 16; Verifier r1: 4 tasks, counted 4).
 
 ### Phase 1: Foundation and network boundary
 
@@ -108,6 +109,15 @@ T27
 
 ```
 T28 → T29 → T30 → T31 → T32
+```
+
+### Phase 7: Verifier fixes (r1)
+
+```
+T33
+T34
+T35
+T36
 ```
 
 ---
@@ -982,6 +992,109 @@ T28 → T29 → T30 → T31 → T32
 
 ---
 
+### T33: Pin the receipt-date cut of the older periods in `annual`, `ttm_year_before` and the TTM read (G1, blocking)
+
+**What**: Add `PeriodReceiptBoundaryTests` to `tests/test_pit_rebuild_cvm.py`. Each helper that reads a period other than the newest one (`annual(years_back=5)`, `ttm_year_before`, and the fiscal-year DFP that `ttm` reads for an ITR) gets two cases built from inline DFP and ITR stores: the older filing's latest version received on d + 1 gives no value; received on d it is used. No production code changes.
+**Where**: `tests/test_pit_rebuild_cvm.py`
+**Depends on**: None (Phase 6 done; Verifier report, gap G1)
+**Reuses**: `inline_store`, `dre_line` (same module)
+**Requirement**: PIT-01 (`DT_RECEB ≤ d` for every value), A-6
+**Sensitive area**: no (tests only)
+
+**Tools**:
+
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+
+- [x] Removing the cut at `py/pit_rebuild/cvm.py:291` fails the three d + 1 tests (`FAILED (failures=3)`); the original passes all six (evidence in the commit body)
+- [x] Changing `<=` to `<` at `py/pit_rebuild/cvm.py:291` fails the three d tests; the original passes all six
+- [x] Pit suite passes: 317 OK (311 + 6)
+
+**Tests**: unit
+**Gate**: full
+**Commit**: `test(pit-rebuild): pin the receipt date of the older periods (#59)`
+
+---
+
+### T34: Pin the receipt-date cut of the annual base (G2, blocking)
+
+**What**: Add `AnnualBaseReceiptTests` to `tests/test_pit_rebuild_cvm.py`. A DFP received after d does not become the base of `annual`: `annual(years_back=0)` is the year before's value and `years_back=5` counts back from that year. A DFP received on d is the base.
+**Where**: `tests/test_pit_rebuild_cvm.py`
+**Depends on**: None (Phase 6 done; Verifier report, gap G2)
+**Reuses**: `inline_store`, `dre_line` (same module)
+**Requirement**: PIT-01, PIT-03 (the newest period received after d gives the previous filing), A-6
+**Sensitive area**: no (tests only)
+
+**Tools**:
+
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+
+- [ ] Removing the cut at `py/pit_rebuild/cvm.py:208` fails the after-d test; the original passes it
+- [ ] Changing `<=` to `<` at `py/pit_rebuild/cvm.py:208` fails the on-d test; the original passes it
+- [ ] Pit suite passes: 319 OK
+
+**Tests**: unit
+**Gate**: full
+**Commit**: `test(pit-rebuild): pin the receipt date of the annual base (#59)`
+
+---
+
+### T35: Round scaled share counts to whole shares (N1, nonblocking)
+
+**What**: Add `ScaledShareCountTests` to `tests/test_pit_rebuild_cli.py`. It calls `cli._company` on inline inputs: one DFP with ON 30 000 007 and PREF 10 000 003 shares, and one B3 record of 4 000 001 shares. The factor is 0.1, so the scaled counts are 3 000 000.7 and 1 000 000.3, and the counts must be 3 000 001 and 1 000 000. Removing `round` at `py/pit_rebuild/cli.py:443` fails it, and so does truncating with `int`.
+**Where**: `tests/test_pit_rebuild_cli.py`
+**Depends on**: None (Phase 6 done; Verifier report, gap N1)
+**Reuses**: `make_zip` (`tests/pit_rebuild_support.py`), `cvm.load_filings`
+**Requirement**: A-18 (counts rounded after the factor; AD-032 (4))
+**Sensitive area**: no (tests only)
+
+**Tools**:
+
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+
+- [ ] Removing `round` at `py/pit_rebuild/cli.py:443` fails the test; replacing it with `int` fails it too; the original passes
+- [ ] Pit suite passes: 320 OK
+
+**Tests**: unit (one function of the CLI; the integration tests of the shape universe are unchanged)
+**Gate**: full
+**Commit**: `test(pit-rebuild): round scaled share counts in the company unit (#59)`
+
+---
+
+### T36: The first docstring example of `cli.py` uses the approved as-of date (N3, nonblocking)
+
+**What**: In the `report` docstring, change the first example's `--date 2026-11-06` to `--date 2026-11-05`, the as-of date of the 2026-11-06 snapshot (A-11, AD-032 (1)). The exit-code table and the second example stay as they are.
+**Where**: `py/pit_rebuild/cli.py` (docstring line 6 only)
+**Depends on**: None (Phase 6 done; Verifier report, gap N3)
+**Reuses**: none
+**Requirement**: CLI-01 (the docstring and the README agree; the exit-code table is compared by code)
+**Sensitive area**: no (docstring only)
+
+**Tools**:
+
+- MCP: NONE
+- Skill: NONE
+
+**Done when**:
+
+- [ ] The diff of `py/pit_rebuild/cli.py` is that one docstring line; no code changes
+- [ ] The exit-code table still parses: `tests/test_pit_rebuild_errors.py` and `tests/test_pit_rebuild_artifact.py` pass
+- [ ] Build gate: pit suite OK, `compileall` OK, protected paths unchanged against `origin/develop`, root suite OK
+
+**Tests**: none (docstring; the exit-code table keeps its tests)
+**Gate**: build
+**Commit**: `docs(pit-rebuild): use the as-of date in the first example (#59)`
+
+---
+
 ## Phase Execution Map
 
 ```
@@ -1008,9 +1121,13 @@ Phase 5:  T21
           T26
           T27
 Phase 6:  T28 → T29 → T30 → T31 → T32
+Phase 7:  T33
+          T34
+          T35
+          T36
 ```
 
-Execution is strictly sequential, task by task in number order. T20 is superseded: T32 replaces it, after Phase 6's code tasks.
+Execution is strictly sequential, task by task in number order. T20 is superseded: T32 replaces it, after Phase 6's code tasks. Phase 7 (Verifier r1) follows T32; its four tasks are independent.
 
 ---
 
@@ -1050,6 +1167,10 @@ Execution is strictly sequential, task by task in number order. T20 is supersede
 | T30 | `cli.py` arguments, as-of check, sensitivities | ⚠️ Heavy (counts 2); one module, kept whole so each new exit-2 case is tested through the real path |
 | T31 | one doc section | ✅ Granular |
 | T32 | real run + artifact test | ✅ Granular (heavy) |
+| T33 | one test class: the three helpers that read the older period | ✅ Granular |
+| T34 | one test class: the annual base | ✅ Granular |
+| T35 | one test class: one CLI function (`_company`) | ✅ Granular |
+| T36 | one docstring line | ✅ Granular |
 
 ## Diagram-Definition Cross-Check
 
@@ -1087,6 +1208,10 @@ Execution is strictly sequential, task by task in number order. T20 is supersede
 | T30 | T29 | T29 → T30 | ✅ Match |
 | T31 | T30 | T30 → T31 | ✅ Match |
 | T32 | T31 | T31 → T32 | ✅ Match |
+| T33 | None (Phase 6 done) | none | ✅ Match |
+| T34 | None (Phase 6 done) | none | ✅ Match |
+| T35 | None (Phase 6 done) | none | ✅ Match |
+| T36 | None (Phase 6 done) | none | ✅ Match |
 
 No task depends on a later phase.
 
@@ -1126,6 +1251,10 @@ No task depends on a later phase.
 | T30 | CLI | integration | integration | ✅ OK |
 | T31 | docs | none | none | ✅ OK |
 | T32 | committed report | artifact test (integration) | integration | ✅ OK |
+| T33 | parser (cvm) | unit | unit | ✅ OK |
+| T34 | parser (cvm) | unit | unit | ✅ OK |
+| T35 | CLI (one function) | integration | unit | ⚠️ Smallest unit that exercises `cli.py:443`, as the Verifier allowed; the CLI integration tests are unchanged |
+| T36 | docs | none | none | ✅ OK |
 
 ## Tools
 
