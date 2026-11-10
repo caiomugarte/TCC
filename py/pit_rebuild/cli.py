@@ -345,6 +345,17 @@ def _company_inputs(acq: _Acquired, cnpj: str, day: date) -> dict:
     }
 
 
+def _r4_class_price(item, day: date):
+    """A class price only from a ticker with a session within MAX_QUOTE_AGE_DAYS, the r4 rule.
+
+    cotahist.class_prices also returns a stale class price (F14). Until T29 wires it into
+    vm_stale_class_price, the report keeps the r4 rule: a stale class price is no price here.
+    """
+    if item is None or (day - item[2]).days > cotahist.MAX_QUOTE_AGE_DAYS:
+        return None
+    return item
+
+
 def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str]) -> _Company:
     """Share counts with the A-18 scale, the A-17 class prices and the class fallback of one company."""
     shares = cvm.shares(acq.dfp, acq.itr, cnpj, day)
@@ -365,10 +376,11 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
             scale = "x1000"
     roots = {ticker[:4] for ticker in tickers}
     candidates = set(acq.fca.tickers_of(cnpj)) | set(tickers) | {t for t in acq.si[day].rows if t[:4] in roots}
-    prices = cotahist.class_prices(acq.quotes, candidates, day)
+    raw_prices = cotahist.class_prices(acq.quotes, candidates, day)
+    prices = {cls: _r4_class_price(item, day) for cls, item in raw_prices.items()}
     quoted = {}
     for cls, item in prices.items():
-        quoted[cls] = None if item is None else Input(item[1], cotahist.quote_at(acq.quotes, item[0], day)[0])
+        quoted[cls] = None if item is None else Input(item[1], item[2])
     fallback = None
     for cls, other, count in (("ON", "PREF", n_on), ("PREF", "ON", n_pref)):
         if count and count > 0 and prices[cls] is None and prices[other] is not None:

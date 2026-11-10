@@ -636,13 +636,15 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cotahist.py`: T9's `test_only_standard_lot_cash_market_records_are_kept` is replaced by `test_lot_and_recovery_records_are_kept_and_the_lot_wins_the_session` (approved r5 expectation change, F1): `CODBDI` 07 and 08 lines of a requested ticker are kept; 10, 12 and 58 lines and a `TPMERC` other than `010` are dropped; a ticker with only `08` lines gets its `quote_at` from them; on a session with a `02` line and an `08` line of the same ticker at different closes, the `02` close is used both when the `08` line comes first and when it comes last.
-- [ ] T9's `test_avg_volume_uses_the_last_30_sessions_and_fewer_when_fewer_exist` becomes the 21-session test: on 25 sessions of distinct `VOLTOT` the default averages the last 21 (the expected mean differs from the 20- and 30-session means), fewer when fewer exist, and `LIQUIDITY_SESSIONS == 21`.
-- [ ] `quote_at(..., max_age_days=None)` and `last_trade` return a session 400 days before `d`; `quote_at` with the default still returns `None` at 31 days.
-- [ ] `class_prices`: an EMAE-shaped company whose only `ON` ticker last traded 2025-08-18 at 150.00 returns `ON` → that ticker, 150.00, 2025-08-18 at `d` 2026-11-05; a preferred ticker with a session within 30 days and lower volume beats a stale one with higher volume; a session after `d` is never used; T9's `test_class_prices_give_no_preferred_price_when_its_last_session_is_too_old` changes (approved, F14): the stale preferred ticker is now returned with its session day; the USIM case still returns `PREF` → `USIM5` at 7.15, now with its session day.
-- [ ] `reference_stale`: last session at `d − 30` → `False`; at `d − 31` → `True`; only a session at `d + 1` → `True`; no session → `True`.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_cotahist.py`
-- [ ] Test count: ≥ 17 tests pass in the file (T9's 13 with one replaced, plus ≥ 4)
+- [x] `tests/test_pit_rebuild_cotahist.py`: T9's `test_only_standard_lot_cash_market_records_are_kept` is replaced by `test_lot_and_recovery_records_are_kept_and_the_lot_wins_the_session` (approved r5 expectation change, F1): `CODBDI` 07 and 08 lines of a requested ticker are kept; 10, 12 and 58 lines and a `TPMERC` other than `010` are dropped; a ticker with only `08` lines gets its `quote_at` from them; on a session with a `02` line and an `08` line of the same ticker at different closes, the `02` close is used both when the `08` line comes first and when it comes last.
+- [x] T9's `test_avg_volume_uses_the_last_30_sessions_and_fewer_when_fewer_exist` becomes the 21-session test: on 25 sessions of distinct `VOLTOT` the default averages the last 21 (the expected mean differs from the 20- and 30-session means), fewer when fewer exist, and `LIQUIDITY_SESSIONS == 21`.
+- [x] `quote_at(..., max_age_days=None)` and `last_trade` return a session 400 days before `d`; `quote_at` with the default still returns `None` at 31 days.
+- [x] `class_prices`: an EMAE-shaped company whose only `ON` ticker last traded 2025-08-18 at 150.00 returns `ON` → that ticker, 150.00, 2025-08-18 at `d` 2026-11-05; a preferred ticker with a session within 30 days and lower volume beats a stale one with higher volume; a session after `d` is never used; T9's `test_class_prices_give_no_preferred_price_when_its_last_session_is_too_old` changes (approved, F14): the stale preferred ticker is now returned with its session day; the USIM case still returns `PREF` → `USIM5` at 7.15, now with its session day.
+- [x] `reference_stale`: last session at `d − 30` → `False`; at `d − 31` → `True`; only a session at `d + 1` → `True`; no session → `True`.
+- [x] Gate check passes: Quick for `test_pit_rebuild_cotahist.py` (19 OK; pit suite 218 OK; compileall OK)
+- [x] Test count: ≥ 17 tests pass in the file (T9's 13 with one replaced, plus ≥ 4) - 19 pass
+
+> Done (T21): `cli.py` reads class prices through `_r4_class_price`, which keeps the r4 rule (a stale price is no price) until T29 wires `vm_stale_class_price`. `tests/test_pit_rebuild_report.py` expects `liquidity_sessions` 21 (F5; T28 asserts the same value). Both were needed to keep the r4 CLI and report tests green: F14 moved two CLI tests and F5 one report test.
 
 **Tests**: unit
 **Gate**: quick

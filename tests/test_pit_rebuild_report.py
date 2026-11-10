@@ -141,7 +141,7 @@ class ProvenanceAndParametersTests(ReportCase):
         self.assertEqual(compare.verdict(parameters["thresholds"]["reconstruivel"], 1), compare.RECONSTRUIVEL)
         self.assertEqual(compare.verdict(parameters["thresholds"]["com_ressalvas"], 1), compare.COM_RESSALVAS)
         self.assertIn("DY", parameters["percent_fields"])
-        self.assertEqual(parameters["liquidity_sessions"], 30)
+        self.assertEqual(parameters["liquidity_sessions"], 21)  # F5: 21 sessions (T21); T28 keeps 21 in the v2 schema
         self.assertEqual(set(parameters["formulas"]), set(ALL_FIELDS))
         self.assertIn("B3", parameters["share_scale_rule"])
         self.assertIn("31,6", parameters["share_scale_rule"])
