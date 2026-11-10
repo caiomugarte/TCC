@@ -845,18 +845,18 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_report.py`: T16's `test_the_non_pit_inputs_are_the_seven_inputs_of_a19_with_their_roles` becomes the eight-input test (approved r5 change): eight rows, the eighth with input naming `stockDividends` and role `dated_event_current_record`; the Markdown has one row per input.
-- [ ] `parameters.share_scale_rule` names `10^-2`, `10^3`, `√10` and the residual and no longer `31,6`; `parameters.liquidity_sessions == 21`; `parameters.quote_codbdi == ["02", "07", "08"]`; `parameters.filings_cutoffs` echoes its input; `schema == "pit-rebuild-stocks/v2"`.
-- [ ] The test fixture's `share_scale` becomes `{"scaled": [{"cd_cvm": "1603", "factor": 1000, "residual": 1.0}, {"cd_cvm": "1605", "factor": 0.1, "residual": 1.02}], "unverified": ["1604"]}` (T16 change) and the Markdown shows each factor and residual; `reference_stale` and `vm_stale_class_price` are rendered, and deleting either from the dict changes the Markdown.
-- [ ] `status_invest` entries keep `collected_on` and `as_of_check`; the Markdown shows the as-of table and a warning line exactly when `best_session` differs from `date`.
-- [ ] Official isolation (VER-08): `build` with `sensitivities` whose stats would make every verdict `não reconstruível` returns `verdicts` equal (`==`) to `build` without `sensitivities`; `sensitivities["official"] is False`.
-- [ ] `class_without_roic_peg`: official verdicts where only `ROIC` is `não reconstruível` give `class` `não reconstruível` and `class_without_roic_peg.class` `reconstruível`, with the note from `ROIC_PEG_NOTE`.
-- [ ] `filings_cutoff`: on hand-built stats where the recomputed second date lifts one field from `com ressalvas` to `reconstruível`, the sensitivity's class verdict is the worst of `overall(official first date, recomputed second date)` (hand-computed).
-- [ ] `without_reference_stale`: verdicts recomputed from the given stats, `excluded` listed per date.
-- [ ] Markdown: the verdict line holds the official class verdict and none of the sensitivity verdicts (fixture with distinct values); the section titled `Sensibilidades (não são o veredito oficial)` follows the verdict section and holds each sensitivity's class verdict and the D-C note; without `sensitivities` the section is absent; changing one sensitivity verdict in the dict changes the Markdown (RPT-04).
-- [ ] `dividends.b3_filters`, `split_adjust_no_isin` and `slash_names`, and the r5 DY coverage (`earliest_raw_date`, `median_ticker_year`), are in the JSON and the Markdown.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_report.py`
-- [ ] Test count: ≥ 25 tests pass in the file (T16's 15 plus ≥ 10)
+- [x] `tests/test_pit_rebuild_report.py`: T16's `test_the_non_pit_inputs_are_the_seven_inputs_of_a19_with_their_roles` becomes the eight-input test (approved r5 change): eight rows, the eighth with input naming `stockDividends` and role `dated_event_current_record`; the Markdown has one row per input.
+- [x] `parameters.share_scale_rule` names `10^-2`, `10^3`, `√10` and the residual and no longer `31,6`; `parameters.liquidity_sessions == 21`; `parameters.quote_codbdi == ["02", "07", "08"]`; `parameters.filings_cutoffs` echoes its input; `schema == "pit-rebuild-stocks/v2"`.
+- [x] The test fixture's `share_scale` becomes `{"scaled": [{"cd_cvm": "1603", "factor": 1000, "residual": 1.0}, {"cd_cvm": "1605", "factor": 0.1, "residual": 1.02}], "unverified": ["1604"]}` (T16 change) and the Markdown shows each factor and residual; `reference_stale` and `vm_stale_class_price` are rendered, and deleting either from the dict changes the Markdown.
+- [x] `status_invest` entries keep `collected_on` and `as_of_check`; the Markdown shows the as-of table and a warning line exactly when `best_session` differs from `date`.
+- [x] Official isolation (VER-08): `build` with `sensitivities` whose stats would make every verdict `não reconstruível` returns `verdicts` equal (`==`) to `build` without `sensitivities`; `sensitivities["official"] is False`.
+- [x] `class_without_roic_peg`: official verdicts where only `ROIC` is `não reconstruível` give `class` `não reconstruível` and `class_without_roic_peg.class` `reconstruível`, with the note from `ROIC_PEG_NOTE`.
+- [x] `filings_cutoff`: on hand-built stats where the recomputed second date lifts one field from `com ressalvas` to `reconstruível`, the sensitivity's class verdict is the worst of `overall(official first date, recomputed second date)` (hand-computed).
+- [x] `without_reference_stale`: verdicts recomputed from the given stats, `excluded` listed per date.
+- [x] Markdown: the verdict line holds the official class verdict and none of the sensitivity verdicts (fixture with distinct values); the section titled `Sensibilidades (não são o veredito oficial)` follows the verdict section and holds each sensitivity's class verdict and the D-C note; without `sensitivities` the section is absent; changing one sensitivity verdict in the dict changes the Markdown (RPT-04).
+- [x] `dividends.b3_filters`, `split_adjust_no_isin` and `slash_names`, and the r5 DY coverage (`earliest_raw_date`, `median_ticker_year`), are in the JSON and the Markdown.
+- [x] Gate check passes: Quick for `test_pit_rebuild_report.py` - 29 OK
+- [x] Test count: ≥ 25 tests pass in the file (T16's 15 plus ≥ 10) - 29 pass
 
 **Tests**: unit
 **Gate**: quick
