@@ -494,7 +494,8 @@ def _mapping_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:
             "",
             f"- Elegíveis: {entry['eligible']}. Mapeados: {mapping['mapped']}. Não mapeados: {len(mapping['unmapped'])}.",
             f"- Mapeados pela B3 (`mapped_via_b3`): {_list_or_none(mapping['mapped_via_b3'])}.",
-            f"- Caíram para o período anterior porque o mais recente chegou depois de d (`refiled_after_d`): "
+            f"- Caíram para o período anterior porque o mais recente foi reapresentado depois de d, "
+            f"com uma versão já recebida até d (`refiled_after_d`): "
             f"{_list_or_none(mapping['refiled_after_d'])}.",
             f"- Usaram o preço da outra classe (`vm_price_fallback`): {fallback['count']} empresa(s).",
             f"- Sem cotação recente (`reference_stale`, sem registro em [d − 30 dias, d]): "

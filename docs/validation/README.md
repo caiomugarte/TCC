@@ -469,7 +469,10 @@ nem na linha do veredito.
 
 - **Demonstrações.** Um DFP ou ITR só vale para a data `d` quando a versão mais
   recente dele foi recebida (`DT_RECEB`) em `d` ou antes. Se não foi, a medição
-  usa o período anterior e registra o ticker em `refiled_after_d`.
+  usa o período anterior. O ticker entra em `refiled_after_d` só quando o período
+  mais recente foi reapresentado: uma versão dele chegou em `d` ou antes, e a
+  versão mais recente depois de `d`. Um período sem nenhuma versão em `d` não
+  entra.
 - **Cotações.** Só entram sessões até `d`. O preço é o último pregão até 30 dias
   antes de `d`; sem pregão nesse prazo, o ticker fica sem cotação (`no_quote`).
   Entram os códigos `CODBDI` 02, 07 e 08 (F1). A liquidez é a média de `VOLTOT`
