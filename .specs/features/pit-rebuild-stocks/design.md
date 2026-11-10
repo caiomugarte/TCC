@@ -247,7 +247,7 @@ Spec "Amendment r5" (F1–F5, F7–F11, F13–F18, D-A–D-C), AD-032. The inter
 
 ### `mapping.py`
 
-- `parse_composition(text)` implements A-9's grammar. Split: on `/`, `+`, or an `e`/`E` that is a word of its own (`(?<!\S)[eE](?!\S)`), surrounding spaces dropped. Part: `^(\d+)\s*(.+)$`. Class (case-insensitive, full match after collapsing spaces): `ON`; `PN`, `PNS` → `PN`; `PNA`; `PNB`; `(AÇÃO|AÇÕES) (ORDINÁRIA|ORDINÁRIAS)` → `ON`; `(AÇÃO|AÇÕES) ON` → `ON`; `(AÇÃO|AÇÕES) (PREFERENCIAL|PREFERENCIAIS)` → `PN`; `(AÇÃO|AÇÕES) PN` → `PN`; a ticker `[A-Z]{4}\d{1,2}` (case-sensitive) stays a ticker key. Repeated keys add up. Any other part → `None`.
+- `parse_composition(text)` implements A-9's grammar. Split: on `/`, `+`, or an `e`/`E` that is a word of its own (`(?<!\S)[eE](?!\S)`), surrounding spaces dropped. Part: `^(\d+)\s*(.+)$`. Class (case-insensitive, full match after collapsing spaces): `ON`; `PN`, `PNS` → `PN`; `PNA`; `PNB`; `(AÇÃO|AÇÕES) (ORDINÁRIA|ORDINÁRIAS)` → `ON`; `(AÇÃO|AÇÕES) ON` → `ON`; `(AÇÃO|AÇÕES) (PREFERENCIAL|PREFERENCIAIS)` → `PN`; `(AÇÃO|AÇÕES) PN` → `PN`; a ticker `[A-Z]{3,4}\d{1,2}` (case-sensitive) stays a ticker key. Repeated keys add up. Any other part → `None`.
 
 ### `dividends.py`
 
