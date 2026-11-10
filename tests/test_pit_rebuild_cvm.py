@@ -44,6 +44,26 @@ def zip_folder(folder: Path, out: Path, index_header_rename: tuple[str, str] | N
     return out
 
 
+INDEX_HEADER = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+DRE_HEADER = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;ESCALA_MOEDA;ORDEM_EXERC;DT_INI_EXERC;DT_FIM_EXERC;CD_CONTA;DS_CONTA;VL_CONTA;ST_CONTA_FIXA\n"
+
+
+def dre_line(cnpj: str, dt_refer: str, ordem: str, dt_ini: str, dt_fim: str, account: str, value: str) -> str:
+    return f"{cnpj};{dt_refer};1;CASE S.A.;1;UNIDADE;{ordem};{dt_ini};{dt_fim};{account};Conta {account};{value};S\n"
+
+
+def inline_store(kind: str, year: int, index_rows: str, statements: dict[str, str], accounts=None) -> cvm.FilingStore:
+    """A FilingStore from inline CSV text: the index rows and the DRE rows of each scope (DRE_con, DRE_ind)."""
+    prefix = kind.lower()
+    members = {f"{prefix}_cia_aberta_{year}.csv": INDEX_HEADER + index_rows}
+    for scope, rows in statements.items():
+        members[f"{prefix}_cia_aberta_{scope}_{year}.csv"] = DRE_HEADER + rows
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / f"{prefix}_cia_aberta_{year}.zip"
+        path.write_bytes(make_zip(members))
+        return cvm.load_filings([path], kind, accounts=accounts)
+
+
 def itr_only_stores(tmp: Path) -> tuple[cvm.FilingStore, cvm.FilingStore]:
     """A company with an ITR and no DFP at all, so the fiscal year before its year-to-date is missing."""
     index = (
@@ -137,6 +157,121 @@ class FilingStoreTests(StoreCase):
                 cvm.load_filings([broken], cvm.DFP)
         self.assertEqual(ctx.exception.exit_code, 4)
         self.assertIn("DT_RECEB", ctx.exception.reason)
+
+
+class StatementChoiceTests(unittest.TestCase):
+    """F18: consolidated when the ÚLTIMO DRE 3.01 or 3.11 is non-zero; else individual when the filing has individual DRE rows; else consolidated."""
+
+    CNPJ = "12.345.678/0001-90"
+    DT_REFER = "2025-12-31"
+    DAY = date(2026, 8, 7)
+
+    def store(self, con: list[tuple[str, str]], ind: list[tuple[str, str]] | None = None, accounts=None) -> cvm.FilingStore:
+        index = f"{self.CNPJ};{self.DT_REFER};1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n"
+        statements = {"DRE_con": "".join(dre_line(self.CNPJ, self.DT_REFER, "ÚLTIMO", "2025-01-01", self.DT_REFER, a, v) for a, v in con)}
+        if ind is not None:
+            statements["DRE_ind"] = "".join(dre_line(self.CNPJ, self.DT_REFER, "ÚLTIMO", "2025-01-01", self.DT_REFER, a, v) for a, v in ind)
+        return inline_store("DFP", 2025, index, statements, accounts=accounts)
+
+    def statement_of(self, store: cvm.FilingStore) -> str:
+        return cvm.usable(store, self.CNPJ, self.DAY)[0].statement
+
+    def test_a_consolidated_dre_that_is_all_zero_is_individual_when_the_filing_has_individual_rows(self):
+        # TIMS-shaped: DRE_con 3.01 and 3.11 are 0, DRE_ind carries the values.
+        store = self.store(con=[("3.01", "0.00"), ("3.11", "0.00")], ind=[("3.01", "5000.00")])
+        self.assertEqual(self.statement_of(store), "individual")
+        self.assertEqual(cvm.row_at(store, self.CNPJ, date(2025, 12, 31), "3.01"), (date(2025, 1, 1), 5000.0))
+
+    def test_a_non_zero_consolidated_3_01_stays_consolidated_even_with_individual_rows(self):
+        store = self.store(con=[("3.01", "1000.00"), ("3.11", "0.00")], ind=[("3.01", "9999.00")])
+        self.assertEqual(self.statement_of(store), "consolidated")
+        self.assertEqual(cvm.row_at(store, self.CNPJ, date(2025, 12, 31), "3.01"), (date(2025, 1, 1), 1000.0))
+
+    def test_a_non_zero_consolidated_3_11_alone_keeps_the_consolidated_statements(self):
+        store = self.store(con=[("3.01", "0.00"), ("3.11", "80.00")], ind=[("3.01", "9999.00")])
+        self.assertEqual(self.statement_of(store), "consolidated")
+
+    def test_an_all_zero_consolidated_dre_with_no_individual_rows_stays_consolidated(self):
+        store = self.store(con=[("3.01", "0.00"), ("3.11", "0.00")])
+        self.assertEqual(self.statement_of(store), "consolidated")
+        self.assertEqual(cvm.row_at(store, self.CNPJ, date(2025, 12, 31), "3.01"), (date(2025, 1, 1), 0.0))
+
+    def test_the_statement_choice_does_not_depend_on_an_account_filter(self):
+        # The individual DRE holds only 3.02 and the filter keeps none of its rows, yet the filing has individual rows.
+        store = self.store(con=[("3.01", "0.00"), ("3.11", "0.00")], ind=[("3.02", "100.00")], accounts={"1"})
+        self.assertEqual(self.statement_of(store), "individual")
+
+
+class NetIncomeTests(unittest.TestCase):
+    """F7 (A-21): per DRE column, NET_INCOME is 3.11.01 when its value is non-zero, else 3.11."""
+
+    CNPJ = "23.456.789/0001-01"
+
+    def dfp(self, detail: str, total: str, accounts=None) -> cvm.FilingStore:
+        rows = dre_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.11.01", detail)
+        rows += dre_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.11", total)
+        index = f"{self.CNPJ};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n"
+        return inline_store("DFP", 2025, index, {"DRE_con": rows}, accounts=accounts)
+
+    def test_a_zero_detail_row_falls_back_to_3_11(self):
+        store = self.dfp(detail="0.00", total="-120.00")
+        self.assertEqual(cvm.annual(store, self.CNPJ, date(2026, 8, 7), cvm.NET_INCOME), cvm.Dated(-120.0, date(2026, 3, 20)))
+
+    def test_a_non_zero_detail_row_is_the_net_income(self):
+        store = self.dfp(detail="80.00", total="100.00")
+        self.assertEqual(cvm.annual(store, self.CNPJ, date(2026, 8, 7), cvm.NET_INCOME), cvm.Dated(80.0, date(2026, 3, 20)))
+
+    def test_an_account_filter_naming_only_3_11_still_yields_net_income(self):
+        store = self.dfp(detail="80.00", total="100.00", accounts={"3.11"})
+        self.assertEqual(cvm.annual(store, self.CNPJ, date(2026, 8, 7), cvm.NET_INCOME), cvm.Dated(80.0, date(2026, 3, 20)))
+
+    def test_ttm_of_an_itr_combines_the_per_row_net_income_of_each_column(self):
+        # FY 2025 net income 200 (3.11.01 non-zero). ITR 2026-06-30: YTD 3.11.01 = 50 (non-zero, so 50);
+        # its prior-year YTD has 3.11.01 = 0, so the 3.11 row, 30, is used. TTM = 200 + 50 - 30 = 220.
+        dfp = self.dfp(detail="200.00", total="210.00")
+        itr_rows = (
+            dre_line(self.CNPJ, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.11.01", "50.00")
+            + dre_line(self.CNPJ, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.11", "60.00")
+            + dre_line(self.CNPJ, "2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", "3.11.01", "0.00")
+            + dre_line(self.CNPJ, "2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", "3.11", "30.00")
+        )
+        index = f"{self.CNPJ};2026-06-30;1;CASE S.A.;1;ITR;1;2026-08-06 18:00:00;\n"
+        itr = inline_store("ITR", 2026, index, {"DRE_con": itr_rows})
+        self.assertEqual(
+            cvm.ttm(dfp, itr, self.CNPJ, date(2026, 8, 7), cvm.NET_INCOME),
+            cvm.Dated(220.0, date(2026, 8, 6)),
+        )
+
+
+class ShareScaleFactorTests(unittest.TestCase):
+    """F13 (A-18): the factor is the power of ten from 10^-2 to 10^3 nearest the B3 count on a log scale."""
+
+    def test_the_factor_is_the_power_of_ten_nearest_the_b3_count(self):
+        cases = [
+            ((1_000, 10_000), 10),  # ratio 10
+            ((10_000, 1_000), 0.1),  # ratio 0.1, an ESPA-shaped count
+            ((100_000, 1_000), 0.01),  # ratio 0.01
+            ((1, 100), 100),  # ratio 100
+            ((31_258, 31_258_000), 1000),  # ratio 1000, EUCATEX: counts in thousands
+            ((10, 10), 1),  # ratio 1
+            ((10_000, 31_000), 1),  # ratio 3.1: below the √10 boundary, the count stays as filed
+            ((10_000, 32_000), 10),  # ratio 3.2: just past the √10 boundary
+            ((1_000, 5_000), 10),  # ratio 5, a 1:5 split: the nearest power of ten, off by 2x
+            ((1, 50_000), 1000),  # ratio 50,000: 1000, never 10^4
+            ((10_000_000, 5_000), 0.01),  # ratio 0.0005: 0.01, never 10^-3
+        ]
+        for (cvm_total, b3_total), expected in cases:
+            with self.subTest(cvm_total=cvm_total, b3_total=b3_total):
+                self.assertEqual(cvm.share_scale(cvm_total, b3_total), (expected, True))
+
+    def test_the_factors_are_the_powers_of_ten_from_1e_minus_2_to_1e_3(self):
+        self.assertEqual(cvm.SHARE_SCALE_FACTORS, (0.01, 0.1, 1, 10, 100, 1000))
+
+
+class SubAccountBalanceTests(StoreCase):
+    def test_balance_of_a_sub_account_is_its_own_row_of_the_newest_usable_period(self):
+        # ALFA's ITR 2026-06-30 (received 2026-08-06) holds 2.03.09 (non-controlling interests) 2500 beside 2.03 31000.
+        self.assertEqual(cvm.balance(self.dfp, self.itr, ALFA, date(2026, 8, 7), "2.03.09"), cvm.Dated(2500.0, date(2026, 8, 6)))
 
 
 class AccountFilterTests(StoreCase):

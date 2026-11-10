@@ -33,6 +33,10 @@ INDIVIDUAL = "individual"
 ULTIMO = "ÚLTIMO"
 PENULTIMO = "PENÚLTIMO"
 SCALE = {"MIL": 1000, "UNIDADE": 1}
+NET_INCOME = "LL"  # A-21 (F7): per DRE column, 3.11.01 when non-zero, else 3.11
+STATEMENT_ACCOUNTS = ("3.01", "3.11")  # F18: a consolidated DRE with either one non-zero is consolidated
+NET_INCOME_ACCOUNTS = ("3.01", "3.11", "3.11.01")  # the rows load_filings keeps whatever accounts it is asked for
+SHARE_SCALE_FACTORS = (0.01, 0.1, 1, 10, 100, 1000)  # A-18 (F13): the powers of ten from 10^-2 to 10^3
 
 _INDEX = re.compile(r"^(dfp|itr)_cia_aberta_(\d{4})\.csv$", re.IGNORECASE)
 _STATEMENT = re.compile(r"^(dfp|itr)_cia_aberta_(BPA|BPP|DRE)_(con|ind)_(\d{4})\.csv$", re.IGNORECASE)
@@ -112,22 +116,22 @@ class FilingStore:
 def load_filings(zip_paths: Iterable[Path], kind: str, accounts: Iterable[str] | None = None) -> FilingStore:
     """Read the DFP or ITR zips of one kind (PIT-01, A-6, IND-01).
 
-    accounts, when given, keeps the statement rows of those CD_CONTA only. The values of the kept
-    accounts are the same as with every account; the rest of the statements are not held in memory.
+    accounts, when given, keeps the statement rows of those CD_CONTA only, plus the accounts that the
+    statement choice and NET_INCOME read (3.01, 3.11, 3.11.01). The values of the kept accounts are the
+    same as with every account; the rest of the statements are not held in memory.
     """
     if kind not in (DFP, ITR):
         raise ValueError(f"unknown filing kind: {kind}")
     prefix = kind.lower()
     paths = [Path(p) for p in zip_paths]
     latest = _latest_versions(paths, prefix)
-    wanted = None if accounts is None else frozenset(accounts)
+    wanted = None if accounts is None else frozenset(accounts) | frozenset(NET_INCOME_ACCOUNTS)
     statements, compositions = _collect_statements(paths, prefix, latest, wanted)
     periods: dict[str, dict[date, _Period]] = {}
     for (cnpj, dt_refer), (versao, dt_receb) in latest.items():
         key = (cnpj, dt_refer)
         by_scope = statements.get(key, {})
-        statement = CONSOLIDATED if ("con", "DRE") in by_scope else INDIVIDUAL
-        scope = "con" if statement == CONSOLIDATED else "ind"
+        statement, scope = _statement(by_scope)
         filing = Filing(kind=kind, cnpj=cnpj, dt_refer=dt_refer, dt_receb=dt_receb, versao=versao, statement=statement)
         period = _Period(filing=filing)
         for stmt in ("BPA", "BPP"):
@@ -146,6 +150,7 @@ def load_filings(zip_paths: Iterable[Path], kind: str, accounts: Iterable[str] |
             current = period.dre.get(account_key)
             if current is None or dt_ini < current.dt_ini:
                 period.dre[account_key] = _DreRow(dt_ini=dt_ini, value=value, desc=row["DS_CONTA"].strip())
+        _add_net_income(period)
         if key in compositions:
             period.composition = _composition(*compositions[key])
         periods.setdefault(cnpj, {})[dt_refer] = period
@@ -235,18 +240,18 @@ def shares(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Shares | N
     return Shares(on=on, pref=pref, total=total, dt_receb=newest.filing.dt_receb)
 
 
-def share_scale(cvm_total: int, b3_total: int | None) -> tuple[int, bool]:
-    """Scale factor f in {1, 1000} of a CVM share count, and whether B3 verified it (A-18).
+def share_scale(cvm_total: int, b3_total: int | None) -> tuple[float, bool]:
+    """Scale factor f in SHARE_SCALE_FACTORS of a CVM share count, and whether B3 verified it (A-18, F13).
 
-    The factor minimises |log10(cvm_total * f / b3_total)|. Without a positive B3 count
-    the factor is 1 and the result is unverified.
+    f minimises |log10(cvm_total * f / b3_total)|, so it is the power of ten nearest the B3 count on a log scale;
+    a tie goes to the smaller factor. Without a positive B3 count f is 1 and the result is unverified.
     """
     if b3_total is None or b3_total <= 0:
-        return 1, False
+        return 1.0, False
     if cvm_total <= 0:
         raise ValueError("share_scale needs a positive CVM share count")
-    factor = min((1, 1000), key=lambda f: abs(math.log10(cvm_total * f / b3_total)))
-    return factor, True
+    factor = min(SHARE_SCALE_FACTORS, key=lambda f: abs(math.log10(cvm_total * f / b3_total)))
+    return float(factor), True
 
 
 def dre_description(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str = "3.01") -> str | None:
@@ -354,9 +359,11 @@ def _collect_statements(
                         key = (row["CNPJ_CIA"].strip(), _date(row["DT_REFER"], member))
                         if key not in latest or _int(row["VERSAO"], member) != latest[key][0]:
                             continue
+                        # The statement exists even when the account filter keeps none of its rows (F18).
+                        bucket = statements.setdefault(key, {}).setdefault((scope, stmt), [])
                         if accounts is not None and row["CD_CONTA"].strip() not in accounts:
                             continue
-                        statements.setdefault(key, {}).setdefault((scope, stmt), []).append((member, row))
+                        bucket.append((member, row))
                     continue
                 composition = _COMPOSITION.match(member)
                 if composition and composition.group(1).lower() == prefix:
@@ -366,6 +373,28 @@ def _collect_statements(
                             continue
                         compositions[key] = (member, row)
     return statements, compositions
+
+
+def _statement(by_scope: dict[tuple[str, str], list]) -> tuple[str, str]:
+    """(statement, scope) of a filing by F18: consolidated when its ÚLTIMO DRE 3.01 or 3.11 is non-zero;
+    individual when it has individual DRE rows; consolidated otherwise."""
+    for member, row in by_scope.get(("con", "DRE"), []):
+        if row["CD_CONTA"].strip() in STATEMENT_ACCOUNTS and row["ORDEM_EXERC"].strip() == ULTIMO:
+            value = _value(row, member)
+            if value is not None and value != 0:
+                return CONSOLIDATED, "con"
+    if ("ind", "DRE") in by_scope:
+        return INDIVIDUAL, "ind"
+    return CONSOLIDATED, "con"
+
+
+def _add_net_income(period: _Period) -> None:
+    """Add the LL rows (F7, A-21): per ORDEM_EXERC holding 3.11, the 3.11.01 row when its value is non-zero, else 3.11."""
+    for (account, ordem), row in list(period.dre.items()):
+        if account != "3.11":
+            continue
+        detail = period.dre.get(("3.11.01", ordem))
+        period.dre[(NET_INCOME, ordem)] = detail if detail is not None and detail.value != 0 else row
 
 
 def _composition(member: str, row: dict[str, str]) -> tuple[int, int, int] | None:

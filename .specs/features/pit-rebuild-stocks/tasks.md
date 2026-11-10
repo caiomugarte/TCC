@@ -730,12 +730,14 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cvm.py`: a TIMS-shaped filing (`DRE_con` `3.01` and `3.11` `ÚLTIMO` 0, `DRE_ind` non-zero) is `statement: individual` and its balances and DRE come from `_ind`; a filing with `DRE_con` `3.01` non-zero and `3.11` 0 stays consolidated; a filing with all-zero `DRE_con` and no `_ind` stays consolidated; T7's `test_company_without_consolidated_income_statement_is_recorded_as_individual` still passes.
-- [ ] `NET_INCOME`: a DFP with `3.11.01 = 0` and `3.11 = −120` gives `annual(..., cvm.NET_INCOME)` −120; one with `3.11.01 = 80` and `3.11 = 100` gives 80; an ITR whose `ÚLTIMO` row has `3.11.01 = 50` and whose `PENÚLTIMO` row has `3.11.01 = 0` and `3.11 = 30` gives `ttm` = `FY_prev` + 50 − 30 (hand-computed; the r4 per-company choice gives a different number); `load_filings(..., accounts={"3.11"})` still yields `NET_INCOME`.
-- [ ] `share_scale` with `b3_total / cvm_total` = 10 → 10, 0.1 → 0.1 (ESPA-shaped), 0.01 → 0.01, 100 → 100, 1000 → 1000 (EUCATEX), 1 → 1, 3.1 → 1, 3.2 → 10 (the √10 boundary), 5 → 10 (a 1:5 split), 50,000 → 1000 (never 10⁴), 0.0005 → 0.01 (never 10⁻³), each `verified`; `None` and 0 → `(1, False)`; T8's `test_share_scale_picks_the_factor_that_matches_b3_or_is_unverified` keeps its 1000 and unverified cases.
-- [ ] `balance(..., "2.03.09")` returns a `2.03.09` BPP row of the fixture.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_cvm.py`
-- [ ] Test count: ≥ 31 tests pass in the file (24 plus ≥ 7)
+- [x] `tests/test_pit_rebuild_cvm.py`: a TIMS-shaped filing (`DRE_con` `3.01` and `3.11` `ÚLTIMO` 0, `DRE_ind` non-zero) is `statement: individual` and its balances and DRE come from `_ind`; a filing with `DRE_con` `3.01` non-zero and `3.11` 0 stays consolidated; a filing with all-zero `DRE_con` and no `_ind` stays consolidated; T7's `test_company_without_consolidated_income_statement_is_recorded_as_individual` still passes.
+- [x] `NET_INCOME`: a DFP with `3.11.01 = 0` and `3.11 = −120` gives `annual(..., cvm.NET_INCOME)` −120; one with `3.11.01 = 80` and `3.11 = 100` gives 80; an ITR whose `ÚLTIMO` row has `3.11.01 = 50` and whose `PENÚLTIMO` row has `3.11.01 = 0` and `3.11 = 30` gives `ttm` = `FY_prev` + 50 − 30 (hand-computed; the r4 per-company choice gives a different number); `load_filings(..., accounts={"3.11"})` still yields `NET_INCOME`.
+- [x] `share_scale` with `b3_total / cvm_total` = 10 → 10, 0.1 → 0.1 (ESPA-shaped), 0.01 → 0.01, 100 → 100, 1000 → 1000 (EUCATEX), 1 → 1, 3.1 → 1, 3.2 → 10 (the √10 boundary), 5 → 10 (a 1:5 split), 50,000 → 1000 (never 10⁴), 0.0005 → 0.01 (never 10⁻³), each `verified`; `None` and 0 → `(1, False)`; T8's `test_share_scale_picks_the_factor_that_matches_b3_or_is_unverified` keeps its 1000 and unverified cases.
+- [x] `balance(..., "2.03.09")` returns a `2.03.09` BPP row of the fixture.
+- [x] Gate check passes: Quick for `test_pit_rebuild_cvm.py` (36 OK: 24 unchanged, 12 new; pit suite 253 OK; compileall OK)
+- [x] Test count: ≥ 31 tests pass in the file (24 plus ≥ 7) - 36 pass
+
+> Done (T24). Two choices and one consequence. (1) The statement choice records an individual DRE before the account filter drops its rows, so a filtered load classifies a filing as the full load does. (2) `load_filings` keeps 3.01, 3.11 and 3.11.01 under any `accounts` filter, as the task requires. (3) `share_scale` now returns the float factor of the powers of ten (F13). `cli.py` multiplies its counts by it, so a verified factor other than 1 or 1000 applies from this commit; T29 rounds the counts and lists them in `share_scale.scaled`.
 
 **Tests**: unit
 **Gate**: quick
