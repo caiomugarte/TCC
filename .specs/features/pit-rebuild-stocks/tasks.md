@@ -1085,11 +1085,11 @@ T36
 
 **Done when**:
 
-- [ ] The diff of `py/pit_rebuild/cli.py` is that one docstring line; no code changes
-- [ ] The exit-code table still parses: `tests/test_pit_rebuild_errors.py` and `tests/test_pit_rebuild_artifact.py` pass
-- [ ] Build gate: pit suite OK, `compileall` OK, protected paths unchanged against `origin/develop`, root suite OK
+- [x] The diff of `py/pit_rebuild/cli.py` is that one docstring line; no code changes
+- [x] The exit-code table still parses: `tests/test_pit_rebuild_errors.py` and `tests/test_pit_rebuild_artifact.py` pass (inside the pit suite, 320 OK)
+- [x] Build gate: pit suite 320 OK; `compileall` OK; protected paths unchanged against `origin/develop` (`--exit-code` 0); root suite 907 OK, 2 skipped (898 before plus the 9 new tests)
 
-**Tests**: none (docstring; the exit-code table keeps its tests)
+**Tests**: none (docstring only; the Test Coverage Matrix's Docs row says none, build gate only, and the exit-code table keeps its tests in `test_pit_rebuild_errors.py` and `test_pit_rebuild_artifact.py`)
 **Gate**: build
 **Commit**: `docs(pit-rebuild): use the as-of date in the first example (#59)`
 

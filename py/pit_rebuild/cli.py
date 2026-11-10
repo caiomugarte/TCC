@@ -3,7 +3,7 @@
 Run from the repository root:
 
     python3 py/pit_rebuild report --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv \\
-        --date 2026-11-06 --si snapshots/data/selectors-2026-11-06/stocks.csv --offline
+        --date 2026-11-05 --si snapshots/data/selectors-2026-11-06/stocks.csv --offline
 
     the committed run takes the collection dates and a filings cutoff as well (A-11, A-22):
 
