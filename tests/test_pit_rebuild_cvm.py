@@ -127,6 +127,24 @@ class FilingStoreTests(StoreCase):
         self.assertEqual((after_refile[0].versao, after_refile[0].dt_receb), (2, date(2026, 8, 20)))
         self.assertFalse(cvm.refiled_after_d(self.dfp, self.itr, REFILED, date(2026, 8, 20)))
 
+    def test_refiled_period_is_flagged_only_between_its_first_and_its_latest_delivery(self):
+        # REFILED 2026-06-30: version 1 received 2026-08-05 (first delivery), version 2 received 2026-08-20 (latest).
+        filing = self.itr.period(REFILED, date(2026, 6, 30)).filing
+        self.assertEqual((filing.first_receb, filing.dt_receb, filing.versao), (date(2026, 8, 5), date(2026, 8, 20), 2))
+        self.assertFalse(cvm.refiled_after_d(self.dfp, self.itr, REFILED, date(2026, 8, 4)))  # nothing delivered yet
+        self.assertTrue(cvm.refiled_after_d(self.dfp, self.itr, REFILED, date(2026, 8, 5)))  # first delivery on d
+        self.assertTrue(cvm.refiled_after_d(self.dfp, self.itr, REFILED, date(2026, 8, 19)))  # latest not yet delivered
+
+    def test_period_whose_first_version_arrives_after_d_is_not_flagged(self):
+        # EDGE's ITR 2026-06-30 has one version, received 2026-08-08, after d = 2026-08-07. EDGE's DFP 2025 (received
+        # on d) is the newest usable filing, so the ITR is the only candidate for the flag. With no version at d it is
+        # not a refiling.
+        d = date(2026, 8, 7)
+        filing = self.itr.period(EDGE, date(2026, 6, 30)).filing
+        self.assertEqual((filing.first_receb, filing.dt_receb), (date(2026, 8, 8), date(2026, 8, 8)))
+        self.assertEqual(cvm.usable(self.dfp, EDGE, d)[0].dt_refer, date(2025, 12, 31))
+        self.assertFalse(cvm.refiled_after_d(self.dfp, self.itr, EDGE, d))
+
     def test_company_without_consolidated_income_statement_is_recorded_as_individual(self):
         indiv = cvm.usable(self.dfp, INDIV, date(2026, 3, 25))
         self.assertEqual(indiv[0].statement, "individual")

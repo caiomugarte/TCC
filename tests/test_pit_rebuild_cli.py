@@ -10,7 +10,7 @@ numbers, so every expectation below is worked out by hand from the fixture value
 - NOBX (no B3 record): share scale unverified; P/L 6.00.
 - SEMP (PN quoted only in May 2026): VM of SEMP3 = 10 M x 20.00 + 10 M x 20.00 (PN priced at the ON quote).
 - BANC (Bancos): the financial group.
-- REFL (DFP 2025 delivered 2026-09-15): refiled after the first date; P/L 10.00 on the first, 5.00 on the second.
+- REFL (DFP 2025: version 1 delivered 2026-03-31, version 2 on 2026-09-15): re-filed across the first date; P/L 10.00 on the first, 5.00 on the second.
 - NOUS (DFP delivered 2026-12-01): no usable filing. NOQT (no quote): no_quote. ZZZZ (not in FCA nor B3): unclassified.
 - SOLO (B3 only, pages 1 and 2): DY 5.00 on the first date (the 2026-10-29 record is not known yet), 15.00 on the second.
 - SHRT (B3 history from 2026-02-10): Yahoo, DY 5.00 and 8.00; the 2026-10-15 Yahoo event is after the first date.
@@ -219,7 +219,8 @@ class ReportSuccessTests(ReportCase):
             {"ticker": "ZZZZ3", "si_setor": "Financeiro e Outros", "reason": "not_in_fca_or_b3"},
         ])
         self.assertEqual(report["dates"][ISO1]["mapping"]["financial"], [{"ticker": "BANC3", "rule": "setor_ativ"}])
-        # REFL's 2025 filing reached the CVM after the first date: that date uses its 2024 filing.
+        # REFL's 2025 filing was re-filed across the first date: version 1 had arrived by then, version 2 after it,
+        # so that date uses its 2024 filing and REFL3 is flagged.
         self.assertEqual(report["dates"][ISO1]["mapping"]["refiled_after_d"], ["REFL3"])
         self.assertEqual(report["dates"][ISO2]["mapping"]["refiled_after_d"], [])
         self.assertEqual(report["dates"][ISO2]["fields"]["P/L"]["non_financial"]["within"], 11)

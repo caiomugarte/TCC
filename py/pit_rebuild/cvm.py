@@ -56,12 +56,17 @@ _COMPOSITION_COLUMNS = (
 
 @dataclass(frozen=True)
 class Filing:
-    """The filing a value comes from: kind, period end, DT_RECEB of its latest version, statement."""
+    """The filing a value comes from: kind, period end, DT_RECEB of its latest version, statement.
+
+    first_receb is the earliest DT_RECEB of any version of the filing, its first delivery (A-6). Only
+    refiled_after_d reads it; the usage rule reads dt_receb alone.
+    """
 
     kind: str
     cnpj: str
     dt_refer: date
     dt_receb: date
+    first_receb: date
     versao: int
     statement: str
 
@@ -128,11 +133,19 @@ def load_filings(zip_paths: Iterable[Path], kind: str, accounts: Iterable[str] |
     wanted = None if accounts is None else frozenset(accounts) | frozenset(NET_INCOME_ACCOUNTS)
     statements, compositions = _collect_statements(paths, prefix, latest, wanted)
     periods: dict[str, dict[date, _Period]] = {}
-    for (cnpj, dt_refer), (versao, dt_receb) in latest.items():
+    for (cnpj, dt_refer), (versao, dt_receb, first_receb) in latest.items():
         key = (cnpj, dt_refer)
         by_scope = statements.get(key, {})
         statement, scope = _statement(by_scope)
-        filing = Filing(kind=kind, cnpj=cnpj, dt_refer=dt_refer, dt_receb=dt_receb, versao=versao, statement=statement)
+        filing = Filing(
+            kind=kind,
+            cnpj=cnpj,
+            dt_refer=dt_refer,
+            dt_receb=dt_receb,
+            first_receb=first_receb,
+            versao=versao,
+            statement=statement,
+        )
         period = _Period(filing=filing)
         for stmt in ("BPA", "BPP"):
             for member, row in by_scope.get((scope, stmt), []):
@@ -164,12 +177,16 @@ def usable(store: FilingStore, cnpj: str, d: date) -> list[Filing]:
 
 
 def refiled_after_d(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> bool:
-    """True when a newer period than the newest usable filing was received after d (A-6, PIT-03)."""
+    """True when a newer period than the newest usable filing was re-filed across d (A-6, PIT-03, AD-031).
+
+    Re-filed: an earlier version of that period arrived on or before d and its latest version after d.
+    A period whose first version arrived after d had no version at d and does not count.
+    """
     newest = _newest_usable(dfp, itr, cnpj, d)
     if newest is None:
         return False
     return any(
-        p.filing.dt_refer > newest.filing.dt_refer and p.filing.dt_receb > d
+        p.filing.dt_refer > newest.filing.dt_refer and p.filing.first_receb <= d < p.filing.dt_receb
         for store in (dfp, itr)
         for p in store.periods(cnpj)
     )
@@ -323,8 +340,10 @@ def _shift_years(day: date, years: int) -> date:
         return day.replace(year=day.year + years, day=28)
 
 
-def _latest_versions(paths: list[Path], prefix: str) -> dict[tuple[str, date], tuple[int, date]]:
+def _latest_versions(paths: list[Path], prefix: str) -> dict[tuple[str, date], tuple[int, date, date]]:
+    """(VERSAO, DT_RECEB) of the latest version of each filing, with the earliest DT_RECEB of any version (A-6)."""
     latest: dict[tuple[str, date], tuple[int, date]] = {}
+    first: dict[tuple[str, date], date] = {}
     for path in paths:
         with zipfile.ZipFile(path) as archive:
             for member, full_name in _members(archive):
@@ -337,13 +356,14 @@ def _latest_versions(paths: list[Path], prefix: str) -> dict[tuple[str, date], t
                     dt_receb = _date(row["DT_RECEB"], member)
                     if key not in latest or versao > latest[key][0]:
                         latest[key] = (versao, dt_receb)
-    return latest
+                    first[key] = min(first.get(key, dt_receb), dt_receb)
+    return {key: (versao, dt_receb, first[key]) for key, (versao, dt_receb) in latest.items()}
 
 
 def _collect_statements(
     paths: list[Path],
     prefix: str,
-    latest: dict[tuple[str, date], tuple[int, date]],
+    latest: dict[tuple[str, date], tuple[int, date, date]],
     accounts: frozenset[str] | None = None,
 ):
     statements: dict[tuple[str, date], dict[tuple[str, str], list[tuple[str, dict[str, str]]]]] = {}
