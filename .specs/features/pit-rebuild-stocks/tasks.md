@@ -1034,9 +1034,9 @@ T36
 
 **Done when**:
 
-- [ ] Removing the cut at `py/pit_rebuild/cvm.py:208` fails the after-d test; the original passes it
-- [ ] Changing `<=` to `<` at `py/pit_rebuild/cvm.py:208` fails the on-d test; the original passes it
-- [ ] Pit suite passes: 319 OK
+- [x] Removing the cut at `py/pit_rebuild/cvm.py:208` fails the after-d test (`FAILED (failures=1)`); the original passes it
+- [x] Changing `<=` to `<` at `py/pit_rebuild/cvm.py:208` fails the on-d test (`FAILED (failures=1)`); the original passes it
+- [x] Pit suite passes: 319 OK (317 + 2)
 
 **Tests**: unit
 **Gate**: full

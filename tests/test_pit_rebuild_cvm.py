@@ -468,5 +468,39 @@ class PeriodReceiptBoundaryTests(unittest.TestCase):
         self.assertEqual(cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"), cvm.Dated(1100.0, self.D))
 
 
+class AnnualBaseReceiptTests(unittest.TestCase):
+    """annual() takes its base from the DFPs received by d (T34, G2): a later DFP received after d does not move it."""
+
+    CNPJ = "10.101.101/0001-01"
+    D = date(2026, 8, 7)
+
+    def store(self, receipt_2025: str) -> cvm.FilingStore:
+        # DFPs 2019, 2020 and 2024 are received before d; DFP 2025, the newest, is received at receipt_2025.
+        filings = [
+            (2019, "2020-03-20 18:00:00", "100.00"),
+            (2020, "2021-03-20 18:00:00", "200.00"),
+            (2024, "2025-03-20 18:00:00", "800.00"),
+            (2025, receipt_2025, "1000.00"),
+        ]
+        index = "".join(f"{self.CNPJ};{year}-12-31;1;CASE S.A.;1;DFP;1;{receipt};\n" for year, receipt, _ in filings)
+        rows = "".join(
+            dre_line(self.CNPJ, f"{year}-12-31", "ÚLTIMO", f"{year}-01-01", f"{year}-12-31", "3.01", value)
+            for year, _, value in filings
+        )
+        return inline_store("DFP", 2025, index, {"DRE_con": rows})
+
+    def test_a_dfp_received_after_d_does_not_move_the_base_of_years_back(self):
+        store = self.store("2026-08-08 09:00:00")
+        # The base is DFP 2024, received 2025-03-20; five years back from it is DFP 2019.
+        self.assertEqual(cvm.annual(store, self.CNPJ, self.D, "3.01"), cvm.Dated(800.0, date(2025, 3, 20)))
+        self.assertEqual(cvm.annual(store, self.CNPJ, self.D, "3.01", years_back=5), cvm.Dated(100.0, date(2020, 3, 20)))
+
+    def test_a_dfp_received_on_d_is_the_base(self):
+        store = self.store("2026-08-07 12:00:00")
+        self.assertEqual(cvm.annual(store, self.CNPJ, self.D, "3.01"), cvm.Dated(1000.0, self.D))
+        # Five years back from DFP 2025 is DFP 2020, received 2021-03-20.
+        self.assertEqual(cvm.annual(store, self.CNPJ, self.D, "3.01", years_back=5), cvm.Dated(200.0, date(2021, 3, 20)))
+
+
 if __name__ == "__main__":
     unittest.main()
