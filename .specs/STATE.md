@@ -253,33 +253,35 @@
 - **Status**: accepted - approved by the human on 2026-11-09 together with the `pit-rebuild-stocks` spec and design
 
 ## Handoff
-
 - **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
-- **Phase / Task**: EXECUTE Phases 2 and 3 done (batch b2, T7-T16). Next: T17, the `report` subcommand (phase 4). Batch b3 = Phase 4 (T17-T20). The feature-level Verifier has not run; it runs after T20.
-- **Human checkpoint**: approved on 2026-11-09 (spec defaults A-1..A-19, design approach A, AD-031, task list T1-T20, counted 23).
+- **Phase / Task**: EXECUTE Phase 4 (batch b3). T17, T18 and T19 are done. T20 stopped before committing the report: the real `fetch` ran and the offline `report` ran, but two spec defects (below) need a decision first. The feature-level Verifier has not run.
 - **Completed (branch t3/issue-59)**:
-  - Phase 2: T7 `64c3377` CVM filings point-in-time (8 tests); T8 `0a931ca` ttm, annual, balance, shares, share_scale, dre_description (22 tests in the file); T9 `fd84acf` COTAHIST quotes, liquidity, ISIN, calendar, class_prices (13 tests); T10 `f5eec5a` B3 and Yahoo dividends, window and leak guard (18 tests); T11 `b844ed5` ticker mapping, units, financial group, quoted universe (15 tests).
-  - Phase 3: T12 `f405281` the 19 fields with reasons and the PIT guard (18 tests); T13 `453fbd9` tolerance, differences, p90, per-indicator statistics (13 tests); T14 `0788ead` verdicts per indicator and for the class (19 tests in the file); T15 `59fb189` earliest years, DY coverage, full-rebuild years, effort (11 tests); T16 `7e38b2a` report JSON and Markdown (15 tests).
-- **Gates**: Phase 2 Build: `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"` 113 OK; compileall OK; root suite 700 OK, 2 skipped. Phase 3 Build: pit suite 176 OK; compileall OK; root suite 763 OK, 2 skipped. Protected paths unchanged against `origin/develop` (9f65467) at both gates (exit 0).
-- **Gate note**: unchanged from Phase 1. The local `develop` ref is stale; the gate compares against `origin/develop` (9f65467), as the orchestrator accepted.
-- **In-progress** (file:line): none.
-- **Next step**: write `py/pit_rebuild/cli.py` (the `report` subcommand, argument checks, exit codes 0-5) and `py/pit_rebuild/__main__.py`, with the CLI-05 tests through `main([...])`. Assemble each ticker's `indicators.TickerInputs` from cvm, cotahist and dividends: LL is 3.11.01, else 3.11; counts go through `cvm.share_scale` before they reach `n_on` and `n_pref`.
-- **Blockers**: none.
+  - T17 `78316b3`: `report` subcommand, argument checks and exit codes 0-5 (`tests/test_pit_rebuild_cli.py`, 20 tests at T17).
+  - T18 `151906a`: `fetch` subcommand. It runs the same acquisition as `report`, then the CVM listings, the COTAHIST probes for 2005-2012 and the Content-Length of every full-rebuild file (34 CLI tests in total).
+  - T19 `20ca78c`: `docs/validation/README.md` section "Reconstrução PIT de ações (issue #59)". No numbers. Its exit-code table has the codes and meanings of the `cli.py` docstring; the wording is Portuguese there and English in the code.
+  - Fix `4ec8665` (not a task; a parser change ahead of T20): `cvm.load_filings(accounts=...)` keeps only the 13 statement accounts the rebuild reads. Peak memory on the real run dropped from 6.4 GB to 1.4 GB. The offline report is the same JSON apart from `tool_commit` and the measured seconds.
+- **Gates at 4ec8665**: pit suite 212 OK; root suite 799 OK, 2 skipped (`$PY` = `/home/caio/Documents/projetos/TCC/.venv/bin/python`). Protected paths (`data`, `snapshots`, `baselines`, `py/core`, `api`, `py/config.py`, `py/pit_validation.py`) unchanged against `origin/develop` 9f65467.
+- **Real run (T20), so far**:
+  - `fetch --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv --date 2026-11-06 --si /home/caio/Documents/projetos/TCC/snapshots/data/selectors-2026-11-06/stocks.csv`: exit 0, wall 9:47. 575 cache files, 377 MB: COTAHIST 2 files (179 MB), DFP 8 files (91 MB), ITR 3 files (87 MB), B3 company records 237, B3 cash pages 284, Yahoo files 20 with data, FCA 17, cadastro 1. The COTAHIST probes for 2005-2012 are all present, so its floor is 2005. 67 Content-Length sizes are recorded.
+  - `report --offline` (same arguments, `--out-dir` pointed at scratch): exit 0 in 47 s, 1.4 GB peak. Nothing was written to `docs/validation`.
+  - Provisional first-pass numbers, NOT committed (they still carry defects 1 and 2): class verdict `não reconstruível`; financial group `não reconstruível`; mapped 237 of 269 on 2026-08-07 and 245 of 274 on 2026-11-06.
+- **Spec defects found on real data (stop; decision needed)**:
+  1. Quote lot. The design keeps only COTAHIST `CODBDI == 02` (lote padrão). A-7 defines PRECO as the last close of the ticker's last trading session. B3's layout (`SeriesHistoricas_Layout.pdf`, revision 02, annex "TABELA DE CODBDI") says: 02 LOTE PADRAO, 07 RECUPERACAO EXTRAJUDICIAL, 08 RECUPERACAO JUDICIAL, 10 DIREITOS E RECIBOS, 12 FUNDOS IMOBILIARIOS, 56 VENDAS POR ALVARA JUDICIAL, 58 OUTROS. Companies under recovery keep trading under 07/08 (AMER3, AMBP3, LIGT3, PCAR3, BHIA3, ONCO3, BRKM3, ...). Impact: AMBP3, AMER3, LIGT3 and PCAR3 on 2026-08-07, and AALR3, AMBP3, BHIA3, BRKM3, BRKM5, ONCO3 and PMAM3 on 2026-11-06, are `no_quote` under 02-only but trade under 07/08 within 30 days. The other `no_quote` tickers have no line in the window under any code (AESB3, APER3, BRFS3, CPLE5, CPLE6, AXIA6, BPAN4, ...), so the rule is not their cause. Options: accept 07 and 08, with 02 preferred on the same day; or keep 02-only and document the affected tickers. Accepting changes the expectation of `test_only_standard_lot_cash_market_records_are_kept` (T9).
+  2. Unit compositions. The real FCA `Composicao_BDR_Unit` strings use "e"/"E" and words: `1 ON E 2 PN` (ALUP11), `1 ON e 4 PN` (SAPR11), `1 ON e 2 PN` (IGTI11), `2 ações preferenciais e 1 ação ordinária` (BRBI11), `1 ação ordinária e 4 ações preferenciais` (ENGI11), `1 ENG3 e 4 ENGI4` (ENGI11, 2018). `parse_composition` accepts only "/" and "+". Impact: ALUP11, BRBI11, ENGI11, IGTI11 and SAPR11 are `unit_composition_unparsed` on both dates. `test_class_and_ticker_compositions_are_read_and_anything_else_is_none` (T11) asserts that `2 ON e 1 PN` is unparseable. That string has the same grammar as the real ones, so accepting "e" means changing that expectation.
+- **Open checks, measured and not yet explained (before trusting the P/L and VM rows)**:
+  - ESPA3 and LAVV3: `VALOR DE MERCADO` rebuilt = 10x the Status Invest value (900 %). Possibly a share grouping after the filing. Not checked.
+  - LWSA3 (-10.09 vs 328.91) and NGRD3 (-31.89 vs 414.49): P/L sign flips. Possibly the TTM of an ITR-only period. Not checked.
+  - 61 companies on the x1000 scale under the B3-total rule, against 39 in A-18's VPA check. Not verified.
+  - DY coverage (COV-02): the ex-date comes from the COTAHIST session calendar (A-16), which starts on 2025-01-02 with the loaded files. So the report gives B3's DY earliest year as 2025 for every ticker, although B3 keeps history from earlier years. Fix needs a decision: take the earliest year from `lastDatePriorEx`, or load the full calendar for the coverage pass.
+- **In-progress (file:line)**: none.
+- **Next step** (after the decision on 1 and 2): run `report --offline` with `--out-dir docs/validation` on the complete cache (no fetch needed). Commit the JSON and MD unedited, with the bytes and wall times in the body. Add `tests/test_pit_rebuild_artifact.py` with five tests: the Markdown re-rendered from the JSON; both dates, the class verdict and the financial verdict; a raw file per source kind with a 64-hex sha256; the tracked Status Invest hash; and the README exit-code table against the docstring codes. Then check the protected paths against `origin/develop`, and check the 2026-11-06 CSV hash (`87c15cb5...`, 115847 bytes, before the run).
+- **Blockers**: decisions 1 and 2 above. Each changes an approved rule or an existing test, so each needs the owner's confirmation.
 - **Uncommitted files**: none.
-- **Branch**: t3/issue-59 (base `develop`). Nothing pushed.
-- **Deviations from the design (made in Execute, not in the decision log)**:
-  - `refiled_after_d` follows A-6 and PIT-03: any newer period whose latest version arrived after d. The design's extra condition (an earlier version received on or before d) is not applied.
-  - `Dated` and `Shares` carry the DT_RECEB. `balance`, `shares`, `ttm` and `ttm_year_before` take the DFP and ITR stores together, as `ttm` already did in the design.
-  - `shares.total` is the CVM TOTAL column as filed. The per-share divisor is ON + PREF (A-17).
-  - `compute` raises PITLeakError for a dividend with ex-date after d. The window filter alone would drop it silently.
-  - `report.build` takes FieldStats per date and derives every verdict. Its `coverage` input needs the keys of `coverage.py`.
-  - `parse_composition(text)`, `classify(mapping, cadastro, dre, si_setor)` and `resolve(choice, b3_dividends, yahoo)` drop or move design parameters that nothing used.
-- **Unverified points carried into Execute**: both B3 endpoints are undocumented. The Status Invest formulas other than `VALOR DE MERCADO`, and the 30-session liquidity window, are readings to be measured. The fixtures are not real data, except the PETR4 COTAHIST line of 2026-11-06 (45.36, BRPETRACNPR6, from the spec) and the trimmed PETROBRAS company record. The Yahoo amounts in `yahoo_petr4.json` are placeholders; the ex-dates come from the spec.
-- **Pitfalls found in Phases 2-3**:
-  - `check_commit.py` warns when a header is over 72 characters (T9 was 74, T13 was 77). Keep headers at 72 or less.
-  - `make_zip` encodes str members as latin-1. Keep fixture text UTF-8, and keep the cadastro file latin-1 on disk, since `cvm.load_cadastro` reads bytes.
-  - A sparse COTAHIST calendar maps every ex-date to the next loaded session. The dividend tests use a dense weekday calendar through `cotahist.Quotes(sessions=...)`.
-  - `dps_12m` filters the window before it sums, so the leak check on raw dividends must run first. `indicators._assert_point_in_time` does it.
-  - `py/pit_rebuild/compare.py` has an unused `import math`, left from the earlier `p90`. It is not changed in T16 because the file is outside that task's list. Remove it in T17 or a later cleanup.
-  - A test file that names the frozen bundle (the string `baselines`) needs `sys.dont_write_bytecode = True` before its `sys.path.insert` (`tests/test_v0_zz_manifest_gates.py`). The new test files do not name it.
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). The system `python3` runs the stdlib-only `pit_rebuild` tests. Run from the worktree root. The root suite takes about 3 to 5 minutes. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
+- **Branch**: t3/issue-59 (base develop; gates compare against origin/develop 9f65467). Nothing pushed.
+- **Outside this repo**: the owner's wiki (`~/brain`) should record the COTAHIST BDI codes and the FCA unit format, as the global instructions ask. Not done here, because it would be a push.
+- **Pitfalls found in Phase 4**:
+  - Memory: `load_filings` held every statement row (6.4 GB). Fixed with `accounts` in `4ec8665`.
+  - `check_commit.py` warns above 72 characters. A 74-character header was amended to 61.
+  - `mkstemp` writes the cache and the report files with mode 0600. They are private and gitignored; git's file mode is unaffected.
+  - The report records the 2026-11-06 CSV path as given, which is the absolute path in the main checkout.
+  - `tests/test_pit_rebuild_cli.py` names the frozen bundle, so it sets `sys.dont_write_bytecode` before its path inserts. The isolation guard reads module docstrings too, so `py/` must not contain the literal `baselines/`.
