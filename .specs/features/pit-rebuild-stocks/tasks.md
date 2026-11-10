@@ -560,9 +560,9 @@ T19 → T20
 
 **Done when**:
 
-- [ ] Section added; its exit-code table equals the `cli.py` docstring table (checked by eye and by T20's artifact test reading both)
-- [ ] Gate check passes: Build
-- [ ] Test count: unchanged
+- [x] Section added; its exit-code table equals the `cli.py` docstring table (checked by eye and by T20's artifact test reading both)
+- [x] Gate check passes: Build (pit suite 210 OK; root suite 797 OK, 2 skipped; protected paths unchanged against origin/develop)
+- [x] Test count: unchanged (210)
 
 **Tests**: none
 **Gate**: build

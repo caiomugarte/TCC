@@ -35,6 +35,8 @@ from pathlib import Path
 from unittest import mock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+# This file names the frozen bundle (the protected trees), so no bytecode is written before the imports (AD-013).
+sys.dont_write_bytecode = True
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 sys.path.insert(0, str(PROJECT_ROOT / "tests"))
 

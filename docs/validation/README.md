@@ -357,3 +357,166 @@ mesmo código e a mesma seed reescreve os dois arquivos byte a byte.
 
 A primeira, a segunda e a última também ficam gravadas em `limitations` no
 relatório gerado.
+
+# Reconstrução PIT de ações (issue #59)
+
+Pergunta: dá para reconstruir, só com CVM e B3, os 19 campos do seletor de ações
+em cada data, de modo que batam com o Status Invest daquela data? A ferramenta
+é `py/pit_rebuild/` (biblioteca padrão, sem pandas). O escopo está em
+`.specs/features/pit-rebuild-stocks/`, e a decisão sobre o ponto no tempo das
+demonstrações (AD-031) em `.specs/STATE.md`. Esta seção descreve como rodar a
+medição e as regras dela. Os resultados ficam no relatório gerado
+(`pit-rebuild-stocks.json` e `pit-rebuild-stocks.md`), não aqui.
+
+## Fontes
+
+| Fonte | Usada para | Endereço |
+| --- | --- | --- |
+| CVM, DFP e ITR (zips anuais) | demonstrações, composição do capital e data de recebimento de cada versão | `dados.cvm.gov.br/dados/CIA_ABERTA/DOC/` |
+| CVM, FCA (zips anuais) | ticker → empresa e composição das units | `dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/` |
+| CVM, cadastro | CNPJ → código CVM e setor (`SETOR_ATIV`) | `dados.cvm.gov.br/dados/CIA_ABERTA/CAD/` |
+| B3, COTAHIST anual | cotações, volume e sessões de pregão | `bvmf.bmfbovespa.com.br/InstDados/SerHist/` |
+| B3, empresas listadas | registro da empresa e histórico de proventos (API não documentada) | `sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/` |
+| Yahoo Finance | proventos, só quando a regra de fonte manda (ver Proventos) | `query1.finance.yahoo.com/v8/finance/chart/` |
+| Status Invest | valor de referência de cada data, lido em modo somente leitura | o CSV passado em `--si` |
+
+## Universo elegível (A-1)
+
+Um ticker entra na medição de uma data quando, no CSV do Status Invest daquela
+data, `VALOR DE MERCADO` ≥ 200.000.000 e `LIQUIDEZ MEDIA DIARIA` ≥ 50.000.
+Valor vazio ou não numérico não é elegível. A regra espelha a produção
+(`py/core/preprocessing.py:103-106`); o piso do perfil arrojado está em
+`api/app/services/premium_policy.py:56`.
+
+## Comparação e veredito (D-1, D-2, A-2 a A-5)
+
+- **Tolerância.** Dentro quando a diferença relativa é de até 5%. Os indicadores
+  em percentual (`DY`, `ROE`, `ROA`, `ROIC`, `MARG. LIQUIDA`, `MARGEM EBIT`,
+  `CAGR RECEITAS 5 ANOS` e `CAGR LUCROS 5 ANOS`) usam 0,5 ponto percentual. O
+  valor reconstruído é arredondado a duas casas antes da comparação. Com
+  referência zero, só fica dentro o valor arredondado igual a 0,00.
+- **Denominador.** São os tickers elegíveis cujo valor do Status Invest não é
+  vazio. Um `DY` vazio vale 0,00 e entra no denominador (A-4). Um ticker do
+  denominador sem valor reconstruído conta como fora da tolerância, e o motivo
+  aparece no relatório.
+- **Veredito por indicador e grupo.** `reconstruível` com 90% ou mais dentro da
+  tolerância; `com ressalvas` com 70% ou mais e menos de 90%;
+  `não reconstruível` abaixo de 70%; `sem referência` quando o denominador é
+  zero. Entre duas datas vale o pior dos dois vereditos.
+- **Veredito da classe.** O pior veredito entre os 16 indicadores de
+  `METRIC_GROUPS` (`py/config.py`) do grupo não financeiro (A-5).
+  `PRECO`, `VALOR DE MERCADO` e `LIQUIDEZ MEDIA DIARIA` recebem veredito, mas não
+  entram na classe.
+- **Grupo financeiro (D-2).** Bancos e seguradoras, pelo `SETOR_ATIV` do cadastro
+  ou pela descrição da linha 3.01 da DRE, que contém "Intermediação Financeira"
+  (A-10). Tem veredito próprio e não muda a classe. Os tickers não classificados
+  (sem mapeamento e com setor `Financeiro e Outros` no Status Invest) ficam no
+  grupo não financeiro, e o relatório traz também o veredito da classe sem eles.
+
+## Ponto no tempo (PIT-01 a PIT-03, A-6, A-7, A-19)
+
+- **Demonstrações.** Um DFP ou ITR só vale para a data `d` quando a versão mais
+  recente dele foi recebida (`DT_RECEB`) em `d` ou antes. Se não foi, a medição
+  usa o período anterior e registra o ticker em `refiled_after_d`.
+- **Cotações.** Só entram sessões até `d`. O preço é o último pregão até 30 dias
+  antes de `d`; sem pregão nesse prazo, o ticker fica sem cotação (`no_quote`).
+  A liquidez é a média de `VOLTOT` das últimas 30 sessões até `d`.
+- **Proventos.** Só entram os que têm data-ex em `d − 365 dias < data-ex ≤ d`.
+- **Entradas que não são ponto no tempo (A-19).** Sete entradas são lidas como
+  foram obtidas no `fetch`, e não como estavam em `d`. Cada uma tem um papel
+  fixo, e o relatório lista as sete com o papel e a verificação que a
+  reconstrução completa precisa fazer.
+
+## Ações: valor de mercado e escala (A-17, A-18)
+
+- `VALOR DE MERCADO` = ações ON × preço ON + ações PN × preço PN. O preço da PN
+  é o do preferencial com maior volume médio nas últimas 30 sessões. Se uma
+  classe tem ações e não tem cotação, usa-se o preço da outra classe, e a
+  empresa aparece em `vm_price_fallback`.
+- A CVM não informa a escala de `composicao_capital`. Cada contagem é multiplicada
+  por 1000 quando isso aproxima a soma do `totalNumberShares` da B3. A contagem
+  da B3 só escolhe a escala e nunca entra num valor. Sem registro da B3, ou com
+  total zero nela, a escala é 1 e a empresa aparece em `share_scale.unverified`.
+  Contagem de ações zero: os campos que dependem dela ficam sem valor, com motivo
+  `no_share_count`.
+
+## Proventos (D-4, A-15, A-16)
+
+- A B3 vem primeiro, empresa por empresa. O histórico de proventos da B3 só é
+  usado quando está completo (todas as páginas), não está vazio e o registro
+  mais antigo tem data `d − 365 dias` ou antes. Caso contrário, o ticker vai ao
+  Yahoo Finance naquela data, e o motivo fica registrado: `b3_failed`,
+  `b3_empty`, `b3_incomplete` ou `b3_short_history`.
+- Histórico da B3 completo e vazio, com o Yahoo sem dados: o ticker é tratado
+  como sem proventos no período, com DY 0 e motivo `b3_empty_yahoo_failed`.
+- Se algum DY vem do Yahoo, o relatório marca a fonte do DY como `secondary`. O
+  Yahoo não tem empresas que saíram da bolsa, e o relatório diz isso.
+
+## Cobertura histórica
+
+O `fetch` lê os diretórios de listagem da CVM e sonda a COTAHIST de 2005 a 2012.
+Com isso, o relatório dá o primeiro ano de cada fonte e de cada indicador, a
+cobertura do DY e o esforço projetado da reconstrução completa de 2012 a 2026
+(carga projetada pelos bytes; cálculo por data multiplicado pelas 180 datas
+mensais).
+
+## Como rodar
+
+A partir da raiz do repositório. O `fetch` baixa o que as datas precisam e não
+escreve relatório. O `report` calcula a partir do cache. Com `--offline`, o
+`report` não faz nenhuma requisição e sai com código 5 se faltar um arquivo.
+Sem `--offline`, ele baixa o que faltar antes de calcular.
+
+```sh
+python3 py/pit_rebuild fetch \
+  --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv \
+  --date 2026-11-06 --si <checkout-principal>/snapshots/data/selectors-2026-11-06/stocks.csv
+
+python3 py/pit_rebuild report --offline \
+  --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv \
+  --date 2026-11-06 --si <checkout-principal>/snapshots/data/selectors-2026-11-06/stocks.csv \
+  --out-dir docs/validation
+```
+
+`<checkout-principal>` é a raiz do checkout que tem `snapshots/`. O CSV de
+2026-11-06 não está no git (A-11), e a ferramenta só lê o caminho passado.
+
+`--date` e `--si` vão em pares, na mesma ordem. `--cache-dir` (padrão
+`.cache/pit-rebuild`, ignorado pelo git) e `--out-dir` (padrão `docs/validation`)
+são opcionais. A primeira execução baixa todos os arquivos planejados; as
+seguintes não baixam de novo o que já está no cache.
+
+Os testes da ferramenta rodam sem rede:
+`python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`.
+
+## Cache
+
+`.cache/pit-rebuild/` guarda cada arquivo baixado e um `manifest.json` com URL,
+sha256, bytes e data de recebimento. Um arquivo cujo sha256 não bate com o
+manifesto encerra a execução com código 4, e nenhum relatório é escrito. O
+relatório registra a URL e o sha256 de cada arquivo que usou, e o sha256 de
+cada CSV do Status Invest.
+
+## Códigos de saída
+
+| Código | Significado |
+| --- | --- |
+| 0 | relatório escrito |
+| 1 | os arquivos do relatório não puderam ser escritos |
+| 2 | argumentos inválidos, ou pasta de saída ou de cache dentro de `data/`, `snapshots/` ou `baselines/` |
+| 3 | um caminho dado não existe (um `--si`, ou a pasta do cache no `report`) |
+| 4 | violação de integridade: hash de arquivo do cache diferente do manifesto, vazamento de ponto no tempo, CSV do Status Invest sem coluna obrigatória ou com ticker repetido |
+| 5 | um download obrigatório falhou, ou um arquivo obrigatório não está no cache em `--offline` |
+
+Uma falha não escreve nenhum arquivo do relatório e imprime uma linha no stderr.
+
+## Limitações conhecidas
+
+- **Fórmulas declaradas.** Cada indicador segue a leitura declarada em
+  `FORMULAS` (`py/pit_rebuild/indicators.py`). A Status Invest não publica as
+  fórmulas dela (A-8). Um desvio é um resultado da medição, não um erro a
+  corrigir nesta etapa.
+- **Janela de liquidez.** As 30 sessões são um chute declarado (A-7).
+- **APIs da B3.** As duas são sem documentação e podem mudar ou limitar
+  requisições. O cache guarda cada resposta com o sha256, para que o relatório
+  possa ser refeito a partir dele.

@@ -204,7 +204,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | RPT-04 | P1 report | Tasks (T16, T20) | In Tasks |
 | RPT-05 | P1 report | Tasks (T2, T17) | Done (T2, T17) |
 | RPT-06 | P1 report | Tasks (T19, T20) | In Tasks |
-| CLI-01 | P1 CLI | Tasks (T1, T17, T19) | In Tasks |
+| CLI-01 | P1 CLI | Tasks (T1, T17, T19) | Done (T1, T17, T19) |
 | CLI-02 | P1 CLI | Tasks (T5, T17) | Done (T5, T17) |
 | CLI-03 | P1 CLI | Tasks (T17) | Done (T17) |
 | CLI-04 | P1 CLI | Tasks (T17) | Done (T17) |

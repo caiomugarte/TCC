@@ -11,7 +11,7 @@ pit-rebuild-stocks.md to --out-dir, both only after every computation finished. 
 
     0  report written
     1  the report files could not be written
-    2  invalid arguments, or an output or cache directory inside data/, snapshots/ or baselines/
+    2  invalid arguments, or an output or cache directory inside data/, snapshots/ or the baselines tree
     3  a given path does not exist (a --si CSV, or the cache directory of report)
     4  integrity violation: cached file hash mismatch, PIT leak, Status Invest CSV missing a
        required column or repeating a ticker
