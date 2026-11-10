@@ -970,11 +970,11 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] The probe was sent once and its result is recorded; `report` exits 0; downloaded files, bytes and wall times are in the commit body.
-- [ ] `tests/test_pit_rebuild_artifact.py`: `render_markdown(json.load(committed JSON))` equals the committed `.md` byte for byte; the JSON's dates are exactly `2026-08-07` and `2026-11-05`, with `collected_on` `2026-08-07` and `2026-11-06`, and each `as_of_check.best_session` equals its `date`; a class verdict in the three-value set and a financial-group verdict; `sensitivities.official` is `false` and `parameters.filings_cutoffs == {"2026-11-05": "2026-11-02"}`; `parameters.liquidity_sessions == 21` and `parameters.quote_codbdi == ["02", "07", "08"]`; ≥ 1 raw file with a 64-hex sha256 per source kind (DFP, ITR, FCA, cadastro, COTAHIST, B3 company, B3 dividends); the SI sha256 of `data/raw/status_invest_fundamentals.csv` equals the file's current hash; the exit-code table in `docs/validation/README.md` equals the one in `cli.py`'s docstring.
-- [ ] `git status --porcelain -- data snapshots baselines` is empty and both CSV hashes are unchanged after the run.
-- [ ] Gate check passes: Build
-- [ ] Test count: ≥ 7 tests pass in `test_pit_rebuild_artifact.py`
+- [x] The probe was sent once and its result is recorded (B3 answered `AMBEV SA` with 40 records, one page; see the commit body); `report` exits 0; downloaded files, bytes and wall times are in the commit body.
+- [x] `tests/test_pit_rebuild_artifact.py`: `render_markdown(json.load(committed JSON))` equals the committed `.md` byte for byte; the JSON's dates are exactly `2026-08-07` and `2026-11-05`, with `collected_on` `2026-08-07` and `2026-11-06`, and each `as_of_check.best_session` equals its `date`; a class verdict in the three-value set and a financial-group verdict; `sensitivities.official` is `false` and `parameters.filings_cutoffs == {"2026-11-05": "2026-11-02"}`; `parameters.liquidity_sessions == 21` and `parameters.quote_codbdi == ["02", "07", "08"]`; ≥ 1 raw file with a 64-hex sha256 per source kind (DFP, ITR, FCA, cadastro, COTAHIST, B3 company, B3 dividends); the SI sha256 of `data/raw/status_invest_fundamentals.csv` equals the file's current hash; the exit-code table in `docs/validation/README.md` equals the one in `cli.py`'s docstring.
+- [x] `git status --porcelain -- data snapshots baselines` is empty and both CSV hashes are unchanged after the run.
+- [x] Gate check passes: Build (pit suite 311 OK; compileall OK; protected paths unchanged against origin/develop; root suite run in the build gate, see the commit body)
+- [x] Test count: ≥ 7 tests pass in `test_pit_rebuild_artifact.py` - 8 pass
 
 **Tests**: integration
 **Gate**: build
