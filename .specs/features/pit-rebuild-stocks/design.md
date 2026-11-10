@@ -1,7 +1,7 @@
 # PIT Rebuild Feasibility for Stocks Design
 
 **Spec**: `.specs/features/pit-rebuild-stocks/spec.md`
-**Status**: Draft r4 (review findings S1-S20 addressed; pending human approval, together with spec A-1..A-19)
+**Status**: r5 amendment (2026-11-10). r4 approved by the human on 2026-11-09 and implemented through T19. r5 follows the diagnosis of the real run (T20) and the human's approval of 2026-11-10 (spec "Amendment r5", AD-032); "Amendment r5" below lists every interface change, and the bullets and formulas it changes are updated in place.
 
 ---
 
@@ -66,7 +66,7 @@ graph TD
 | CVM dados abertos | HTTPS GET of yearly zips and `cad_cia_aberta.csv`; directory listings (HTML) for COV-01. |
 | B3 COTAHIST | HTTPS GET `COTAHIST_A{YYYY}.ZIP`; HEAD for COV-01/COV-03 sizes. |
 | B3 listed companies | HTTPS GET `GetListedSupplementCompany/{base64 json}` per root of every eligible ticker (`tradingName`, `codeCVM` mapping fallback, `totalNumberShares` share-scale reference), then `GetListedCashDividends/{base64 json}` per `tradingName`, every page (dividend history). |
-| Yahoo Finance | HTTPS GET `v8/finance/chart/{TICKER}.SA?period1={2000-01-01}&period2={max(d)+1}&interval=1d&events=div` (fallback only, A-15). |
+| Yahoo Finance | HTTPS GET `v8/finance/chart/{TICKER}.SA?period1={2000-01-01}&period2={max(collected_on)+1}&interval=1d&events=div` (fallback only, A-15; r5: `period2` from the latest collection date, which equals r4's `max(d)+1` for the cached run, so its Yahoo files stay valid). |
 | Status Invest CSVs | Read-only paths given by `--si`. |
 
 ---
@@ -80,8 +80,8 @@ graph TD
 | FCA | `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_{Y}.zip` | listing 2010–2026; member `fca_cia_aberta_valor_mobiliario_{Y}.csv` with `CNPJ_Companhia;Data_Referencia;Versao;…;Valor_Mobiliario;…;Codigo_Negociacao;Composicao_BDR_Unit;…` (`TAEE11` → `Units`, `1 ON / 2 PN`; `KLBN11` → `1 KLBN3 + 4 KLBN4`) |
 | Cadastro | `https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv` | header has `CNPJ_CIA;…;SIT;…;CD_CVM;SETOR_ATIV;…`; `SETOR_ATIV` values of A-10 present |
 | COTAHIST | `https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A{Y}.ZIP` | 2026 = 102,322,138 B; daily file parsed: `TIPREG` 1-2, `DATA` 3-10, `CODBDI` 11-12, `CODNEG` 13-24, `TPMERC` 25-27, `PREULT` 109-121 (÷100), `VOLTOT` 171-188 (÷100), `FATCOT` 211-217, `ESPECI` 40-49, `CODISI` 231-242 (PETR4 2026-11-06: 45.36, `BRPETRACNPR6`; `ESPECI` first token `ON`/`PN`/`PNA`/`PNB`/`UNT` checked on PETR3, PETR4, BPAC5, BRSR6, TAEE11, KLBN11 in `COTAHIST_D06112026.ZIP`) |
-| B3 company | `https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/{base64('{"issuingCompany":"PETR","language":"pt-br"}')}` | returns `[{…,"tradingName":"PETROBRAS   ","code":"PETR","codeCVM":"9512","cashDividends":[…],…}]`. Also carries `numberCommonShares`, `numberPreferredShares`, `totalNumberShares` as `.`-grouped strings (EUCATEX `31.257.700`/`61.361.556`/`92.619.256`, verified 2026-11-09; current counts, issued, treasury included). Used for `tradingName` (stripped), `codeCVM` and `totalNumberShares` (A-18 unit only), all current values, not dated (spec A-19); its embedded `cashDividends` (keys `approvedOn, assetIssued, isinCode, label, lastDatePrior, paymentDate, rate, relatedTo, remarks`) held 24 PETR records, `lastDatePrior` 2025-12-22 … 2026-08-21, so it does not cover a 12-month window. |
-| B3 dividends | `https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/{base64('{"language":"pt-br","pageNumber":1,"pageSize":120,"tradingName":"PETROBRAS"}')}` | returns `{"page":{"pageNumber","pageSize","totalRecords","totalPages"},"results":[{"typeStock","dateApproval","valueCash","ratio","corporateAction","lastDatePriorEx","dateClosingPricePriorExDate","closingPricePriorExDate","quotedPerShares","corporateActionPrice","lastDateTimePriorEx"}]}`; PETROBRAS: 343 records in 3 pages, `lastDatePriorEx` 1996-03-21 … 2026-08-21, `typeStock` `ON`/`PN`; TAESA `ON`/`PN`/`UNT`; BTGP BANCO `ON`/`PNA`/`UNT`; `valueCash` uses `,` decimal; dates `dd/mm/yyyy`. Both B3 endpoints are undocumented (see Risks). |
+| B3 company | `https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/{base64('{"issuingCompany":"PETR","language":"pt-br"}')}` | returns `[{…,"tradingName":"PETROBRAS   ","code":"PETR","codeCVM":"9512","cashDividends":[…],…}]`. Also carries `numberCommonShares`, `numberPreferredShares`, `totalNumberShares` as `.`-grouped strings (EUCATEX `31.257.700`/`61.361.556`/`92.619.256`, verified 2026-11-09; current counts, issued, treasury included). Used for `tradingName` (stripped), `codeCVM`, `totalNumberShares` (A-18 unit only) and, r5, `stockDividends` (A-20: entries `{assetIssued, factor, approvedOn, isinCode, label, lastDatePrior, remarks}`, `factor` with `,` decimal, `lastDatePrior` `dd/mm/yyyy`; labels seen in the cache: `BONIFICACAO`, `GRUPAMENTO`, `DESDOBRAMENTO`, `CIS RED CAP`, `RESG TOTAL RV`, `INCORPORACAO`, `REST CAP ACOES`, `REST CAP C/ RED`; SBSP `DESDOBRAMENTO` `400,00000000000` = 1:5, ESPA `GRUPAMENTO` `0,10000000000` = 10:1), all current values, not dated (spec A-19); its embedded `cashDividends` (keys `approvedOn, assetIssued, isinCode, label, lastDatePrior, paymentDate, rate, relatedTo, remarks`) held 24 PETR records, `lastDatePrior` 2025-12-22 … 2026-08-21, so it does not cover a 12-month window. |
+| B3 dividends | `https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/{base64('{"language":"pt-br","pageNumber":1,"pageSize":120,"tradingName":"PETROBRAS"}')}` | returns `{"page":{"pageNumber","pageSize","totalRecords","totalPages"},"results":[{"typeStock","dateApproval","valueCash","ratio","corporateAction","lastDatePriorEx","dateClosingPricePriorExDate","closingPricePriorExDate","quotedPerShares","corporateActionPrice","lastDateTimePriorEx"}]}`; PETROBRAS: 343 records in 3 pages, `lastDatePriorEx` 1996-03-21 … 2026-08-21, `typeStock` `ON`/`PN`; TAESA `ON`/`PN`/`UNT`; BTGP BANCO `ON`/`PNA`/`UNT`; `valueCash` uses `,` decimal; dates `dd/mm/yyyy`; `corporateAction` values in the cache: `JRS CAP PROPRIO`, `DIVIDENDO`, `RENDIMENTO`, `REST CAP DIN` (r5: the last is excluded, A-15). Trading names with `/` (`AMBEV S/A`, …) return `totalRecords: 0` (r5: queried without `/`, unverified until T32). Both B3 endpoints are undocumented (see Risks). |
 | Yahoo | `https://query1.finance.yahoo.com/v8/finance/chart/PETR4.SA?period1=946684800&period2=…&interval=1d&events=div` | returns `chart.result[0].events.dividends` keyed by epoch, each `{amount, date}` at the ex-date (PETR4: 2025-08-22, 2026-08-24); `range=max` buckets dividends by month (2026-08-01) and is not used. Needs a browser-like `User-Agent`. |
 
 All files in CVM zips and the cadastro are `latin-1`, `;`-separated. Values carry `ESCALA_MOEDA` (`MIL` → ×1000, `UNIDADE` → ×1).
@@ -150,7 +150,7 @@ All under `py/pit_rebuild/`. Every module is stdlib-only (A-14). Tests import mo
   - `ttm_year_before(...)` - same, one year earlier (PEG).
   - `annual(dfp, cnpj, d, account, years_back) -> float | None` - fiscal-year value (CAGR).
   - `balance(store, cnpj, d, account) -> float | None`; `shares(store, cnpj, d) -> Shares(on, pref, total, dt_receb)` issued per class (`QT_ACAO_{ORDIN,PREF,TOTAL}_CAP_INTEGR`, treasury **not** subtracted, A-17) from the newest usable filing, DFP or ITR; `None` when that filing has no `composicao_capital` row for the company or its total is `≤ 0` (A-18 "no share count"; no fallback to an older filing).
-  - `share_scale(cvm_total: int, b3_total: int | None) -> (factor: 1 | 1000, verified: bool)` - A-18: the factor minimising `|log10(cvm_total × f / b3_total)|`; `b3_total` `None` or 0 → `(1, False)`. Called only with a share count (`cvm_total > 0`), so `log10(0)` never runs.
+  - `share_scale(cvm_total: int, b3_total: int | None) -> (factor: float, verified: bool)` - A-18 (r5, F13): the factor of `SHARE_SCALE_FACTORS = (0.01, 0.1, 1, 10, 100, 1000)` minimising `abs(log10(cvm_total × f / b3_total))` (an exact tie, which needs a ratio of exactly √10 times a power of ten, goes to the factor nearer 1); `b3_total` `None` or 0 → `(1, False)`. Called only with a share count (`cvm_total > 0`), so `log10(0)` never runs. The caller rounds `N × f`.
   - `load_cadastro(path) -> dict[cnpj, {cd_cvm, setor_ativ, sit}]`.
   - Every returned value carries its `dt_receb` so `indicators.compute` can assert PIT-02.
 
@@ -158,19 +158,20 @@ All under `py/pit_rebuild/`. Every module is stdlib-only (A-14). Tests import mo
 
 - **Purpose**: Parse COTAHIST yearly zips (fixed width, verified positions above).
 - **Interfaces**:
-  - `load(zip_paths, tickers: set[str]) -> Quotes` - keeps `TIPREG == "01"`, `TPMERC == "010"` (cash market) and `CODBDI == "02"` (standard lot; `PETR4` and `TAEE11` verified) for the requested tickers, which are `mapping.quote_tickers(...)` (A-17: eligible tickers plus every other class and unit component of their companies, eligible or not); stores `(date, close, voltot, isin, especi)`; `FATCOT` divides price when > 1; also keeps the set of every session date in the files (all tickers, the market calendar for A-16).
-  - `quote_at(q, ticker, d, max_age_days=30) -> (date, close) | None` (A-7, edge case `no_quote`).
-  - `avg_volume(q, ticker, d, sessions=30) -> float | None` (A-7).
+  - `load(zip_paths, tickers: set[str]) -> Quotes` - keeps `TIPREG == "01"`, `TPMERC == "010"` (cash market) and, r5, `CODBDI` in `QUOTE_CODBDI = ("02", "07", "08")` (standard lot, extrajudicial and judicial recovery; a `02` record wins its session over a `07`/`08` one, independent of line order; A-7) for the requested tickers, which are `mapping.quote_tickers(...)` (A-17: eligible tickers plus every other class and unit component of their companies, eligible or not); stores `(date, close, voltot, isin, especi)`; `FATCOT` divides price when > 1; also keeps the set of every session date in the files (all tickers, the market calendar for A-16).
+  - `quote_at(q, ticker, d, max_age_days=30) -> (date, close) | None` (A-7, edge case `no_quote`); r5: `max_age_days=None` means no age limit.
+  - `avg_volume(q, ticker, d, sessions=LIQUIDITY_SESSIONS) -> float | None` (A-7; r5: `LIQUIDITY_SESSIONS = 21`).
+  - r5: `last_trade(q, ticker, d) -> (date, close) | None` (`quote_at` without age limit) and `reference_stale(q, ticker, d) -> bool` (no record in `[d − 30 days, d]`, A-22 (a)).
   - `isin(q, ticker) -> str | None`; `share_class(q, ticker) -> str | None` (first token of `ESPECI`: `ON`, `PN`, `PNA`, `PNB`, `UNT`, …).
   - `next_session(q, day) -> date | None` - first market session strictly after `day`; `None` past the data horizon and `None` when `day` is before the first loaded session (A-16: the true ex-date is unknown).
-  - `class_prices(q, tickers_of_company, d) -> {"ON": (ticker, close) | None, "PREF": (ticker, close) | None}` - per class (`ESPECI` first token `ON`; first token starting with `PN`), the ticker with the highest `avg_volume` among those with `quote_at` not `None`, ties by ticker; units (`UNT`) skipped (A-17).
+  - `class_prices(q, tickers_of_company, d) -> {"ON": (ticker, close, session_day) | None, "PREF": (ticker, close, session_day) | None}` - per class (`ESPECI` first token `ON`; first token starting with `PN`), the ticker with the highest `avg_volume` among those with `quote_at` not `None`, ties by ticker; r5 (F14): when no ticker of the class has a session within 30 days, the ticker with the latest `last_trade` (ties by `avg_volume`, then ticker), at any age; units (`UNT`) skipped (A-17).
 
 ### `dividends.py`
 
 - **Purpose**: Dividend per share over the 12 months to `d` (D-4, A-15, A-16, SRC-05, VER-04).
 - **Interfaces**:
-  - `parse_b3_company(json_bytes) -> B3Company(trading_name, code_cvm, total_shares) | None` - `tradingName` stripped; `totalNumberShares` with `.` grouping removed; an empty list → `None`.
-  - `parse_b3_cash(pages: list[bytes]) -> B3History(records: list[B3Dividend(type_stock, value, last_date_prior_ex)], total_records, complete)` - `valueCash` with `,` decimal, `lastDatePriorEx` `dd/mm/yyyy`; `complete` iff `len(records) == page.totalRecords` from page 1 and every page `1..totalPages` is present.
+  - `parse_b3_company(json_bytes) -> B3Company(trading_name, code_cvm, total_shares, stock_events) | None` - `tradingName` stripped; `totalNumberShares` with `.` grouping removed; r5: `stock_events` from `stockDividends` (A-20); an empty list → `None`.
+  - `parse_b3_cash(pages: list[bytes]) -> B3History(records: list[B3Dividend(type_stock, value, last_date_prior_ex)], total_records, complete, raw_records, duplicates, capital_returns)` - `valueCash` with `,` decimal, `lastDatePriorEx` `dd/mm/yyyy`; `complete` iff the raw record count (before r5's filters) equals page 1's `totalRecords` and every page `1..totalPages` is present; r5 (F16): records identical in every field kept once across pages, `REST CAP DIN` dropped.
   - `parse_yahoo(json_bytes) -> list[Dividend(amount, ex_date)]` - ex-date from the event's epoch (UTC date).
   - `choose_source(history: B3History | None, d) -> ("b3", None) | ("yahoo", reason)` - A-15: `None` → `b3_failed`; complete and `total_records == 0` → `b3_empty`; not `complete` → `b3_incomplete`; earliest `last_date_prior_ex > d − 365 days` → `b3_short_history`; else `b3`.
   - `resolve(choice, yahoo: list[Dividend] | None) -> (source, reason, divs | None)` - `("b3", None)` → B3 records; `("yahoo", r)` with Yahoo parsed → `("yahoo", r, yahoo)`; Yahoo failed and `r == "b3_empty"` → `("b3", "b3_empty_yahoo_failed", [])` (dividends 0, confirmed non-payer, SRC-05); Yahoo failed otherwise → `("none", "no_dividend_source", None)`.
@@ -184,7 +185,7 @@ All under `py/pit_rebuild/`. Every module is stdlib-only (A-14). Tests import mo
 - **Purpose**: Ticker → company, units, financial group (MAP-01..MAP-03, A-9, A-10).
 - **Interfaces**:
   - `load_fca(zip_paths) -> dict[ticker, FcaRow(cnpj, valor_mobiliario, composition, data_referencia)]` (latest `Data_Referencia` ≤ `d` wins).
-  - `parse_composition(text, ticker) -> dict[class_or_ticker, int] | None` - handles `"1 ON / 2 PN"` and `"1 KLBN3 + 4 KLBN4"`; anything else → `None` → reason `unit_composition_unparsed`.
+  - `parse_composition(text) -> dict[class_or_ticker, int] | None` - r5 (F2): spec A-9's grammar (`/`, `+`, standalone `e`/`E`; classes `ON`, `PN`, `PNA`, `PNB`, `PNs` → `PN`, the Portuguese word forms, tickers); anything else → `None` → reason `unit_composition_unparsed`.
   - `map_tickers(eligible, fca, cadastro, b3_companies: dict[root, B3Company | None], d) -> dict[ticker, Mapped | Unmapped(reason)]` with reasons from MAP-01; `b3_companies` holds the record of every eligible root (fetched before mapping), so a ticker absent from every FCA year maps through its root's `codeCVM`.
   - `quote_tickers(eligible, mapped, fca, si_tickers) -> set[str]` - A-17: eligible tickers ∪ every FCA `Codigo_Negociacao` of a mapped company's CNPJ (all loaded years) ∪ every Status Invest ticker (any date's CSV) sharing a root with an eligible ticker ∪ every ticker named in a parsed unit composition.
   - `classify(ticker, mapped_or_unmapped, cadastro, dre_301_desc, si_setor) -> {"group": "financial" | "non_financial" | "unclassified", "rule": "setor_ativ" | "dre_3_01" | "si_setor" | None}` - mapped tickers by A-10's two CVM rules; unmapped tickers by Status Invest `SETOR`: not `Financeiro e Outros` → `non_financial` (`si_setor`), `Financeiro e Outros` → `unclassified`.
@@ -212,14 +213,14 @@ All under `py/pit_rebuild/`. Every module is stdlib-only (A-14). Tests import mo
 - **Interfaces**:
   - `earliest_years(listings: dict[source, html_bytes], cotahist_probe: dict[int, bool]) -> dict[source, {"year": int, "at_probe_floor": bool}]` - COTAHIST probe 2005–2012: the first year present; `at_probe_floor = True` when 2005 is present (rendered `≤ 2005 (probe floor)`, COV-01).
   - `LOOKBACK = {CAGR: 5, PEG: 2, ttm flows: 1, balance/price: 0}`; `field_earliest(field, earliest) -> int`.
-  - `dy_coverage(by_source: {source: {"tickers": n, "earliest_ex_date": date | None}}) -> dict` - per source used, with the retention text (B3: full company history; Yahoo: from `period1` 2000-01-01); DY's earliest year from B3 when any ticker used it, else Yahoo (COV-02).
+  - `dy_coverage(by_source: {source: {ticker: earliest_raw_date}}) -> dict` - r5 (F3): per source, the tickers that used it, `earliest_raw_date` (min over them), its `earliest_year`, `median_ticker_year` (`statistics.median` of the per-ticker years; `None` with no ticker) and the retention text (B3: full company history; Yahoo: from `period1` 2000-01-01); DY's earliest year from B3 when any ticker used it, else Yahoo (COV-02). The per-ticker date is raw: B3 = `dividends.b3_earliest_raw` (earliest `lastDatePriorEx` + 1 day), Yahoo = earliest event date; never cut by `d` nor mapped through the COTAHIST calendar.
   - `full_rebuild_years(earliest) -> dict[source, (first, last)]` - SRC-01's rule over 2012-01 … 2026-12 (DFP 2005, ITR 2010, FCA 2010, COTAHIST 2011, through 2026), each clipped to the source's earliest year (DFP 2010, ITR 2011 with the verified listings).
   - `effort(load: {kind: (seconds, bytes)}, compute_seconds, n_dates, sizes: {url: bytes}, kind_of_url) -> dict` - A-13: `load_projected = Σ_kind seconds/bytes × full bytes of kind`; `compute_per_date = compute_seconds / n_dates`; `compute_projected = compute_per_date × 180`; `total = load_projected + compute_projected`. `load` holds the yearly-file kinds only (DFP, ITR, FCA, cadastro, COTAHIST); dividend parse seconds are reported as `dividends_parse_seconds` and not projected. A kind with 0 bytes measured contributes `None` and makes the total `None` (stated, not guessed).
 
 ### `report.py`
 
 - **Purpose**: Build the JSON object and render the Markdown from it (RPT-01..RPT-04).
-- **Interfaces**: `SHARE_SCALE_RULE: str` (A-18 rule and its 31.6× limit) and `NON_PIT_INPUTS: list[dict]` (the seven rows of spec A-19: `input`, `role` ∈ `unit_only`, `identity`, `classification`, `source_selection`, `dated_value_current_amount`, `use`, `full_rebuild_check`), both copied into `parameters` by `build`; `build(...) -> dict`; `render_markdown(report: dict) -> str` (pure; only reads the dict); `encode_json(report) -> bytes` (`json.dumps(sort_keys=True, indent=2, ensure_ascii=False) + "\n"`).
+- **Interfaces**: `SHARE_SCALE_RULE: str` (A-18 rule and its limit: 31.6× in r4, √10 in r5) and `NON_PIT_INPUTS: list[dict]` (the rows of spec A-19, seven in r4 and eight in r5: `input`, `role` ∈ `unit_only`, `identity`, `classification`, `source_selection`, `dated_value_current_amount`, `dated_event_current_record` (r5), `use`, `full_rebuild_check`), both copied into `parameters` by `build`; `build(...) -> dict`; `render_markdown(report: dict) -> str` (pure; only reads the dict); `encode_json(report) -> bytes` (`json.dumps(sort_keys=True, indent=2, ensure_ascii=False) + "\n"`).
 
 ### `cli.py`
 
@@ -229,6 +230,112 @@ All under `py/pit_rebuild/`. Every module is stdlib-only (A-14). Tests import mo
   - `python3 py/pit_rebuild report --date … --si … --date … --si … [--cache-dir .cache/pit-rebuild] [--offline] --out-dir docs/validation`
   - `--date`/`--si` pair by position. `main(argv=None, *, opener=None, clock=None) -> int`: `opener` replaces `urlopen` (tests), `clock` replaces `time.perf_counter` (COV-03 tests). `report` reads the clock around each source kind's parse (load) and around the per-date mapping + indicators + comparison (compute).
   - Order of checks: parse args (2) → `assert_writable_dir` for `--out-dir`, `--cache-dir` (2) → `--si` paths exist (3) → `cache.verify()` (4) → load and compute (4/5) → write both files atomically (0).
+
+---
+
+## Amendment r5 (2026-11-10)
+
+Spec "Amendment r5" (F1–F5, F7–F11, F13–F18, D-A–D-C), AD-032. The interface changes per module follow; the bullets and formulas above carry the same changes in place. Every r4 behaviour not named here stays.
+
+### `cotahist.py`
+
+- `QUOTE_CODBDI = ("02", "07", "08")`, `LOT_CODBDI = "02"`. `load` keeps `TIPREG 01`, `TPMERC 010`, `CODBDI ∈ QUOTE_CODBDI`. Per (ticker, session): a `02` record replaces a `07`/`08` record, and a `07`/`08` record never replaces a `02` record, whatever the line order. The session calendar stays every session date of every `01` record in the files.
+- `LIQUIDITY_SESSIONS = 21` (F5).
+- `quote_at(..., max_age_days=None)` has no age limit; `last_trade(q, ticker, d)` calls it.
+- `reference_stale(q, ticker, d) -> bool`: `True` when the ticker has no record dated in `[d − MAX_QUOTE_AGE_DAYS, d]` (D-A).
+- `class_prices` returns `(ticker, close, session_day)` and applies F14 (see Components).
+
+### `mapping.py`
+
+- `parse_composition(text)` implements A-9's grammar. Split: on `/`, `+`, or an `e`/`E` that is a word of its own (`(?<!\S)[eE](?!\S)`), surrounding spaces dropped. Part: `^(\d+)\s*(.+)$`. Class (case-insensitive, full match after collapsing spaces): `ON`; `PN`, `PNS` → `PN`; `PNA`; `PNB`; `(AÇÃO|AÇÕES) (ORDINÁRIA|ORDINÁRIAS)` → `ON`; `(AÇÃO|AÇÕES) ON` → `ON`; `(AÇÃO|AÇÕES) (PREFERENCIAL|PREFERENCIAIS)` → `PN`; `(AÇÃO|AÇÕES) PN` → `PN`; a ticker `[A-Z]{4}\d{1,2}` (case-sensitive) stays a ticker key. Repeated keys add up. Any other part → `None`.
+
+### `dividends.py`
+
+- `StockEvent(isin: str, label: str, multiplier: float, last_date_prior: date)`; `SPLIT_LABELS = ("DESDOBRAMENTO", "BONIFICACAO", "GRUPAMENTO")`. `parse_b3_company` fills `B3Company.stock_events: tuple[StockEvent, ...]` from `stockDividends`: `DESDOBRAMENTO`/`BONIFICACAO` → `1 + factor / 100`, `GRUPAMENTO` → `factor`; other labels skipped; entries identical in every field once; key absent or `null` → `()`.
+- `parse_b3_cash` (F16): dedup key = every field of the result item as received (sorted key/value pairs), across pages; `REST CAP DIN` (`corporateAction` stripped) dropped; `B3History` gains `raw_records`, `duplicates`, `capital_returns`; `complete` uses `raw_records`.
+- `split_divisor(events, isin, ex_date, d, next_session) -> float`: product of `multiplier` over events with `isin == event.isin` and `ex_date < next_session(event.last_date_prior) ≤ d`; `1.0` when none, when `isin` is `None`, or when `ex_date` is `None`.
+- `b3_ex_dates(records, next_session, *, events=(), isin=None, d=None)` and `unit_dividends(records, composition, next_session, *, events=(), isins=None, d=None)` divide each amount by `split_divisor` (for `unit_dividends`: `isins["UNT"]` for `UNT` records, `isins[class]` for class records). With no events or no `d` they behave as in r4, so r4 tests keep passing.
+- `b3_earliest_raw(records) -> date | None`: `min(last_date_prior_ex) + 1 day` (F3).
+
+### `cvm.py`
+
+- `NET_INCOME = "LL"`: `load_filings` adds, for each period and `ORDEM_EXERC` holding `3.11`, a DRE entry `("LL", ordem)` equal to the `3.11.01` row when present with a non-zero value, else the `3.11` row (F7). `ttm`, `ttm_year_before` and `annual` read it like any account.
+- Statement choice (F18): `CONSOLIDATED` when the `_con` DRE has a non-zero `ÚLTIMO` `3.01` or `3.11`; else `INDIVIDUAL` when the filing has `_ind` DRE rows; else `CONSOLIDATED`. `accounts`, when given, must include `3.01`, `3.11` and `3.11.01`; `load_filings` adds them to the filter itself.
+- `SHARE_SCALE_FACTORS` and `share_scale` as in Components (F13).
+
+### `indicators.py`
+
+- `TickerInputs.pl_ctrl: Input | None`; `TickerInputs.ll_fy` is removed (no formula reads it). `ROE`, `P/VP`, `DIV. LIQ. / PATRI.` read `pl_ctrl`; `ROIC` reads `EBIT − abs(IR)`; `CAGR LUCROS 5 ANOS` reads `ll` (TTM) over `ll_fy5`. `FORMULAS` carries the r5 text of the table above.
+
+### `coverage.py`
+
+- `dy_coverage` takes per source `{ticker: earliest_raw_date}` (Components).
+
+### `sources.py`
+
+- `b3_query_name(trading_name) -> str`: strip, remove every `/`, collapse inner whitespace (`"AMBEV S/A   "` → `"AMBEV SA"`). `b3_cash_url` applies it to the payload's `tradingName` (F15).
+
+### `report.py`
+
+- `SCHEMA = "pit-rebuild-stocks/v2"`.
+- `SHARE_SCALE_RULE` (Portuguese) states: factors `10^-2 … 10^3` against B3 `totalNumberShares`; B3 picks the factor only; unverified without a B3 count; a change of the count `< √10` (3,16×) stays as filed, `≥ √10` becomes the nearest power of ten (exact only for 10:1, otherwise off, e.g. a 1:5 split gives ×10, off by 2×; wrong at `d` when the change came after `d`); the residual per company shows it.
+- `NON_PIT_INPUTS` gets an eighth row: ``{"input": "B3 `stockDividends`", "role": "dated_event_current_record", "use": "ajusta valores de dividendos por desdobramento, bonificação e grupamento (A-20); só eventos com data-ex ≤ d", "full_rebuild_check": "eventos societários como eram conhecidos em cada data"}``.
+- `SENSITIVITY_TITLE = "Sensibilidades (não são o veredito oficial)"`; `SENSITIVITY_TEXT` per sensitivity; `ROIC_PEG_NOTE = "ROIC e PEG RATIO falham porque as fórmulas do Status Invest para eles não são públicas (A-8 é uma leitura), não por falta de dados."`.
+- `build(*, …, sensitivities: Mapping | None = None)`: `verdicts` is computed first from the official `per_date` only; then, when given, `sensitivities` = `{"without_reference_stale": {iso: {field: {group: FieldStats}}}, "filings_cutoff": {iso: {"cutoff": date, "fields": {field: {group: FieldStats}}}}}` is turned into per-date verdicts and class verdicts with the same `compare` functions (for `filings_cutoff`, the other dates keep their official field verdicts in `overall`); `class_without_roic_peg` is computed from the official overall verdicts minus `ROIC` and `PEG RATIO`. Output under `sensitivities` with `official: false`. `parameters` gains `quote_codbdi`, `filings_cutoffs` and `liquidity_sessions = 21`.
+- `render_markdown`: the verdict line keeps only official verdicts. A section titled `SENSITIVITY_TITLE` comes right after the official verdict section, with one table row per sensitivity (name, class verdict, financial verdict when present, what changed) and the D-C note, all from the JSON; with no `sensitivities` key the section is absent. The inputs section shows `collected_on` and the `as_of_check` table; the mapping section shows `reference_stale`, `vm_stale_class_price` and `share_scale.scaled` (factor, residual); the dividends section shows `b3_filters`, `split_adjust_no_isin` and `slash_names`.
+
+### `cli.py`
+
+- Arguments: both subcommands take `--collected-on YYYY-MM-DD` (repeatable, paired by position with `--date`; default: the `--date`); `report` takes `--filings-cutoff DATE:CUTOFF` (repeatable). CLI-03's checks exit 2. The exit-code table is unchanged.
+- `_Request` gains `collected_on: tuple[date, ...]` and `filings_cutoffs: dict[date, date]`; Yahoo `period2 = max(collected_on) + 1 day`.
+- `STATEMENT_ACCOUNTS` gains `2.03.09`.
+- `_company_inputs(acq, cnpj, filings_day)`: `ll`, `ll_1y`, `ll_fy5` from `cvm.NET_INCOME` (the r4 per-company choice between `3.11.01` and `3.11` goes away); `pl_ctrl = balance("2.03") − (balance("2.03.09") or 0)`, `None` when `2.03` is absent.
+- `_company(acq, day, filings_day, …)`: `n_on = round(on × f)`, `n_pref = round(pref × f)`; a verified `f ≠ 1` → `share_scale.scaled` entry `{cd_cvm, factor, residual}`; class prices with session days; a class price older than 30 days → `vm_stale_class_price` entry `{cd_cvm, class, ticker, session}`; `vm_price_fallback` only for a class with `N > 0` and no session `≤ d`.
+- B3 cash pages are requested and cached under `sources.b3_query_name(trading_name)` (`b3_cash_name` of the query name). `_choice`: a company whose `trading_name` contains `/` and whose history is complete with `total_records == 0` → `("yahoo", "b3_failed")`.
+- `_b3_dividends(acq, ticker, item, history, day)`: passes the company's `stock_events`, the ISINs (`cotahist.isin` of the ticker; for a unit, of the unit and of the smallest quote ticker of each composition class) and `day`; a class with no ISIN adds to `split_adjust_no_isin`.
+- `_evaluate_day(acq, day, filings_day=None)`: every CVM read (`usable`/`_has_filings`, `ttm`, `ttm_year_before`, `annual`, `balance`, `shares`, `refiled_after_d`, `dre_description`) uses `filings_day or day`; quotes, dividends, eligibility and the PIT guard use `day`. It also returns `reference_stale` (eligible tickers with `cotahist.reference_stale`).
+- `_as_of_check(acq, day, collected_on) -> {"eligible_with_price", "matches": {iso_session: n}, "best_session"}` over the sessions from the one before `day` to the last one `≤ collected_on` (A-11).
+- `_report_object`: times the official evaluations only (compute, A-13); then builds, untimed, (a) the stale-free stats from the official pairs minus `reference_stale` (no second evaluation) and (b) one `_evaluate_day(acq, day, filings_day=cutoff)` per `--filings-cutoff`; passes both to `report.build(sensitivities=…)`. DY coverage gets per source `{ticker: earliest raw date}` over the run's dates.
+
+### Report JSON additions (r5)
+
+```json
+{
+  "schema": "pit-rebuild-stocks/v2",
+  "parameters": {"liquidity_sessions": 21, "quote_codbdi": ["02", "07", "08"],
+                 "filings_cutoffs": {"2026-11-05": "2026-11-02"}},
+  "inputs": {"status_invest": [{"date": "2026-11-05", "collected_on": "2026-11-06", "path": "…", "sha256": "…",
+                                "as_of_check": {"eligible_with_price": 274,
+                                                "matches": {"2026-11-04": 0, "2026-11-05": 0, "2026-11-06": 0},
+                                                "best_session": "2026-11-05"}}]},
+  "dates": {"2026-11-05": {"mapping": {
+      "reference_stale": ["…"],
+      "vm_price_fallback": {"count": 0, "companies": [{"cd_cvm": "…", "class_without_quote": "PREF", "price_from": "…"}]},
+      "vm_stale_class_price": [{"cd_cvm": "…", "class": "ON", "ticker": "EMAE3", "session": "2025-08-18"}],
+      "share_scale": {"scaled": [{"cd_cvm": "…", "factor": 0.1, "residual": 1.0}], "unverified": ["…"]}}}},
+  "dividends": {"b3_filters": {"raw_records": 0, "duplicates": 0, "capital_returns": 0},
+                "split_adjust_no_isin": {"2026-11-05": 0},
+                "slash_names": [{"trading_name": "AMBEV S/A", "queried_as": "AMBEV SA", "total_records": 0}]},
+  "coverage": {"dy": {"by_source": {"b3": {"tickers": 0, "earliest_raw_date": "…", "earliest_year": 0,
+                                           "median_ticker_year": 0, "retention": "…"}},
+                      "earliest_year_from": "b3", "earliest_year": 0}},
+  "sensitivities": {
+    "official": false,
+    "title": "Sensibilidades (não são o veredito oficial)",
+    "without_reference_stale": {"text": "…", "excluded": {"2026-11-05": ["…"]},
+                                "dates": {"2026-11-05": {"fields": {"P/L": {"non_financial": {"…": "FieldStats"}}},
+                                                         "verdicts": {"P/L": {"non_financial": "…"}}}},
+                                "verdicts": {"fields": {}, "class": "…", "class_without_unclassified": "…",
+                                             "financial_group": "…"}},
+    "filings_cutoff": {"2026-11-05": {"text": "…", "cutoff": "2026-11-02", "fields": {}, "date_verdicts": {},
+                                      "verdicts": {"fields": {}, "class": "…", "class_without_unclassified": "…",
+                                                   "financial_group": "…"}}},
+    "class_without_roic_peg": {"excluded_fields": ["PEG RATIO", "ROIC"], "class": "…", "note": "…"}
+  }
+}
+```
+
+`mapping.share_scale.x1000` (r4) becomes `mapping.share_scale.scaled`; T17's end-to-end test that reads `x1000` changes with T28.
 
 ---
 
@@ -248,7 +355,7 @@ All under `py/pit_rebuild/`. Every module is stdlib-only (A-14). Tests import mo
     "tolerance": {"relative": 0.05, "pp": 0.5, "rounding_decimals": 2},
     "thresholds": {"reconstruivel": 90, "com_ressalvas": 70},
     "percent_fields": ["…"], "liquidity_sessions": 30, "formulas": {"P/L": "…"},
-    "share_scale_rule": "contagens da CVM × 1000 quando … ; erra só se a contagem mudou ≥ 31,6× entre o arquivamento e a consulta à B3",
+    "share_scale_rule": "(r5) fator f em 10^-2 … 10^3 mais perto da contagem da B3; mudança da contagem < √10 (3,16×) fica como arquivada; ≥ √10 vira a potência de dez mais próxima (exata só para grupamento ou desdobramento de 10:1); resíduo por empresa",
     "non_pit_inputs": [{"input": "B3 totalNumberShares", "role": "unit_only", "use": "A-18", "full_rebuild_check": "…"}]
   },
   "inputs": {
@@ -261,7 +368,7 @@ All under `py/pit_rebuild/`. Every module is stdlib-only (A-14). Tests import mo
       "mapping": {"mapped": 0, "unmapped": [{"ticker": "…", "reason": "…"}], "refiled_after_d": ["…"],
                   "mapped_via_b3": ["…"],
                   "vm_price_fallback": {"count": 0, "companies": [{"cd_cvm": "…", "class_without_quote": "PREF", "price_from": "…"}]},
-                  "share_scale": {"x1000": ["…cd_cvm"], "unverified": ["…cd_cvm"]},
+                  "share_scale": {"x1000": ["…cd_cvm"], "unverified": ["…cd_cvm"]},  // r4; r5: "scaled" (Amendment r5)
                   "financial": [{"ticker": "…", "rule": "setor_ativ"}],
                   "unclassified": [{"ticker": "…", "si_setor": "Financeiro e Outros", "reason": "…"}]},
       "fields": {
@@ -307,28 +414,28 @@ The Markdown (Portuguese, like the other `docs/validation/*.md`) has: verdict li
 ### Indicator formulas (A-8)
 
 Notation, all from the usable filing(s) at `d`, consolidated statement when present, else individual:
-`LL` = TTM DRE `3.11.01` (attributable to controllers), else `3.11`; `REC` = TTM DRE `3.01`; `EBIT` = TTM DRE `3.05`; `IR` = TTM DRE `3.08` (sign as filed, negative = expense); `PL` = BPP `2.03`; `AT` = BPA `1`; `AC` = BPA `1.01`; `PC` = BPP `2.01`; `DB` = BPP `2.01.04` + `2.02.01`; `CX` = BPA `1.01.01` + `1.01.02`; `DL` = `DB − CX`; `N` = issued shares (`CAP_INTEGR`, treasury included, A-17) × share scale (A-18), per class (`N_ON`, `N_PREF`) and total; `p` = ticker close; `k` = shares per ticker (1, or the unit composition total); `p_eq = p / k`.
+`LL` = TTM of `cvm.NET_INCOME`, which is, per DRE row (filing × `ORDEM_EXERC`), `3.11.01` (attributable to controllers) when present and non-zero, else `3.11` (r5, F7); the statement is consolidated only when its DRE `3.01` or `3.11` is non-zero, else individual (r5, F18); `REC` = TTM DRE `3.01`; `EBIT` = TTM DRE `3.05`; `IR` = TTM DRE `3.08` (sign as filed, negative = expense); `PL` = BPP `2.03`; `PL_ctrl` = `2.03 − 2.03.09` (non-controlling interests; 0 when absent; r5, F8); `AT` = BPA `1`; `AC` = BPA `1.01`; `PC` = BPP `2.01`; `DB` = BPP `2.01.04` + `2.02.01`; `CX` = BPA `1.01.01` + `1.01.02`; `DL` = `DB − CX`; `N` = issued shares (`CAP_INTEGR`, treasury included, A-17) × share scale (A-18), per class (`N_ON`, `N_PREF`) and total; `p` = ticker close; `k` = shares per ticker (1, or the unit composition total); `p_eq = p / k`.
 
 | Field | Formula |
 | ----- | ------- |
 | `PRECO` | `p` (last session ≤ `d`) |
-| `VALOR DE MERCADO` | `N_ON × p_ON + N_PREF × p_PREF` (A-17): `p_ON` from the `ON` ticker, `p_PREF` from the preferred ticker with the highest 30-session average volume (`cotahist.class_prices`); a class with `N > 0` and no quote uses the other class's price (`vm_price_fallback`); counts × A-18 scale |
-| `LIQUIDEZ MEDIA DIARIA` | mean `VOLTOT` of the last 30 sessions ≤ `d` |
+| `VALOR DE MERCADO` | `N_ON × p_ON + N_PREF × p_PREF` (A-17): `p_ON` from the `ON` ticker, `p_PREF` from the preferred ticker with the highest 21-session average volume (`cotahist.class_prices`); r5: a class whose tickers have no session within 30 days is priced at its last trade at any age (`vm_stale_class_price`); a class with `N > 0` and no session `≤ d` uses the other class's price (`vm_price_fallback`); counts `round(N × f)` with A-18's scale |
+| `LIQUIDEZ MEDIA DIARIA` | mean `VOLTOT` of the last 21 sessions ≤ `d`, `CODBDI` 02/07/08 (r5, F1, F5) |
 | `P/L` | `p_eq / (LL / N_total)` |
-| `P/VP` | `p_eq / (PL / N_total)` |
+| `P/VP` | `p_eq / (PL_ctrl / N_total)` (r5, F8) |
 | `PSR` | `p_eq / (REC / N_total)` |
 | `EV/EBIT` | `(VALOR DE MERCADO + DL) / EBIT` |
-| `DY` | `100 × DPS_12m / p` (per unit for units); `DPS_12m` = Σ dividends with `d − 365 days < ex_date ≤ d` from the source of A-15 |
-| `ROE` | `100 × LL / PL` |
+| `DY` | `100 × DPS_12m / p` (per unit for units); `DPS_12m` = Σ dividends with `d − 365 days < ex_date ≤ d` from the source of A-15; B3 amounts divided by A-20's split multipliers (r5, F16, F17) |
+| `ROE` | `100 × LL / abs(PL_ctrl)` (r5, F8, F9) |
 | `ROA` | `100 × LL / AT` |
-| `ROIC` | `100 × (EBIT + IR) / (PL + DB)` |
+| `ROIC` | `100 × (EBIT − abs(IR)) / (PL + DB)` (r5, F11) |
 | `MARG. LIQUIDA` | `100 × LL / REC` |
 | `MARGEM EBIT` | `100 × EBIT / REC` |
 | `LIQ. CORRENTE` | `AC / PC` |
 | `DIVIDA LIQUIDA / EBIT` | `DL / EBIT` |
-| `DIV. LIQ. / PATRI.` | `DL / PL` |
+| `DIV. LIQ. / PATRI.` | `DL / PL_ctrl` (r5, F8) |
 | `CAGR RECEITAS 5 ANOS` | `100 × ((REC_FY / REC_FY−5)^(1/5) − 1)`, fiscal-year DFP values; empty if either ≤ 0 |
-| `CAGR LUCROS 5 ANOS` | same with `LL` |
+| `CAGR LUCROS 5 ANOS` | `100 × ((LL_TTM / LL_FY−5)^(1/5) − 1)`, `LL_FY−5` = the fiscal year five years before the newest usable DFP; empty if either ≤ 0 (r5, F10) |
 | `PEG RATIO` | `P/L / (100 × (LL_TTM / LL_TTM,1y-earlier − 1))`; empty if `LL_TTM,1y-earlier ≤ 0` |
 
 Evidence for the per-ticker vs per-company split, from `data/raw/status_invest_fundamentals.csv`: `AHEB3`/`AHEB5` share `VALOR DE MERCADO` 208,345,116.53 and `EV/EBIT` 2.20, but differ in `P/L` (4.12/10.00) and `PSR` (0.37/0.90), so `P/L` and `PSR` use the ticker price; `CAGR RECEITAS 5 ANOS` is 21.70 in both the August and November CSVs, consistent with fiscal-year values. `PEG RATIO` −0.07/−0.18 with blank `CAGR LUCROS 5 ANOS` implies a growth other than the 5-year CAGR; the one-year TTM growth above is this design's reading (flagged).
@@ -361,7 +468,7 @@ Exit 1 for an `OSError` on output follows `pit_validation.py`; CLI-01's table is
 | Status Invest formulas are not public | (external) | A wrong reading fails an indicator that the data could support | Formulas in the report (RPT-03); 10 worst cases per indicator make a systematic offset visible; tuning is follow-up. |
 | COTAHIST yearly zip is ~100 MB per year; full parse is slow in pure Python | `cotahist.load` | Long `report` | Parse line by line from the zip stream and keep only requested tickers; measured time goes into COV-03. |
 | ITR Q2/Q3 `DRE` has a year-to-date and a three-month row per account | `cvm.load_filings` | Keying by account alone would mix the two and break TTM | Earliest `DT_INI_EXERC` per key (verified on `itr_cia_aberta_2025.zip`); T7/T8 fixtures write the three-month row last. ITR member names were verified equal to DFP's (Sources), so that earlier flag is closed. |
-| CVM `composicao_capital` has no scale column; 39 of 252 mapped companies file counts in thousands | `cvm.shares`, `cvm.share_scale` | Per-share fields and `VALOR DE MERCADO` off by 1000× for ~15 % of the universe | A-18: unit chosen against B3 `totalNumberShares`; `share_scale_unverified` and `x1000` companies listed in the report; T8 tests both factors, the unverified path and the no-share-count path (total 0, missing row); T17 checks `x1000`, `unverified` and the scaled `VALOR DE MERCADO` end to end. |
+| CVM `composicao_capital` has no scale column; 39 of 252 mapped companies file counts in thousands; some filings carry power-of-ten typos (LAVV3, JALL3) or predate a grouping (ESPA3) | `cvm.shares`, `cvm.share_scale` | Per-share fields and `VALOR DE MERCADO` off by a power of ten | A-18 (r5): factor over 10⁻²…10³ chosen against B3 `totalNumberShares`; companies with `f ≠ 1` listed with factor and residual, `share_scale_unverified` listed; a share change ≥ √10× between filing and retrieval maps to the nearest power of ten (stated limit, visible as a residual ≠ 1); T8 tests both factors, the unverified path and the no-share-count path (total 0, missing row); T17 checks `x1000`, `unverified` and the scaled `VALOR DE MERCADO` end to end. |
 | Share counts and class prices for `VALOR DE MERCADO` | `cvm.shares`, `cotahist.class_prices` | CVM gives only ON and PREF totals; a non-eligible class not loaded would fall back to another class's price | A-17: one preferred price (most liquid preferred ticker), which reproduces SI's value within 10⁻⁷ on 14 companies (spec A-17); COTAHIST loaded for `quote_tickers`, not only eligible tickers; fallback counted in the report. Counts are the filing's, so a change after the filing (BBDC bonus shares, AXIA on 2026-08-07) shows as a measured difference. |
 | Eligibility thresholds restated, not imported | `pit_rebuild/status_invest.py` | Drift if `STOCK_RULES` changes | Test reads `api/app/services/premium_policy.py` and asserts the `arrojado` anchor equals `ELIGIBILITY` (text match, no import of `api`). |
 | `snapshots/data/selectors-2026-11-06/stocks.csv` is untracked | main checkout only | Run cannot be reproduced from git alone | CLI takes the path; report records its sha256 (A-11). |
@@ -376,6 +483,8 @@ Exit 1 for an `OSError` on output follows `pit_validation.py`; CLI-01's table is
 | Two subcommands | `fetch` (network) and `report` (cache only with `--offline`) | Makes "no network in report" provable (CLI-02) and lets tests run the real `report` path on a fixture cache. |
 | Fixtures | Small text CSV/TXT/JSON under `tests/fixtures/pit_rebuild/`, zipped into a temp cache by a test helper | No committed binaries; fixtures stay reviewable. |
 | PIT on filings | Latest-version `DT_RECEB ≤ d` | Strictest reading of the issue AC given A-6 (recorded as AD-031). |
-| Inputs that are not point-in-time | Seven current inputs allowed with fixed roles (spec A-19), listed in `parameters.non_pit_inputs` | The report must not claim more PIT purity than it has; the full rebuild re-checks each one (AD-031). |
+| Inputs that are not point-in-time | Eight current inputs (r5 adds B3 `stockDividends`) allowed with fixed roles (spec A-19), listed in `parameters.non_pit_inputs` | The report must not claim more PIT purity than it has; the full rebuild re-checks each one (AD-031, AD-032). |
+| Decision date of a CSV (r5) | `--date` is the CSV's as-of session; `--collected-on` is recorded; `as_of_check` is evidence only | One `d` per CSV keeps every PIT rule's meaning; a tool that picked `d` from price matches would make `d` depend on the reference it is compared with (AD-032). |
+| Sensitivities (r5) | Computed after the official result, stored under `sensitivities` with `official: false`, rendered in their own section | The issue's denominator and strict PIT stay the verdict; the sensitivities only explain a failure (AD-032). |
 
 > **Project-level decision:** AD-031 in `.specs/STATE.md` records the PIT rule for CVM filings, which the full 2012–2026 rebuild must also follow.
