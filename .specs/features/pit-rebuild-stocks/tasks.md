@@ -945,9 +945,9 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] Section updated; its exit-code table equals the `cli.py` docstring table (checked by T32's artifact test)
-- [ ] Gate check passes: Build
-- [ ] Test count: unchanged
+- [x] Section updated; its exit-code table equals the `cli.py` docstring table (checked by T32's artifact test). The table is unchanged: codes and meanings match the docstring, the wording is pt-BR
+- [x] Gate check passes: Build (pit suite 302 OK; compileall OK; protected paths unchanged against origin/develop 9f65467; root suite 889 OK, 2 skipped)
+- [x] Test count: unchanged (302 pit tests, no test added in T31)
 
 **Tests**: none
 **Gate**: build

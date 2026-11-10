@@ -413,6 +413,58 @@ Valor vazio ou não numérico não é elegível. A regra espelha a produção
   (sem mapeamento e com setor `Financeiro e Outros` no Status Invest) ficam no
   grupo não financeiro, e o relatório traz também o veredito da classe sem eles.
 
+## Revisão r5 (2026-11-10)
+
+A primeira execução real parou em defeitos da especificação. O diagnóstico achou as
+causas, e a revisão r5 (AD-032) mudou estas regras. Os identificadores (F1 a F18, sem
+F6 e F12, e D-A a D-C) são os da especificação, em
+`.specs/features/pit-rebuild-stocks/spec.md`.
+
+- **Cotações (F1).** Entram os códigos `CODBDI` 02, 07 e 08 (lote padrão e empresas
+  em recuperação). No mesmo pregão, o lote (02) vale sobre os outros dois.
+- **Liquidez (F5).** A média de `VOLTOT` usa as últimas 21 sessões, e não 30.
+- **Data de referência (A-11, F4).** Cada CSV é avaliado na sessão dada por `--date`.
+  `--collected-on` registra a coleta, e o `as_of_check` do relatório mostra qual
+  sessão bate com os preços do CSV. A checagem é só evidência.
+- **Escala das ações (F13).** O fator é uma potência de dez, de 10⁻² a 10³, e as
+  contagens são arredondadas. O resíduo de cada empresa vai ao relatório.
+- **Preço de classe (F14).** Sem pregão recente na classe, usa-se o último pregão dela,
+  mesmo antigo, e o caso aparece em `vm_stale_class_price`.
+- **Demonstrações (F7 a F11, F18).** O lucro é o da linha `3.11.01` quando ela é
+  diferente de zero, senão o da `3.11`. ROE e P/VP usam o patrimônio dos controladores
+  (`2.03` menos `2.03.09`). ROIC usa EBIT menos o valor absoluto do IR. CAGR LUCROS
+  usa o lucro dos últimos 12 meses sobre o lucro do exercício de cinco anos antes. A
+  demonstração consolidada só vale quando a DRE consolidada tem `3.01` ou `3.11`
+  diferente de zero.
+- **Proventos da B3 (F15 a F17).** Registros idênticos contam uma vez, `REST CAP DIN`
+  não é provento, e os valores são ajustados por desdobramento, bonificação e
+  grupamento. Um nome com `/` é consultado sem a barra.
+- **DY (F3).** A cobertura parte da primeira data bruta de cada fonte, sem corte por `d`.
+- **Units (A-9, F2).** A composição lê `e` ou `E` como separador e `PNs` como PN, e
+  aceita tickers de três ou quatro letras (`1 ENG3 e 4 ENGI4`).
+
+## Sensibilidades (não são o veredito)
+
+O relatório traz três sensibilidades, calculadas na mesma execução (A-22). Elas ajudam
+a ler uma reprovação, mas não substituem o veredito oficial, que é o da seção Veredito
+e segue o denominador da issue e o ponto no tempo estrito.
+
+- **D-A, sem referências obsoletas.** Sai do denominador o ticker sem registro de
+  cotação em `[d − 30 dias, d]` (`reference_stale`). Isso separa a parte da falha que
+  vem da referência, porque o Status Invest continua mostrando valores de tickers que
+  deixaram de negociar.
+- **D-B, filings com corte.** Uma data é recalculada só com os filings recebidos até o
+  corte de `--filings-cutoff DATA:CORTE`. Cotações, proventos e elegibilidade continuam
+  os mesmos. A classe da sensibilidade combina essa data recalculada com o veredito
+  oficial das outras datas.
+- **D-C, sem ROIC e PEG RATIO.** A classe sobre os outros 14 indicadores de score. Os
+  dois falham porque as fórmulas do Status Invest para eles não são públicas (A-8 é
+  uma leitura), e não por falta de dados.
+
+As sensibilidades ficam em `sensitivities`, com `official: false`, e o relatório
+Markdown as mostra numa seção própria, depois do veredito. Nenhuma entra no veredito,
+nem na linha do veredito.
+
 ## Ponto no tempo (PIT-01 a PIT-03, A-6, A-7, A-19)
 
 - **Demonstrações.** Um DFP ou ITR só vale para a data `d` quando a versão mais
@@ -420,33 +472,59 @@ Valor vazio ou não numérico não é elegível. A regra espelha a produção
   usa o período anterior e registra o ticker em `refiled_after_d`.
 - **Cotações.** Só entram sessões até `d`. O preço é o último pregão até 30 dias
   antes de `d`; sem pregão nesse prazo, o ticker fica sem cotação (`no_quote`).
-  A liquidez é a média de `VOLTOT` das últimas 30 sessões até `d`.
+  Entram os códigos `CODBDI` 02, 07 e 08 (F1). A liquidez é a média de `VOLTOT`
+  das últimas 21 sessões até `d` (F5).
+- **Data de referência (A-11, F4).** Cada CSV do Status Invest é avaliado na sessão
+  dada por `--date`, que é a sessão de referência dele. `--collected-on` registra o dia
+  da coleta, e por padrão é o próprio `--date`. O relatório traz o `as_of_check` de
+  cada CSV: quantos elegíveis têm o preço de cada sessão e qual sessão bate melhor. A
+  checagem é só evidência e não escolhe `d`. Quando a sessão que bate melhor não é `d`,
+  o Markdown avisa.
 - **Proventos.** Só entram os que têm data-ex em `d − 365 dias < data-ex ≤ d`.
-- **Entradas que não são ponto no tempo (A-19).** Sete entradas são lidas como
-  foram obtidas no `fetch`, e não como estavam em `d`. Cada uma tem um papel
-  fixo, e o relatório lista as sete com o papel e a verificação que a
-  reconstrução completa precisa fazer.
+- **Entradas que não são ponto no tempo (A-19, A-20).** Oito entradas são lidas como
+  foram obtidas no `fetch`, e não como estavam em `d`. Cada uma tem um papel fixo, e o
+  relatório lista as oito com o papel e a verificação que a reconstrução completa
+  precisa fazer. A oitava são os `stockDividends` da B3, que só contam com data-ex até
+  `d`.
 
 ## Ações: valor de mercado e escala (A-17, A-18)
 
-- `VALOR DE MERCADO` = ações ON × preço ON + ações PN × preço PN. O preço da PN
-  é o do preferencial com maior volume médio nas últimas 30 sessões. Se uma
-  classe tem ações e não tem cotação, usa-se o preço da outra classe, e a
-  empresa aparece em `vm_price_fallback`.
-- A CVM não informa a escala de `composicao_capital`. Cada contagem é multiplicada
-  por 1000 quando isso aproxima a soma do `totalNumberShares` da B3. A contagem
-  da B3 só escolhe a escala e nunca entra num valor. Sem registro da B3, ou com
-  total zero nela, a escala é 1 e a empresa aparece em `share_scale.unverified`.
-  Contagem de ações zero: os campos que dependem dela ficam sem valor, com motivo
+- `VALOR DE MERCADO` = ações ON × preço ON + ações PN × preço PN, com as contagens já
+  arredondadas pelo fator de escala. Cada classe usa o preço do ticker de maior volume
+  médio (últimas 21 sessões) entre os que tiveram pregão nos 30 dias até `d`. Sem
+  pregão recente na classe, usa-se o último pregão dela, mesmo antigo, e a empresa
+  aparece em `vm_stale_class_price`. Uma classe com ações e nenhum pregão até `d` usa o
+  preço da outra, e a empresa aparece em `vm_price_fallback`.
+- A CVM não informa a escala de `composicao_capital`. O fator é a potência de dez, de
+  10⁻² a 10³, que deixa a soma das ações mais perto da `totalNumberShares` da B3. A
+  contagem da B3 só escolhe o fator e nunca entra num valor. Empresas com fator
+  diferente de 1 aparecem em `share_scale.scaled`, com o fator e o resíduo
+  (`N_total × f / totalNumberShares`). Sem registro da B3, ou com total zero nela, o
+  fator é 1 e a empresa aparece em `share_scale.unverified`.
+- Limite (√10): se a contagem mudou menos de √10 vezes entre o arquivamento e a consulta
+  à B3, ela fica como arquivada. Se mudou √10 vezes ou mais, o fator absorve a mudança
+  como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1, e erra em
+  `d` quando a mudança é posterior a `d`. O resíduo mostra cada caso.
+- Contagem de ações zero: os campos que dependem dela ficam sem valor, com motivo
   `no_share_count`.
 
 ## Proventos (D-4, A-15, A-16)
 
-- A B3 vem primeiro, empresa por empresa. O histórico de proventos da B3 só é
-  usado quando está completo (todas as páginas), não está vazio e o registro
-  mais antigo tem data `d − 365 dias` ou antes. Caso contrário, o ticker vai ao
-  Yahoo Finance naquela data, e o motivo fica registrado: `b3_failed`,
-  `b3_empty`, `b3_incomplete` ou `b3_short_history`.
+- A B3 vem primeiro, empresa por empresa. O histórico da B3 só é usado quando está
+  completo (todas as páginas, e o número bruto de registros bate com `totalRecords`),
+  não está vazio e o registro mais antigo tem data `d − 365 dias` ou antes. Caso
+  contrário, o ticker vai ao Yahoo Finance naquela data, e o motivo fica registrado:
+  `b3_failed`, `b3_empty`, `b3_incomplete` ou `b3_short_history`.
+- **Nome com barra.** Um nome com `/` na B3 é consultado sem a barra (F15). Se a
+  resposta vem vazia, o motivo é `b3_failed`, e não `b3_empty`. Um nome que a B3 não
+  entendeu não prova que a empresa não paga proventos.
+- **Registros.** Registros idênticos em todos os campos contam uma vez, e os de
+  `REST CAP DIN` saem, porque são devolução de capital e não provento (F16). O
+  relatório conta os registros brutos, os repetidos e os de capital.
+- **Desdobramento, bonificação e grupamento.** Cada provento da B3 é dividido pelo
+  múltiplo dos eventos da empresa cuja data-ex vem depois da data-ex do provento e até
+  `d` (A-20, F17). Uma classe sem ISIN não recebe esse ajuste, e o relatório conta essas
+  classes.
 - Histórico da B3 completo e vazio, com o Yahoo sem dados: o ticker é tratado
   como sem proventos no período, com DY 0 e motivo `b3_empty_yahoo_failed`.
 - Se algum DY vem do Yahoo, o relatório marca a fonte do DY como `secondary`. O
@@ -460,6 +538,11 @@ cobertura do DY e o esforço projetado da reconstrução completa de 2012 a 2026
 (carga projetada pelos bytes; cálculo por data multiplicado pelas 180 datas
 mensais).
 
+A cobertura do DY parte da primeira data bruta de cada fonte: o dia seguinte ao
+primeiro `lastDatePriorEx` da B3, ou a data-ex mais antiga do Yahoo. Essa data não é
+cortada por `d` nem mapeada pelo calendário de sessões. O relatório dá também a
+mediana do ano por ticker (COV-02, F3).
+
 ## Como rodar
 
 A partir da raiz do repositório. O `fetch` baixa o que as datas precisam e não
@@ -469,22 +552,33 @@ Sem `--offline`, ele baixa o que faltar antes de calcular.
 
 ```sh
 python3 py/pit_rebuild fetch \
-  --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv \
-  --date 2026-11-06 --si <checkout-principal>/snapshots/data/selectors-2026-11-06/stocks.csv
+  --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv --collected-on 2026-08-07 \
+  --date 2026-11-05 --si <checkout-principal>/snapshots/data/selectors-2026-11-06/stocks.csv \
+  --collected-on 2026-11-06
 
 python3 py/pit_rebuild report --offline \
-  --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv \
-  --date 2026-11-06 --si <checkout-principal>/snapshots/data/selectors-2026-11-06/stocks.csv \
+  --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv --collected-on 2026-08-07 \
+  --date 2026-11-05 --si <checkout-principal>/snapshots/data/selectors-2026-11-06/stocks.csv \
+  --collected-on 2026-11-06 --filings-cutoff 2026-11-05:2026-11-02 \
   --out-dir docs/validation
 ```
 
 `<checkout-principal>` é a raiz do checkout que tem `snapshots/`. O CSV de
 2026-11-06 não está no git (A-11), e a ferramenta só lê o caminho passado.
 
-`--date` e `--si` vão em pares, na mesma ordem. `--cache-dir` (padrão
-`.cache/pit-rebuild`, ignorado pelo git) e `--out-dir` (padrão `docs/validation`)
-são opcionais. A primeira execução baixa todos os arquivos planejados; as
-seguintes não baixam de novo o que já está no cache.
+`--date` e `--si` vão em pares, na mesma ordem. `--date` é a data de referência `d` do
+CSV. `--collected-on` diz quando o CSV foi coletado: vem zero vezes (cada CSV conta como
+coletado no próprio `--date`) ou uma vez por `--date`, na mesma ordem, e nunca fica antes
+do `--date`. Os proventos do Yahoo são pedidos até a última data de coleta, inclusive.
+
+`--filings-cutoff DATA:CORTE` (só no `report`, repetível) pede a sensibilidade D-B da
+seção de sensibilidades. `DATA` precisa ser um `--date`, e `CORTE` não pode ser depois
+dele. Argumento inválido sai com código 2 e uma linha no stderr, antes de qualquer
+leitura ou escrita.
+
+`--cache-dir` (padrão `.cache/pit-rebuild`, ignorado pelo git) e `--out-dir` (padrão
+`docs/validation`) são opcionais. A primeira execução baixa todos os arquivos
+planejados; as seguintes não baixam de novo o que já está no cache.
 
 Os testes da ferramenta rodam sem rede:
 `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`.
@@ -516,7 +610,13 @@ Uma falha não escreve nenhum arquivo do relatório e imprime uma linha no stder
   `FORMULAS` (`py/pit_rebuild/indicators.py`). A Status Invest não publica as
   fórmulas dela (A-8). Um desvio é um resultado da medição, não um erro a
   corrigir nesta etapa.
-- **Janela de liquidez.** As 30 sessões são um chute declarado (A-7).
+- **Janela de liquidez.** As 21 sessões são a janela escolhida (A-7, F5): entre as
+  janelas testadas, é a que melhor reproduz a liquidez do Status Invest nos dados em
+  cache. O Status Invest não publica a sua. O relatório registra a janela usada em
+  `liquidity_sessions`.
+- **Nome com barra na B3.** Se a B3 não responder ao nome sem a barra (A-15, F15), esses
+  tickers vão ao Yahoo com o motivo `b3_failed`. Os nomes consultados assim aparecem em
+  `dividends.slash_names`.
 - **APIs da B3.** As duas são sem documentação e podem mudar ou limitar
   requisições. O cache guarda cada resposta com o sha256, para que o relatório
   possa ser refeito a partir dele.

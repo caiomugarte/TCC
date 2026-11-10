@@ -256,8 +256,8 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | RPT-03 | P1 report | Tasks (T16, T25, T28) | In Tasks (amended r5; T25, T28 done) |
 | RPT-04 | P1 report | Tasks (T16, T28, T32) | In Tasks (T28 done; T32 pending) |
 | RPT-05 | P1 report | Tasks (T2, T17) | Done (T2, T17) |
-| RPT-06 | P1 report | Tasks (T19, T31, T32) | In Tasks (amended r5; T20 superseded by T32) |
-| CLI-01 | P1 CLI | Tasks (T1, T17, T19, T31) | Done (T1, T17, T19); T31 keeps the README table equal |
+| RPT-06 | P1 report | Tasks (T19, T31, T32) | In Tasks (amended r5; T19, T31 done; T32 pending; T20 superseded by T32) |
+| CLI-01 | P1 CLI | Tasks (T1, T17, T19, T31) | Done (T1, T17, T19, T31); T32 checks the README table against the docstring |
 | CLI-02 | P1 CLI | Tasks (T5, T17) | Done (T5, T17) |
 | CLI-03 | P1 CLI | Tasks (T17, T30) | In Tasks (amended r5; T30 done) |
 | CLI-04 | P1 CLI | Tasks (T17) | Done (T17) |
