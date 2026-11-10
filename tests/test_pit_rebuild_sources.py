@@ -73,6 +73,21 @@ class B3UrlTests(unittest.TestCase):
         )
 
 
+class B3QueryNameTests(unittest.TestCase):
+    def test_b3_query_name_strips_removes_every_slash_and_collapses_inner_whitespace(self):
+        self.assertEqual(sources.b3_query_name("AMBEV S/A   "), "AMBEV SA")
+        self.assertEqual(sources.b3_query_name("KLABIN S/A"), "KLABIN SA")
+        self.assertEqual(sources.b3_query_name("PETROBRAS   "), "PETROBRAS")
+        self.assertEqual(sources.b3_query_name("A  /  B"), "A B")
+
+    def test_b3_cash_url_queries_the_normalized_trading_name(self):
+        # The name with "/" is sent without it (F15); the page number and size are as before.
+        self.assertEqual(
+            decode_payload(sources.b3_cash_url("AMBEV S/A", 1)),
+            {"language": "pt-br", "pageNumber": 1, "pageSize": 120, "tradingName": "AMBEV SA"},
+        )
+
+
 class YahooUrlTests(unittest.TestCase):
     def test_yahoo_url_has_period1_interval_events_and_no_range(self):
         url = sources.yahoo_url("PETR4", date(2026, 8, 8))

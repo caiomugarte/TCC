@@ -45,8 +45,13 @@ def b3_company_url(root: str) -> str:
     return f"{B3_BASE}/GetListedSupplementCompany/{_b64_json(payload)}"
 
 
+def b3_query_name(trading_name: str) -> str:
+    """The name GetListedCashDividends is queried with: stripped, every "/" removed, inner whitespace collapsed (A-15, F15)."""
+    return " ".join(trading_name.replace("/", "").split())
+
+
 def b3_cash_url(trading_name: str, page: int) -> str:
-    payload = {"language": "pt-br", "pageNumber": page, "pageSize": B3_PAGE_SIZE, "tradingName": trading_name}
+    payload = {"language": "pt-br", "pageNumber": page, "pageSize": B3_PAGE_SIZE, "tradingName": b3_query_name(trading_name)}
     return f"{B3_BASE}/GetListedCashDividends/{_b64_json(payload)}"
 
 

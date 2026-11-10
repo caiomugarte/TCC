@@ -269,7 +269,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | COV-03 | P2 coverage | Tasks (T15, T17, T30, T32) | In Tasks |
 | PIT-04 | P1 rebuild | Tasks (T28, T30, T32) | In Tasks (r5) |
 | SRC-06 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |
-| SRC-07 | P1 rebuild | Tasks (T27, T28, T29, T32) | In Tasks (r5) |
+| SRC-07 | P1 rebuild | Tasks (T27, T28, T29, T32) | In Tasks (r5; T27 done) |
 | IND-05 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |
 | IND-06 | P1 rebuild | Tasks (T24, T25, T29) | In Tasks (r5; T24, T25 done) |
 | VER-05 | P1 rebuild | Tasks (T21, T28, T30) | In Tasks (r5; T21 done) |

@@ -820,9 +820,9 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_sources.py`: `b3_query_name("AMBEV S/A   ")` → `AMBEV SA`; `KLABIN S/A` → `KLABIN SA`; `PETROBRAS   ` → `PETROBRAS`; `A  /  B` → `A B`; `b3_cash_url("AMBEV S/A", 1)` decodes to `{"language":"pt-br","pageNumber":1,"pageSize":120,"tradingName":"AMBEV SA"}`; T6's PETROBRAS page-2 URL is unchanged.
-- [ ] Gate check passes: Build (last task of Phase 5)
-- [ ] Test count: ≥ 9 tests pass in the file (T6's 7 plus ≥ 2)
+- [x] `tests/test_pit_rebuild_sources.py`: `b3_query_name("AMBEV S/A   ")` → `AMBEV SA`; `KLABIN S/A` → `KLABIN SA`; `PETROBRAS   ` → `PETROBRAS`; `A  /  B` → `A B`; `b3_cash_url("AMBEV S/A", 1)` decodes to `{"language":"pt-br","pageNumber":1,"pageSize":120,"tradingName":"AMBEV SA"}`; T6's PETROBRAS page-2 URL is unchanged.
+- [x] Gate check passes: Build (last task of Phase 5): pit suite 265 OK; root suite 852 OK, 2 skipped (799 at 4ec8665 plus the 53 new pit tests); compileall OK; protected paths unchanged against origin/develop 9f65467
+- [x] Test count: ≥ 9 tests pass in the file (T6's 7 plus ≥ 2) - 9 pass
 
 **Tests**: unit
 **Gate**: build
