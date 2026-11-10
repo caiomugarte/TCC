@@ -255,25 +255,31 @@
 ## Handoff
 
 - **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
-- **Phase / Task**: EXECUTE Phase 1 done (batch b1, T1-T6). Next: T7, the first task of Phase 2. Batch b2 = Phases 2+3 (T7-T16); batch b3 = Phase 4 (T17-T20). The feature-level Verifier has not run; it runs after T20.
+- **Phase / Task**: EXECUTE Phases 2 and 3 done (batch b2, T7-T16). Next: T17, the `report` subcommand (phase 4). Batch b3 = Phase 4 (T17-T20). The feature-level Verifier has not run; it runs after T20.
 - **Human checkpoint**: approved on 2026-11-09 (spec defaults A-1..A-19, design approach A, AD-031, task list T1-T20, counted 23).
-- **Completed (Phase 1, branch t3/issue-59)**:
-  - T1 `c7b395e` error classes and exit codes (3 tests)
-  - T2 `349e964` write guard and atomic writes (8 tests)
-  - T3 `7711eaf` field list read from `config.py` with ast; spec IND-02 set to Done (6 tests)
-  - T4 `f4f7b16` Status Invest loader and eligibility; fixture `tests/fixtures/pit_rebuild/si_small.csv` (11 tests)
-  - T5 `c7c8802` hash-checked cache with offline mode; spec SRC-02 set to Done; helper `tests/pit_rebuild_support.py` (10 tests)
-  - fix `887306f` T1 and T2 files made clean for the v0 isolation and bytecode scans (found at the T6 gate)
-  - T6 `06b99a8` source URLs and per-date file plan (7 tests)
-  - Gates: `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"` gives 45 OK. Root suite `$PY -m unittest discover -s tests -p "test_*.py"` gives 632 OK, 2 skipped (587 existing + 45 new).
-- **Gate note**: the literal Build gate `git diff --exit-code develop -- data snapshots baselines py/core api py/config.py py/pit_validation.py` exits 1. The local `develop` ref is `af1080e`, older than `origin/develop` (`9f65467`, merge of #61), which this file records as develop. The same paths are unchanged against `origin/develop` and against HEAD (both exit 0). Not changed here: fast-forward the local `develop`, or run this gate against `origin/develop`.
+- **Completed (branch t3/issue-59)**:
+  - Phase 2: T7 `64c3377` CVM filings point-in-time (8 tests); T8 `0a931ca` ttm, annual, balance, shares, share_scale, dre_description (22 tests in the file); T9 `fd84acf` COTAHIST quotes, liquidity, ISIN, calendar, class_prices (13 tests); T10 `f5eec5a` B3 and Yahoo dividends, window and leak guard (18 tests); T11 `b844ed5` ticker mapping, units, financial group, quoted universe (15 tests).
+  - Phase 3: T12 `f405281` the 19 fields with reasons and the PIT guard (18 tests); T13 `453fbd9` tolerance, differences, p90, per-indicator statistics (13 tests); T14 `0788ead` verdicts per indicator and for the class (19 tests in the file); T15 `59fb189` earliest years, DY coverage, full-rebuild years, effort (11 tests); T16 `7e38b2a` report JSON and Markdown (15 tests).
+- **Gates**: Phase 2 Build: `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"` 113 OK; compileall OK; root suite 700 OK, 2 skipped. Phase 3 Build: pit suite 176 OK; compileall OK; root suite 763 OK, 2 skipped. Protected paths unchanged against `origin/develop` (9f65467) at both gates (exit 0).
+- **Gate note**: unchanged from Phase 1. The local `develop` ref is stale; the gate compares against `origin/develop` (9f65467), as the orchestrator accepted.
 - **In-progress** (file:line): none.
-- **Next step**: T7, `py/pit_rebuild/cvm.py` (`load_filings` and PIT selection).
-- **Blockers**: none in code.
-- **Pitfalls found in Phase 1**:
-  - `tests/test_v0_zz_manifest_gates.py` treats a `sys.path.insert` as a bundle import in any test file whose string constants contain `baselines`, unless `sys.dont_write_bytecode = True` comes first (AD-013). Production code must not contain `baselines/` (`tests/test_v0_legacy_isolation.py`, AD-014).
-  - `py/config.py` declares `METRIC_GROUPS` as an annotated assignment; `fields.metric_groups` handles that form.
-- **Unverified points carried into Execute**: both B3 endpoints are undocumented and may change. The Status Invest formulas other than `VALOR DE MERCADO`, and the 30-session liquidity window, are readings to be measured, not facts. Unit companies (ENGI, SULA) do not follow the `VALOR DE MERCADO` rule in SI's own numbers. Verified facts and their evidence are in spec A-17 and A-18 and in design "Sources".
+- **Next step**: write `py/pit_rebuild/cli.py` (the `report` subcommand, argument checks, exit codes 0-5) and `py/pit_rebuild/__main__.py`, with the CLI-05 tests through `main([...])`. Assemble each ticker's `indicators.TickerInputs` from cvm, cotahist and dividends: LL is 3.11.01, else 3.11; counts go through `cvm.share_scale` before they reach `n_on` and `n_pref`.
+- **Blockers**: none.
+- **Uncommitted files**: none.
 - **Branch**: t3/issue-59 (base `develop`). Nothing pushed.
-- **Previous handoff**: premium-whole-units (issue #57) merged into `develop` via #61 (`9f65467`). protection-zone (#46) T17 is still DEFERRED pending a November snapshot. Observation carried over: `scripts/protection_zone_turnover.py:66` LIMITATIONS text still says "a real premium-policy-v3 run".
-- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest); system `python3` 3.14.4 without pandas runs the stdlib-only `pit_rebuild` tests. Run from the worktree root. The root suite takes about 5 minutes. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
+- **Deviations from the design (made in Execute, not in the decision log)**:
+  - `refiled_after_d` follows A-6 and PIT-03: any newer period whose latest version arrived after d. The design's extra condition (an earlier version received on or before d) is not applied.
+  - `Dated` and `Shares` carry the DT_RECEB. `balance`, `shares`, `ttm` and `ttm_year_before` take the DFP and ITR stores together, as `ttm` already did in the design.
+  - `shares.total` is the CVM TOTAL column as filed. The per-share divisor is ON + PREF (A-17).
+  - `compute` raises PITLeakError for a dividend with ex-date after d. The window filter alone would drop it silently.
+  - `report.build` takes FieldStats per date and derives every verdict. Its `coverage` input needs the keys of `coverage.py`.
+  - `parse_composition(text)`, `classify(mapping, cadastro, dre, si_setor)` and `resolve(choice, b3_dividends, yahoo)` drop or move design parameters that nothing used.
+- **Unverified points carried into Execute**: both B3 endpoints are undocumented. The Status Invest formulas other than `VALOR DE MERCADO`, and the 30-session liquidity window, are readings to be measured. The fixtures are not real data, except the PETR4 COTAHIST line of 2026-11-06 (45.36, BRPETRACNPR6, from the spec) and the trimmed PETROBRAS company record. The Yahoo amounts in `yahoo_petr4.json` are placeholders; the ex-dates come from the spec.
+- **Pitfalls found in Phases 2-3**:
+  - `check_commit.py` warns when a header is over 72 characters (T9 was 74, T13 was 77). Keep headers at 72 or less.
+  - `make_zip` encodes str members as latin-1. Keep fixture text UTF-8, and keep the cadastro file latin-1 on disk, since `cvm.load_cadastro` reads bytes.
+  - A sparse COTAHIST calendar maps every ex-date to the next loaded session. The dividend tests use a dense weekday calendar through `cotahist.Quotes(sessions=...)`.
+  - `dps_12m` filters the window before it sums, so the leak check on raw dividends must run first. `indicators._assert_point_in_time` does it.
+  - `py/pit_rebuild/compare.py` has an unused `import math`, left from the earlier `p90`. It is not changed in T16 because the file is outside that task's list. Remove it in T17 or a later cleanup.
+  - A test file that names the frozen bundle (the string `baselines`) needs `sys.dont_write_bytecode = True` before its `sys.path.insert` (`tests/test_v0_zz_manifest_gates.py`). The new test files do not name it.
+- **Environment**: `$PY=/home/caio/Documents/projetos/TCC/.venv/bin/python` (3.14.4, numpy, pandas, no pytest). The system `python3` runs the stdlib-only `pit_rebuild` tests. Run from the worktree root. The root suite takes about 3 to 5 minutes. Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message that contains the word "make".
