@@ -29,6 +29,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import urllib.error
 from datetime import date
 from pathlib import Path
 from unittest import mock
@@ -37,8 +38,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 sys.path.insert(0, str(PROJECT_ROOT / "tests"))
 
-from pit_rebuild import cli, cvm, safety  # noqa: E402
-from pit_rebuild_support import UNIVERSE, populate_cache  # noqa: E402
+from pit_rebuild import cli, cvm, safety, sources  # noqa: E402
+from pit_rebuild_support import UNIVERSE, FakeOpener, FakeResponse, populate_cache, universe_routes  # noqa: E402
 
 D1 = date(2026, 8, 7)
 D2 = date(2026, 11, 6)
@@ -218,7 +219,7 @@ class ReportSuccessTests(ReportCase):
         self.assertEqual(report["dates"][ISO1]["fields"]["DY"]["non_financial"]["within"], 12)
         self.assertEqual(report["dates"][ISO2]["fields"]["DY"]["non_financial"]["within"], 12)
         self.assertEqual(div["by_source"][ISO1], {"b3": 12, "yahoo": 1, "none": 0})
-        self.assertEqual(div["yahoo_reasons"][ISO1], {"b3_failed": 0, "b3_empty": 0, "b3_incomplete": 0, "b3_short_history": 1})
+        self.assertEqual(div["yahoo_reasons"][ISO1], {"b3_failed": 0, "b3_empty": 11, "b3_incomplete": 0, "b3_short_history": 1})
         # the eleven companies whose complete B3 history is empty and whose Yahoo lookup failed: DY 0, source b3
         self.assertEqual(div["b3_empty_yahoo_failed"][ISO1], 11)
         self.assertEqual(div["source"], "secondary")
@@ -383,6 +384,183 @@ class ReportSafetyTests(ReportCase):
             cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120, check=False,
         )
         self.assertEqual(probe.stdout.strip(), "False", probe.stderr)
+
+
+def fetch_args(cache: Path, dates=(D1, D2), si=(SI1, SI2)) -> list[str]:
+    args = ["fetch"]
+    for day, path in zip(dates, si):
+        args += ["--date", day.isoformat(), "--si", str(path)]
+    return args + ["--cache-dir", str(cache)]
+
+
+def http_error(code: int) -> urllib.error.HTTPError:
+    return urllib.error.HTTPError("https://example.invalid/", code, "error", {}, io.BytesIO(b""))
+
+
+def json_response(body: dict) -> FakeResponse:
+    data = (json.dumps(body, separators=(",", ":")) + "\n").encode("utf-8")
+    return FakeResponse(data, {"Content-Length": str(len(data))})
+
+
+class FetchTests(unittest.TestCase):
+    """fetch downloads what report needs, through the same acquisition (SRC-01..SRC-05, COV-01, COV-03, CLI-05)."""
+
+    def setUp(self):
+        self._dir = tempfile.TemporaryDirectory()
+        self.work = Path(self._dir.name)
+        self.cache = self.work / "cache"
+        self.out = self.work / "out"
+        self.routes = universe_routes((D1, D2))
+        self.planned = [url for url, _name in sources.plan_files((D1, D2))]
+
+    def tearDown(self):
+        self._dir.cleanup()
+
+    def fetch(self, routes=None, cache=None):
+        fake = FakeOpener(self.routes if routes is None else routes)
+        code, err = run(fetch_args(cache or self.cache), opener=fake)
+        return code, err, fake
+
+    @staticmethod
+    def gets(fake) -> list[str]:
+        return [url for method, url in fake.requests if method == "GET"]
+
+    def manifest(self) -> dict:
+        return json.loads((self.cache / "manifest.json").read_text(encoding="utf-8"))
+
+    def test_fetch_requests_every_planned_url_once_and_writes_the_manifest(self):
+        code, err, fake = self.fetch()
+        self.assertEqual(code, 0, err)
+        gets = self.gets(fake)
+        for url in self.planned:
+            self.assertEqual(gets.count(url), 1, url)
+        names = {entry["name"] for entry in self.manifest()["files"].values()}
+        for _url, name in sources.plan_files((D1, D2)):
+            self.assertIn(name, names)
+
+    def test_fetch_records_the_listings_probes_and_content_lengths_for_the_full_rebuild(self):
+        code, err, _fake = self.fetch()
+        self.assertEqual(code, 0, err)
+        manifest = self.manifest()
+        self.assertIn("listing_dfp.html", {entry["name"] for entry in manifest["files"].values()})
+        self.assertEqual(manifest["probes"][sources.cotahist_url(2011)], True)
+        self.assertEqual(manifest["probes"][sources.cotahist_url(2005)], False)
+        self.assertEqual(sorted(sources.cotahist_url(y) for y in range(2005, 2013)), sorted(manifest["probes"]))
+        self.assertIn(sources.dfp_url(2010), manifest["sizes"])
+        self.assertIn(sources.cotahist_url(2026), manifest["sizes"])
+        self.assertIn(sources.CAD_URL, manifest["sizes"])
+
+    def test_a_second_fetch_makes_no_request_for_cached_files(self):
+        self.fetch()
+        code, err, fake = self.fetch()
+        self.assertEqual(code, 0, err)
+        repeated = [url for url in self.gets(fake) if url in set(self.planned)]
+        self.assertEqual(repeated, [])
+
+    def test_a_b3_cash_history_over_two_pages_fetches_both_pages(self):
+        _code, _err, fake = self.fetch()
+        gets = self.gets(fake)
+        self.assertEqual(gets.count(sources.b3_cash_url("SOLO S.A.", 1)), 1)
+        self.assertEqual(gets.count(sources.b3_cash_url("SOLO S.A.", 2)), 1)
+
+    def test_a_b3_company_record_that_fails_sends_each_eligible_ticker_of_that_company_to_yahoo(self):
+        routes = dict(self.routes)
+        routes[sources.b3_company_url("ALFA")] = http_error(500)
+        code, err, fake = self.fetch(routes)
+        self.assertEqual(code, 0, err)
+        alfa = [url for url in self.gets(fake) if "/ALFA3.SA?" in url or "/ALFA4.SA?" in url]
+        self.assertEqual(len(alfa), 2)  # one Yahoo request per eligible ticker of ALFA
+        self.assertEqual(run(report_args(self.cache, self.out))[0], 0)
+        self.assertEqual(self.report_dividends()["yahoo_reasons"][ISO1]["b3_failed"], 2)
+
+    def test_a_cash_history_with_no_records_goes_to_yahoo_and_a_failed_lookup_is_a_confirmed_non_payer(self):
+        routes = dict(self.routes)
+        routes[sources.b3_cash_url("SOLO S.A.", 1)] = json_response(
+            {"page": {"pageNumber": 1, "pageSize": 120, "totalRecords": 0, "totalPages": 1}, "results": []}
+        )
+        code, err, fake = self.fetch(routes)
+        self.assertEqual(code, 0, err)
+        self.assertEqual(len([url for url in self.gets(fake) if "/SOLO3.SA?" in url]), 1)
+        self.assertEqual(run(report_args(self.cache, self.out))[0], 0)
+        div = self.report_dividends()
+        self.assertEqual(div["yahoo_reasons"][ISO1], {"b3_failed": 0, "b3_empty": 12, "b3_incomplete": 0, "b3_short_history": 1})
+        self.assertEqual(div["b3_empty_yahoo_failed"][ISO1], 12)  # the eleven of the fixture plus SOLO3
+
+    def test_a_missing_second_page_is_incomplete_and_goes_to_yahoo(self):
+        routes = dict(self.routes)
+        routes[sources.b3_cash_url("SOLO S.A.", 2)] = http_error(500)
+        code, err, fake = self.fetch(routes)
+        self.assertEqual(code, 0, err)
+        self.assertEqual(len([url for url in self.gets(fake) if "/SOLO3.SA?" in url]), 1)
+        self.assertEqual(run(report_args(self.cache, self.out))[0], 0)
+        div = self.report_dividends()
+        self.assertEqual(div["yahoo_reasons"][ISO1]["b3_incomplete"], 1)
+        self.assertEqual(div["by_source"][ISO1]["none"], 1)  # Yahoo failed too: no dividend source
+
+    def test_a_complete_history_starting_after_d_minus_365_asks_yahoo(self):
+        _code, _err, fake = self.fetch()
+        self.assertEqual(len([url for url in self.gets(fake) if "/SHRT3.SA?" in url]), 1)
+
+    def test_a_complete_history_reaching_d_minus_365_makes_no_yahoo_request(self):
+        _code, _err, fake = self.fetch()
+        self.assertEqual([url for url in self.gets(fake) if "/SOLO3.SA?" in url], [])
+
+    def test_a_failed_cotahist_download_exits_5_naming_it_and_keeps_the_cached_files(self):
+        code, err, _fake = self.fetch()
+        self.assertEqual(code, 0, err)
+        cached = {entry["name"] for entry in self.manifest()["files"].values()}
+        (self.cache / "COTAHIST_A2026.ZIP").unlink()
+        manifest = self.manifest()
+        del manifest["files"]["COTAHIST_A2026.ZIP"]
+        (self.cache / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+        routes = dict(self.routes)
+        routes[sources.cotahist_url(2026)] = http_error(500)
+        code, err, _fake = self.fetch(routes)
+        self.assertEqual(code, 5)
+        self.assertIn(sources.cotahist_url(2026), err)
+        still = {entry["name"] for entry in self.manifest()["files"].values()}
+        self.assertEqual(still, cached - {"COTAHIST_A2026.ZIP"})
+        self.assertTrue((self.cache / "dfp_cia_aberta_2025.zip").is_file())
+
+    def test_fetch_then_report_offline_exits_0_end_to_end(self):
+        code, err, _fake = self.fetch()
+        self.assertEqual(code, 0, err)
+        code, err = run(report_args(self.cache, self.out))
+        self.assertEqual(code, 0, err)
+        self.assertTrue((self.out / REPORT).is_file())
+
+    def test_a_ticker_absent_from_every_fca_year_is_requested_and_mapped_through_its_b3_record(self):
+        _code, _err, fake = self.fetch()
+        self.assertEqual(self.gets(fake).count(sources.b3_company_url("SOLO")), 1)
+        self.assertEqual(run(report_args(self.cache, self.out))[0], 0)
+        mapping_out = json.loads((self.out / REPORT).read_text(encoding="utf-8"))["dates"][ISO1]["mapping"]
+        self.assertEqual(mapping_out["mapped_via_b3"], ["SOLO3"])
+        self.assertNotIn("SOLO3", [row["ticker"] for row in mapping_out["unmapped"]])
+
+    def test_a_confirmed_non_payer_is_asked_of_yahoo_once_and_counted_under_b3(self):
+        _code, _err, fake = self.fetch()
+        self.assertEqual(len([url for url in self.gets(fake) if "/AZUL4.SA?" in url]), 1)  # Yahoo answers 404
+        self.assertEqual(run(report_args(self.cache, self.out))[0], 0)
+        div = self.report_dividends()
+        self.assertEqual(div["by_source"][ISO1]["none"], 0)
+        self.assertEqual(div["by_source"][ISO1]["b3"], 12)  # AZUL4 among them, with DY 0 from b3
+
+    def test_fetch_exit_codes_for_missing_si_and_forbidden_cache(self):
+        code, err, _fake = self.fetch_with(si=(self.work / "absent.csv", SI2))
+        self.assertEqual(code, 3)
+        self.assertIn("absent.csv", err)
+        forbidden = safety.REPO_ROOT / "data" / "pit-test-fetch-cache"
+        code, err = run(fetch_args(forbidden), opener=FakeOpener(self.routes))
+        self.assertEqual(code, 2, err)
+        self.assertFalse(forbidden.exists())
+
+    def fetch_with(self, si):
+        fake = FakeOpener(self.routes)
+        code, err = run(fetch_args(self.cache, si=si), opener=fake)
+        return code, err, fake
+
+    def report_dividends(self) -> dict:
+        return json.loads((self.out / REPORT).read_text(encoding="utf-8"))["dividends"]
 
 
 if __name__ == "__main__":

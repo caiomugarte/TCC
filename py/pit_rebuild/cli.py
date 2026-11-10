@@ -482,8 +482,9 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
         company = companies[item.cnpj]
         source, dy_reason, divs = _dividends_of(acq, day, ticker, item)
         counts["by_source"][source] += 1
-        if source == "yahoo":
-            counts["yahoo_reasons"][dy_reason] += 1
+        choice = _choice(acq, day, ticker)
+        if choice[0] == "yahoo":  # every switch to Yahoo counts with its reason, whether Yahoo answered or not
+            counts["yahoo_reasons"][choice[1]] += 1
         if dy_reason == "b3_empty_yahoo_failed":
             counts["b3_empty_yahoo_failed"] += 1
         if source in ("b3", "yahoo") and divs is not None:
@@ -575,20 +576,32 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
     )
 
 
-def _coverage(cache: Cache, acq: _Acquired, req: _Request, compute_seconds: float, dy: dict) -> dict:
-    """Earliest years, the field years, the DY coverage and the effort of the full rebuild (COV-01..COV-03)."""
+def _survey(cache: Cache) -> tuple[dict, dict]:
+    """The CVM listings and the COTAHIST probes: each source's earliest year and the full-rebuild years (COV-01)."""
     listings = {
         source: cache.get(url, listing_name(source), required=True).read_bytes() for source, url in LISTINGS.items()
     }
     probes = {year: cache.probe(sources.cotahist_url(year)) for year in PROBE_YEARS}
     earliest = coverage.earliest_years(listings, probes)
     years = coverage.full_rebuild_years({source: info["year"] for source, info in earliest.items()})
+    return earliest, years
+
+
+def _sizes(cache: Cache, years: dict) -> dict[str, int]:
+    """The Content-Length of every yearly file of the full rebuild and of the cadastro (COV-03)."""
     sizes: dict[str, int] = {}
     for url in _full_rebuild_urls(years):
         size = cache.head_size(url)
         if size is None:
             raise SourceError(url, "Content-Length is not known; run fetch while online first")
         sizes[url] = size
+    return sizes
+
+
+def _coverage(cache: Cache, acq: _Acquired, req: _Request, compute_seconds: float, dy: dict) -> dict:
+    """Earliest years, the field years, the DY coverage and the effort of the full rebuild (COV-01..COV-03)."""
+    earliest, years = _survey(cache)
+    sizes = _sizes(cache, years)
     effort = coverage.effort(
         {kind: acq.timings[kind] for kind in KINDS},
         compute_seconds,
@@ -642,6 +655,17 @@ def _command_report(args: argparse.Namespace, *, opener, clock) -> int:
     return 0
 
 
+def _command_fetch(args: argparse.Namespace, *, opener, clock) -> int:
+    """Download every file the rebuild of the dates needs, in the order of design.md, and record the survey (COV-01, SRC-01)."""
+    req = _request(args, needs_out=False)
+    cache = _cache(req.cache_dir, offline=False, opener=opener)
+    cache.verify()
+    _acquire(cache, req.dates, req.si_paths, clock)
+    _, years = _survey(cache)
+    _sizes(cache, years)
+    return 0
+
+
 def _write_report(out_dir: Path, obj: dict) -> None:
     payload = {
         out_dir / REPORT_JSON: report.encode_json(obj),
@@ -664,6 +688,11 @@ def _build_parser() -> argparse.ArgumentParser:
     report_parser.add_argument("--offline", action="store_true", help="read only the cache: no network request")
     report_parser.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR), help="where the report files are written")
     report_parser.set_defaults(handler=_command_report)
+    fetch_parser = commands.add_parser("fetch", help="download the raw sources into the cache, without a report")
+    fetch_parser.add_argument("--date", action="append", required=True, metavar="YYYY-MM-DD", help="decision date (repeatable)")
+    fetch_parser.add_argument("--si", action="append", required=True, metavar="PATH", help="Status Invest CSV of the date at the same position")
+    fetch_parser.add_argument("--cache-dir", default=str(DEFAULT_CACHE_DIR), help="download cache (default .cache/pit-rebuild)")
+    fetch_parser.set_defaults(handler=_command_fetch)
     return parser
 
 
