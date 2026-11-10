@@ -262,16 +262,15 @@
 
 ## Handoff
 - **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
-- **Phase / Task**: Verifier r1 fixes done (Phase 7, T33-T36). Next: the Verifier re-run (`validate.md`, author != verifier; not run here), then `validate_state.py`, which needs the new `validation.md`.
-- **Verifier r1 (`validation.md`, FAIL: 2 blocking, 3 nonblocking)**: the four gaps the fix plan covers are closed by test-only commits, plus one docstring line. The Verifier's report is untouched.
-  - G1 (blocking): T33 `e1d3826`, `PeriodReceiptBoundaryTests` in `tests/test_pit_rebuild_cvm.py`: the older filing read by `annual(years_back=5)`, `ttm_year_before` and the TTM read, received on d + 1 (no value) and on d (used). 6 tests.
-  - G2 (blocking): T34 `1613e09`, `AnnualBaseReceiptTests`: a DFP received after d does not move `annual()`'s base; on d it is the base. 2 tests.
-  - N1 (nonblocking): T35 `90ec292`, `ScaledShareCountTests` in `tests/test_pit_rebuild_cli.py`: `cli._company` rounds the scaled counts (3 000 001 and 1 000 000). 1 test.
-  - N3 (nonblocking): T36 `046bb93`: the first docstring example uses `--date 2026-11-05`.
-- **Discrimination** (scratch copies of `py/` and `tests/`, never the worktree): removing the cut at `cvm.py:291` fails the three d + 1 tests, and `<=` to `<` there fails the three on-d tests. At `cvm.py:208` (G2) each mutant fails its one test. Removing `round` at `cli.py:443` fails N1, and so does `int`. The restored copies pass every time.
-- **Gates at 046bb93**: pit suite 320 OK; root suite 907 OK, 2 skipped (898 before plus the 9 new tests); `compileall` OK; protected paths unchanged against `origin/develop` 9f65467 (`git diff --exit-code` 0).
-- **Results**: unchanged. The only production change is the N3 docstring line. `docs/validation/pit-rebuild-stocks.{json,md}` and `validation.md` are untouched.
-- **For the human to confirm** (still open from the previous Handoff):
+- **Phase / Task**: the-judge r1 fixes done on PR #62 (F1, N1, N2). Next: the-judge r2, then the Verifier re-run (`validate.md`, author != verifier; not run here), then `validate_state.py`. `validation.md` still holds the Verifier r2 PASS of the code before the refiled fix, so its N2 note (217 tickers) is stale until the re-run.
+- **the-judge r1 fixes**:
+  - F1 (`refiled_after_d` counted every company whose next filing arrived after d): `74cbf5d` sets the rule to `first_receb <= d < dt_receb`, with the earliest receipt of any version kept in `Filing.first_receb`; `faac9b1` words the Markdown line. The usage rule (`usable`, `dt_receb <= d`) is unchanged. The REFL fixture has two versions (v1 2026-03-31, v2 2026-09-15), so `REFL3` is flagged on 2026-08-07 only.
+  - Discrimination (scratch copies, never the worktree): the window replaced by `True` fails 2 tests in `test_pit_rebuild_cvm.py`; the whole predicate replaced by `True` fails 4 (CVM and CLI); the pre-fix `dt_receb > d` fails 2. `<=` on the latest receipt is an equivalent mutant: `_newest_usable` takes a period received on d, so that period can't be newer than the newest usable.
+  - N1 and N2 (README: zero reference; exit 5 only for required files): `0366546`.
+  - Report regenerated offline (flags of the Handoff, tool `0366546`): `53fde43`. `refiled_after_d` 217 → 1 (ONCO3) on 2026-08-07, 2 → 0 on 2026-11-05. Verdicts and sensitivities unchanged; the other differences are run timings and `tool_commit`.
+  - Gates at `53fde43`: pit suite 322 OK; root suite 909 OK, 2 skipped; protected paths unchanged against `origin/develop` 9f65467.
+- **For the human to confirm** (g is new; a-f are still open from the previous Handoff):
+  - (g) **Spec text vs the fixed rule.** `spec.md` PIT-03 (line 115), A-6 (line 76) and AD-031's Decision still say any fallback to an older period counts as `refiled_after_d`. The code and `design.md:148` count only a period with a version delivered <= d and a newer one after d, which AD-031's Trade-off ("re-filed companies") matches. Those texts are human-approved, so they were not edited. Choose: amend the three to the narrow rule, or revert the code to the broad one.
   - (a) Scale residuals left at the A-18 limit, visible in `share_scale.scaled`: SBSP3 (factor 10, residual 1.99), LIGT3 (factor 10, residual 2.31), cd_cvm 25550 at x1000 (residual 0.175).
   - (b) The x1000 group has 62 companies on 2026-08-07 and 61 on 2026-11-05.
   - (c) Three extra B3 histories (AMBIPAR, BR PARTNERS, PARANAPANEMA) were fetched.
@@ -280,7 +279,7 @@
   - (f) The Phase 5 items of the earlier Handoff (ZETA11 fixture row, T12's PL_ctrl, edge choices) still await the human.
 - **In-progress (file:line)**: none.
 - **Uncommitted files**: none.
-- **Branch**: t3/issue-59 (base develop; gates compare against origin/develop 9f65467). Nothing pushed; no PR.
+- **Branch**: t3/issue-59 (base develop; gates compare against origin/develop 9f65467). PR #62 is open; the pushed head is the commit that carries this Handoff.
 - **Outside this repo**: `~/brain` was not updated (this batch was limited to the worktree). It needs the COTAHIST `CODBDI` codes (02/07/08), the FCA unit-composition formats (including `ENG3`), the B3 `stockDividends` split semantics, B3 answering the normalized `/` names, and the #59 status in `projetos/prumo.md`, which still says the SPEC is in review. Push and wiki edits need an explicit go-ahead.
 - **Lesson proposed by the Verifier** (not recorded here; the orchestrator runs `lessons.py`): when a PIT rule is applied in several helpers, test the boundary through each helper that selects a filing.
 - **Pitfalls (carried)**:
@@ -295,3 +294,6 @@
   - The Markdown is rendered in a fixed order (`_canonical`, sorted keys), so the artifact bytes do not depend on dict build order.
   - The T20 cash pages under the raw names are no longer read; they stay in the cache.
   - In a gate, `git diff --stat` exits 0 whatever it finds. Use `git diff --exit-code`.
+  - `gh pr edit` exits 1 on a Projects (classic) GraphQL warning and leaves the PR body unchanged; `gh api -X PATCH repos/caiomugarte/TCC/pulls/62 -F body=@<file>` works.
+  - A mutation copy of `py/` and `tests/` also needs `api/app/services/premium_policy.py`, `docs/validation/` and `data/raw/status_invest_fundamentals.csv`: the eligibility and artifact tests read them.
+  - The REFL CLI expectation does not tell the old rule from the new one (REFL is re-filed under both); `test_pit_rebuild_cvm.py` is the discriminating layer.
