@@ -236,7 +236,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | SRC-04 | P1 rebuild | Tasks (T5, T18) | Done (T5, T18) |
 | SRC-05 | P1 rebuild | Tasks (T10, T18) | Done (T10, T18) |
 | PIT-01 | P1 rebuild | Tasks (T7, T8, T9, T17) | Done (T7, T8, T9, T17) |
-| PIT-02 | P1 rebuild | Tasks (T1, T10, T12, T17, T23) | Done (T1, T10, T12, T17); T23 keeps the leak guard with split adjustment |
+| PIT-02 | P1 rebuild | Tasks (T1, T10, T12, T17, T23) | Done (T1, T10, T12, T17, T23) |
 | PIT-03 | P1 rebuild | Tasks (T7) | Done (T7) |
 | MAP-01 | P1 rebuild | Tasks (T4, T11, T18, T22) | Done (T4, T11, T18, T22) |
 | MAP-02 | P1 rebuild | Tasks (T11, T16) | Done (T11, T16) |
@@ -265,12 +265,12 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | SAFE-01 | P1 CLI | Tasks (T2, T17) | Done (T2, T17) |
 | SAFE-02 | P1 CLI | Tasks (T4, T17) | Done (T4, T17) |
 | COV-01 | P2 coverage | Tasks (T15, T18) | Done (T15, T18) |
-| COV-02 | P2 coverage | Tasks (T15, T16, T23, T26, T28, T29) | In Tasks (amended r5) |
+| COV-02 | P2 coverage | Tasks (T15, T16, T23, T26, T28, T29) | In Tasks (amended r5; T23 done) |
 | COV-03 | P2 coverage | Tasks (T15, T17, T30, T32) | In Tasks |
 | PIT-04 | P1 rebuild | Tasks (T28, T30, T32) | In Tasks (r5) |
-| SRC-06 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5) |
+| SRC-06 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |
 | SRC-07 | P1 rebuild | Tasks (T27, T28, T29, T32) | In Tasks (r5) |
-| IND-05 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5) |
+| IND-05 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |
 | IND-06 | P1 rebuild | Tasks (T24, T25, T29) | In Tasks (r5) |
 | VER-05 | P1 rebuild | Tasks (T21, T28, T30) | In Tasks (r5; T21 done) |
 | VER-06 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5) |

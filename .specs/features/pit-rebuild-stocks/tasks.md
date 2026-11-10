@@ -697,15 +697,17 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_dividends.py` with new fixtures `b3_company_sbsp.json` (`stockDividends` as cached: `DESDOBRAMENTO` `400,00000000000` 28/04/2026, `BONIFICACAO` `0,16098032200` 19/03/2026 and `2,96469750000` 23/12/2025, `GRUPAMENTO` `0,00800000000` 01/06/2007, all ISIN `BRSBSPACNOR5`), `b3_company_espa.json` (`GRUPAMENTO` `0,10000000000` 12/06/2026) and `b3_cash_dupes_p1.json`/`_p2.json` (a record repeated on its page and again on page 2, one `REST CAP DIN` record, `totalRecords` = the raw count).
-- [ ] `parse_b3_company`: SBSP multipliers 5.0, 1.0016098032, 1.0296469750 and 0.008; ESPA 0.1; `CIS RED CAP`, `RESG TOTAL RV` and `INCORPORACAO` entries skipped; two identical entries give one event; a record without `stockDividends` → `()`.
-- [ ] `parse_b3_cash`: the repeated record counts once (same page and across pages), `duplicates` and `capital_returns` count them, no `REST CAP DIN` record in `records`, and `complete` holds because the raw count equals `totalRecords` though `len(records)` is smaller; T10's `test_page_two_missing_or_totals_announcing_more_records_is_not_complete` still passes.
-- [ ] `split_divisor` and `b3_ex_dates(..., events=, isin=, d=)`, on a calendar of every weekday: an SBSP dividend with ex-date 2026-03-02 at `d` 2026-08-07 is divided by `5 × 1.0016098032` (the 2025-12-23 bonus is before it; hand-computed); the same dividend at `d` 2026-04-27 is divided by 1.0016098032 only; a dividend with ex-date after the split is not divided; an event whose ex-date equals the dividend's is not applied; an event of another ISIN is not applied; `isin=None` leaves amounts unchanged; an ESPA dividend before the 2026-06-12 grouping at `d` 2026-08-07 is multiplied by 10.
-- [ ] `unit_dividends(..., events=, isins=, d=)` adjusts `UNT` records by the unit's ISIN and class records by each class's ISIN (ENGI-shaped 10 % bonus on the ON, PN and unit ISINs, `1 ON e 4 PN`).
-- [ ] `b3_earliest_raw`: `lastDatePriorEx` 1996-03-21 and 2025-12-31 → 1996-03-22; only 2020-12-31 → 2021-01-01; `[]` → `None`.
-- [ ] Every r4 call without the new keywords gives the r4 result (T10's tests unchanged and passing).
-- [ ] Gate check passes: Quick for `test_pit_rebuild_dividends.py`
-- [ ] Test count: ≥ 25 tests pass in the file (T10's 18 plus ≥ 7)
+- [x] `tests/test_pit_rebuild_dividends.py` with new fixtures `b3_company_sbsp.json` (`stockDividends` as cached: `DESDOBRAMENTO` `400,00000000000` 28/04/2026, `BONIFICACAO` `0,16098032200` 19/03/2026 and `2,96469750000` 23/12/2025, `GRUPAMENTO` `0,00800000000` 01/06/2007, all ISIN `BRSBSPACNOR5`), `b3_company_espa.json` (`GRUPAMENTO` `0,10000000000` 12/06/2026) and `b3_cash_dupes_p1.json`/`_p2.json` (a record repeated on its page and again on page 2, one `REST CAP DIN` record, `totalRecords` = the raw count).
+- [x] `parse_b3_company`: SBSP multipliers 5.0, 1.0016098032, 1.0296469750 and 0.008; ESPA 0.1; `CIS RED CAP`, `RESG TOTAL RV` and `INCORPORACAO` entries skipped; two identical entries give one event; a record without `stockDividends` → `()`.
+- [x] `parse_b3_cash`: the repeated record counts once (same page and across pages), `duplicates` and `capital_returns` count them, no `REST CAP DIN` record in `records`, and `complete` holds because the raw count equals `totalRecords` though `len(records)` is smaller; T10's `test_page_two_missing_or_totals_announcing_more_records_is_not_complete` still passes.
+- [x] `split_divisor` and `b3_ex_dates(..., events=, isin=, d=)`, on a calendar of every weekday: an SBSP dividend with ex-date 2026-03-02 at `d` 2026-08-07 is divided by `5 × 1.0016098032` (the 2025-12-23 bonus is before it; hand-computed); the same dividend at `d` 2026-04-27 is divided by 1.0016098032 only; a dividend with ex-date after the split is not divided; an event whose ex-date equals the dividend's is not applied; an event of another ISIN is not applied; `isin=None` leaves amounts unchanged; an ESPA dividend before the 2026-06-12 grouping at `d` 2026-08-07 is multiplied by 10.
+- [x] `unit_dividends(..., events=, isins=, d=)` adjusts `UNT` records by the unit's ISIN and class records by each class's ISIN (ENGI-shaped 10 % bonus on the ON, PN and unit ISINs, `1 ON e 4 PN`).
+- [x] `b3_earliest_raw`: `lastDatePriorEx` 1996-03-21 and 2025-12-31 → 1996-03-22; only 2020-12-31 → 2021-01-01; `[]` → `None`.
+- [x] Every r4 call without the new keywords gives the r4 result (T10's tests unchanged and passing).
+- [x] Gate check passes: Quick for `test_pit_rebuild_dividends.py` (38 OK: T10's 18 unchanged and 20 new; pit suite 241 OK; compileall OK)
+- [x] Test count: ≥ 25 tests pass in the file (T10's 18 plus ≥ 7) - 38 pass
+
+> Done (T23). Two choices the spec leaves open. (1) A record identical to one already received is a duplicate, and the duplicate test runs before the REST CAP DIN filter, so a repeated capital return counts once as a capital return and again as a duplicate. (2) A complete history whose records are all capital returns is `b3_short_history`: no record reaches d, and `min` had no value to compare. `cli.py` still calls the parser without the events, ISINs and `d`, so the split adjustment reaches real runs only with T29.
 
 **Tests**: unit
 **Gate**: quick
