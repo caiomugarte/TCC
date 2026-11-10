@@ -913,16 +913,16 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_cli.py`, exit 2 with one stderr line naming the argument and nothing written, one subtest each: `--collected-on` malformed; given once for two dates; before its `--date`; `--filings-cutoff` without `:` or with a malformed side; naming a date not given with `--date`; repeating a date; with a cutoff after its date.
-- [ ] Without `--collected-on`, every `status_invest` entry has `collected_on` equal to its `date`.
-- [ ] A fixture CSV whose `PRECO` values equal the closes of the session before `d`: `as_of_check.best_session` is that session with hand-counted `matches`, and the Markdown warns; a CSV matching `d`'s closes gets no warning.
-- [ ] `fetch` with `--collected-on` one day after `--date` requests Yahoo with `period2` = `collected_on` + 1 day (decoded epoch), and `report --offline` with the same arguments finds every file (exit 0).
-- [ ] A fixture ticker whose last session is `d − 31` is in `mapping.reference_stale`, stays in the official denominator outside tolerance, and is out of the `sensitivities.without_reference_stale` denominator (hand-computed `pct_within` for one field).
-- [ ] `--filings-cutoff D2:C` with a fixture filing received between `C` and `D2`: the official JSON uses that filing and the sensitivity's fields use the older one; the `verdicts` and `dates` objects of the run with `--filings-cutoff` equal (`==`) those of the same run without it (VER-08).
-- [ ] `sensitivities.class_without_roic_peg` is present on every exit-0 run.
-- [ ] With an injected clock, `effort.compute_seconds_per_date` is the same with and without `--filings-cutoff`.
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 53 tests pass in `test_pit_rebuild_cli.py` (T29's 45 plus ≥ 8)
+- [x] `tests/test_pit_rebuild_cli.py`, exit 2 with one stderr line naming the argument and nothing written, one subtest each (`CollectedOnAndCutoffTests`): `--collected-on` malformed; given once for two dates; before its `--date`; `--filings-cutoff` without `:` or with a malformed side; naming a date not given with `--date`; repeating a date; with a cutoff after its date.
+- [x] Without `--collected-on`, every `status_invest` entry has `collected_on` equal to its `date`.
+- [x] A fixture CSV whose `PRECO` values equal the closes of the session before `d`: `as_of_check.best_session` is that session with hand-counted `matches`, and the Markdown warns; a CSV matching `d`'s closes gets no warning.
+- [x] `fetch` with `--collected-on` one day after `--date` requests Yahoo with `period2` = `collected_on` + 1 day (decoded epoch), and `report --offline` with the same arguments finds every file (exit 0).
+- [x] A fixture ticker whose last session is `d − 31` is in `mapping.reference_stale`, stays in the official denominator outside tolerance, and is out of the `sensitivities.without_reference_stale` denominator (hand-computed `pct_within` for one field).
+- [x] `--filings-cutoff D2:C` with a fixture filing received between `C` and `D2`: the official JSON uses that filing and the sensitivity's fields use the older one; the `verdicts` and `dates` objects of the run with `--filings-cutoff` equal (`==`) those of the same run without it (VER-08).
+- [x] `sensitivities.class_without_roic_peg` is present on every exit-0 run.
+- [x] With an injected clock, `effort.compute_seconds_per_date` is the same with and without `--filings-cutoff`.
+- [x] Gate check passes: Full (`python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`) - 302 OK
+- [x] Test count: ≥ 53 tests pass in `test_pit_rebuild_cli.py` (T29's 45 plus ≥ 8) - 57 pass
 
 **Tests**: integration
 **Gate**: full

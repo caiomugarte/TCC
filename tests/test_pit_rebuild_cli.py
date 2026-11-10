@@ -32,7 +32,7 @@ import sys
 import tempfile
 import unittest
 import urllib.error
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 from urllib.parse import unquote
@@ -589,7 +589,11 @@ SHAPE_COMPANIES = {  # root: (CNPJ, CD_CVM, name, ON shares, PN shares)
     "SBSP": ("29.000.000/0001-29", "2009", "SBSP S.A.", 100_000_000, 0),
     "DUPL": ("30.000.000/0001-30", "2010", "DUPL S.A.", 100_000_000, 0),
     "FOOX": ("31.000.000/0001-31", "2011", "FOO S.A.", 100_000_000, 0),
+    "OKPX": ("32.000.000/0001-32", "2012", "OKPX S.A.", 1_000_000, 0),
+    "STAL": ("33.000.000/0001-33", "2013", "STAL S.A.", 1_000_000, 0),
 }
+# the stale ticker of the as-of and reference-stale tests: its last session is d - 31 (2026-07-07)
+SHAPE_STALE = ("STAL3", "STAL", "ON", 10.0, "BRSTAL3CNOR1", date(2026, 7, 7))
 # ticker, company root, ESPECI, close on every session, ISIN (12 columns)
 SHAPE_QUOTES = [
     ("UNIT11", "UNIT", "UNT", 33.0, "BRUNIT11CNOR"),
@@ -603,6 +607,7 @@ SHAPE_QUOTES = [
     ("SBSP3", "SBSP", "ON", 10.0, "BRSBSP3CNOR5"),
     ("DUPL3", "DUPL", "ON", 10.0, "BRDUPL3CNOR1"),
     ("FOOX3", "FOOX", "ON", 10.0, "BRFOOX3CNOR1"),
+    ("OKP3", "OKPX", "ON", 10.0, "BROKP3CNOR1"),
 ]
 # FCA rows: ticker, root, valor mobiliario, composition (units only)
 SHAPE_FCA = [
@@ -620,6 +625,8 @@ SHAPE_FCA = [
     ("SBSP3", "SBSP", "Ações Ordinárias", ""),
     ("DUPL3", "DUPL", "Ações Ordinárias", ""),
     ("FOOX3", "FOOX", "Ações Ordinárias", ""),
+    ("OKP3", "OKPX", "Ações Ordinárias", ""),
+    (SHAPE_STALE[0], SHAPE_STALE[1], "Ações Ordinárias", ""),
 ]
 # Status Invest rows of the eligible tickers (VM and liquidity make them eligible; the reference values are off on purpose)
 SHAPE_SI = [
@@ -635,6 +642,8 @@ SHAPE_SI = [
     {"TICKER": "SBSP3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "DY": 1.0},
     {"TICKER": "DUPL3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "DY": 1.0},
     {"TICKER": "FOOX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "OKP3", "VALOR DE MERCADO": 500_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "PRECO": 10.0},
+    {"TICKER": SHAPE_STALE[0], "VALOR DE MERCADO": 500_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "PRECO": 9.0},
 ]
 SHAPE_DFP_STATEMENTS = {  # root: (BPP rows, consolidated DRE rows, individual DRE rows)
     "MINO": ([("2.03", 200_000_000.0), ("2.03.09", 50_000_000.0)], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
@@ -672,6 +681,10 @@ def _shape_cotahist_2026() -> str:
         lines.append(_cotahist_line(day, "CODB3", "08", "ON", 30.0 if index == last else 20.0, 1_000_000.0 + 100_000.0 * index, "BRCODB3CNOR1"))
         for ticker, _root, especi, close, isin in SHAPE_QUOTES:
             lines.append(_cotahist_line(day, ticker, "02", especi, close, 1_000_000.0, isin))
+    stale_ticker, _root, stale_especi, stale_close, stale_isin, stale_last = SHAPE_STALE
+    for day in SHAPE_SESSIONS:
+        if day <= stale_last:
+            lines.append(_cotahist_line(day, stale_ticker, "02", stale_especi, stale_close, 1_000_000.0, stale_isin))
     lines.append(_cotahist_line(date(2026, 8, 10), "NOP4", "02", "PN", 10.0, 1_000_000.0, "BRNOP4CNOR1"))  # after d only
     return "\n".join(lines) + "\n"
 
@@ -883,6 +896,81 @@ class ShapeReportTests(unittest.TestCase):
         self.assertEqual(dividends_out["b3_empty_yahoo_failed"][ISO1], 0)
 
 
+class ShapeAsOfTests(unittest.TestCase):
+    """The as-of check (A-11) on the shape universe, whose CODB3 close moves from 20.00 to 30.00 on the last session."""
+
+    WARN_PRECO = {  # the 2026-08-06 closes: 13 of the 14 tickers have one (STAL3 has no session on or after 07-08)
+        "CODB3": 20.0, "UNIT11": 33.0, "MINO3": 10.0, "ZERO3": 10.0, "TIMX3": 10.0, "ESPA3": 10.0, "ESPA4": 12.0,
+        "EMAE4": 10.0, "NOP3": 10.0, "SBSP3": 10.0, "DUPL3": 10.0, "FOOX3": 10.0, "OKP3": 10.0, "STAL3": 10.0,
+    }
+
+    def test_the_as_of_check_names_the_best_session_and_warns_exactly_when_it_differs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            universe = write_shape_universe(base / "universe")
+            cache = base / "cache"
+            populate_cache(cache, (D1,), universe)
+            # as built: PRECO of CODB3 (1.00) and STAL3 (9.00) match no close; OKP3 (10.00) matches 08-06 and 08-07: a tie, so 08-07
+            out = base / "out"
+            code, err = run(["report", "--date", ISO1, "--si", str(universe / "si_2026-08-07.csv"), "--cache-dir", str(cache),
+                             "--out-dir", str(out), "--offline"])
+            self.assertEqual(code, 0, err)
+            as_built = json.loads((out / REPORT).read_text(encoding="utf-8"))
+            self.assertEqual(
+                as_built["inputs"]["status_invest"][0]["as_of_check"],
+                {"eligible_with_price": 3, "matches": {"2026-08-06": 1, "2026-08-07": 1}, "best_session": "2026-08-07"},
+            )
+            self.assertNotIn("**Atenção:**", (out / MARKDOWN).read_text(encoding="utf-8"))
+            # a CSV whose PRECO values are the 2026-08-06 closes: 13 match on 08-06; on 08-07 CODB3's close is 30.00,
+            # so 12 match. The best session is 08-06 and the Markdown warns.
+            with (universe / "si_2026-08-07.csv").open(encoding="utf-8", newline="") as handle:
+                reader = csv.DictReader(handle)
+                columns = reader.fieldnames
+                rows = list(reader)
+            for row in rows:
+                if row["TICKER"] in self.WARN_PRECO:
+                    row["PRECO"] = str(self.WARN_PRECO[row["TICKER"]])
+            warn = base / "si_warn.csv"
+            with warn.open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.DictWriter(handle, fieldnames=columns)
+                writer.writeheader()
+                writer.writerows(rows)
+            out2 = base / "out2"
+            code, err = run(["report", "--date", ISO1, "--si", str(warn), "--cache-dir", str(cache), "--out-dir", str(out2), "--offline"])
+            self.assertEqual(code, 0, err)
+            warned = json.loads((out2 / REPORT).read_text(encoding="utf-8"))
+            self.assertEqual(
+                warned["inputs"]["status_invest"][0]["as_of_check"],
+                {"eligible_with_price": 14, "matches": {"2026-08-06": 13, "2026-08-07": 12}, "best_session": "2026-08-06"},
+            )
+            self.assertIn(
+                "**Atenção:** as cotações do CSV de 2026-08-07 batem melhor com a sessão 2026-08-06, não com 2026-08-07.",
+                (out2 / MARKDOWN).read_text(encoding="utf-8"),
+            )
+
+    def test_a_ticker_whose_last_session_is_d_minus_31_is_reference_stale_and_leaves_only_the_sensitivity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            universe = write_shape_universe(base / "universe")
+            cache = base / "cache"
+            populate_cache(cache, (D1,), universe)
+            out = base / "out"
+            code, err = run(["report", "--date", ISO1, "--si", str(universe / "si_2026-08-07.csv"), "--cache-dir", str(cache),
+                             "--out-dir", str(out), "--offline"])
+            self.assertEqual(code, 0, err)
+            report_object = json.loads((out / REPORT).read_text(encoding="utf-8"))
+        self.assertIn("STAL3", report_object["dates"][ISO1]["mapping"]["reference_stale"])  # its last session is 2026-07-07
+        preco = report_object["dates"][ISO1]["fields"]["PRECO"]["non_financial"]
+        # PRECO: CODB3 (1.00 against 30.00) and STAL3 (no quote) are out; OKP3 (10.00 against 10.00) is within: 1 of 3
+        self.assertEqual((preco["denominator"], preco["within"]), (3, 1))
+        self.assertAlmostEqual(preco["pct_within"], 100 / 3, places=9)
+        self.assertIn({"ticker": "STAL3", "reason": "no_quote"}, preco["missing"])
+        # without STAL3 the denominator is 2 and the within count stays 1: 50.0 %
+        stale_free = report_object["sensitivities"]["without_reference_stale"]["dates"][ISO1]["fields"]["PRECO"]["non_financial"]
+        self.assertEqual((stale_free["denominator"], stale_free["within"]), (2, 1))
+        self.assertEqual(stale_free["pct_within"], 50.0)
+
+
 class ShapeFetchTests(unittest.TestCase):
     def test_fetch_asks_b3_for_the_query_name_and_never_with_a_slash(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -900,6 +988,103 @@ class ShapeFetchTests(unittest.TestCase):
             ]
             self.assertIn("FOO SA", names)
             self.assertTrue(names and all("/" not in name for name in names))
+
+
+class CollectedOnAndCutoffTests(ReportCase):
+    """--collected-on, --filings-cutoff and the untimed sensitivities on the shared universe (CLI-03, A-11, A-22)."""
+
+    def invalid(self, extra: list[str]) -> tuple[int, str]:
+        return run(report_args(self.cache, self.out) + extra)
+
+    def assert_exit_2_with_one_line(self, extra: list[str], argument: str) -> None:
+        code, err = self.invalid(extra)
+        self.assertEqual(code, 2, err)
+        self.assertEqual(len(err.strip().splitlines()), 1, err)
+        self.assertIn(argument, err)
+        self.assertFalse(self.out.exists())
+
+    def test_bad_collected_on_arguments_exit_2_naming_the_argument_and_write_nothing(self):
+        cases = {
+            "malformed": ["--collected-on", ISO1, "--collected-on", "06/11/2026"],
+            "given once for two dates": ["--collected-on", ISO2],
+            "before its --date": ["--collected-on", "2026-08-06", "--collected-on", ISO2],
+        }
+        for name, extra in cases.items():
+            with self.subTest(name):
+                self.assert_exit_2_with_one_line(extra, "--collected-on")
+
+    def test_bad_filings_cutoff_arguments_exit_2_naming_the_argument_and_write_nothing(self):
+        cases = {
+            "without a colon": ["--filings-cutoff", ISO2],
+            "malformed side": ["--filings-cutoff", "2026-11-06:2026-13-40"],
+            "date not given with --date": ["--filings-cutoff", "2026-10-01:2026-09-30"],
+            "date repeated": ["--filings-cutoff", "2026-11-06:2026-09-14", "--filings-cutoff", "2026-11-06:2026-09-30"],
+            "cutoff after its date": ["--filings-cutoff", "2026-11-06:2026-11-07"],
+        }
+        for name, extra in cases.items():
+            with self.subTest(name):
+                self.assert_exit_2_with_one_line(extra, "--filings-cutoff")
+
+    def test_without_collected_on_every_csv_is_collected_on_its_own_date(self):
+        for item in self.success()["inputs"]["status_invest"]:
+            self.assertEqual(item["collected_on"], item["date"])
+
+    def test_a_filings_cutoff_is_a_sensitivity_on_the_older_filing_and_leaves_verdicts_and_dates_unchanged(self):
+        plain = self.success()
+        out2 = self.work / "out2"
+        code, err = run(report_args(self.cache, out2) + ["--filings-cutoff", f"{ISO2}:2026-09-14"])
+        self.assertEqual(code, 0, err)
+        cut = json.loads((out2 / REPORT).read_text(encoding="utf-8"))
+        # VER-08: the official objects of the two runs are equal
+        self.assertEqual(cut["verdicts"], plain["verdicts"])
+        self.assertEqual(cut["dates"], plain["dates"])
+        self.assertEqual(cut["parameters"]["filings_cutoffs"], {ISO2: "2026-09-14"})
+        self.assertIs(cut["sensitivities"]["official"], False)
+        # REFL3 (2025 filing received 2026-09-15): P/L 5.00 in the official run, within; with the 2024 filing (10.00) it is out
+        official = cut["dates"][ISO2]["fields"]["P/L"]["non_financial"]
+        self.assertEqual((official["denominator"], official["within"]), (15, 11))
+        recomputed = cut["sensitivities"]["filings_cutoff"][ISO2]
+        self.assertEqual(recomputed["cutoff"], "2026-09-14")
+        self.assertEqual((recomputed["fields"]["P/L"]["non_financial"]["denominator"],
+                          recomputed["fields"]["P/L"]["non_financial"]["within"]), (15, 10))
+
+    def test_class_without_roic_peg_is_on_every_exit_0_run(self):
+        sensitivities = self.success()["sensitivities"]
+        block = sensitivities["class_without_roic_peg"]
+        self.assertEqual(block["excluded_fields"], ["PEG RATIO", "ROIC"])
+        self.assertIn(block["class"], {"reconstruível", "com ressalvas", "não reconstruível"})
+        self.assertIn("não são públicas", block["note"])
+        self.assertIs(sensitivities["official"], False)
+
+    def test_compute_seconds_per_date_is_the_same_with_and_without_filings_cutoff(self):
+        code, err = run(report_args(self.cache, self.out), clock=StepClock(2.0))
+        self.assertEqual(code, 0, err)
+        plain_per_date = self.report_json()["coverage"]["effort"]["compute_seconds_per_date"]
+        out2 = self.work / "out2"
+        code, err = run(report_args(self.cache, out2) + ["--filings-cutoff", f"{ISO2}:2026-09-14"], clock=StepClock(2.0))
+        self.assertEqual(code, 0, err)
+        cut_per_date = json.loads((out2 / REPORT).read_text(encoding="utf-8"))["coverage"]["effort"]["compute_seconds_per_date"]
+        self.assertEqual(cut_per_date, plain_per_date)
+        self.assertEqual(plain_per_date, 2.0)  # 2 s per date: the untimed sensitivity evaluations add no clock step
+
+
+class CollectedFetchTests(unittest.TestCase):
+    def test_fetch_with_a_collection_date_one_day_after_asks_yahoo_for_the_day_after_it_and_report_finds_the_files(self):
+        collected = D1 + timedelta(days=1)
+        period2 = collected + timedelta(days=1)  # Yahoo runs up to the day after the last collection date (A-11)
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            cache = base / "cache"
+            fake = FakeOpener(universe_routes((collected,), UNIVERSE))  # the universe serves Yahoo up to max(dates) + 1
+            args = ["--date", ISO1, "--si", str(SI1), "--collected-on", collected.isoformat(), "--cache-dir", str(cache)]
+            code, err = run(["fetch", *args], opener=fake)
+            self.assertEqual(code, 0, err)
+            epoch = int(datetime(period2.year, period2.month, period2.day, tzinfo=timezone.utc).timestamp())
+            yahoo = [url for _method, url in fake.requests if "query1.finance.yahoo.com" in url]
+            self.assertTrue(yahoo)
+            self.assertTrue(all(f"period2={epoch}&" in url for url in yahoo), yahoo)
+            code, err = run(["report", *args, "--out-dir", str(base / "out"), "--offline"])
+            self.assertEqual(code, 0, err)
 
 
 class RawDateAndCounterTests(unittest.TestCase):

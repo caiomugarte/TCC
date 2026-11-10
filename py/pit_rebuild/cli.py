@@ -5,6 +5,12 @@ Run from the repository root:
     python3 py/pit_rebuild report --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv \\
         --date 2026-11-06 --si snapshots/data/selectors-2026-11-06/stocks.csv --offline
 
+    the committed run takes the collection dates and a filings cutoff as well (A-11, A-22):
+
+    python3 py/pit_rebuild report --date 2026-08-07 --si data/raw/status_invest_fundamentals.csv \\
+        --date 2026-11-05 --si snapshots/data/selectors-2026-11-06/stocks.csv \\
+        --collected-on 2026-08-07 --collected-on 2026-11-06 --filings-cutoff 2026-11-05:2026-11-02 --offline
+
 ``report`` rebuilds every date from the cache and writes pit-rebuild-stocks.json and
 pit-rebuild-stocks.md to --out-dir, both only after every computation finished. Without
 --offline a missing file is downloaded first. Exit codes:
@@ -21,6 +27,7 @@ pit-rebuild-stocks.md to --out-dir, both only after every computation finished. 
 from __future__ import annotations
 
 import argparse
+from bisect import bisect_left
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass, field
@@ -117,6 +124,8 @@ class _Request:
     si_paths: tuple[Path, ...]
     cache_dir: Path
     out_dir: Path | None
+    collected_on: tuple[date, ...] = ()  # the collection date of each CSV, paired by position (A-11, F4)
+    filings_cutoffs: dict[date, date] = field(default_factory=dict)  # --filings-cutoff DATE:CUTOFF (A-22 (b))
 
 
 def _dates(values: Sequence[str]) -> tuple[date, ...]:
@@ -134,8 +143,49 @@ def _dates(values: Sequence[str]) -> tuple[date, ...]:
     return tuple(days)
 
 
+def _one_date(argument: str, text: str) -> date:
+    if not _DATE.fullmatch(text):
+        raise ArgumentError(argument, f"{text!r} is not YYYY-MM-DD")
+    try:
+        return date.fromisoformat(text)
+    except ValueError as exc:
+        raise ArgumentError(argument, f"{text!r} is not a calendar date") from exc
+
+
+def _collected(values: Sequence[str], dates: tuple[date, ...]) -> tuple[date, ...]:
+    """The collection date of each CSV: zero --collected-on (each collected on its --date) or one per --date (CLI-03)."""
+    if values and len(values) != len(dates):
+        raise ArgumentError("--collected-on", f"{len(values)} given for {len(dates)} --date (zero, or one per --date)")
+    collected = tuple(_one_date("--collected-on", text) for text in values) or dates
+    for day, when in zip(dates, collected):
+        if when < day:
+            raise ArgumentError("--collected-on", f"{when} is before its --date {day}")
+    return collected
+
+
+def _filings_cutoffs(values: Sequence[str], dates: tuple[date, ...]) -> dict[date, date]:
+    """--filings-cutoff DATE:CUTOFF, each DATE a --date given once, CUTOFF not after DATE (A-22 (b), CLI-03)."""
+    cutoffs: dict[date, date] = {}
+    for text in values:
+        if ":" not in text:
+            raise ArgumentError("--filings-cutoff", f"{text!r} is not DATE:CUTOFF")
+        day_text, cutoff_text = text.split(":", 1)
+        day = _one_date("--filings-cutoff", day_text)
+        cutoff = _one_date("--filings-cutoff", cutoff_text)
+        if day not in dates:
+            raise ArgumentError("--filings-cutoff", f"{day} is not given with --date")
+        if day in cutoffs:
+            raise ArgumentError("--filings-cutoff", f"{day} is given more than once")
+        if cutoff > day:
+            raise ArgumentError("--filings-cutoff", f"cutoff {cutoff} is after its date {day}")
+        cutoffs[day] = cutoff
+    return cutoffs
+
+
 def _request(args: argparse.Namespace, *, needs_out: bool) -> _Request:
     dates = _dates(args.date)
+    collected = _collected(getattr(args, "collected_on", None) or [], dates)
+    cutoffs = _filings_cutoffs(getattr(args, "filings_cutoff", None) or [], dates)
     si_paths = tuple(Path(item) for item in args.si)
     if len(si_paths) != len(dates):
         raise ArgumentError("--si", f"{len(si_paths)} given for {len(dates)} --date (one --si per --date)")
@@ -146,7 +196,10 @@ def _request(args: argparse.Namespace, *, needs_out: bool) -> _Request:
             raise MissingPathError("--si", f"{path} does not exist")
     if needs_out and not cache_dir.is_dir():
         raise MissingPathError("--cache-dir", f"{cache_dir} does not exist")
-    return _Request(dates=dates, si_paths=si_paths, cache_dir=cache_dir, out_dir=out_dir)
+    return _Request(
+        dates=dates, si_paths=si_paths, cache_dir=cache_dir, out_dir=out_dir,
+        collected_on=collected, filings_cutoffs=cutoffs,
+    )
 
 
 # --- acquisition: the raw files every date needs, in the order of design.md -------------------
@@ -171,7 +224,9 @@ class _Acquired:
     dividend_files: int = 0
 
 
-def _acquire(cache: Cache, dates: Sequence[date], si_paths: Sequence[Path], clock: Callable[[], float]) -> _Acquired:
+def _acquire(
+    cache: Cache, dates: Sequence[date], si_paths: Sequence[Path], clock: Callable[[], float], collected_on: Sequence[date]
+) -> _Acquired:
     files: dict[str, list[Path]] = {kind: [] for kind in KINDS}
     for url, name in sources.plan_files(dates):
         files[_kind_of_url(url)].append(cache.get(url, name, required=True))
@@ -199,7 +254,7 @@ def _acquire(cache: Cache, dates: Sequence[date], si_paths: Sequence[Path], cloc
     for name in names:
         acq.histories[name] = _b3_history(cache, name, acq, clock)
     need_yahoo = sorted({ticker for day, ticker in needed if _choice(acq, day, ticker)[0] == "yahoo"})
-    period2 = max(dates) + timedelta(days=1)
+    period2 = max(collected_on) + timedelta(days=1)  # Yahoo runs up to the last collection date (A-11)
     for ticker in need_yahoo:
         acq.yahoo[ticker] = _yahoo(cache, ticker, period2, acq, clock)
     return acq
@@ -269,12 +324,12 @@ def _has_filings(acq: _Acquired, cnpj: str, day: date) -> bool:
     return bool(cvm.usable(acq.dfp, cnpj, day) or cvm.usable(acq.itr, cnpj, day))
 
 
-def _unmapped_reason(acq: _Acquired, day: date, ticker: str) -> str | None:
-    """Why an eligible ticker is not computed at day (MAP-01), or None when it is."""
+def _unmapped_reason(acq: _Acquired, day: date, ticker: str, filings_day: date | None = None) -> str | None:
+    """Why an eligible ticker is not computed at day (MAP-01), or None when it is. CVM filings are read at filings_day (A-22 (b))."""
     item = acq.mapped[day][ticker]
     if isinstance(item, mapping.Unmapped):
         return item.reason
-    if not _has_filings(acq, item.cnpj, day):
+    if not _has_filings(acq, item.cnpj, filings_day or day):
         return _NO_FILINGS
     if cotahist.quote_at(acq.quotes, ticker, day) is None:
         return _NO_QUOTE
@@ -367,9 +422,12 @@ def _quote_candidates(acq: _Acquired, cnpj: str, tickers: Sequence[str], day: da
     return set(acq.fca.tickers_of(cnpj)) | set(tickers) | {t for t in acq.si[day].rows if t[:4] in roots}
 
 
-def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str]) -> _Company:
-    """Share counts with the A-18 scale, the A-17 class prices (F14) and the class fallback of one company."""
-    shares = cvm.shares(acq.dfp, acq.itr, cnpj, day)
+def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date) -> _Company:
+    """Share counts with the A-18 scale, the A-17 class prices (F14) and the class fallback of one company.
+
+    The CVM reads use filings_day; the quotes use day (A-22 (b)).
+    """
+    shares = cvm.shares(acq.dfp, acq.itr, cnpj, filings_day)
     n_on = n_pref = None
     scaled = None
     unverified = False
@@ -402,7 +460,7 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
     return _Company(
         cnpj=cnpj, cd_cvm=cd_cvm, n_on=n_on, n_pref=n_pref, scaled=scaled, unverified=unverified,
         price_on=quoted["ON"], price_pref=quoted["PREF"], fallback=fallback, stale=stale,
-        inputs=_company_inputs(acq, cnpj, day), dre_desc=cvm.dre_description(acq.dfp, acq.itr, cnpj, day),
+        inputs=_company_inputs(acq, cnpj, filings_day), dre_desc=cvm.dre_description(acq.dfp, acq.itr, cnpj, filings_day),
     )
 
 
@@ -501,18 +559,20 @@ class _DayResult:
     dy_dates: dict[str, dict[str, date | None]]  # per dividend source, each ticker's earliest date (COV-02)
 
 
-def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
+def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) -> _DayResult:
+    """One decision date. Every CVM read uses filings_day (A-22 (b)); quotes, dividends and eligibility use day."""
+    fday = filings_day or day
     eligible = acq.eligible[day]
     csv = acq.si[day]
     mapped = acq.mapped[day]
     members: dict[str, list[str]] = defaultdict(list)
     for ticker in eligible:
         item = mapped[ticker]
-        if isinstance(item, mapping.Mapped) and _unmapped_reason(acq, day, ticker) is None:
+        if isinstance(item, mapping.Mapped) and _unmapped_reason(acq, day, ticker, fday) is None:
             members[item.cnpj].append(ticker)
     companies: dict[str, _Company] = {}
     for cnpj, tickers in members.items():
-        companies[cnpj] = _company(acq, day, cnpj, mapped[tickers[0]].cd_cvm, tickers)
+        companies[cnpj] = _company(acq, day, cnpj, mapped[tickers[0]].cd_cvm, tickers, fday)
     candidates_of = {cnpj: _quote_candidates(acq, cnpj, tickers, day) for cnpj, tickers in members.items()}
     out = {
         "mapped": 0, "unmapped": [], "refiled_after_d": [], "mapped_via_b3": [],
@@ -546,8 +606,8 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
     dy_dates: dict[str, dict[str, date | None]] = defaultdict(dict)
     for ticker in eligible:
         item = mapped[ticker]
-        reason = _unmapped_reason(acq, day, ticker)
-        dre = cvm.dre_description(acq.dfp, acq.itr, item.cnpj, day) if isinstance(item, mapping.Mapped) else None
+        reason = _unmapped_reason(acq, day, ticker, fday)
+        dre = cvm.dre_description(acq.dfp, acq.itr, item.cnpj, fday) if isinstance(item, mapping.Mapped) else None
         classified = mapping.classify(item, acq.cadastro, dre, csv.setor.get(ticker))
         group_of[ticker] = classified["group"]
         if classified["group"] == "financial":
@@ -561,7 +621,7 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
         out["mapped"] += 1
         if item.via == "b3":
             out["mapped_via_b3"].append(ticker)
-        if cvm.refiled_after_d(acq.dfp, acq.itr, item.cnpj, day):
+        if cvm.refiled_after_d(acq.dfp, acq.itr, item.cnpj, fday):
             out["refiled_after_d"].append(ticker)
         company = companies[item.cnpj]
         found = _dividends_of(acq, day, ticker, item, candidates_of[item.cnpj])
@@ -614,8 +674,83 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
 # --- report object --------------------------------------------------------------------------
 
 
+def _close_on(quotes: cotahist.Quotes, ticker: str, day: date) -> float | None:
+    """The close of the ticker's record on exactly this session, or None (A-11)."""
+    dates = quotes.dates.get(ticker, [])
+    index = bisect_left(dates, day)
+    if index < len(dates) and dates[index] == day:
+        return quotes.rows[ticker][index].close
+    return None
+
+
+def _same_cent(close: float | None, price: float) -> bool:
+    return close is not None and round(close, 2) == round(price, 2)
+
+
+def _as_of_check(acq: _Acquired, day: date, collected_on: date) -> dict:
+    """Which session the CSV's PRECO values belong to (A-11, F4). Evidence only: it never chooses d.
+
+    The sessions run from the one before day to the last one on or before collected_on. matches counts the eligible
+    tickers whose Status Invest PRECO equals that session's close to the cent; best_session has the most matches,
+    the later session on a tie.
+    """
+    sessions = acq.quotes.sessions
+    before = [session for session in sessions if session < day]
+    start = before[-1] if before else day
+    window = [session for session in sessions if start <= session <= collected_on]
+    prices: dict[str, float] = {}
+    for ticker in acq.eligible[day]:
+        price = acq.si[day].rows[ticker]["PRECO"]
+        if price is not None:
+            prices[ticker] = price
+    matches = {
+        session.isoformat(): sum(1 for ticker, price in prices.items() if _same_cent(_close_on(acq.quotes, ticker, session), price))
+        for session in window
+    }
+    best = max(window, key=lambda session: (matches[session.isoformat()], session), default=None)
+    return {
+        "eligible_with_price": len(prices),
+        "matches": matches,
+        "best_session": None if best is None else best.isoformat(),
+    }
+
+
+def _sensitivities(acq: _Acquired, req: _Request, results: dict[date, _DayResult]) -> dict:
+    """The non-official sensitivities (A-22), computed after the timed official evaluations (A-13).
+
+    D-A: each date's official statistics without the reference-stale tickers, from the same pairs (no second
+    evaluation). D-B: one more evaluation per --filings-cutoff date with the filings received by its cutoff.
+    """
+    stale_excluded: dict[str, list[str]] = {}
+    stale_fields: dict[str, dict] = {}
+    for day in sorted(req.dates):
+        iso = day.isoformat()
+        stale = set(results[day].mapping["reference_stale"])
+        stale_excluded[iso] = sorted(stale)
+        stale_fields[iso] = {
+            name: {
+                group: compare.summarize(name, [row for row in results[day].pairs[name][group] if row[0] not in stale])
+                for group in GROUP_KEYS
+            }
+            for name in ALL_FIELDS
+        }
+    cutoff_blocks: dict[str, dict] = {}
+    for day in sorted(req.filings_cutoffs):
+        cutoff = req.filings_cutoffs[day]
+        result = _evaluate_day(acq, day, filings_day=cutoff)
+        cutoff_blocks[day.isoformat()] = {
+            "cutoff": cutoff,
+            "fields": {name: {group: compare.summarize(name, result.pairs[name][group]) for group in GROUP_KEYS} for name in ALL_FIELDS},
+        }
+    return {
+        "without_reference_stale": {"excluded": stale_excluded, "fields": stale_fields},
+        "filings_cutoff": cutoff_blocks,
+    }
+
+
 def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[[], float], tool_commit: str | None) -> dict:
     compute_seconds = 0.0
+    results: dict[date, _DayResult] = {}
     per_date: dict[str, dict] = {}
     dividends_out: dict[str, dict] = {"by_source": {}, "yahoo_reasons": {}, "b3_empty_yahoo_failed": {}, "split_adjust_no_isin": {}}
     dy_dates: dict[str, dict[str, date | None]] = defaultdict(dict)
@@ -627,6 +762,7 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
             for name in ALL_FIELDS
         }
         compute_seconds += clock() - start
+        results[day] = result
         iso = day.isoformat()
         per_date[iso] = {"eligible": result.eligible, "mapping": result.mapping, "fields": fields_out}
         dividends_out["by_source"][iso] = dict(result.dividends["by_source"])
@@ -658,17 +794,27 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
         key=lambda row: row["trading_name"],
     )
     raw = list(cache.used)
+    collected = dict(zip(req.dates, req.collected_on))
+    sensitivities = _sensitivities(acq, req, results)
     return report.build(
         dates=list(req.dates),
         tool_commit=tool_commit,
         status_invest=[
-            {"date": day.isoformat(), "path": str(path), "sha256": acq.si[day].sha256}
+            {
+                "date": day.isoformat(),
+                "collected_on": collected[day].isoformat(),
+                "path": str(path),
+                "sha256": acq.si[day].sha256,
+                "as_of_check": _as_of_check(acq, day, collected[day]),
+            }
             for day, path in zip(req.dates, req.si_paths)
         ],
         raw_files=raw,
         per_date=per_date,
         dividends=dividends_out,
         coverage=coverage_out,
+        filings_cutoffs=req.filings_cutoffs,
+        sensitivities=sensitivities,
     )
 
 
@@ -745,7 +891,7 @@ def _command_report(args: argparse.Namespace, *, opener, clock) -> int:
     req = _request(args, needs_out=True)
     cache = _cache(req.cache_dir, offline=args.offline, opener=opener)
     cache.verify()
-    acq = _acquire(cache, req.dates, req.si_paths, clock)
+    acq = _acquire(cache, req.dates, req.si_paths, clock, req.collected_on)
     obj = _report_object(cache, acq, req, clock, _tool_commit())
     _write_report(req.out_dir, obj)
     return 0
@@ -756,7 +902,7 @@ def _command_fetch(args: argparse.Namespace, *, opener, clock) -> int:
     req = _request(args, needs_out=False)
     cache = _cache(req.cache_dir, offline=False, opener=opener)
     cache.verify()
-    _acquire(cache, req.dates, req.si_paths, clock)
+    _acquire(cache, req.dates, req.si_paths, clock, req.collected_on)
     _, years = _survey(cache)
     _sizes(cache, years)
     return 0
@@ -783,11 +929,23 @@ def _build_parser() -> argparse.ArgumentParser:
     report_parser.add_argument("--cache-dir", default=str(DEFAULT_CACHE_DIR), help="download cache (default .cache/pit-rebuild)")
     report_parser.add_argument("--offline", action="store_true", help="read only the cache: no network request")
     report_parser.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR), help="where the report files are written")
+    report_parser.add_argument(
+        "--collected-on", action="append", metavar="YYYY-MM-DD",
+        help="collection date of the CSV at the same position (default: its --date; repeatable)",
+    )
+    report_parser.add_argument(
+        "--filings-cutoff", action="append", metavar="DATE:CUTOFF",
+        help="a non-official sensitivity: DATE with the filings received by CUTOFF (repeatable)",
+    )
     report_parser.set_defaults(handler=_command_report)
     fetch_parser = commands.add_parser("fetch", help="download the raw sources into the cache, without a report")
     fetch_parser.add_argument("--date", action="append", required=True, metavar="YYYY-MM-DD", help="decision date (repeatable)")
     fetch_parser.add_argument("--si", action="append", required=True, metavar="PATH", help="Status Invest CSV of the date at the same position")
     fetch_parser.add_argument("--cache-dir", default=str(DEFAULT_CACHE_DIR), help="download cache (default .cache/pit-rebuild)")
+    fetch_parser.add_argument(
+        "--collected-on", action="append", metavar="YYYY-MM-DD",
+        help="collection date of the CSV at the same position (default: its --date; repeatable)",
+    )
     fetch_parser.set_defaults(handler=_command_fetch)
     return parser
 

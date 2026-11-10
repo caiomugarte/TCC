@@ -252,30 +252,30 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | VER-03 | P1 rebuild | Tasks (T14, T16, T32) | In Tasks |
 | VER-04 | P1 rebuild | Tasks (T16) | Done (T16) |
 | RPT-01 | P1 report | Tasks (T2, T17) | Done (T2, T17) |
-| RPT-02 | P1 report | Tasks (T16, T28, T30) | In Tasks (amended r5; T28 done) |
+| RPT-02 | P1 report | Tasks (T16, T28, T30) | In Tasks (amended r5; T28, T30 done) |
 | RPT-03 | P1 report | Tasks (T16, T25, T28) | In Tasks (amended r5; T25, T28 done) |
 | RPT-04 | P1 report | Tasks (T16, T28, T32) | In Tasks (T28 done; T32 pending) |
 | RPT-05 | P1 report | Tasks (T2, T17) | Done (T2, T17) |
 | RPT-06 | P1 report | Tasks (T19, T31, T32) | In Tasks (amended r5; T20 superseded by T32) |
 | CLI-01 | P1 CLI | Tasks (T1, T17, T19, T31) | Done (T1, T17, T19); T31 keeps the README table equal |
 | CLI-02 | P1 CLI | Tasks (T5, T17) | Done (T5, T17) |
-| CLI-03 | P1 CLI | Tasks (T17, T30) | In Tasks (amended r5) |
+| CLI-03 | P1 CLI | Tasks (T17, T30) | In Tasks (amended r5; T30 done) |
 | CLI-04 | P1 CLI | Tasks (T17) | Done (T17) |
 | CLI-05 | P1 CLI | Tasks (T17, T18) | Done (T17, T18) |
 | SAFE-01 | P1 CLI | Tasks (T2, T17) | Done (T2, T17) |
 | SAFE-02 | P1 CLI | Tasks (T4, T17) | Done (T4, T17) |
 | COV-01 | P2 coverage | Tasks (T15, T18) | Done (T15, T18) |
 | COV-02 | P2 coverage | Tasks (T15, T16, T23, T26, T28, T29) | In Tasks (amended r5; T23, T26, T28, T29 done) |
-| COV-03 | P2 coverage | Tasks (T15, T17, T30, T32) | In Tasks |
-| PIT-04 | P1 rebuild | Tasks (T28, T30, T32) | In Tasks (r5; T28 done) |
+| COV-03 | P2 coverage | Tasks (T15, T17, T30, T32) | In Tasks (T30 done; T32 pending) |
+| PIT-04 | P1 rebuild | Tasks (T28, T30, T32) | In Tasks (r5; T28, T30 done; T32 pending) |
 | SRC-06 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23, T29 done) |
 | SRC-07 | P1 rebuild | Tasks (T27, T28, T29, T32) | In Tasks (r5; T27, T28, T29 done) |
 | IND-05 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23, T29 done) |
 | IND-06 | P1 rebuild | Tasks (T24, T25, T29) | In Tasks (r5; T24, T25, T29 done) |
-| VER-05 | P1 rebuild | Tasks (T21, T28, T30) | In Tasks (r5; T21, T28 done; T30 pending) |
-| VER-06 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5; T28 done) |
-| VER-07 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5; T28 done) |
-| VER-08 | P1 rebuild | Tasks (T28, T30, T32) | In Tasks (r5; T28 done) |
+| VER-05 | P1 rebuild | Tasks (T21, T28, T30) | In Tasks (r5; T21, T28, T30 done) |
+| VER-06 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5; T28, T30 done) |
+| VER-07 | P1 rebuild | Tasks (T28, T30) | In Tasks (r5; T28, T30 done) |
+| VER-08 | P1 rebuild | Tasks (T28, T30, T32) | In Tasks (r5; T28, T30 done; T32 pending) |
 
 **ID format:** `[CATEGORY]-[NUMBER]`.
 
