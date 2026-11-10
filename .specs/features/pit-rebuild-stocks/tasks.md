@@ -1060,8 +1060,8 @@ T36
 
 **Done when**:
 
-- [ ] Removing `round` at `py/pit_rebuild/cli.py:443` fails the test; replacing it with `int` fails it too; the original passes
-- [ ] Pit suite passes: 320 OK
+- [x] Removing `round` at `py/pit_rebuild/cli.py:443` fails the test (`FAILED (failures=1)`); replacing it with `int` fails it too (`FAILED (failures=1)`); the original passes
+- [x] Pit suite passes: 320 OK (319 + 1)
 
 **Tests**: unit (one function of the CLI; the integration tests of the shape universe are unchanged)
 **Gate**: full

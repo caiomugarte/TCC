@@ -34,6 +34,7 @@ import unittest
 import urllib.error
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 from urllib.parse import unquote
 
@@ -43,8 +44,8 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 sys.path.insert(0, str(PROJECT_ROOT / "tests"))
 
-from pit_rebuild import cli, cvm, safety, sources  # noqa: E402
-from pit_rebuild_support import UNIVERSE, FakeOpener, FakeResponse, populate_cache, universe_routes  # noqa: E402
+from pit_rebuild import cli, cotahist, cvm, safety, sources  # noqa: E402
+from pit_rebuild_support import UNIVERSE, FakeOpener, FakeResponse, make_zip, populate_cache, universe_routes  # noqa: E402
 
 D1 = date(2026, 8, 7)
 D2 = date(2026, 11, 6)
@@ -1116,6 +1117,46 @@ class RawDateAndCounterTests(unittest.TestCase):
         self.assertEqual(dividends_out["slash_names"], [])
         self.assertEqual(dividends_out["split_adjust_no_isin"], {ISO1: 0, ISO2: 0})
         self.assertEqual(dividends_out["b3_filters"], {"raw_records": 4, "duplicates": 0, "capital_returns": 0})
+
+
+class ScaledShareCountTests(unittest.TestCase):
+    """A-18: a share count scaled by its factor is rounded to whole shares before it is valued (T35, N1).
+
+    cli._company is the smallest unit that reads the rounded counts. Its inputs are inline: one DFP with a
+    composicao_capital row, an empty ITR, one B3 record of 4 000 001 shares and no quotes, so the factor is
+    0.1 and the counts are the only thing that decides n_on and n_pref.
+    """
+
+    CNPJ = "10.101.101/0001-01"
+    D = date(2026, 8, 7)
+
+    def test_the_scaled_counts_are_rounded_to_whole_shares(self):
+        # ON 30 000 007 and PREF 10 000 003 at 0.1 are 3 000 000.7 and 1 000 000.3: the counts are 3 000 001 and 1 000 000.
+        members = {
+            "dfp_cia_aberta_2025.csv": (
+                "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+                f"{self.CNPJ};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n"
+            ),
+            "dfp_cia_aberta_composicao_capital_2025.csv": (
+                "CNPJ_CIA;DT_REFER;VERSAO;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR\n"
+                f"{self.CNPJ};2025-12-31;1;30000007;10000003;40000010\n"
+            ),
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "dfp_cia_aberta_2025.zip"
+            path.write_bytes(make_zip(members))
+            dfp = cvm.load_filings([path], cvm.DFP)
+        acq = SimpleNamespace(
+            dfp=dfp,
+            itr=cvm.load_filings([], cvm.ITR),
+            b3={"ROUN": SimpleNamespace(total_shares=4_000_001)},
+            fca=SimpleNamespace(tickers_of=lambda cnpj: []),
+            si={self.D: SimpleNamespace(rows={})},
+            quotes=cotahist.Quotes(),
+        )
+        company = cli._company(acq, self.D, self.CNPJ, "9999", ["ROUN3"], self.D)
+        self.assertEqual(company.scaled["factor"], 0.1)
+        self.assertEqual((company.n_on, company.n_pref), (3_000_001, 1_000_000))
 
 
 if __name__ == "__main__":
