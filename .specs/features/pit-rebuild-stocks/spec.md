@@ -265,7 +265,7 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | SAFE-01 | P1 CLI | Tasks (T2, T17) | Done (T2, T17) |
 | SAFE-02 | P1 CLI | Tasks (T4, T17) | Done (T4, T17) |
 | COV-01 | P2 coverage | Tasks (T15, T18) | Done (T15, T18) |
-| COV-02 | P2 coverage | Tasks (T15, T16, T23, T26, T28, T29) | In Tasks (amended r5; T23 done) |
+| COV-02 | P2 coverage | Tasks (T15, T16, T23, T26, T28, T29) | In Tasks (amended r5; T23, T26 done) |
 | COV-03 | P2 coverage | Tasks (T15, T17, T30, T32) | In Tasks |
 | PIT-04 | P1 rebuild | Tasks (T28, T30, T32) | In Tasks (r5) |
 | SRC-06 | P1 rebuild | Tasks (T23, T29) | In Tasks (r5; T23 done) |

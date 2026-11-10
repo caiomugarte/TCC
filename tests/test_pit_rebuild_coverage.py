@@ -64,15 +64,40 @@ class EarliestYearTests(unittest.TestCase):
 class DyAndRebuildYearsTests(unittest.TestCase):
     def test_dy_takes_its_earliest_year_from_b3_when_any_ticker_used_b3_and_from_yahoo_otherwise(self):
         with_b3 = coverage.dy_coverage(
-            {"b3": {"tickers": 1, "earliest_ex_date": date(2016, 3, 1)}, "yahoo": {"tickers": 2, "earliest_ex_date": date(2000, 6, 1)}}
+            {"b3": {"PETR4": date(2016, 3, 1)}, "yahoo": {"ABCD3": date(2000, 6, 1), "EFGH3": date(2001, 6, 1)}}
         )
         self.assertEqual((with_b3["earliest_year_from"], with_b3["earliest_year"]), ("b3", 2016))
         self.assertEqual(with_b3["by_source"]["b3"]["retention"], coverage.RETENTION["b3"])
         without_b3 = coverage.dy_coverage(
-            {"b3": {"tickers": 0, "earliest_ex_date": None}, "yahoo": {"tickers": 2, "earliest_ex_date": date(2003, 6, 1)}}
+            {"b3": {}, "yahoo": {"ABCD3": date(2003, 6, 1), "EFGH3": date(2005, 6, 1)}}
         )
         self.assertEqual((without_b3["earliest_year_from"], without_b3["earliest_year"]), ("yahoo", 2003))
         self.assertEqual(without_b3["by_source"]["yahoo"]["retention"], coverage.RETENTION["yahoo"])
+
+    def test_b3_tickers_give_their_earliest_raw_date_the_year_of_the_earliest_and_the_median_of_the_years(self):
+        # The dates are reported as given: 1996-03-22 is not cut by d or moved to a session.
+        result = coverage.dy_coverage(
+            {"b3": {"PETR4": date(1996, 3, 22), "VALE3": date(2003, 5, 2), "TAEE11": date(2006, 7, 1)}, "yahoo": {}}
+        )
+        b3 = result["by_source"]["b3"]
+        self.assertEqual(
+            (b3["tickers"], b3["earliest_raw_date"], b3["earliest_year"], b3["median_ticker_year"]),
+            (3, "1996-03-22", 1996, 2003),
+        )
+        self.assertEqual((result["earliest_year_from"], result["earliest_year"]), ("b3", 1996))
+
+    def test_two_tickers_give_the_median_of_their_years_between_the_two(self):
+        result = coverage.dy_coverage({"b3": {"ALFA3": date(2003, 5, 2), "BETA3": date(2006, 7, 1)}, "yahoo": {}})
+        self.assertEqual(result["by_source"]["b3"]["median_ticker_year"], 2004.5)
+
+    def test_a_source_with_no_ticker_has_no_dates_and_no_median(self):
+        result = coverage.dy_coverage({"b3": {}, "yahoo": {}})
+        self.assertEqual(
+            result["by_source"]["b3"],
+            {"tickers": 0, "earliest_raw_date": None, "earliest_year": None, "median_ticker_year": None,
+             "retention": coverage.RETENTION["b3"]},
+        )
+        self.assertEqual((result["earliest_year_from"], result["earliest_year"]), (None, None))
 
     def test_full_rebuild_years_follow_the_src_01_rule_clipped_to_each_source(self):
         self.assertEqual(

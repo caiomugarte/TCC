@@ -13,6 +13,7 @@ multiplied by the 180 monthly dates of 2012-01 to 2026-12. The load is never mul
 from collections.abc import Callable, Mapping
 from datetime import date
 import re
+import statistics
 
 from .sources import FCA_FIRST_YEAR
 
@@ -88,23 +89,32 @@ def field_earliest(field: str, earliest: Mapping[str, int | None]) -> int | None
     return max(years) + LOOKBACK[kind]
 
 
-def dy_coverage(by_source: Mapping[str, Mapping[str, object]]) -> dict[str, object]:
-    """DY's coverage per dividend source with its retention. The DY year comes from B3 when any ticker used B3, else from Yahoo (COV-02)."""
+def dy_coverage(by_source: Mapping[str, Mapping[str, date | None]]) -> dict[str, object]:
+    """DY's coverage per dividend source from each ticker's earliest raw date (COV-02, F3).
+
+    by_source maps a source to {ticker: earliest_raw_date}; a ticker counts whether or not it has a date.
+    The dates are reported as given: no session calendar and no d cut them. The median is over the tickers'
+    years. The DY year comes from B3 when any ticker used B3, else from Yahoo.
+    """
     sources: dict[str, dict[str, object]] = {}
     for source in ("b3", "yahoo"):
-        info = by_source.get(source, {})
-        earliest = info.get("earliest_ex_date")
+        dates = dict(by_source.get(source, {}))
+        known = sorted(day for day in dates.values() if day is not None)
+        earliest = known[0] if known else None
+        years = [day.year for day in known]
         sources[source] = {
-            "tickers": info.get("tickers", 0),
-            "earliest_ex_date": earliest.isoformat() if isinstance(earliest, date) else None,
+            "tickers": len(dates),
+            "earliest_raw_date": earliest.isoformat() if earliest else None,
+            "earliest_year": earliest.year if earliest else None,
+            "median_ticker_year": statistics.median(years) if years else None,
             "retention": RETENTION[source],
         }
-    used = next((source for source in ("b3", "yahoo") if by_source.get(source, {}).get("tickers", 0) > 0), None)
-    year = None
-    if used is not None:
-        earliest = by_source[used].get("earliest_ex_date")
-        year = earliest.year if isinstance(earliest, date) else None
-    return {"by_source": sources, "earliest_year_from": used, "earliest_year": year}
+    used = next((source for source in ("b3", "yahoo") if sources[source]["tickers"] > 0), None)
+    return {
+        "by_source": sources,
+        "earliest_year_from": used,
+        "earliest_year": None if used is None else sources[used]["earliest_year"],
+    }
 
 
 def full_rebuild_years(earliest: Mapping[str, int | None]) -> dict[str, tuple[int, int]]:

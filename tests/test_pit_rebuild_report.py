@@ -87,8 +87,8 @@ def coverage_block() -> dict:
         "earliest_year_by_field": {"ROE": 2012, "P/VP": 2011},
         "dy": coverage.dy_coverage(
             {
-                "b3": {"tickers": 2, "earliest_ex_date": date(2016, 1, 4)},
-                "yahoo": {"tickers": 1, "earliest_ex_date": date(2000, 6, 1)},
+                "b3": {"PETR4": date(2016, 1, 4), "VALE3": date(2018, 3, 1)},
+                "yahoo": {"ABCD3": date(2000, 6, 1)},
             }
         ),
         "effort": coverage.effort(

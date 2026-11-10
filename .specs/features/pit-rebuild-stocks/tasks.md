@@ -792,10 +792,12 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_coverage.py`: T15's `test_dy_takes_its_earliest_year_from_b3_when_any_ticker_used_b3_and_from_yahoo_otherwise` moves to the new input shape (approved r5 change, F3) and keeps its rule.
-- [ ] B3 `{PETR4: 1996-03-22, VALE3: 2003-05-02, TAEE11: 2006-07-01}` gives `tickers` 3, `earliest_raw_date` 1996-03-22, `earliest_year` 1996 and `median_ticker_year` 2003; two tickers of 2003 and 2006 give `median_ticker_year` 2004.5; a source with no ticker gives `tickers` 0 and `None` dates and median; a 1996 date is reported as given (the function takes no session calendar and no `d`).
-- [ ] Gate check passes: Quick for `test_pit_rebuild_coverage.py`
-- [ ] Test count: ≥ 13 tests pass in the file (T15's 11 plus ≥ 2)
+- [x] `tests/test_pit_rebuild_coverage.py`: T15's `test_dy_takes_its_earliest_year_from_b3_when_any_ticker_used_b3_and_from_yahoo_otherwise` moves to the new input shape (approved r5 change, F3) and keeps its rule.
+- [x] B3 `{PETR4: 1996-03-22, VALE3: 2003-05-02, TAEE11: 2006-07-01}` gives `tickers` 3, `earliest_raw_date` 1996-03-22, `earliest_year` 1996 and `median_ticker_year` 2003; two tickers of 2003 and 2006 give `median_ticker_year` 2004.5; a source with no ticker gives `tickers` 0 and `None` dates and median; a 1996 date is reported as given (the function takes no session calendar and no `d`).
+- [x] Gate check passes: Quick for `test_pit_rebuild_coverage.py` (14 OK; pit suite 263 OK; compileall OK)
+- [x] Test count: ≥ 13 tests pass in the file (T15's 11 plus ≥ 2) - 14 pass
+
+> Done (T26). `dy_coverage` takes each ticker's earliest raw date. Until T29 `cli.py` passes each ticker's earliest ex-date, because the B3 raw date needs the company's records in `_dividends_of`; the two differ by the days to the next session, so a date at a year boundary can land in the other year until T29 wires the raw dates. The report's DY table reads `earliest_raw_date` under the header `primeira data bruta`. `tests/test_pit_rebuild_report.py` gives its fixture the per-ticker shape; its assertions do not change.
 
 **Tests**: unit
 **Gate**: quick

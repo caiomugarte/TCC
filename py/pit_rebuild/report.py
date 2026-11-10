@@ -403,9 +403,9 @@ def _coverage_section(coverage: Mapping[str, object]) -> list[str]:
     dy = coverage["dy"]
     lines += ["### Cobertura do DY", ""]
     lines += _table(
-        ["fonte", "tickers", "primeira data-ex", "retenção"],
+        ["fonte", "tickers", "primeira data bruta", "retenção"],
         [
-            [_code(source), info["tickers"], info["earliest_ex_date"] or "-", info["retention"]]
+            [_code(source), info["tickers"], info["earliest_raw_date"] or "-", info["retention"]]
             for source, info in dy["by_source"].items()
         ],
     )

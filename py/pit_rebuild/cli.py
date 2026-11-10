@@ -445,8 +445,7 @@ class _DayResult:
     mapping: dict
     pairs: dict[str, dict[str, list]]
     dividends: dict
-    dy_tickers: dict[str, set[str]]
-    dy_earliest: dict[str, date]
+    dy_dates: dict[str, dict[str, date | None]]  # per dividend source, each ticker's earliest date (COV-02)
 
 
 def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
@@ -483,8 +482,7 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
     values: dict[str, dict[str, Value]] = {}
     group_of: dict[str, str] = {}
     counts = {"by_source": {name: 0 for name in SOURCES}, "yahoo_reasons": {r: 0 for r in YAHOO_REASONS}, "b3_empty_yahoo_failed": 0}
-    dy_tickers: dict[str, set[str]] = defaultdict(set)
-    dy_earliest: dict[str, date] = {}
+    dy_dates: dict[str, dict[str, date | None]] = defaultdict(dict)
     for ticker in eligible:
         item = mapped[ticker]
         reason = _unmapped_reason(acq, day, ticker)
@@ -513,10 +511,9 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
         if dy_reason == "b3_empty_yahoo_failed":
             counts["b3_empty_yahoo_failed"] += 1
         if source in ("b3", "yahoo") and divs is not None:
-            dy_tickers[source].add(ticker)
+            # Until T29 the coverage input is each ticker's earliest ex-date; T29 passes the B3 raw dates (COV-02).
             known = [item_.ex_date for item_ in divs if item_.ex_date is not None]
-            if known:
-                dy_earliest[source] = min(dy_earliest.get(source, min(known)), min(known))
+            dy_dates[source][ticker] = min(known) if known else None
         close_day, close = cotahist.quote_at(acq.quotes, ticker, day)
         last_day = cotahist.quote_at(acq.quotes, ticker, day, max_age_days=100_000)[0]
         composition = item.composition
@@ -550,8 +547,7 @@ def _evaluate_day(acq: _Acquired, day: date) -> _DayResult:
         mapping=out,
         pairs=pairs,
         dividends=counts,
-        dy_tickers=dy_tickers,
-        dy_earliest=dy_earliest,
+        dy_dates=dy_dates,
     )
 
 
@@ -562,8 +558,7 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
     compute_seconds = 0.0
     per_date: dict[str, dict] = {}
     dividends_out: dict[str, dict] = {"by_source": {}, "yahoo_reasons": {}, "b3_empty_yahoo_failed": {}}
-    dy_tickers: dict[str, set[str]] = defaultdict(set)
-    dy_earliest: dict[str, date] = {}
+    dy_dates: dict[str, dict[str, date | None]] = defaultdict(dict)
     for day in sorted(req.dates):
         start = clock()
         result = _evaluate_day(acq, day)
@@ -577,14 +572,11 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
         dividends_out["by_source"][iso] = dict(result.dividends["by_source"])
         dividends_out["yahoo_reasons"][iso] = dict(result.dividends["yahoo_reasons"])
         dividends_out["b3_empty_yahoo_failed"][iso] = result.dividends["b3_empty_yahoo_failed"]
-        for source, tickers in result.dy_tickers.items():
-            dy_tickers[source] |= tickers
-        for source, day_seen in result.dy_earliest.items():
-            dy_earliest[source] = min(dy_earliest.get(source, day_seen), day_seen)
-    dy = coverage.dy_coverage({
-        source: {"tickers": len(dy_tickers.get(source, ())), "earliest_ex_date": dy_earliest.get(source)}
-        for source in ("b3", "yahoo")
-    })
+        for source, found in result.dy_dates.items():
+            for ticker, first in found.items():
+                known = [day for day in (dy_dates[source].get(ticker), first) if day is not None]
+                dy_dates[source][ticker] = min(known) if known else None
+    dy = coverage.dy_coverage({source: dict(dy_dates.get(source, {})) for source in ("b3", "yahoo")})
     coverage_out = _coverage(cache, acq, req, compute_seconds, dy)
     raw = list(cache.used)
     return report.build(
