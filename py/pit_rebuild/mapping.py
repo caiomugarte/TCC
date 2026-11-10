@@ -37,8 +37,15 @@ FINANCIAL_SETORES = frozenset(
 DRE_FINANCIAL_TERM = "Intermediação Financeira"  # A-10: DRE 3.01 description
 SI_FINANCIAL_SETOR = "Financeiro e Outros"  # Status Invest SETOR, too coarse to decide a mapped ticker (A-10)
 _VALOR_MOBILIARIO = re.compile(r"^fca_cia_aberta_valor_mobiliario_(\d{4})\.csv$", re.IGNORECASE)
-_COMPOSITION_PART = re.compile(r"^(\d+)\s+(\S+)$")
-_TICKER = re.compile(r"^[A-Z]{4}\d{1,2}$")
+_COMPOSITION_SPLIT = re.compile(r"\s*(?:/|\+|(?<!\S)[eE](?!\S))\s*")  # A-9 (F2): "/", "+" or a standalone "e"/"E"
+_COMPOSITION_PART = re.compile(r"(\d+)\s*(.+)")  # a count, then a share class or a ticker
+_CLASS_WORDS = (  # A-9 share classes; the words match case-insensitively
+    (re.compile(r"ON|(?:AÇÃO|AÇÕES) ON|(?:AÇÃO|AÇÕES) ORDINÁRIAS?", re.IGNORECASE), "ON"),
+    (re.compile(r"PN|PNS|(?:AÇÃO|AÇÕES) PN|(?:AÇÃO|AÇÕES) PREFERENCIAIS?", re.IGNORECASE), "PN"),
+    (re.compile(r"PNA", re.IGNORECASE), "PNA"),
+    (re.compile(r"PNB", re.IGNORECASE), "PNB"),
+)
+_TICKER = re.compile(r"^[A-Z]{3,4}\d{1,2}$")  # a ticker key stays as written; 3 letters too: FCA "ENG3" (T22)
 _REQUIRED = ("CNPJ_Companhia", "Data_Referencia", "Versao", "Valor_Mobiliario", "Codigo_Negociacao", "Composicao_BDR_Unit")
 
 
@@ -118,17 +125,35 @@ def load_fca(zip_paths: Iterable[Path]) -> FcaIndex:
 
 
 def parse_composition(text: str | None) -> dict[str, int] | None:
-    """"1 ON / 2 PN" -> {"ON": 1, "PN": 2}; "1 KLBN3 + 4 KLBN4" -> {"KLBN3": 1, "KLBN4": 4}; anything else None."""
+    """Read a unit's composition by A-9's grammar (F2).
+
+    "1 ON / 2 PN" -> {"ON": 1, "PN": 2}; "1 KLBN3 + 4 KLBN4" -> {"KLBN3": 1, "KLBN4": 4};
+    "2 ações preferenciais e 1 ação ordinária" -> {"PN": 2, "ON": 1}. Parts are split on "/", "+" or a
+    standalone "e"/"E"; repeated keys add up; any other part makes the whole composition None.
+    """
     if text is None or not text.strip():
         return None
     composition: dict[str, int] = {}
-    for part in re.split(r"\s*[/+]\s*", text.strip()):
-        match = _COMPOSITION_PART.match(part.strip())
+    for part in _COMPOSITION_SPLIT.split(text.strip()):
+        match = _COMPOSITION_PART.fullmatch(part.strip())
         if match is None:
             return None
-        key = match.group(2)
+        key = _class_key(match.group(2))
+        if key is None:
+            return None
         composition[key] = composition.get(key, 0) + int(match.group(1))
     return composition
+
+
+def _class_key(text: str) -> str | None:
+    """The key a composition part names: a ticker as written, or the share class of its words; None otherwise."""
+    words = " ".join(text.split())
+    if _TICKER.match(words):
+        return words
+    for pattern, key in _CLASS_WORDS:
+        if pattern.fullmatch(words):
+            return key
+    return None
 
 
 def map_tickers(

@@ -667,12 +667,14 @@ T28 → T29 → T30 → T31 → T32
 
 **Done when**:
 
-- [ ] `tests/test_pit_rebuild_mapping.py`: T11's `test_class_and_ticker_compositions_are_read_and_anything_else_is_none` changes its `2 ON e 1 PN` expectation from `None` to `{"ON": 2, "PN": 1}` (approved r5 expectation change, F2) and keeps `""` and `None` → `None`.
-- [ ] `test_real_fca_unit_strings_parse`, one subtest each: `1 ON E 2 PN` → `{ON: 1, PN: 2}`; `1 ON e 4 PN` → `{ON: 1, PN: 4}`; `1 ON e 2 PN` → `{ON: 1, PN: 2}`; `2 ações preferenciais e 1 ação ordinária` → `{PN: 2, ON: 1}`; `1 ação ordinária e 4 ações preferenciais` → `{ON: 1, PN: 4}`; `1 ENG3 e 4 ENGI4` → `{ENG3: 1, ENGI4: 4}`; `1 ON+ 2PN` → `{ON: 1, PN: 2}`; `1 ON e 2PNs` → `{ON: 1, PN: 2}` with no `PNs` key; `1 ação ON + 2 ações PN` → `{ON: 1, PN: 2}`; `1 ON E 2 PNA` → `{ON: 1, PNA: 2}`; `1 ON + 1 ON` → `{ON: 2}`; `1 ON / 2 PN` and `1 KLBN3 + 4 KLBN4` as in r4.
-- [ ] `test_any_other_part_leaves_the_composition_unparsed`, one subtest each → `None`: `1 ON e duas PN`, `1 BDR`, `ON + PN`, `1 ON - 2 PN`, `1 ação especial`, `1 ON e`, `1 ONe 2 PN`.
-- [ ] `map_tickers` maps a unit whose FCA composition is `1 ON e 2 PN` with composition `{ON: 1, PN: 2}`, not `unit_composition_unparsed`.
-- [ ] Gate check passes: Quick for `test_pit_rebuild_mapping.py`
-- [ ] Test count: ≥ 18 tests pass in the file (T11's 15 plus ≥ 3)
+- [x] `tests/test_pit_rebuild_mapping.py`: T11's `test_class_and_ticker_compositions_are_read_and_anything_else_is_none` changes its `2 ON e 1 PN` expectation from `None` to `{"ON": 2, "PN": 1}` (approved r5 expectation change, F2) and keeps `""` and `None` → `None`.
+- [x] `test_real_fca_unit_strings_parse`, one subtest each: `1 ON E 2 PN` → `{ON: 1, PN: 2}`; `1 ON e 4 PN` → `{ON: 1, PN: 4}`; `1 ON e 2 PN` → `{ON: 1, PN: 2}`; `2 ações preferenciais e 1 ação ordinária` → `{PN: 2, ON: 1}`; `1 ação ordinária e 4 ações preferenciais` → `{ON: 1, PN: 4}`; `1 ENG3 e 4 ENGI4` → `{ENG3: 1, ENGI4: 4}`; `1 ON+ 2PN` → `{ON: 1, PN: 2}`; `1 ON e 2PNs` → `{ON: 1, PN: 2}` with no `PNs` key; `1 ação ON + 2 ações PN` → `{ON: 1, PN: 2}`; `1 ON E 2 PNA` → `{ON: 1, PNA: 2}`; `1 ON + 1 ON` → `{ON: 2}`; `1 ON / 2 PN` and `1 KLBN3 + 4 KLBN4` as in r4.
+- [x] `test_any_other_part_leaves_the_composition_unparsed`, one subtest each → `None`: `1 ON e duas PN`, `1 BDR`, `ON + PN`, `1 ON - 2 PN`, `1 ação especial`, `1 ON e`, `1 ONe 2 PN`.
+- [x] `map_tickers` maps a unit whose FCA composition is `1 ON e 2 PN` with composition `{ON: 1, PN: 2}`, not `unit_composition_unparsed`.
+- [x] Gate check passes: Quick for `test_pit_rebuild_mapping.py` (18 OK; pit suite 221 OK; compileall OK)
+- [x] Test count: ≥ 18 tests pass in the file (T11's 15 plus ≥ 3) - 18 pass
+
+> Done (T22). Two changes beyond the named expectations. (1) The ticker key takes 3 or 4 letters, `[A-Z]{3,4}\d{1,2}`: A-9's pattern `[A-Z]{4}\d{1,2}` cannot read the real string `1 ENG3 e 4 ENGI4`, which this task expects as `{ENG3: 1, ENGI4: 4}`. The spec pattern needs the human's correction. (2) The ZETA11 row of both FCA fixtures changes from `2 ON e 1 PN` to `1 ON e duas PN`, which r5 still leaves unparsed, so `test_reason_unit_composition_unparsed...` keeps its meaning. `cli.py` keeps its own 4-letter `_TICKER` (line 57) until T29 wires the unit dividends.
 
 **Tests**: unit
 **Gate**: quick

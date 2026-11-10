@@ -78,6 +78,15 @@ class MapTickerTests(MappingCase):
             mapping.Mapped(KLABIN, "1602", "fca", {"KLBN3": 1, "KLBN4": 4}),
         )
 
+    def test_a_unit_with_an_r5_composition_string_maps_with_its_composition(self):
+        # ALUP11's FCA composition "1 ON e 2 PN" is read, not reported as unit_composition_unparsed.
+        row = mapping.FcaRow(
+            ticker="ALUP11", cnpj=EUCATEX, valor_mobiliario=mapping.UNIT,
+            composition="1 ON e 2 PN", data_referencia=date(2025, 12, 31), versao=1,
+        )
+        mapped = mapping.map_tickers(["ALUP11"], mapping.FcaIndex([row]), self.cadastro, {}, D)
+        self.assertEqual(mapped["ALUP11"], mapping.Mapped(EUCATEX, self.cadastro[EUCATEX]["cd_cvm"], "fca", {"ON": 1, "PN": 2}))
+
     def test_the_fca_row_used_has_the_latest_data_referencia_on_or_before_d(self):
         # EUCA4 has rows for 2024-12-31 and 2025-12-31: at 2025-06-30 only the first is on or before the date.
         self.assertEqual(self.fca.latest("EUCA4", date(2025, 6, 30)).data_referencia, date(2024, 12, 31))
@@ -88,9 +97,42 @@ class ParseCompositionTests(unittest.TestCase):
     def test_class_and_ticker_compositions_are_read_and_anything_else_is_none(self):
         self.assertEqual(mapping.parse_composition("1 ON / 2 PN"), {"ON": 1, "PN": 2})
         self.assertEqual(mapping.parse_composition("1 KLBN3 + 4 KLBN4"), {"KLBN3": 1, "KLBN4": 4})
-        self.assertIsNone(mapping.parse_composition("2 ON e 1 PN"))
+        self.assertEqual(mapping.parse_composition("2 ON e 1 PN"), {"ON": 2, "PN": 1})  # F2: a standalone e splits
         self.assertIsNone(mapping.parse_composition(""))
         self.assertIsNone(mapping.parse_composition(None))
+
+    def test_real_fca_unit_strings_parse(self):
+        cases = {
+            "1 ON E 2 PN": {"ON": 1, "PN": 2},
+            "1 ON e 4 PN": {"ON": 1, "PN": 4},
+            "1 ON e 2 PN": {"ON": 1, "PN": 2},
+            "2 ações preferenciais e 1 ação ordinária": {"PN": 2, "ON": 1},
+            "1 ação ordinária e 4 ações preferenciais": {"ON": 1, "PN": 4},
+            "1 ENG3 e 4 ENGI4": {"ENG3": 1, "ENGI4": 4},
+            "1 ON+ 2PN": {"ON": 1, "PN": 2},
+            "1 ON e 2PNs": {"ON": 1, "PN": 2},  # PNs is PN: no PNs key
+            "1 ação ON + 2 ações PN": {"ON": 1, "PN": 2},
+            "1 ON E 2 PNA": {"ON": 1, "PNA": 2},
+            "1 ON + 1 ON": {"ON": 2},
+            "1 ON / 2 PN": {"ON": 1, "PN": 2},
+            "1 KLBN3 + 4 KLBN4": {"KLBN3": 1, "KLBN4": 4},
+        }
+        for text, expected in cases.items():
+            with self.subTest(text=text):
+                self.assertEqual(mapping.parse_composition(text), expected)
+
+    def test_any_other_part_leaves_the_composition_unparsed(self):
+        for text in [
+            "1 ON e duas PN",  # a count written in words
+            "1 BDR",  # a class the grammar does not name
+            "ON + PN",  # a part without a count
+            "1 ON - 2 PN",  # a separator the grammar does not split on
+            "1 ação especial",  # a share class word the grammar does not name
+            "1 ON e",  # an empty part after the standalone e
+            "1 ONe 2 PN",  # the e is part of a word, so the part is unparsed
+        ]:
+            with self.subTest(text=text):
+                self.assertIsNone(mapping.parse_composition(text))
 
 
 class GroupTests(MappingCase):

@@ -238,9 +238,9 @@ Decisions D-1..D-4 come from the issue's `## Decisões` and are settled (confirm
 | PIT-01 | P1 rebuild | Tasks (T7, T8, T9, T17) | Done (T7, T8, T9, T17) |
 | PIT-02 | P1 rebuild | Tasks (T1, T10, T12, T17, T23) | Done (T1, T10, T12, T17); T23 keeps the leak guard with split adjustment |
 | PIT-03 | P1 rebuild | Tasks (T7) | Done (T7) |
-| MAP-01 | P1 rebuild | Tasks (T4, T11, T18, T22) | Done (T4, T11, T18); T22 narrows `unit_composition_unparsed` |
+| MAP-01 | P1 rebuild | Tasks (T4, T11, T18, T22) | Done (T4, T11, T18, T22) |
 | MAP-02 | P1 rebuild | Tasks (T11, T16) | Done (T11, T16) |
-| MAP-03 | P1 rebuild | Tasks (T11, T12, T22, T29) | In Tasks (amended r5) |
+| MAP-03 | P1 rebuild | Tasks (T11, T12, T22, T29) | In Tasks (amended r5; T22 done) |
 | IND-01 | P1 rebuild | Tasks (T8, T9, T10, T12, T21, T24, T25, T29) | In Tasks (amended r5; T21 done) |
 | IND-02 | P1 rebuild | Tasks (T3) | Done (T3) |
 | IND-03 | P1 rebuild | Tasks (T12) | Done (T12) |
