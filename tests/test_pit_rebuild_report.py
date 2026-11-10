@@ -304,6 +304,11 @@ class MarkdownTests(ReportCase):
 
     def test_render_is_deterministic_and_reads_every_number_from_the_dict(self):
         self.assertEqual(report.render_markdown(self.report), self.markdown)
+
+    def test_the_markdown_of_the_object_is_the_markdown_of_its_json(self):
+        # the committed JSON is written with sorted keys; the Markdown must not depend on the order a dict was built in
+        loaded = json.loads(report.encode_json(self.report))
+        self.assertEqual(report.render_markdown(loaded), self.markdown)
         changed = deepcopy(self.report)
         changed["dates"]["2026-08-07"]["eligible"] = 999
         self.assertIn("Elegíveis: 999.", report.render_markdown(changed))

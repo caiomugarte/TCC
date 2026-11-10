@@ -401,7 +401,7 @@ def _verdict_section(verdicts: Mapping[str, object]) -> list[str]:
     ]
     rows = [
         [_code(field)] + [verdicts["fields"][field][group] for group, _label in GROUPS]
-        for field in verdicts["fields"]
+        for field in _canonical(verdicts["fields"])
     ]
     lines += _table(["indicador"] + [label for _group, label in GROUPS], rows)
     return lines
@@ -466,7 +466,7 @@ def _parameters_section(parameters: Mapping[str, object]) -> list[str]:
     lines.append(f"- Cortes de filings (`filings_cutoffs`): {cutoff_text}.")
     lines.append(f"- Escala das ações: {parameters['share_scale_rule']}")
     lines += ["", "### Fórmulas", ""]
-    lines += _table(["indicador", "fórmula"], [[_code(field), text] for field, text in parameters["formulas"].items()])
+    lines += _table(["indicador", "fórmula"], [[_code(field), parameters["formulas"][field]] for field in _canonical(parameters["formulas"])])
     lines += [
         "### Entradas que não são ponto no tempo",
         "",
@@ -538,7 +538,8 @@ def _results_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:
     lines = ["## Resultados por data", ""]
     for iso, entry in dates.items():
         rows = []
-        for field, groups in entry["fields"].items():
+        for field in _canonical(entry["fields"]):
+            groups = entry["fields"][field]
             for group, label in GROUPS:
                 stats = groups[group]
                 rows.append(
@@ -557,13 +558,14 @@ def _results_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:
         blanks = [
             [_code(field), groups[GROUPS[0][0]]["reference_blank"], groups[GROUPS[0][0]]["reference_blank_with_value"],
              groups[GROUPS[0][0]]["reference_blank_as_zero"]]
-            for field, groups in entry["fields"].items()
+            for field, groups in ((name, entry["fields"][name]) for name in _canonical(entry["fields"]))
             if groups[GROUPS[0][0]]["reference_blank"] or groups[GROUPS[0][0]]["reference_blank_as_zero"]
         ]
         if blanks:
             lines += ["Referências em branco no Status Invest (grupo não financeiro):", ""]
             lines += _table(["indicador", "em branco", "com valor reconstruído", "DY tratado como 0,00"], blanks)
-        for field, groups in entry["fields"].items():
+        for field in _canonical(entry["fields"]):
+            groups = entry["fields"][field]
             for group, label in GROUPS:
                 if group in DETAILED_GROUPS:
                     lines += _worst_details(field, label, groups[group])
@@ -640,12 +642,12 @@ def _coverage_section(coverage: Mapping[str, object]) -> list[str]:
     lines = ["## Cobertura histórica e esforço", "", "### Primeiro ano por fonte", ""]
     lines += _table(
         ["fonte", "primeiro ano"],
-        [[_code(source), _year_text(info)] for source, info in coverage["earliest_year_by_source"].items()],
+        [[_code(source), _year_text(info)] for source, info in sorted(coverage["earliest_year_by_source"].items())],
     )
     lines += ["### Primeiro ano por indicador", ""]
     lines += _table(
         ["indicador", "primeiro ano"],
-        [[_code(field), year] for field, year in coverage["earliest_year_by_field"].items()],
+        [[_code(field), coverage["earliest_year_by_field"][field]] for field in _canonical(coverage["earliest_year_by_field"])],
     )
     dy = coverage["dy"]
     lines += ["### Cobertura do DY", ""]
@@ -660,7 +662,7 @@ def _coverage_section(coverage: Mapping[str, object]) -> list[str]:
                 _year(info["median_ticker_year"]),
                 info["retention"],
             ]
-            for source, info in dy["by_source"].items()
+            for source, info in sorted(dy["by_source"].items())
         ],
     )
     if dy["earliest_year_from"]:
@@ -680,13 +682,13 @@ def _coverage_section(coverage: Mapping[str, object]) -> list[str]:
         ["tipo", "segundos", "bytes medidos", "bytes completos", "segundos projetados"],
         [
             [_code(kind), _num(item["seconds"]), item["bytes"], item["full_bytes"], _num_or_none(item["projected_seconds"])]
-            for kind, item in effort["load"].items()
+            for kind, item in sorted(effort["load"].items())
         ],
     )
     years = coverage.get("years")
     if years:
         lines += ["### Anos lidos na reconstrução completa", ""]
-        lines += _table(["fonte", "primeiro ano", "último ano"], [[_code(source), first, last] for source, (first, last) in years.items()])
+        lines += _table(["fonte", "primeiro ano", "último ano"], [[_code(source), first, last] for source, (first, last) in sorted(years.items())])
     return lines
 
 
@@ -720,6 +722,11 @@ def _inputs_section(inputs: Mapping[str, object]) -> list[str]:
                 "",
             ]
     return lines
+
+
+def _canonical(present: Mapping[str, object]) -> list[str]:
+    """The indicators held in present, in the order of ALL_FIELDS: the Markdown does not depend on the order of the dict."""
+    return [name for name in ALL_FIELDS if name in present]
 
 
 def _table(header: Sequence[str], rows: Iterable[Sequence[object]]) -> list[str]:
