@@ -38,6 +38,18 @@ Seen once or not yet corroborated. Tracked, not trusted.
 - evidence: validation.md W1/W3/W4/W5 (web/components/recommendation/recommendation-view.tsx:84,96,289,299) (web)
 - last seen: 2026-11-09T17:49:05Z
 
+### L-005 - When a receipt-date PIT rule is applied in several helpers, test its boundary (d and d+1) through every helper that selects a filing, not only the main one.
+- signal: `surviving_mutant` · recurrence: 1 feature(s) · scope: `pit/research-tools` · harmful: 0
+- features: pit-rebuild-stocks
+- evidence: py/pit_rebuild/cvm.py:291,208 (Verifier r1 G1/G2) (pit/research-tools)
+- last seen: 2026-11-10T14:18:46Z
+
+### L-006 - Before freezing rules that reproduce a third-party number, run the tool once on real data and fit each rule (date alignment, windows, accounts) before approving the spec.
+- signal: `spec_precision_gap` · recurrence: 1 feature(s) · scope: `pit/research-tools` · harmful: 0
+- features: pit-rebuild-stocks
+- evidence: T20 stop; iw-59-research-r1 F1-F18 (pit/research-tools)
+- last seen: 2026-11-10T14:18:46Z
+
 ## Quarantined (failed when applied - ignore)
 
 A confirmed lesson that recurred alongside failure. Kept for the maintainer to review.

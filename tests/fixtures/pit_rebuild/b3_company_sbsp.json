@@ -1,0 +1,45 @@
+[
+ {
+  "tradingName": "SABESP      ",
+  "codeCVM": "14443",
+  "totalNumberShares": "3.534.409.282",
+  "stockDividends": [
+   {
+    "assetIssued": "BRSBSPACNOR5",
+    "factor": "400,00000000000",
+    "approvedOn": "28/04/2026",
+    "isinCode": "BRSBSPACNOR5",
+    "label": "DESDOBRAMENTO",
+    "lastDatePrior": "28/04/2026",
+    "remarks": ""
+   },
+   {
+    "assetIssued": "BRSBSPACNOR5",
+    "factor": "0,16098032200",
+    "approvedOn": "16/03/2026",
+    "isinCode": "BRSBSPACNOR5",
+    "label": "BONIFICACAO",
+    "lastDatePrior": "19/03/2026",
+    "remarks": ""
+   },
+   {
+    "assetIssued": "BRSBSPACNOR5",
+    "factor": "2,96469750000",
+    "approvedOn": "18/12/2025",
+    "isinCode": "BRSBSPACNOR5",
+    "label": "BONIFICACAO",
+    "lastDatePrior": "23/12/2025",
+    "remarks": ""
+   },
+   {
+    "assetIssued": "BRSBSPACNOR5",
+    "factor": "0,00800000000",
+    "approvedOn": "30/04/2007",
+    "isinCode": "BRSBSPACNOR5",
+    "label": "GRUPAMENTO",
+    "lastDatePrior": "01/06/2007",
+    "remarks": ""
+   }
+  ]
+ }
+]

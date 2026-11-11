@@ -3,7 +3,7 @@
   "promote_threshold": 2,
   "window_days": 45,
   "quarantine_threshold": 2,
-  "next_id": 5,
+  "next_id": 7,
   "lessons": [
     {
       "id": "L-001",
@@ -76,6 +76,42 @@
       ],
       "created": "2026-11-09T17:49:05Z",
       "last_seen": "2026-11-09T17:49:05Z"
+    },
+    {
+      "id": "L-005",
+      "key": "surviving_mutant::when a receipt date pit rule is applied in several helpers test its boundary d and d 1 through every helper that selects a filing not only the main one",
+      "text": "When a receipt-date PIT rule is applied in several helpers, test its boundary (d and d+1) through every helper that selects a filing, not only the main one.",
+      "signal": "surviving_mutant",
+      "scope": "pit/research-tools",
+      "status": "candidate",
+      "features": [
+        "pit-rebuild-stocks"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "py/pit_rebuild/cvm.py:291,208 (Verifier r1 G1/G2) (pit/research-tools)"
+      ],
+      "created": "2026-11-10T14:18:46Z",
+      "last_seen": "2026-11-10T14:18:46Z"
+    },
+    {
+      "id": "L-006",
+      "key": "spec_precision_gap::before freezing rules that reproduce a third party number run the tool once on real data and fit each rule date alignment windows accounts before approving the spec",
+      "text": "Before freezing rules that reproduce a third-party number, run the tool once on real data and fit each rule (date alignment, windows, accounts) before approving the spec.",
+      "signal": "spec_precision_gap",
+      "scope": "pit/research-tools",
+      "status": "candidate",
+      "features": [
+        "pit-rebuild-stocks"
+      ],
+      "recurrence": 1,
+      "harmful": 0,
+      "evidence": [
+        "T20 stop; iw-59-research-r1 F1-F18 (pit/research-tools)"
+      ],
+      "created": "2026-11-10T14:18:46Z",
+      "last_seen": "2026-11-10T14:18:46Z"
     }
   ]
 }
