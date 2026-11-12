@@ -261,15 +261,15 @@ T23 → T24
 
 **Done when**:
 
-- [ ] Ex-date on `after`: out; on `until`: in; one day after `until`: out (SHR-02)
-- [ ] An event of an ISIN not in `isins` is out; events of two ISINs in `isins` are both in
-- [ ] The same (label, multiplier, `lastDatePrior`) listed under two ISINs of `isins` is returned once (B-2)
-- [ ] `parse_b3_company` of the SBSP fixture has `retrieved_on` None
-- [ ] `next_session` None (outside the calendar): ex-date = `lastDatePrior + 1 day`
-- [ ] `until=None` keeps every later event
-- [ ] `split_divisor` results of the existing tests unchanged
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 7 new tests
+- [x] Ex-date on `after`: out; on `until`: in; one day after `until`: out (SHR-02)
+- [x] An event of an ISIN not in `isins` is out; events of two ISINs in `isins` are both in
+- [x] The same (label, multiplier, `lastDatePrior`) listed under two ISINs of `isins` is returned once (B-2)
+- [x] `parse_b3_company` of the SBSP fixture has `retrieved_on` None
+- [x] `next_session` None (outside the calendar): ex-date = `lastDatePrior + 1 day`
+- [x] `until=None` keeps every later event
+- [x] `split_divisor` results of the existing tests unchanged
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 7 new tests
 
 **Tests**: unit
 **Gate**: quick
