@@ -391,11 +391,11 @@ T23 → T24
 
 **Done when**:
 
-- [ ] Every `ACCOUNTING_FIELDS` value becomes `Value(None, "stale_filing")`
-- [ ] `PRECO`, `VALOR DE MERCADO`, `LIQUIDEZ MEDIA DIARIA`, `DY` keep value, reason and note
-- [ ] The input dict is not mutated
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 2 new tests
+- [x] Every `ACCOUNTING_FIELDS` value becomes `Value(None, "stale_filing")`
+- [x] `PRECO`, `VALOR DE MERCADO`, `LIQUIDEZ MEDIA DIARIA`, `DY` keep value, reason and note
+- [x] The input dict is not mutated
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 2 new tests
 
 **Tests**: unit
 **Gate**: quick

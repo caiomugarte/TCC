@@ -18,7 +18,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "py"))
 from pit_rebuild import indicators  # noqa: E402
 from pit_rebuild.dividends import Dividend  # noqa: E402
 from pit_rebuild.errors import PITLeakError  # noqa: E402
-from pit_rebuild.fields import ALL_FIELDS  # noqa: E402
+from pit_rebuild.fields import ACCOUNTING_FIELDS, ALL_FIELDS  # noqa: E402
 from pit_rebuild.indicators import Input, TickerInputs  # noqa: E402
 
 D = date(2026, 8, 7)
@@ -232,6 +232,35 @@ class PointInTimeTests(unittest.TestCase):
         with self.assertRaises(PITLeakError) as ctx:
             indicators.compute(synthetic(dividends=[Dividend(0.5, D + timedelta(days=1))]), D)
         self.assertEqual(ctx.exception.offending_date, D + timedelta(days=1))
+
+
+class StaleFilingMaskTests(unittest.TestCase):
+    """STL-01, STL-02 and B-7: a stale filing blanks the 15 accounting fields with the reason stale_filing; the market fields keep theirs."""
+
+    def test_every_accounting_field_of_a_stale_filing_has_no_value_and_the_stale_reason(self):
+        self.assertEqual(indicators.STALE_FILING_REASON, "stale_filing")
+        masked = indicators.mask_accounting(indicators.compute(synthetic(), D), indicators.STALE_FILING_REASON)
+        for field in ACCOUNTING_FIELDS:
+            with self.subTest(field=field):
+                self.assertEqual((masked[field].value, masked[field].reason), (None, "stale_filing"))
+
+    def test_the_market_fields_keep_their_value_reason_and_note(self):
+        # No preferred quote gives VALOR DE MERCADO its vm_price_fallback note; no dividend source gives DY its reason.
+        values = indicators.compute(synthetic(price_pref=None, dividends=None), D)
+        masked = indicators.mask_accounting(values, indicators.STALE_FILING_REASON)
+        for field in ("PRECO", "VALOR DE MERCADO", "LIQUIDEZ MEDIA DIARIA", "DY"):
+            with self.subTest(field=field):
+                self.assertEqual(masked[field], values[field])
+        self.assertEqual((masked["VALOR DE MERCADO"].value, masked["VALOR DE MERCADO"].note), (15_000_000.0, "vm_price_fallback"))
+        self.assertEqual((masked["DY"].value, masked["DY"].reason), (None, "no_dividend_source"))
+
+    def test_masking_keeps_every_key_and_does_not_change_the_input(self):
+        values = indicators.compute(synthetic(), D)
+        before = dict(values)  # a shallow copy: any in-place change of values shows as a difference
+        masked = indicators.mask_accounting(values, indicators.STALE_FILING_REASON)
+        self.assertEqual(list(masked), list(values))
+        self.assertEqual(values, before)
+        self.assertAlmostEqual(values["P/L"].value, 10.0)  # the input still holds its P/L value
 
 
 if __name__ == "__main__":

@@ -261,8 +261,8 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | TTM-02 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
 | TTM-03 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
 | TTM-04 | P1: 12-month flows | AC3 | Tasks | Pending |
-| STL-01 | P1: Stale filing | AC4 | Tasks | Partial (T3 age; T16 mask) |
-| STL-02 | P1: Stale filing | AC4 | Tasks | Pending |
+| STL-01 | P1: Stale filing | AC4 | Tasks | Partial (T3 age; T9, T10 unit; T16 CLI) |
+| STL-02 | P1: Stale filing | AC4 | Tasks | Unit (T10); CLI T16 |
 | STL-03 | P1: Stale filing | AC4 | Tasks | Pending |
 | STL-04 | P1: Stale filing | AC4 | Tasks | Pending |
 | ISN-01 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
