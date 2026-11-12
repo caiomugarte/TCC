@@ -257,10 +257,10 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | SHR-06 | P1: Share count at d | AC2 | Tasks | Done (T8 unit; T15 CLI) |
 | SHR-07 | P1: Share count at d | AC2 | Tasks | Done (T8 unit; T15 CLI) |
 | SHR-08 | P1: Share count at d | AC1 | Tasks | Done (T1, T6, T7 unit; T15 CLI) |
-| TTM-01 | P1: 12-month flows | AC3 | Tasks | Unit (T2); CLI T17 |
+| TTM-01 | P1: 12-month flows | AC3 | Tasks | Done (T2 unit; CLI T17) |
 | TTM-02 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
 | TTM-03 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
-| TTM-04 | P1: 12-month flows | AC3 | Tasks | Partial (Markdown T14; CLI T17) |
+| TTM-04 | P1: 12-month flows | AC3 | Tasks | Done (Markdown T14; CLI T17) |
 | STL-01 | P1: Stale filing | AC4 | Tasks | Done (T3 age; T9, T10 unit; T16 CLI) |
 | STL-02 | P1: Stale filing | AC4 | Tasks | Done (T10 unit; T16 CLI) |
 | STL-03 | P1: Stale filing | AC4 | Tasks | Done (Markdown T14; CLI T16) |

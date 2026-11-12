@@ -387,6 +387,7 @@ class _Company:
     no_isin: list[dict]  # share_events.no_isin: the classes with shares and no ISIN at d (SHR-04)
     suspect: dict | None  # share_count_suspect: a jump of the count with no B3 event between two filings (SHR-05)
     period_end: date | None  # DT_REFER of the newest usable filing, read at filings_day (B-6, STL-01)
+    ttm_prior: tuple[str, ...]  # the flows whose prior year-to-date is last year's ITR at d (TTM-04)
 
 
 def _dated(item) -> Input | None:
@@ -531,6 +532,19 @@ def _counts(
     return _Counts(adjusted.n_on, adjusted.n_pref, scaled, False, share_events, no_isin, suspect)
 
 
+TTM_FLOWS = (cvm.NET_INCOME, "3.01", "3.05", "3.08")  # the flows that the indicators read as 12-month values (IND-01)
+
+
+def _flows_from_itr(acq: _Acquired, cnpj: str, day: date) -> tuple[str, ...]:
+    """The flows whose prior year-to-date at day is last year's ITR, because the comparative of this year's ITR is absent or 0 (TTM-01, TTM-04)."""
+    used: list[str] = []
+    for account in TTM_FLOWS:
+        flow = cvm.ttm(acq.dfp, acq.itr, cnpj, day, account)
+        if flow is not None and flow.prior_from_itr:
+            used.append(account)
+    return tuple(used)
+
+
 def _is_stale(period_end: date | None, day: date) -> bool:
     """Whether the newest usable filing ends more than STALE_FILING_DAYS before day, so its accounting fields have no value (STL-01, STL-04, B-6)."""
     return period_end is not None and (day - period_end).days > cvm.STALE_FILING_DAYS
@@ -561,6 +575,7 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
         inputs=_company_inputs(acq, cnpj, filings_day), dre_desc=cvm.dre_description(acq.dfp, acq.itr, cnpj, filings_day),
         share_events=counts.share_events, no_isin=counts.no_isin, suspect=counts.suspect,
         period_end=cvm.newest_period_end(acq.dfp, acq.itr, cnpj, filings_day),
+        ttm_prior=_flows_from_itr(acq, cnpj, filings_day),
     )
 
 
@@ -682,6 +697,7 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
         "share_events": {"adjusted": [], "no_isin": []},
         "share_count_suspect": [],
         "stale_filing": [],
+        "ttm_prior_from_itr": [],
         "reference_stale": sorted(ticker for ticker in eligible if cotahist.reference_stale(acq.quotes, ticker, day)),
         "financial": [], "unclassified": [],
     }
@@ -698,6 +714,10 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
         out["share_events"]["no_isin"].extend(company.no_isin)
         if company.suspect is not None:
             out["share_count_suspect"].append(company.suspect)
+        if company.ttm_prior:
+            out["ttm_prior_from_itr"].append({
+                "cd_cvm": company.cd_cvm, "dt_refer": company.period_end.isoformat(), "accounts": sorted(company.ttm_prior),
+            })
     out["vm_price_fallback"]["companies"].sort(key=lambda row: row["cd_cvm"])
     out["vm_price_fallback"]["count"] = len(out["vm_price_fallback"]["companies"])
     out["vm_stale_class_price"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
@@ -706,6 +726,7 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
     out["share_events"]["adjusted"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
     out["share_events"]["no_isin"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
     out["share_count_suspect"].sort(key=lambda row: row["cd_cvm"])
+    out["ttm_prior_from_itr"].sort(key=lambda row: row["cd_cvm"])
 
     values: dict[str, dict[str, Value]] = {}
     group_of: dict[str, str] = {}

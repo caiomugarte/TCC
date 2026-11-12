@@ -614,10 +614,10 @@ T23 → T24
 
 **Done when**:
 
-- [ ] Through `main`: the fixture company's `P/L` uses the fallback flow (hand-computed) and the company is listed with the accounts that used it (TTM-04)
-- [ ] A company with a non-zero `PENÚLTIMO` is not listed
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 2 new CLI tests
+- [x] Through `main`: the fixture company's `P/L` uses the fallback flow (hand-computed) and the company is listed with the accounts that used it (TTM-04)
+- [x] A company with a non-zero `PENÚLTIMO` is not listed
+- [x] Gate check passes: Full
+- [x] Test count: ≥ 2 new CLI tests
 
 **Tests**: integration
 **Gate**: full

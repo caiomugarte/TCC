@@ -619,6 +619,8 @@ SHAPE_COMPANIES = {  # root: (CNPJ, CD_CVM, name, ON shares, PN shares)
     "JUMP": ("36.000.000/0001-36", "2016", "JUMP S.A.", 150_000_000, 0),  # 100 M in 2024, 150 M in 2025, no B3 event (SHR-05)
     "OLDF": ("37.000.000/0001-37", "2017", "OLDF S.A.", 100_000_000, 0),  # its only filing ends 2025-10-31 (STL-01)
     "ANTE": ("38.000.000/0001-38", "2018", "ANTE S.A.", 100_000_000, 0),  # another stale filing, listed after OLDF in the SI rows
+    "TTMX": ("39.000.000/0001-39", "2019", "TTMX S.A.", 100_000_000, 0),  # a zero comparative: last year's ITR is read (TTM-01)
+    "TTMZ": ("41.000.000/0001-41", "2020", "TTMZ S.A.", 100_000_000, 0),  # a comparative of 30 M: last year's ITR is not read (TTM-03)
 }
 # the period end of the DFP of a company whose fiscal year does not end in December (default 2025-12-31)
 SHAPE_PERIOD_END = {"OLDF": "2025-10-31", "ANTE": "2025-10-31"}
@@ -643,6 +645,8 @@ SHAPE_QUOTES = [
     ("JUMP3", "JUMP", "ON", 10.0, "BRJUMP3CNOR1"),
     ("OLDF3", "OLDF", "ON", 10.0, "BROLDF3CNOR1"),
     ("ANTE3", "ANTE", "ON", 10.0, "BRANTE3CNOR1"),
+    ("TTMX3", "TTMX", "ON", 10.0, "BRTTMX3CNOR1"),
+    ("TTMZ3", "TTMZ", "ON", 10.0, "BRTTMZ3CNOR1"),
 ]
 # FCA rows: ticker, root, valor mobiliario, composition (units only)
 SHAPE_FCA = [
@@ -667,6 +671,8 @@ SHAPE_FCA = [
     ("JUMP3", "JUMP", "Ações Ordinárias", ""),
     ("OLDF3", "OLDF", "Ações Ordinárias", ""),
     ("ANTE3", "ANTE", "Ações Ordinárias", ""),
+    ("TTMX3", "TTMX", "Ações Ordinárias", ""),
+    ("TTMZ3", "TTMZ", "Ações Ordinárias", ""),
 ]
 # Status Invest rows of the eligible tickers (VM and liquidity make them eligible; the reference values are off on purpose)
 SHAPE_SI = [
@@ -690,12 +696,16 @@ SHAPE_SI = [
     # every accounting field has a Status Invest reference, so the stale ticker is in each field's missing list (STL-03)
     {"TICKER": "OLDF3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, **{field: 1.0 for field in ACCOUNTING_FIELDS}},
     {"TICKER": "ANTE3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, **{field: 1.0 for field in ACCOUNTING_FIELDS}},
+    {"TICKER": "TTMX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0, "PSR": 2.0},
+    {"TICKER": "TTMZ3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0},
 ]
 SHAPE_DFP_STATEMENTS = {  # root: (BPP rows, consolidated DRE rows, individual DRE rows)
     "MINO": ([("2.03", 200_000_000.0), ("2.03.09", 50_000_000.0)], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
     "UNIT": ([], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
     "ZERO": ([], [("3.11", -100_000_000.0), ("3.11.01", 0.0)], []),
     "TIMX": ([], [("3.01", 0.0), ("3.11", 0.0)], [("3.01", 1_000_000_000.0), ("3.11", 100_000_000.0)]),
+    "TTMX": ([], [("3.01", 400_000_000.0), ("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
+    "TTMZ": ([], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
 }
 
 
@@ -833,6 +843,47 @@ def write_shape_universe(root: Path) -> Path:
         for key, account, value in statement_rows(2)
     )
     _latin1(dfp / "dfp_cia_aberta_DRE_ind_2025.csv", dre_header + "\n" + dre_ind)
+    # ITRs (TTM-01, TTM-03). Each 2026 ITR has 70 M of 2026 profit. TTMX's comparative is 0, so its prior YTD is the 40 M
+    # of the 2025 ITR; TTMZ's comparative is 30 M and no earlier ITR is read.
+    itr_index = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+
+    def itr_profit(key: str, ordem: str, ini: str, fim: str, dt_refer: str, value: float, accounts=("3.11", "3.11.01")) -> str:
+        return "".join(
+            f"{cnpj[key]};{dt_refer};1;{name[key]};{cd[key]};UNIDADE;{ordem};{ini};{fim};{account};Conta {account};{value:.2f};S\n"
+            for account in accounts
+        )
+
+    itr = root / "itr"
+    _latin1(itr / "2025" / "itr_cia_aberta_2025.csv", itr_index + f"{cnpj['TTMX']};2025-06-30;1;TTMX S.A.;2019;ITR;1;2025-07-30 18:00:00;\n")
+    _latin1(
+        itr / "2025" / "itr_cia_aberta_DRE_con_2025.csv",
+        dre_header + "\n"
+        + itr_profit("TTMX", "ÚLTIMO", "2025-01-01", "2025-06-30", "2025-06-30", 40_000_000.0)
+        + itr_profit("TTMX", "ÚLTIMO", "2025-01-01", "2025-06-30", "2025-06-30", 120_000_000.0, ("3.01",)),
+    )
+    _latin1(
+        itr / "2026" / "itr_cia_aberta_2026.csv",
+        itr_index
+        + f"{cnpj['TTMX']};2026-06-30;1;TTMX S.A.;2019;ITR;1;2026-07-30 18:00:00;\n"
+        + f"{cnpj['TTMZ']};2026-06-30;1;TTMZ S.A.;2020;ITR;1;2026-07-30 18:00:00;\n",
+    )
+    _latin1(
+        itr / "2026" / "itr_cia_aberta_composicao_capital_2026.csv",
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
+        "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
+        f"{cnpj['TTMX']};2026-06-30;1;TTMX S.A.;100000000;0;100000000;0;0;0\n"
+        f"{cnpj['TTMZ']};2026-06-30;1;TTMZ S.A.;100000000;0;100000000;0;0;0\n",
+    )
+    _latin1(
+        itr / "2026" / "itr_cia_aberta_DRE_con_2026.csv",
+        dre_header + "\n"
+        + itr_profit("TTMX", "ÚLTIMO", "2026-01-01", "2026-06-30", "2026-06-30", 70_000_000.0)
+        + itr_profit("TTMX", "ÚLTIMO", "2026-01-01", "2026-06-30", "2026-06-30", 300_000_000.0, ("3.01",))
+        + itr_profit("TTMX", "PENÚLTIMO", "2025-01-01", "2025-06-30", "2026-06-30", 0.0)
+        + itr_profit("TTMX", "PENÚLTIMO", "2025-01-01", "2025-06-30", "2026-06-30", 0.0, ("3.01",))
+        + itr_profit("TTMZ", "ÚLTIMO", "2026-01-01", "2026-06-30", "2026-06-30", 70_000_000.0)
+        + itr_profit("TTMZ", "PENÚLTIMO", "2025-01-01", "2025-06-30", "2026-06-30", 30_000_000.0),
+    )
     # JUMP's count of 2024 is 100 M: the 2025 count of 150 M is a jump of 50 % with no B3 event (SHR-05)
     dfp_2024 = root / "dfp" / "2024"
     _latin1(
@@ -1048,6 +1099,21 @@ class ShapeReportTests(unittest.TestCase):
         for field in ("PRECO", "LIQUIDEZ MEDIA DIARIA", "DY"):  # the market fields keep their own reasons (STL-02)
             reasons = {row["ticker"]: row["reason"] for row in fields[field]["non_financial"]["missing"]}
             self.assertNotEqual(reasons.get("OLDF3"), "stale_filing", field)
+
+    def test_a_12_month_profit_with_a_zero_comparative_uses_last_years_itr_and_is_listed_with_its_account(self):
+        # TTMX: the 2026 ITR's comparatives are 0, so the prior YTDs are the 2025 ITR's: LL = 100 M + 70 M - 40 M = 130 M,
+        # REC = 400 M + 300 M - 120 M = 580 M; P/L = 10.00 / (130 M / 100 M) = 7.69, PSR = 10.00 / (580 M / 100 M) = 1.72 (TTM-01, TTM-04)
+        self.assertEqual(
+            self.report["dates"][ISO1]["mapping"]["ttm_prior_from_itr"],
+            [{"cd_cvm": "2019", "dt_refer": "2026-06-30", "accounts": ["3.01", "LL"]}],
+        )
+        self.assertAlmostEqual(worst_value(self.report, "P/L", "TTMX3"), 10 / 1.3, places=2)
+        self.assertAlmostEqual(worst_value(self.report, "PSR", "TTMX3"), 10 / 5.8, places=2)
+
+    def test_a_12_month_profit_with_a_non_zero_comparative_is_not_listed(self):
+        # TTMZ: the comparative is 30 M, so it is used and no earlier ITR is read: LL = 100 M + 70 M - 30 M = 140 M (TTM-03)
+        self.assertNotIn("2020", [row["cd_cvm"] for row in self.report["dates"][ISO1]["mapping"]["ttm_prior_from_itr"]])
+        self.assertAlmostEqual(worst_value(self.report, "P/L", "TTMZ3"), 10 / 1.4, places=2)
 
 
 class ShapeAsOfTests(unittest.TestCase):
