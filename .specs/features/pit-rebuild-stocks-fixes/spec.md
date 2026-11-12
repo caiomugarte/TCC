@@ -291,7 +291,7 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | RPT-02 | P1: Regenerated report | AC10 | Tasks | Done (T21 byte-for-byte test) |
 | RPT-03 | P1: Regenerated report | AC10 | Tasks | Done (artifact tests read committed files; CLI tests on fixtures) |
 | RPT-04 | P1: Regenerated report | AC10 | Tasks | Partial (T21 artifact; T22 README; T23 audit) |
-| RPT-05 | P1: Regenerated report | AC10 (REVIEW.md) | Tasks | Done (T21 exit-code test; README table at T22) |
+| RPT-05 | P1: Regenerated report | AC10 (REVIEW.md) | Tasks | Done (exit-code artifact test; README table checked in T22) |
 | RPT-06 | P1: Regenerated report | AC1, AC10 (REVIEW.md) | Tasks | Done (T14 texts; T21 committed JSON and artifact test) |
 
 **Coverage:** 44 requirements; every issue AC (AC1..AC10) maps to at least one; all 44 mapped to tasks in `tasks.md` (see its traceability table).

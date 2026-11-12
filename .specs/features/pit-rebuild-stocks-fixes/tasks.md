@@ -779,10 +779,10 @@ T23 → T24
 
 **Done when**:
 
-- [ ] The section names each new rule and list with its JSON key
-- [ ] Any number about the report in the README is checked against the committed JSON (cite the key in the commit body)
-- [ ] The artifact test of the exit-code table passes
-- [ ] Gate check passes: Build (end of Phase 4)
+- [x] The section names each new rule and list with its JSON key
+- [x] Any number about the report in the README is checked against the committed JSON (cite the key in the commit body)
+- [x] The artifact test of the exit-code table passes
+- [x] Gate check passes: Build (end of Phase 4)
 
 **Tests**: none
 **Gate**: build
