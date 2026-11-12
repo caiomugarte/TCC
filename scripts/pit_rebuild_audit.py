@@ -879,11 +879,11 @@ def classify_accounting(ctx, iso, day, row):
             motive += (f"; {len({(p['kind'], p['dt'], p['versao']) for p in as_filed})} demonstrativo(s) dentro da tolerância "
                        f"não bastam (a regra exige igualdade a duas casas)")
     elif rule == "lucro total 3.11":
-        motive = (f"o Status Invest usa o lucro total do DRE (3.11), não o do controlador (3.11.01, A-21/F7): "
-                  f"com 3.11 o valor fica em {alts['LL_TOTAL'][0]:.2f} (SI {ref})")
+        motive = (f"valor do SI: {match_clause('lucro total do DRE (3.11)', alts['LL_TOTAL'][0], ref)}; "
+                  f"o do controlador (3.11.01) fica fora da tolerância (A-21/F7)")
     elif rule == "patrimônio total 2.03":
-        motive = (f"o Status Invest usa o patrimônio total (2.03), não o do controlador (2.03 − 2.03.09, A-21/F8): "
-                  f"com 2.03 o valor fica em {alts['PL_TOTAL'][0]:.2f} (SI {ref})")
+        motive = (f"valor do SI: {match_clause('patrimônio total (2.03)', alts['PL_TOTAL'][0], ref)}; "
+                  f"o do controlador (2.03 − 2.03.09) fica fora da tolerância (A-21/F8)")
     elif rule == "reproduzido (visão de método)":
         (motive, extra), cited = cite(others, best_any), best_any
     elif rule == "preço d−1":

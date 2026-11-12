@@ -361,6 +361,13 @@ class AuditDocumentTests(unittest.TestCase):
                     self.assertEqual(cells[2], "0", (iso, cells[0]))
                     self.assertFalse(self.adjusted["dates"][iso]["fields"][cells[0]]["missing"], (iso, cells[0]))
 
+    def test_no_motive_says_what_the_status_invest_did_with_a_filing_or_a_subset(self):  # V9, decision 1: a measure, never a cause
+        causes = ("o Status Invest usa", "o Status Invest reproduz", "o SI usa", "o SI reproduz", "o SI soma", "o SI deixa de fora", "reproduz o valor com")
+        for iso, block in self.doc.items():
+            for field, cells in block["rows"]:
+                for cause in causes:
+                    self.assertNotIn(cause, cells[7], (iso, field, cells[1], cause))
+
     def summary_rows(self):
         """The first table of Resumo: {date: [erro nosso, erro do Status Invest, método, dentro da tolerância, não classificado, total]}."""
         rows, in_summary = {}, False
