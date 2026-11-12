@@ -621,7 +621,10 @@ SHAPE_COMPANIES = {  # root: (CNPJ, CD_CVM, name, ON shares, PN shares)
     "ANTE": ("38.000.000/0001-38", "2018", "ANTE S.A.", 100_000_000, 0),  # another stale filing, listed after OLDF in the SI rows
     "TTMX": ("39.000.000/0001-39", "2019", "TTMX S.A.", 100_000_000, 0),  # a zero comparative: last year's ITR is read (TTM-01)
     "TTMZ": ("41.000.000/0001-41", "2020", "TTMZ S.A.", 100_000_000, 0),  # a comparative of 30 M: last year's ITR is not read (TTM-03)
+    "ISNX": ("42.000.000/0001-42", "2021", "ISNX S.A.", 100_000_000, 0),  # its ISIN changes on 2026-07-27 (ISN-03)
 }
+# ISN-03: the ticker whose ISIN changes, the first session with the new ISIN, and the new ISIN (the old one is in SHAPE_QUOTES)
+SHAPE_ISIN_CHANGE = ("ISNX3", date(2026, 7, 27), "BRISNX3NEW01")
 # the period end of the DFP of a company whose fiscal year does not end in December (default 2025-12-31)
 SHAPE_PERIOD_END = {"OLDF": "2025-10-31", "ANTE": "2025-10-31"}
 # the stale ticker of the as-of and reference-stale tests: its last session is d - 31 (2026-07-07)
@@ -647,6 +650,7 @@ SHAPE_QUOTES = [
     ("ANTE3", "ANTE", "ON", 10.0, "BRANTE3CNOR1"),
     ("TTMX3", "TTMX", "ON", 10.0, "BRTTMX3CNOR1"),
     ("TTMZ3", "TTMZ", "ON", 10.0, "BRTTMZ3CNOR1"),
+    ("ISNX3", "ISNX", "ON", 10.0, "BRISNX3OLD01"),
 ]
 # FCA rows: ticker, root, valor mobiliario, composition (units only)
 SHAPE_FCA = [
@@ -673,6 +677,7 @@ SHAPE_FCA = [
     ("ANTE3", "ANTE", "Ações Ordinárias", ""),
     ("TTMX3", "TTMX", "Ações Ordinárias", ""),
     ("TTMZ3", "TTMZ", "Ações Ordinárias", ""),
+    ("ISNX3", "ISNX", "Ações Ordinárias", ""),
 ]
 # Status Invest rows of the eligible tickers (VM and liquidity make them eligible; the reference values are off on purpose)
 SHAPE_SI = [
@@ -698,6 +703,8 @@ SHAPE_SI = [
     {"TICKER": "ANTE3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, **{field: 1.0 for field in ACCOUNTING_FIELDS}},
     {"TICKER": "TTMX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0, "PSR": 2.0},
     {"TICKER": "TTMZ3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0},
+    # its value reference is the rebuilt 600 M x 10.00, so it does not rank among the worst VALOR DE MERCADO cases
+    {"TICKER": "ISNX3", "VALOR DE MERCADO": 6_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "DY": 5.0},
 ]
 SHAPE_DFP_STATEMENTS = {  # root: (BPP rows, consolidated DRE rows, individual DRE rows)
     "MINO": ([("2.03", 200_000_000.0), ("2.03.09", 50_000_000.0)], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
@@ -736,7 +743,9 @@ def _shape_cotahist_2026() -> str:
         # CODB3 is CODBDI 08 only: its VOLTOT on session j is 1 000 000 + 100 000 j and its last close is 30.00
         lines.append(_cotahist_line(day, "CODB3", "08", "ON", 30.0 if index == last else 20.0, 1_000_000.0 + 100_000.0 * index, "BRCODB3CNOR1"))
         for ticker, _root, especi, close, isin in SHAPE_QUOTES:
-            lines.append(_cotahist_line(day, ticker, "02", especi, close, 1_000_000.0, isin))
+            change_ticker, change_day, new_isin = SHAPE_ISIN_CHANGE
+            session_isin = new_isin if ticker == change_ticker and day >= change_day else isin
+            lines.append(_cotahist_line(day, ticker, "02", especi, close, 1_000_000.0, session_isin))
     stale_ticker, _root, stale_especi, stale_close, stale_isin, stale_last = SHAPE_STALE
     for day in SHAPE_SESSIONS:
         if day <= stale_last:
@@ -763,6 +772,10 @@ def _shape_b3_pages(root: Path) -> None:
     old = {"typeStock": "ON", "valueCash": "0,10", "lastDatePriorEx": "01/05/2025", "corporateAction": "DIVIDENDO"}
     sbsp = {"typeStock": "ON", "valueCash": "5,00", "lastDatePriorEx": "01/06/2026", "corporateAction": "DIVIDENDO"}
     _latin1(root / "b3" / "cash" / "SBSP_p1.json", page([sbsp, old], 2))
+    # ISNX pays 1.00 on 2026-05-10 (ex-date), before both of its splits; the 2025 record is outside every window (ISN-03)
+    isnx = {"typeStock": "ON", "valueCash": "1,00", "lastDatePriorEx": "10/05/2026", "corporateAction": "DIVIDENDO"}
+    isnx_old = {"typeStock": "ON", "valueCash": "0,10", "lastDatePriorEx": "10/01/2025", "corporateAction": "DIVIDENDO"}
+    _latin1(root / "b3" / "cash" / "ISNX_p1.json", page([isnx, isnx_old], 2))
     _latin1(root / "b3" / "cash" / "DUPL_p1.json", page([dividend, dict(dividend), capital, old], 4))
     _latin1(root / "b3" / "cash" / "FOOX_p1.json", page([], 0))
     companies = {
@@ -778,6 +791,12 @@ def _shape_b3_pages(root: Path) -> None:
         # LATE: a split x5 (ex-date 2026-07-13), B3 count 100 M retrieved before it (pinned in ShapeReportTests)
         "LATE": {"tradingName": "LATE S.A.", "code": "LATE", "codeCVM": "2015", "totalNumberShares": "100.000.000",
                  "stockDividends": [{"label": "DESDOBRAMENTO", "factor": "400", "isinCode": "BRLATE3CNOR1", "lastDatePrior": "10/07/2026"}]},
+        # ISNX: an old-ISIN bonus x2 (ex-date 2026-07-13) and, after the ISIN change, a new-ISIN split x3 (ex-date 2026-08-03)
+        "ISNX": {"tradingName": "ISNX S.A.", "code": "ISNX", "codeCVM": "2021", "totalNumberShares": "600.000.000",
+                 "stockDividends": [
+                     {"label": "BONIFICACAO", "factor": "100", "isinCode": "BRISNX3OLD01", "lastDatePrior": "10/07/2026"},
+                     {"label": "DESDOBRAMENTO", "factor": "200", "isinCode": "BRISNX3NEW01", "lastDatePrior": "31/07/2026"},
+                 ]},
     }
     for root_name, body in companies.items():
         _latin1(root / "b3" / f"company_{root_name}.json", json.dumps([body]))
@@ -915,6 +934,7 @@ SHAPE_RETRIEVED = {
     "b3_company_BONU.json": "2026-11-10T00:34:49Z",
     "b3_company_SBSP.json": "2026-11-10T00:34:49Z",
     "b3_company_LATE.json": "2026-07-10T12:00:00Z",
+    "b3_company_ISNX.json": "2026-11-10T00:34:49Z",
 }
 
 
@@ -1563,6 +1583,46 @@ class StaleFilingRuleTests(unittest.TestCase):
 
     def test_a_company_with_no_usable_filing_has_no_stale_age(self):
         self.assertFalse(cli._is_stale(None, date(2026, 8, 7)))
+
+
+FIRST_DAY = date(2026, 7, 20)  # before ISNX's ISIN change on 2026-07-27 (SHAPE_ISIN_CHANGE)
+
+
+class IsinAtDateTests(unittest.TestCase):
+    """ISN-03 through the report command: the ISIN at each decision date chooses the split that divides a dividend (A-20)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        base = Path(cls._tmp.name)
+        universe = write_shape_universe(base / "universe")
+        shutil.copy(universe / "si_2026-08-07.csv", universe / "si_2026-07-20.csv")  # the same Status Invest rows, for the first date
+        cache = base / "cache"
+        populate_cache(cache, (FIRST_DAY, D1), universe)
+        pin_retrieval(cache, SHAPE_RETRIEVED)
+        code, err = run(
+            ["report", "--date", FIRST_DAY.isoformat(), "--date", ISO1,
+             "--si", str(universe / "si_2026-07-20.csv"), "--si", str(universe / "si_2026-08-07.csv"),
+             "--cache-dir", str(cache), "--out-dir", str(base / "out"), "--offline"]
+        )
+        if code != 0:
+            raise RuntimeError(f"the ISIN report exited {code}: {err}")
+        cls.report = json.loads((base / "out" / REPORT).read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_the_isin_at_each_date_chooses_the_split_that_divides_the_dividend(self):
+        # ISNX pays 1.00 with ex-date 2026-05-10. On 2026-07-20 its ISIN is the old one, whose x2 bonus (ex-date 2026-07-13)
+        # divides the dividend to 0.50: DY = 100 x 0.50 / 10.00 = 5.00. On 2026-08-07 the ISIN is the new one, whose x3 split
+        # (ex-date 2026-08-03) divides it to 1/3: DY = 100 x (1/3) / 10.00 = 3.33 (ISN-03).
+        dy = {
+            iso: {row["ticker"]: row["rebuilt"] for row in self.report["dates"][iso]["fields"]["DY"]["non_financial"]["worst"]}
+            for iso in (FIRST_DAY.isoformat(), ISO1)
+        }
+        self.assertAlmostEqual(dy[FIRST_DAY.isoformat()]["ISNX3"], 5.0, places=2)
+        self.assertAlmostEqual(dy[ISO1]["ISNX3"], 100 / 30, places=2)
 
 
 if __name__ == "__main__":

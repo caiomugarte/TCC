@@ -642,10 +642,10 @@ T23 → T24
 
 **Done when**:
 
-- [ ] Through `main`: at the first date the old ISIN's split divides the dividend (hand-computed DY); at the second date the new ISIN's does
-- [ ] The test fails when `cli.py` passes the last loaded session instead of `day` (mutation checked in a scratch copy, noted in the commit body)
-- [ ] Gate check passes: Build (end of Phase 3)
-- [ ] Test count: ≥ 1 new CLI test
+- [x] Through `main`: at the first date the old ISIN's split divides the dividend (hand-computed DY); at the second date the new ISIN's does
+- [x] The test fails when `cli.py` passes the last loaded session instead of `day` (mutation checked in a scratch copy, noted in the commit body)
+- [x] Gate check passes: Build (end of Phase 3)
+- [x] Test count: ≥ 1 new CLI test
 
 **Tests**: integration
 **Gate**: build

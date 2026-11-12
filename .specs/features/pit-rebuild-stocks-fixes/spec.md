@@ -267,7 +267,7 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | STL-04 | P1: Stale filing | AC4 | Tasks | Done (T16 rule test) |
 | ISN-01 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
 | ISN-02 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
-| ISN-03 | P1: ISIN at d | AC5 | Tasks | Partial (T1 call sites; T18 test) |
+| ISN-03 | P1: ISIN at d | AC5 | Tasks | Done (T1 call sites; T18 test) |
 | MBR-01 | P2: MBRF3 | AC6 | Tasks | Pending |
 | MBR-02 | P2: MBRF3 | AC6 | Tasks | Partial (T14 section; T20 fills it) |
 | ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Done (T13 order; T14 B-12 line) |
