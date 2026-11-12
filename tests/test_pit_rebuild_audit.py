@@ -29,14 +29,52 @@ class ReproductionTests(unittest.TestCase):
         self.assertFalse(audit.reproduces("ROE", 15.91, 16.50))  # 0.59 p.p.
         self.assertFalse(audit.reproduces("P/L", 10.0, None))  # a view without a value reproduces nothing
 
-    def test_the_oldest_reproducer_is_by_receipt_then_period_end_then_version(self):  # the citation rule of B-10
-        a = {"dt_receb": date(2024, 5, 9), "dt": date(2024, 3, 31), "versao": 1}
-        b = {"dt_receb": date(2024, 5, 9), "dt": date(2023, 12, 31), "versao": 2}
-        c = {"dt_receb": date(2023, 6, 1), "dt": date(2025, 12, 31), "versao": 1}
-        self.assertIs(audit.oldest([a, b, c]), c)  # the earliest receipt wins, whatever the period
-        self.assertIs(audit.oldest([a, b]), b)  # same receipt: the earlier period end wins
-        d = {"dt_receb": date(2024, 5, 9), "dt": date(2023, 12, 31), "versao": 1}
-        self.assertIs(audit.oldest([b, d]), d)  # same receipt and period: the lower version wins
+def _reproducer(received, period, versao, value, ref=10.0):
+    """A reproducer of the search, as the citation reads it; exact means equal to the SI value at two decimals."""
+    return {"dt_receb": received, "dt": period, "versao": versao, "value": value, "gap": abs(value - ref),
+            "exact": round(value, 2) == round(ref, 2)}
+
+
+class CitationTests(unittest.TestCase):  # B-10 r5: the exact reproducer received first, else the closest to the SI value
+    def test_an_exact_reproducer_is_cited_before_an_older_inexact_one(self):
+        inexact = _reproducer(date(2019, 5, 1), date(2018, 12, 31), 1, 10.4)  # within 5 %, received first
+        exact = _reproducer(date(2024, 5, 1), date(2024, 3, 31), 1, 10.0)
+        self.assertIs(audit.citation([inexact, exact]), exact)
+
+    def test_among_exact_reproducers_the_one_received_first_is_cited(self):  # then DT_REFER, then VERSAO
+        a = _reproducer(date(2024, 5, 9), date(2024, 3, 31), 1, 10.0)
+        b = _reproducer(date(2024, 5, 9), date(2023, 12, 31), 2, 10.0)
+        c = _reproducer(date(2023, 6, 1), date(2025, 12, 31), 1, 10.0)
+        self.assertIs(audit.citation([a, b, c]), c)  # the earliest receipt wins, whatever the period
+        self.assertIs(audit.citation([a, b]), b)  # same receipt: the earlier period end wins
+        d = _reproducer(date(2024, 5, 9), date(2023, 12, 31), 1, 10.0)
+        self.assertIs(audit.citation([b, d]), d)  # same receipt and period: the lower version wins
+
+    def test_without_an_exact_reproducer_the_closest_to_the_si_value_is_cited(self):
+        far = _reproducer(date(2018, 1, 1), date(2017, 12, 31), 1, 10.4)  # the oldest, 0.4 away
+        near = _reproducer(date(2023, 1, 1), date(2022, 12, 31), 1, 10.2)  # 0.2 away
+        self.assertIs(audit.citation([far, near]), near)
+
+    def test_a_tie_on_the_gap_goes_to_the_oldest(self):
+        later = _reproducer(date(2021, 1, 1), date(2020, 12, 31), 1, 10.25)
+        older = _reproducer(date(2019, 1, 1), date(2018, 12, 31), 1, 9.75)  # the same gap, 0.25
+        self.assertIs(audit.citation([later, older]), older)
+
+
+class MeasureWordingTests(unittest.TestCase):  # B-10 r5 (V9): the motive states a measure, never what the SI did with a filing
+    def test_an_exact_match_is_stated_as_equal_at_two_decimals(self):
+        best = dict(_reproducer(date(2020, 3, 30), date(2019, 12, 31), 1, 10.0), kind="DFP", method=(), view="FULL")
+        motive = audit.reproduced_motive([best], best, date(2026, 8, 7), 10.0)
+        self.assertTrue(motive.startswith("valor do SI: igual a duas casas a DFP 2019-12-31 v1, recebido em 2020-03-30, "
+                                          "antes de d = 2026-08-07 (10); "), motive)
+        self.assertIn("1 demonstrativo(s) dentro da tolerância, 1 a duas casas; cita-se o exato recebido primeiro", motive)
+
+    def test_a_match_within_the_tolerance_names_CMP_01_and_says_it_shows_no_origin(self):
+        best = dict(_reproducer(date(2020, 3, 30), date(2019, 12, 31), 1, 10.4), kind="DFP", method=(), view="FULL")
+        motive = audit.reproduced_motive([best], best, date(2026, 8, 7), 10.0)
+        self.assertTrue(motive.startswith("valor do SI: dentro da tolerância CMP-01 de DFP 2019-12-31 v1, recebido em 2020-03-30, "
+                                          "antes de d = 2026-08-07 (10.4 contra SI 10); a coincidência não mostra a origem; "), motive)
+        self.assertNotIn("reproduz", motive)
 
 
 class DySubsetTests(unittest.TestCase):

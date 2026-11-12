@@ -149,9 +149,13 @@ def same_filing(p, f0):
     return f0 is not None and (p["kind"], p["dt"], p["versao"]) == (f0.kind, f0.dt_refer, f0.versao)
 
 
-def oldest(reprod):
-    """The reproducer with the smallest DT_RECEB, then DT_REFER, then VERSAO (stable: view order breaks ties)."""
-    return min(reprod, key=lambda p: (p["dt_receb"], p["dt"], p["versao"]))
+def citation(reprod):
+    """The reproducer a row cites (B-10 r5): the one equal to the SI value at two decimals and received first (DT_RECEB,
+    then DT_REFER, then VERSAO); without one, the closest to the SI value (ties: the oldest). Stable: view order breaks ties."""
+    exact = [p for p in reprod if p["exact"]]
+    if exact:
+        return min(exact, key=lambda p: (p["dt_receb"], p["dt"], p["versao"]))
+    return min(reprod, key=lambda p: (p["gap"], p["dt_receb"], p["dt"], p["versao"]))
 
 
 def reproduces(field, reference, value):
@@ -535,6 +539,7 @@ def search_date(acq, versions, iso, rows):
                         out[(r["field"], r["ticker"])].append({
                             "view": view_name, "method": m, "kind": kind, "dt": dt, "versao": v, "dt_receb": rec,
                             "fday": fday, "value": value, "nums": nums, "composition": comp,
+                            "exact": round(value, 2) == round(r["reference"], 2), "gap": abs(value - r["reference"]),
                         })
     return out, companies
 
@@ -672,20 +677,21 @@ def post_count(acq, day, cnpj, f, ref, cur, adj, det):
     if val is None or not compare.within(f, ref, round(val, 2)):
         return None
     filing = fut_filing(acq, cnpj, fut)
-    motive = (f"o Status Invest usa a composição de ações de {fut.dt_refer.isoformat()} recebida em {fut.dt_receb.isoformat()}, depois de d = {day.isoformat()} "
-              f"(a primeira entrega é posterior à data de coleta do CSV): com essa contagem e os demais insumos de d reproduz {fmt(round(val, 2))}")
+    obj = f"a composição de ações de {fut.dt_refer.isoformat()} recebida em {fut.dt_receb.isoformat()}, depois de d = {day.isoformat()}"
+    motive = (f"valor do SI: {match_clause(obj, val, ref)}; com essa contagem e os demais insumos de d; "
+              f"a primeira entrega é posterior à data de coleta do CSV")
     items = [composition_item(acq, filing)] if filing is not None else []
     return motive, [i for i in items if i]
 
 
-def post_flow(acq, day, f, fut_entry):
+def post_flow(acq, day, f, fut_entry, ref):
     """Accounting field reproduced with the filing that R reads and d does not."""
-    filing, _value = fut_entry
+    filing, value = fut_entry
     if filing is None:
         return None
     items = [it for it in (cvm_item(acq, filing, acc) for acc in FIELD_ACCOUNTS[f][:2]) if it]
-    motive = (f"o Status Invest reproduz o valor com o {filing.kind} de {filing.dt_refer.isoformat()} v{filing.versao} recebido em {filing.dt_receb.isoformat()}, "
-              f"depois de d = {day.isoformat()}; com os demonstrativos usáveis em d o valor fica fora da tolerância")
+    obj = f"o {filing.kind} de {filing.dt_refer.isoformat()} v{filing.versao}, recebido em {filing.dt_receb.isoformat()}, depois de d = {day.isoformat()}"
+    motive = f"valor do SI: {match_clause(obj, value, ref)}; com os demonstrativos usáveis em d o valor fica fora da tolerância"
     return motive, items
 
 
@@ -767,11 +773,23 @@ def reproducer_items(p, f):
     return items
 
 
-def reproduced_motive(best, n_rep, day, ref):
+def match_clause(obj, value, ref):
+    """How a reproduced value relates to the SI value (B-10 r5): a measure, never a cause. Equal at two decimals,
+    or within the report's tolerance (CMP-01), which shows no origin."""
+    if round(value, 2) == round(ref, 2):
+        return f"igual a duas casas a {obj} ({fmt(round(value, 2))})"
+    return f"dentro da tolerância CMP-01 de {obj} ({fmt(round(value, 2))} contra SI {fmt(ref)}); a coincidência não mostra a origem"
+
+
+def reproduced_motive(pool, best, day, ref):
+    """The motive of a row that cites `best` among the reproducers `pool` (the counts are of their filings)."""
     when = "antes" if best["dt_receb"] < day else ("no dia" if best["dt_receb"] == day else "depois")
-    return (f"o Status Invest reproduz o valor com {best['kind']} {best['dt'].isoformat()} v{best['versao']}, recebido em {best['dt_receb'].isoformat()}, "
-            f"{when} de d = {day.isoformat()}: {how_text(best['method'], best['view'])} "
-            f"(SI {ref}, recalculado {best['value']}; {n_rep} demonstrativo(s) reproduzem, o mais antigo é citado)")
+    n = len({(p["kind"], p["dt"], p["versao"]) for p in pool})
+    n_exact = len({(p["kind"], p["dt"], p["versao"]) for p in pool if p["exact"]})
+    obj = f"{best['kind']} {best['dt'].isoformat()} v{best['versao']}, recebido em {best['dt_receb'].isoformat()}, {when} de d = {day.isoformat()}"
+    tail = "cita-se o exato recebido primeiro" if best["exact"] else "cita-se o mais próximo do SI"
+    return (f"valor do SI: {match_clause(obj, best['value'], ref)}; {how_text(best['method'], best['view'])}; "
+            f"{n} demonstrativo(s) dentro da tolerância, {n_exact} a duas casas; {tail}")
 
 
 def base_items(acq, t, f, f0, det, rule, lag, older, price):
@@ -841,16 +859,14 @@ def classify_accounting(ctx, iso, day, row):
     reproduces = {k for k, (v, ok) in alts.items() if ok}
     others = [p for p in ctx["reproducers"].get((iso, f, t), []) if not same_filing(p, f0)]
     as_filed = [p for p in others if p["view"] == "COUNT" or p["method"] == ()]
-    best_af = oldest(as_filed) if as_filed else None
-    best_any = oldest(others) if others else None
-    n_af = len({(p["kind"], p["dt"], p["versao"]) for p in as_filed})
-    n_any = len({(p["kind"], p["dt"], p["versao"]) for p in others})
+    best_af = citation(as_filed) if as_filed else None
+    best_any = citation(others) if others else None
     older = older_filing(acq, day, cnpj) if lag else None
     post = None
     if f in SHARE_FIELDS and not lag:
         post = post_count(acq, day, cnpj, f, ref, cur, adj, det)
     elif f in FIELD_ACCOUNTS and not lag and (iso, f, t) in ctx["fut"] and not ({"LL_TOTAL", "PL_TOTAL"} & reproduces):
-        post = post_flow(acq, day, f, ctx["fut"][(iso, f, t)])
+        post = post_flow(acq, day, f, ctx["fut"][(iso, f, t)], ref)
     price_fields = []
     if f in SHARE_FIELDS and "PRICE_PREV" in reproduces:
         for r in ctx["by_ticker"][(iso, t)]:
@@ -872,20 +888,20 @@ def classify_accounting(ctx, iso, day, row):
     cls, rule = decide(facts)
     cited, extra = None, []
 
-    def cite(pool, n):
-        return reproduced_motive(pool, n, day, ref), reproducer_items(pool, f)
+    def cite(pool, best):
+        return reproduced_motive(pool, best, day, ref), reproducer_items(best, f)
 
     if rule == "defasagem (B-9)":
         motive = "o filing anterior reproduz o Status Invest (B-9): a defasagem é do SI"
     elif rule == "post-d":
         motive, extra = post
         if best_af is not None:
-            (motive, extra), cited = cite(best_af, n_af), best_af
+            (motive, extra), cited = cite(as_filed, best_af), best_af
     elif rule == "erro nosso":
         motive = (f"fator A-18 sem suporte: a contagem em d ({fmt((cur.n_on or 0) + (cur.n_pref or 0))}) é {residual:.2f} vezes a contagem B3 de R "
                   f"({fmt(b3_total)}, `b3_company_{det['b3_root']}.json`); a potência de dez escolhida (×{fmt(adj.factor)}) não corresponde a erro de unidade")
     elif rule in ("reproduzido (sobre a contagem da B3)", "reproduzido"):
-        (motive, extra), cited = cite(best_af, n_af), best_af
+        (motive, extra), cited = cite(as_filed, best_af), best_af
     elif rule == "contagem da B3 de R":
         motive = (f"o Status Invest usa a contagem total da B3 de R ({fmt(b3_total)}, `b3_company_{det['b3_root']}.json`), posterior a d; "
                   f"a contagem arquivada em d com eventos é {residual:.2f} vezes a da B3 (AD-033); "
@@ -897,9 +913,9 @@ def classify_accounting(ctx, iso, day, row):
         motive = (f"o Status Invest usa o patrimônio total (2.03), não o do controlador (2.03 − 2.03.09, A-21/F8): "
                   f"com 2.03 o valor fica em {alts['PL_TOTAL'][0]:.2f} (SI {ref})")
     elif rule == "reproduzido (visão de método)":
-        (motive, extra), cited = cite(best_any, n_any), best_any
+        (motive, extra), cited = cite(others, best_any), best_any
     elif rule == "preço d−1":
-        motive = f"o Status Invest usa o fechamento da sessão anterior: reproduz {', '.join(price_fields)} com esse preço"
+        motive = f"valor do SI, em {', '.join(price_fields)}, fica dentro da tolerância com o fechamento de d − 1; a coincidência não mostra a origem"
     else:
         n_checked, n_index = ctx["counts"][cnpj]
         pp = "; o fechamento de d − 1 reproduz este campo (um só campo, sem regra de preço)" if "PRICE_PREV" in reproduces else ""
@@ -1023,7 +1039,7 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
 
 - **Classe** (uma por linha, AUD-02):
   - `erro nosso`: o nosso valor contradiz a fonte ou a regra A-18 (contagem de ações com fator sem suporte da B3).
-  - `erro do Status Invest`: o SI traz um número que o cache não sustenta. Há duas origens, separadas no resumo: (a) `reproduzido`: uma visão de um demonstrativo do cache, ou um subconjunto dos proventos da B3, reproduz o valor do SI; cita-se o mais antigo (defasagem B-9 e demonstrativo recebido depois de d entram aqui); (b) `sem base`: nenhuma visão de nenhum demonstrativo do cache, nem subconjunto de proventos, reproduz o valor do SI. A regra de (b) é a decisão do usuário sobre o AC9 (linha fora da tolerância sem base no cache vira `erro do Status Invest`, como na conferência da #59).
+  - `erro do Status Invest`: o SI traz um número que o cache não sustenta. Há duas origens, separadas no resumo: (a) `reproduzido`: uma visão de um demonstrativo do cache, ou um subconjunto dos proventos da B3, fica dentro da tolerância do valor do SI (CMP-01; igual a duas casas, quando é igual) e cita-se pela regra de Citação (defasagem B-9 e demonstrativo recebido depois de d entram aqui); a coincidência mostra que o valor cabe, não a origem; (b) `sem base`: nenhuma visão de nenhum demonstrativo do cache, nem subconjunto de proventos, fica dentro da tolerância do valor do SI. A regra de (b) é a decisão do usuário sobre o AC9 (linha fora da tolerância sem base no cache vira `erro do Status Invest`, como na conferência da #59).
   - `diferença de método`: o SI usa outra definição que reproduz o valor dele (contagem total da B3 de R, LL total 3.11, PL total 2.03).
   - `dentro da tolerância`: a linha entra na lista dos piores porque o campo tem menos de 10 linhas fora da tolerância; não há erro a explicar, e a linha não é um dos três erros.
   - `não classificado`, com o motivo: linha fora da tolerância sem demonstrativo no cache para conferir. Nenhuma linha desta versão fica nessa classe.
@@ -1031,16 +1047,16 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
   1. dentro da tolerância (CMP-01);
   2. proventos (DY): decisão manual de 15 linhas (`DY_DECISIONS` no script, com os registros da B3 citados); nas demais, subconjunto que reproduz a duas casas, entre todos os registros da B3 do cache da classe do ticker (PN para 4, 5 e 6, ON para 3), sobre o fechamento de d ou o de d − 1; sem subconjunto, `sem base`;
   3. defasagem do filing anterior (B-9, LAG-01): `erro do Status Invest`;
-  4. demonstrativo recebido depois de d que reproduz o valor, lido em R (contagem ou contas): `erro do Status Invest`, citado o mais antigo que reproduz;
+  4. demonstrativo recebido depois de d que reproduz o valor, lido em R (contagem ou contas): `erro do Status Invest`, citado pela regra de Citação;
   5. fator de contagem sem suporte da B3: a contagem em d passa de duas vezes a contagem B3 de R, sem suspeita (SHR-05): `erro nosso`;
   6. contagem total da B3 de R reproduz o valor e a contagem arquivada em d com eventos é no máximo duas vezes a da B3 (sem suspeita SHR-05): `diferença de método`, salvo se um demonstrativo do cache, diferente do usado em d, reproduz o valor como arquivado (contagem ou demonstrativo inteiro): então `erro do Status Invest`, citado o mais antigo (caso EGIE3 PSR da #64);
   7. lucro total 3.11 ou patrimônio total 2.03 reproduz o valor e difere do nosso em mais de 0,01: `diferença de método`;
-  8. demonstrativo do cache, diferente do usado em d, que reproduz o valor como arquivado: `erro do Status Invest`, citado o mais antigo;
+  8. demonstrativo do cache, diferente do usado em d, que reproduz o valor como arquivado: `erro do Status Invest`, citado pela regra de Citação;
   9. demonstrativo do cache que reproduz o valor só com o total da LL ou do PL: `erro do Status Invest` (visão de método), citado o mais antigo;
   10. preço de d − 1 reproduz pelo menos dois campos de contagem: `erro do Status Invest`;
   11. o resto: `sem base`.
 - **Reproduzir**: um demonstrativo reproduz o valor do SI quando, tratado como o filing mais novo do ticker, o valor recalculado fica dentro da tolerância do relatório (CMP-01: 5 % para os relativos, 0,5 p.p. para os percentuais; `compare.within`). Para cada versão de cada DFP e ITR do cache são testadas: o demonstrativo inteiro, como arquivado; com a LL 3.11 total; com o PL 2.03 total; com os dois; e só a contagem de ações da versão, com o fator A-18 e os eventos de d. Todas as versões contam, sem limite de idade: um período terminado há mais de 270 dias é lido inteiro (o relatório zera esses valores pela máscara STL-01; a busca não aplica a máscara, porque pergunta de qual demonstrativo o SI tirou o valor). O cache não tem versão recebida depois de R = 2026-11-09 (data de recuperação da B3), então "todas as versões do cache" e "recebidas até R" são o mesmo conjunto. Para um filing recebido depois de d, as leituras da CVM são feitas em R, como no lote 5; a contagem sozinha usa sempre os demais insumos de d. Nessas leituras a guarda de ponto no tempo do relatório (PIT-02, `indicators._assert_point_in_time`) fica desligada; o relatório não a desliga.
-- **Mais antigo**: entre os demonstrativos que reproduzem (exceto o que o relatório usou em d, F0), o de menor DT_RECEB; empate: DT_REFER, depois VERSAO. Quando o mesmo demonstrativo reproduz por mais de uma visão, cita-se a primeira na ordem: as contas como arquivadas, depois os totais LL e PL, depois a contagem.
+- **Citação**: entre os demonstrativos que reproduzem (exceto F0, o que o relatório usou em d), cita-se o que é igual ao valor do SI a duas casas e foi recebido primeiro (DT_RECEB; empate: DT_REFER, depois VERSAO). Sem nenhum igual a duas casas, cita-se o mais próximo do valor do SI (empate: o mais antigo). A ordem das visões é como arquivado e contagem primeiro; a visão de método (total da LL 3.11 ou do PL 2.03) só é citada quando nenhuma das outras reproduz. Quando o mesmo demonstrativo reproduz por mais de uma dessas visões, vale a primeira na ordem: como arquivado, depois a contagem.
 - **Proventos (DY)**: reprodução exata a duas casas (a precisão do SI), com o fechamento de d ou o de d − 1. Os registros são todas as linhas da B3 do cache da classe do ticker, sem janela de data nem exclusão por falta de cotação; cada linha é um registro, e linhas idênticas contam separadamente (o SI somou linhas repetidas nos casos MDNE3 e VLID3). As somas são feitas em unidades de 0,00001 R$; a janela é alargada pelo erro de arredondamento, e cada subconjunto achado é conferido com a soma exata. Quando existe subconjunto que reproduz, a evidência cita um deles, achado pela ordem das datas-ex (registros mais novos ficam de fora quando não são necessários); o motivo não conta os subconjuntos.
 - **Demonstrativos conferidos**: cada empresa com linha `erro do Status Invest` sem base ou reproduzida, ou `diferença de método` pela contagem da B3, tem a lista completa dos demonstrativos conferidos na seção `Demonstrativos conferidos`, com o número arquivado de cada conta do campo e a composição de ações. Uma versão marcada `(só o índice no cache)` tem a linha do índice (DT_RECEB), mas nenhuma linha de BPA, BPP, DRE ou composição no cache: nos zips da CVM do cache, as linhas de demonstrativo de alguns períodos vêm só para a versão mais nova. Essa versão não reproduz nada e não é contada.
 - **Defasagem**: `sim` quando a linha é `si_lag` no JSON (B-9): o filing anterior reproduz o SI dentro da tolerância.
@@ -1057,12 +1073,12 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
 
 - A lista de piores deixa de fora os tickers sem valor reconstruído (`missing`, com o motivo do JSON; contagem por data, indicador e motivo na seção "Sem valor reconstruído") e, nos campos relativos, os tickers cuja referência do SI é zero. A auditoria não conta os tickers de referência zero: o JSON também não os conta, e são um limite declarado, não uma contagem.
 - Nos campos de DY, uma célula em branco do SI é tratada como 0,00 (A-4) e fica no denominador; o JSON conta essas células em `reference_blank_as_zero`.
-- O Status Invest é a referência do projeto. Quando uma classe é `erro do Status Invest`, a evidência mostra que o número do SI não sai do cache; ela não prova o que o SI fez internamente.
+- O Status Invest é a referência do projeto. Quando uma classe é `erro do Status Invest`, a evidência mostra o que o cache sustenta do número do SI (uma coincidência dentro da tolerância, uma igualdade a duas casas, ou nada); ela não prova o que o SI fez internamente.
 - `sem base` quer dizer: nenhuma visão de nenhum demonstrativo do cache reproduz o valor, e nenhum subconjunto de proventos reproduz o DY. Não quer dizer que o SI usou uma combinação que não está no cache: combinações de dois filings (uma conta de um e a contagem de outro) não são testadas, e um preço que não está no cache não é testado.
-- Reproduzir é comparação dentro da tolerância do relatório, e a busca testa muitas visões. Das {EXACT_N} citações contábeis de reprodução, {EXACT_Y} têm o valor do demonstrativo igual ao do SI a duas casas; as outras {NEAR_N} estão só dentro da tolerância do relatório (5 % relativos, 0,5 p.p.). Essas aproximações são citadas como reprodução pela regra; a contagem de reproduções é um fato do cache, não prova do que o SI fez.
+- Reproduzir é comparação dentro da tolerância do relatório, e a busca testa muitas visões. Das {EXACT_N} citações contábeis de reprodução, {EXACT_Y} são iguais ao valor do SI a duas casas; as outras {NEAR_N} estão só dentro da tolerância do relatório (5 % relativos, 0,5 p.p.), e nelas a coincidência não mostra a origem. A contagem de reproduções é um fato do cache, não prova do que o SI fez.
 - A reprodução de DY por subconjunto é exata a duas casas. Quando mais de um subconjunto reproduz, a classe diz só que o valor do SI cabe em algum deles, não qual o SI usou; o citado é um deles. A busca usa a grade de 0,00001 R$ (ver Proventos), com confirmação exata de cada subconjunto achado: uma soma em que a grade e a soma exata divergem só numa borda da janela pode não ser achada.
 - Versões sem linhas de demonstrativo no cache (só o índice): {INDEX_ONLY} das {ALL_VERSIONS} versões recebidas até R de {N_COMP} empresas com linhas fora da tolerância nas duas datas (sem DY). Empresas e versões são contadas uma vez cada, mesmo com linhas nas duas datas. Elas não reproduzem valor e não entram na contagem de demonstrativos conferidos.
-- Algumas linhas de `erro do Status Invest` reproduzem o SI com um filing recebido depois de 2026-08-07, a data de coleta declarada do CSV do Status Invest. Ou o CSV foi coletado depois dessa data, ou o SI usa dado posterior à coleta. O cache não distingue as duas coisas: a classe diz só que o valor do SI depende de um filing recebido depois de d.
+- Algumas linhas de `erro do Status Invest` têm o valor do SI dentro da tolerância, ou igual a duas casas, de um filing recebido depois de 2026-08-07, a data de coleta declarada do CSV do Status Invest. Ou o CSV foi coletado depois dessa data, ou o valor do SI vem de dado posterior à coleta. O cache não distingue as duas coisas: a classe diz só que o valor do SI cabe num filing recebido depois de d.
 
 """
 
