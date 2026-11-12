@@ -9,6 +9,15 @@ Run from the repository root. It reads `.cache/pit-rebuild` (offline, never writ
 
 If a CSV is not at the path the JSON records, pass it with `--si-2026-11-05 PATH` (or `--si-2026-08-07`).
 
+Exit codes:
+
+    0  the document is written (or --help was asked)
+    1  invalid input or a failed precondition, and nothing is written: a Status Invest CSV is not at the path the
+       JSON records (or the one given), its sha256 differs from the JSON entry, the reconstructed filings differ
+       from the store, or the cache changed during the run. An uncaught exception (such as a missing folder for
+       --out) also exits 1.
+    2  invalid arguments
+
 The search (`search_date`, `company_values`, `dy_search`) is the one the document states in its
 "Reproduzir", "Proventos (DY)" and "Ordem das regras" sections: every version of every DFP and ITR of
 the cache, with no age limit and no mask, and every B3 dividend line of the cache with no date window.
@@ -977,6 +986,14 @@ def cache_digest():
     return h.hexdigest()
 
 
+def write_document(path, text, before):
+    """Writes the document only when the cache still has the digest `before`, taken before the reads: a run that
+    changed the cache exits 1 and leaves `path` as it was."""
+    if cache_digest() != before:
+        raise SystemExit("the cache changed during the run; the document was not written")
+    path.write_text(text, encoding="utf-8")
+
+
 def is_sem_base(r):
     return r["class"] == ERRO_SI and r["motive"].startswith(SEM_BASE_PREFIXES)
 
@@ -1236,10 +1253,7 @@ def main(argv=None):
 
     filings = {str(cd): {"tickers": tickers, "numbers": numbers(versions, cnpj)} for cnpj, (cd, tickers) in company.items()}
     text, verdict, out_nc, erro = render(rows, av, filings, index_only_counts(versions, cnpjs))
-    args.out.write_text(text, encoding="utf-8")
-    after = cache_digest()
-    if after != before:
-        raise SystemExit("the cache changed during the run")
+    write_document(args.out, text, before)
     for d in DATES:
         c, sub = class_counts(rows, d)
         print(d, {k: c[k] for k in ORDER}, "reproduzido", sub["reproduzido"], "sem base", sub["sem base"])

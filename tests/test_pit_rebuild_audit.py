@@ -13,6 +13,7 @@ import unittest
 from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 REPO = Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode = True  # AD-013: the in-process loader of this suite writes no bytecode
@@ -183,6 +184,53 @@ class GeneratorWritesNoBytecodeTests(unittest.TestCase):  # V12: the generator w
             env = {key: value for key, value in os.environ.items() if key != "PYTHONDONTWRITEBYTECODE"}  # the run must not rely on it
             subprocess.run([sys.executable, str(root / "scripts" / "pit_rebuild_audit.py"), "--help"], check=True, env=env, capture_output=True)
             self.assertEqual(sorted(root.rglob("*.pyc")), [])
+
+
+def _run_generator(*args):
+    """The generator run as a script, as the shell runs it: its exit code and stderr (the docstring's exit codes)."""
+    return subprocess.run([sys.executable, str(REPO / "scripts" / "pit_rebuild_audit.py"), *args], capture_output=True, text=True, check=False)
+
+
+class ExitCodeTests(unittest.TestCase):  # the docstring's exit codes: 2 for an invalid argument, 1 for an invalid input, nothing written
+    def test_an_invalid_argument_exits_with_2(self):
+        self.assertEqual(_run_generator("--bogus").returncode, 2)
+
+    def test_a_status_invest_csv_that_is_not_there_exits_with_1_and_writes_no_document(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "audit.md"
+            result = _run_generator("--si-2026-08-07", str(Path(tmp) / "absent.csv"), "--out", str(out))
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertIn("not found", result.stderr)
+            self.assertFalse(out.exists())
+
+    def test_a_status_invest_csv_with_another_sha256_exits_with_1_and_writes_no_document(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "audit.md"
+            other = Path(tmp) / "other.csv"
+            other.write_text("ticker;preco\n", encoding="utf-8")
+            result = _run_generator("--si-2026-08-07", str(other), "--out", str(out))
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertIn("sha256", result.stderr)
+            self.assertFalse(out.exists())
+
+
+class CacheGuardTests(unittest.TestCase):  # the cache is checked before --out is written: a changed cache leaves the committed document as it was
+    def test_a_changed_cache_leaves_the_document_as_it_was(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "audit.md"
+            out.write_text("documento anterior\n", encoding="utf-8")
+            with mock.patch.object(audit, "cache_digest", return_value="depois"):
+                with self.assertRaises(SystemExit) as caught:
+                    audit.write_document(out, "documento novo\n", "antes")
+            self.assertIn("the cache changed during the run", str(caught.exception.code))
+            self.assertEqual(out.read_text(encoding="utf-8"), "documento anterior\n")
+
+    def test_an_unchanged_cache_writes_the_document(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / "audit.md"
+            with mock.patch.object(audit, "cache_digest", return_value="igual"):
+                audit.write_document(out, "documento novo\n", "igual")
+            self.assertEqual(out.read_text(encoding="utf-8"), "documento novo\n")
 
 
 if __name__ == "__main__":
