@@ -1089,8 +1089,8 @@ def render(rows, av, filings, index_counts):
         grand.update(c)
     out.append(f"| **Total** | **{grand[ERRO_NOSSO]}** | **{grand[ERRO_SI]}** | **{grand[METODO]}** | **{grand[WITHIN]}** | **{grand[NC]}** | **{sum(grand.values())}** |")
     out.append("")
-    out.append("Dentro de `erro do Status Invest`, a origem da classe:\n")
-    out.append("| Data | reproduzido por um demonstrativo ou provento | sem base em nenhum demonstrativo ou provento do cache |")
+    out.append("Dentro de `erro do Status Invest`, o que o cache sustenta:\n")
+    out.append("| Data | reproduzido: um demonstrativo ou provento do cache dentro da tolerância | sem base em nenhum demonstrativo ou provento do cache |")
     out.append("| --- | ---: | ---: |")
     for d in DATES:
         _c, sub = class_counts(rows, d)

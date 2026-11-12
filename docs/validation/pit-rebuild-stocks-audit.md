@@ -62,9 +62,9 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
 | 2026-11-05 | 7 | 121 | 4 | 8 | 0 | 140 |
 | **Total** | **24** | **213** | **11** | **32** | **0** | **280** |
 
-Dentro de `erro do Status Invest`, a origem da classe:
+Dentro de `erro do Status Invest`, o que o cache sustenta:
 
-| Data | reproduzido por um demonstrativo ou provento | sem base em nenhum demonstrativo ou provento do cache |
+| Data | reproduzido: um demonstrativo ou provento do cache dentro da tolerância | sem base em nenhum demonstrativo ou provento do cache |
 | --- | ---: | ---: |
 | 2026-08-07 | 48 | 44 |
 | 2026-11-05 | 75 | 46 |
