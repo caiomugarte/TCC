@@ -493,8 +493,8 @@ Os identificadores são os da especificação em `.specs/features/pit-rebuild-st
 
 Resultado da regeneração, com as chaves do JSON:
 
-- Veredito oficial da classe (`verdicts.class`): `não reconstruível`, como na v2, nas duas datas
-  e no geral. Um veredito por data muda: LIQ. CORRENTE em 2026-08-07, no grupo sem os não
+- Veredito oficial da classe (`verdicts.class`, geral, sobre as duas datas): `não reconstruível`,
+  como na v2. Um veredito por data muda: LIQ. CORRENTE em 2026-08-07, no grupo sem os não
   classificados, de `reconstruível` para `com ressalvas` (90,21% na v2; 89,79% agora). A causa é
   a AMBP3, que está em `stale_filing`.
 - Veredito ajustado da classe (`adjusted_verdict.class`): `com ressalvas`.
