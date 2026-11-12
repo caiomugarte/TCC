@@ -258,7 +258,15 @@
 - **Trade-off**: The formulas and windows of r5 were chosen after looking at the two dates the verdict is measured on, so the verdict is in-sample for those choices and may be optimistic for other dates; the full 2012-2026 rebuild must check them on dates not used here. A share change between √10x and 10x (a 1:4 or 1:5 split between filing and B3 retrieval) is scaled to the wrong power of ten; the residual lists it but does not fix it. Whether B3 answers a trading name without `/` is unverified until one live probe in T32; if it does not, those companies stay on Yahoo. The report grows a section that a hasty reader could take for the result; the label, the JSON flag and a test that the official `verdicts` are identical with and without sensitivities guard against that. The report's second date is 2026-11-05, not the snapshot's name.
 - **Scope**: `py/pit_rebuild/` (`.specs/features/pit-rebuild-stocks/`); the full-rebuild follow-up of #59 inherits (1), (2), (3) and (4).
 - **Date**: 2026-11-10
-- **Status**: accepted - approved by the human on 2026-11-10
+- **Status**: accepted - approved by the human on 2026-11-10; item (4) is superseded in part by AD-033 once the #64 spec review accepts it
+
+### AD-033
+- **Decision**: In the stock PIT rebuild (issue #64), the CVM share count at `d` is the filed count of the newest usable filing × the A-18 power of ten × the product of the B3 `stockDividends` multipliers (split, bonus, grouping) of the class ISIN with ex-date in (period end, `d`]. The A-18 power of ten is chosen on the filed count adjusted by every event of the class after the period end, at any date, because B3 `totalNumberShares` is today's count. Event ex-date: the first COTAHIST session after `lastDatePrior`, or the calendar day after it outside the loaded calendar. This supersedes AD-032 (4)'s "a share change of at least √10x between filing and retrieval is absorbed as the nearest power of ten" for changes B3 lists as events; a change with no event is still absorbed, and a change above 20 % between two filings with no event is flagged (`share_count_suspect`), never corrected.
+- **Reason**: Issue #64 `## Decisões` sets the share count as CVM adjusted by the B3 events in the past. Applying the events after a scale chosen against today's B3 count counts a split twice (a 1:5 split became ×10 under AD-032, then ×5 again: 50×).
+- **Trade-off**: `stockDividends` is still a current record (AD-031 non-PIT input 8), now also for share counts. A class with no ISIN at `d` is not adjusted (listed). `share_scale.scaled` of the regenerated report differs from #59 for companies with a split between filing and retrieval.
+- **Scope**: `py/pit_rebuild/` (`shares.py`, `cli.py`); `.specs/features/pit-rebuild-stocks-fixes/` (B-1..B-4, SHR-01..SHR-07).
+- **Date**: 2026-11-12
+- **Status**: proposed - waiting for the #64 spec review
 
 ## Handoff
 - **Feature**: pit-rebuild-stocks (issue #59) - `.specs/features/pit-rebuild-stocks/`
