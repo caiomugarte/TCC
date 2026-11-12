@@ -1824,6 +1824,16 @@ class AdjustedVerdictTests(unittest.TestCase):
         self.assertIn({"ticker": "OLDQ3", "reason": "stale_filing"}, pl["missing"])
         self.assertNotIn("OLDQ3", pl["si_lag"]["tickers"])
 
+    def test_a_reference_stale_ticker_has_no_value_so_no_si_lag_mark_can_hold_it(self):  # V3, LAG-02
+        # STLQ3 has no session in the 30 days before D1. reference_stale and no_quote are the same test (cotahist.reference_stale
+        # and cli._unmapped_reason both read quote_at), so every field of STLQ3 is empty and no si_lag mark can be on it. The cut
+        # of the reference-stale tickers in adjusted_input is redundant under these definitions (V3: an equivalent mutant).
+        mapping = self.report["dates"][ISO1]["mapping"]
+        self.assertIn("STLQ3", mapping["reference_stale"])
+        self.assertIn({"ticker": "STLQ3", "reason": "no_quote"}, mapping["unmapped"])
+        for field, block in self.adjusted()["dates"][ISO1]["fields"].items():
+            self.assertNotIn("STLQ3", block["si_lag"]["tickers"], field)
+
     def test_the_si_lag_mark_changes_no_statistic(self):
         # LAG-04: LAGX3, ONEF3 and OLDQ3 are all outside tolerance, so the share within is 0 % whether or not LAGX3 is si_lag
         pl = self.adjusted()["dates"][ISO1]["fields"]["P/L"]
