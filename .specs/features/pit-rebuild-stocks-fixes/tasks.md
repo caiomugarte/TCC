@@ -452,16 +452,16 @@ T23 → T24
 
 **Done when**:
 
-- [ ] The block lists exactly the 14 `ADJUSTED_FIELDS`; `ROIC` and `PEG RATIO` absent (ADJ-02)
-- [ ] Per field, `overall` is the worse of the two dates; `class` the worst field (ADJ-03)
-- [ ] Worst rows carry `si_lag`, `filing` (or null) and `previous_value` (or null) as given; a `DY` worst row has `filing` and `previous_value` null even when details are given for it (ADJ-04)
-- [ ] `criterion` has `part` 1 and `part2` naming the audit document; `met` true at 70.0 % on every field and date; false at 69.99 % on one, with that `{field, date, pct_within}` in `failing` (ADJ-05)
-- [ ] Each field and date keeps the `missing` list of its statistics (read by the audit, AUD-05)
-- [ ] Denominator 0 on a date: the field fails with `pct_within` null (ADJ-06)
-- [ ] `verdicts` byte-identical (via `encode_json`) with and without `adjusted` (ADJ-07)
-- [ ] `si_lag.count` equals `len(tickers)`; within counts unchanged by `si_lag` (LAG-02, LAG-04)
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 8 new tests in `test_pit_rebuild_report.py`
+- [x] The block lists exactly the 14 `ADJUSTED_FIELDS`; `ROIC` and `PEG RATIO` absent (ADJ-02)
+- [x] Per field, `overall` is the worse of the two dates; `class` the worst field (ADJ-03)
+- [x] Worst rows carry `si_lag`, `filing` (or null) and `previous_value` (or null) as given; a `DY` worst row has `filing` and `previous_value` null even when details are given for it (ADJ-04)
+- [x] `criterion` has `part` 1 and `part2` naming the audit document; `met` true at 70.0 % on every field and date; false at 69.99 % on one, with that `{field, date, pct_within}` in `failing` (ADJ-05)
+- [x] Each field and date keeps the `missing` list of its statistics (read by the audit, AUD-05)
+- [x] Denominator 0 on a date: the field fails with `pct_within` null (ADJ-06)
+- [x] `verdicts` byte-identical (via `encode_json`) with and without `adjusted` (ADJ-07)
+- [x] `si_lag.count` equals `len(tickers)`; within counts unchanged by `si_lag` (LAG-02, LAG-04)
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 8 new tests in `test_pit_rebuild_report.py`
 
 **Tests**: unit
 **Gate**: quick

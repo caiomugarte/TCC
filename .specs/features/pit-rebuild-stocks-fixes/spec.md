@@ -271,21 +271,21 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | MBR-01 | P2: MBRF3 | AC6 | Tasks | Pending |
 | MBR-02 | P2: MBRF3 | AC6 | Tasks | Pending |
 | ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Pending |
-| ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Partial (T9 fields; T12, T19) |
-| ADJ-03 | P1: Adjusted verdict | AC7 | Tasks | Pending |
-| ADJ-04 | P1: Adjusted verdict | AC7, AC9 | Tasks | Partial (T3 filing; T19 rows) |
-| ADJ-05 | P1: Adjusted verdict | AC7 (DEC-2) | Tasks | Pending |
-| ADJ-06 | P1: Adjusted verdict | AC7 | Tasks | Pending |
-| ADJ-07 | P1: Adjusted verdict | AC7 | Tasks | Pending |
+| ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Partial (T9 fields; T12 unit; T19 CLI) |
+| ADJ-03 | P1: Adjusted verdict | AC7 | Tasks | Unit (T12) |
+| ADJ-04 | P1: Adjusted verdict | AC7, AC9 | Tasks | Partial (T3 filing; T12 unit; T19 rows) |
+| ADJ-05 | P1: Adjusted verdict | AC7 (DEC-2) | Tasks | Partial (T12 unit; T13, T19, T21) |
+| ADJ-06 | P1: Adjusted verdict | AC7 | Tasks | Unit (T12) |
+| ADJ-07 | P1: Adjusted verdict | AC7 | Tasks | Unit (T12); CLI T19 |
 | LAG-01 | P1: SI lag | AC8 | Tasks | Partial (T5 view; T11 unit; T19 CLI) |
-| LAG-02 | P1: SI lag | AC8 | Tasks | Pending |
+| LAG-02 | P1: SI lag | AC8 | Tasks | Partial (T12 unit; T13, T19) |
 | LAG-03 | P1: SI lag | AC8 | Tasks | Unit (T11); CLI T19 |
-| LAG-04 | P1: SI lag | AC8 | Tasks | Partial (T11 unit; T12, T19) |
+| LAG-04 | P1: SI lag | AC8 | Tasks | Partial (T11, T12 unit; T19) |
 | AUD-01 | P1: Audit | AC9 | Tasks | Pending |
 | AUD-02 | P1: Audit | AC9 | Tasks | Pending |
 | AUD-03 | P1: Audit | AC9 | Tasks | Pending |
 | AUD-04 | P1: Audit | AC9 | Tasks | Pending |
-| AUD-05 | P1: Audit | AC9 | Tasks | Pending |
+| AUD-05 | P1: Audit | AC9 | Tasks | Partial (T12 missing list; T23, T24) |
 | AUD-06 | P1: Audit | AC7, AC9 (DEC-2) | Tasks | Pending |
 | RPT-01 | P1: Regenerated report | AC10 | Tasks | Pending |
 | RPT-02 | P1: Regenerated report | AC10 | Tasks | Pending |

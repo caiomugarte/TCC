@@ -18,7 +18,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 
 from pit_rebuild import compare, coverage, report  # noqa: E402
-from pit_rebuild.fields import ALL_FIELDS, PERCENT_FIELDS  # noqa: E402
+from pit_rebuild.fields import ADJUSTED_FIELDS, ALL_FIELDS, PERCENT_FIELDS  # noqa: E402
 
 GROUP_NAMES = [group for group, _label in report.GROUPS]
 BASE = [("AAAA3", 10.0, 10.0, None), ("BBBB3", 20.0, 20.0, None)]
@@ -499,6 +499,124 @@ class SensitivityTests(unittest.TestCase):
         verdict_line = next(line for line in markdown.splitlines() if line.startswith("**Veredito da classe:**"))
         self.assertEqual(verdict_line, "**Veredito da classe:** `reconstruível`. Os tickers não classificados não mudam o veredito.")
         self.assertEqual(out["sensitivities"]["without_reference_stale"]["verdicts"]["class"], compare.NAO_RECONSTRUIVEL)
+
+
+def adjusted_stats(pct_by_field: dict | None = None, default: float = 100.0) -> dict:
+    """{field: FieldStats} of the non-financial group, the statistics the adjusted scope reads for every indicator."""
+    return {field: groups["non_financial"] for field, groups in stats_fields(pct_by_field, default).items()}
+
+
+def adjusted_entry(fields: dict | None = None, *, excluded=(), si_lag=None, worst_details=None) -> dict:
+    """The stale-free statistics of one date for the adjusted block: all at 100 % unless given."""
+    return {
+        "excluded": list(excluded),
+        "fields": adjusted_stats() if fields is None else fields,
+        "si_lag": si_lag or {},
+        "worst_details": worst_details or {},
+    }
+
+
+def adjusted_run(first: dict | None = None, second: dict | None = None) -> dict:
+    """The report object of the run with the adjusted statistics of its two dates."""
+    adjusted = {"2026-08-07": first or adjusted_entry(), "2026-11-06": second or adjusted_entry()}
+    return report.build(**run_kwargs(adjusted=adjusted))
+
+
+class AdjustedVerdictTests(unittest.TestCase):
+    """ADJ-02..ADJ-07, AUD-05, LAG-02 and LAG-04: the adjusted block is built after the official verdicts, from the given statistics."""
+
+    def test_the_block_lists_the_14_adjusted_fields_and_no_roic_or_peg_ratio(self):
+        block = adjusted_run()["adjusted_verdict"]
+        self.assertEqual(block["fields"], list(ADJUSTED_FIELDS))
+        self.assertEqual(len(block["fields"]), 14)
+        self.assertNotIn("ROIC", block["fields"])
+        self.assertNotIn("PEG RATIO", block["fields"])
+        self.assertEqual(set(block["dates"]["2026-11-06"]["fields"]), set(ADJUSTED_FIELDS))
+        self.assertEqual(block["class"], compare.RECONSTRUIVEL)  # every field at 100 % on both dates
+
+    def test_each_field_takes_the_worse_of_its_two_dates_and_the_class_the_worst_field(self):
+        block = adjusted_run(adjusted_entry(adjusted_stats({"P/L": 75.0})), adjusted_entry(adjusted_stats({"ROE": 50.0})))["adjusted_verdict"]
+        self.assertEqual(block["dates"]["2026-08-07"]["fields"]["P/L"]["verdict"], compare.COM_RESSALVAS)
+        self.assertEqual(block["verdicts"]["P/L"], compare.COM_RESSALVAS)  # com ressalvas and reconstruível: the worse
+        self.assertEqual(block["verdicts"]["ROE"], compare.NAO_RECONSTRUIVEL)
+        self.assertEqual(block["verdicts"]["DIVIDA LIQUIDA / EBIT"], compare.RECONSTRUIVEL)
+        self.assertEqual(block["class"], compare.NAO_RECONSTRUIVEL)  # the worst of the 14 fields
+
+    def test_worst_rows_carry_si_lag_the_filing_and_the_rounded_previous_value_and_dy_rows_have_no_filing(self):
+        filing = {"kind": "ITR", "dt_refer": date(2026, 3, 31), "versao": 1, "dt_receb": date(2026, 5, 14)}
+        pl = adjusted_stats()["P/L"]
+        pl.worst = [
+            {"ticker": "AAAA3", "reference": 10.0, "rebuilt": 15.0, "diff": 50.0},
+            {"ticker": "BBBB3", "reference": 20.0, "rebuilt": 30.0, "diff": 50.0},
+        ]
+        dy = adjusted_stats()["DY"]
+        dy.worst = [{"ticker": "CCCC3", "reference": 3.0, "rebuilt": 0.0, "diff": 3.0}]
+        fields = {**adjusted_stats(), "P/L": pl, "DY": dy}
+        details = {
+            "P/L": {"AAAA3": {"filing": filing, "previous_value": 10.4567, "si_lag": True}},  # BBBB3 has no details
+            "DY": {"CCCC3": {"filing": filing, "previous_value": 0.3, "si_lag": False}},
+        }
+        block = adjusted_run(adjusted_entry(fields, worst_details=details))["adjusted_verdict"]
+        rows = {row["ticker"]: row for row in block["dates"]["2026-08-07"]["fields"]["P/L"]["worst"]}
+        self.assertTrue(rows["AAAA3"]["si_lag"])
+        self.assertEqual(rows["AAAA3"]["filing"], {"kind": "ITR", "dt_refer": "2026-03-31", "versao": 1, "dt_receb": "2026-05-14"})
+        self.assertEqual(rows["AAAA3"]["previous_value"], 10.46)
+        self.assertEqual((rows["BBBB3"]["si_lag"], rows["BBBB3"]["filing"], rows["BBBB3"]["previous_value"]), (False, None, None))
+        dy_row = block["dates"]["2026-08-07"]["fields"]["DY"]["worst"][0]
+        self.assertEqual((dy_row["filing"], dy_row["previous_value"]), (None, None))
+
+    def test_the_criterion_is_met_at_70_percent_on_every_field_and_date(self):
+        criterion = adjusted_run(adjusted_entry(adjusted_stats(default=70.0)), adjusted_entry(adjusted_stats(default=70.0)))["adjusted_verdict"]["criterion"]
+        self.assertEqual(
+            criterion,
+            {"part": 1, "threshold_pct": 70, "met": True, "failing": [], "part2": "docs/validation/pit-rebuild-stocks-audit.md"},
+        )
+
+    def test_the_criterion_fails_at_69_99_percent_and_names_that_field_and_date(self):
+        second = adjusted_entry(adjusted_stats({"P/L": 69.99}, default=70.0))
+        criterion = adjusted_run(adjusted_entry(adjusted_stats(default=70.0)), second)["adjusted_verdict"]["criterion"]
+        self.assertFalse(criterion["met"])
+        self.assertEqual(criterion["failing"], [{"field": "P/L", "date": "2026-11-06", "pct_within": 69.99}])
+
+    def test_a_field_with_no_denominator_on_a_date_fails_the_criterion_with_a_null_pct_within(self):
+        empty = adjusted_stats()
+        empty["ROE"] = compare.FieldStats(field="ROE", diff_unit="pp")  # denominator 0 and no pct_within on 2026-11-06
+        block = adjusted_run(adjusted_entry(), adjusted_entry(empty))["adjusted_verdict"]
+        self.assertFalse(block["criterion"]["met"])
+        self.assertEqual(block["criterion"]["failing"], [{"field": "ROE", "date": "2026-11-06", "pct_within": None}])
+        self.assertEqual(block["dates"]["2026-11-06"]["fields"]["ROE"]["verdict"], compare.SEM_REFERENCIA)
+
+    def test_each_field_and_date_keeps_the_missing_list_of_its_statistics(self):
+        stats = adjusted_stats()
+        stats["P/L"].missing = [{"ticker": "UUUU3", "reason": "stale_filing"}]
+        block = adjusted_run(adjusted_entry(stats))["adjusted_verdict"]
+        self.assertEqual(block["dates"]["2026-08-07"]["fields"]["P/L"]["missing"], [{"ticker": "UUUU3", "reason": "stale_filing"}])
+        self.assertEqual(block["dates"]["2026-11-06"]["fields"]["P/L"]["missing"], [])
+
+    def test_the_si_lag_count_is_the_number_of_listed_tickers_and_the_within_counts_do_not_change(self):
+        entry = adjusted_entry(adjusted_stats({"P/L": 60.0}), si_lag={"P/L": ["BBBB3", "AAAA3"]})
+        block = adjusted_run(entry)["adjusted_verdict"]
+        pl = block["dates"]["2026-08-07"]["fields"]["P/L"]
+        self.assertEqual(pl["si_lag"], {"count": 2, "tickers": ["AAAA3", "BBBB3"]})
+        self.assertEqual((pl["denominator"], pl["within"], pl["pct_within"]), (10, 6, 60.0))
+        self.assertEqual(block["dates"]["2026-08-07"]["fields"]["ROE"]["si_lag"], {"count": 0, "tickers": []})
+
+    def test_the_excluded_tickers_are_listed_per_date_in_order(self):
+        block = adjusted_run(adjusted_entry(excluded=["ZZZZ3", "YYYY3"]))["adjusted_verdict"]
+        self.assertEqual(block["excluded"], {"2026-08-07": ["YYYY3", "ZZZZ3"], "2026-11-06": []})
+
+    def test_the_official_verdicts_are_byte_identical_with_and_without_the_adjusted_block(self):
+        official = report.build(**run_kwargs())
+        with_block = adjusted_run(adjusted_entry(), adjusted_entry())  # every adjusted field at 100 %: a class that differs from the official one
+        self.assertEqual(official["verdicts"]["class"], compare.NAO_RECONSTRUIVEL)
+        self.assertEqual(with_block["adjusted_verdict"]["class"], compare.RECONSTRUIVEL)
+        self.assertNotIn("adjusted_verdict", official)
+        self.assertEqual(report.encode_json(with_block["verdicts"]), report.encode_json(official["verdicts"]))
+        self.assertEqual(report.encode_json(with_block["dates"]), report.encode_json(official["dates"]))
+
+    def test_build_refuses_adjusted_statistics_that_miss_one_of_the_dates(self):
+        with self.assertRaises(ValueError):
+            report.build(**run_kwargs(adjusted={"2026-08-07": adjusted_entry()}))
 
 
 if __name__ == "__main__":

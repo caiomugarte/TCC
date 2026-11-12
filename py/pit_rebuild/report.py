@@ -17,7 +17,7 @@ import math
 
 from . import compare
 from .cotahist import LIQUIDITY_SESSIONS, QUOTE_CODBDI
-from .fields import ALL_FIELDS, PERCENT_FIELDS, SCORE_FIELDS
+from .fields import ADJUSTED_FIELDS, ALL_FIELDS, PERCENT_FIELDS, SCORE_FIELDS
 from .indicators import FORMULAS
 from .status_invest import ELIGIBILITY
 
@@ -110,6 +110,13 @@ ROIC_PEG_NOTE = (
     "não por falta de dados."
 )
 DIVIDEND_EXTRAS = ("b3_filters", "split_adjust_no_isin", "slash_names")  # carried from the run when given (r5)
+ADJUSTED_SCOPE = (
+    "14 indicadores do veredito ajustado (sem ROIC e PEG RATIO), grupo não financeiro incluindo os não classificados. "
+    "Por data, os tickers elegíveis sem os tickers de referência obsoleta (`reference_stale`). Os tickers com `si_lag` "
+    "ficam no denominador como fora da tolerância."
+)
+ADJUSTED_THRESHOLD_PCT = 70  # ADJ-05: the share within tolerance that part 1 of the release criterion asks, per field and date
+ADJUSTED_PART2 = "docs/validation/pit-rebuild-stocks-audit.md"  # ADJ-05, AUD-06: part 2 is the audit document
 
 
 def build(
@@ -123,6 +130,7 @@ def build(
     coverage: Mapping[str, object],
     filings_cutoffs: Mapping[object, object] | None = None,
     sensitivities: Mapping[str, object] | None = None,
+    adjusted: Mapping[str, Mapping[str, object]] | None = None,
 ) -> dict[str, object]:
     """The report object of one run (RPT-02, RPT-03, VER-05..VER-08).
 
@@ -130,7 +138,9 @@ def build(
     dividends holds by_source, yahoo_reasons and b3_empty_yahoo_failed, each keyed by ISO date; b3_filters,
     split_adjust_no_isin and slash_names are carried when given. filings_cutoffs maps a decision date to its
     cutoff (--filings-cutoff, A-22 (b)). sensitivities holds the statistics of the non-official sensitivities
-    (see _sensitivities); without it the object has no "sensitivities" key.
+    (see _sensitivities); without it the object has no "sensitivities" key. adjusted holds the stale-free statistics of
+    the adjusted verdict (see _adjusted), built after the official verdicts and never read by them (ADJ-07); without it
+    the object has no "adjusted_verdict" key.
     """
     iso_dates = [day.isoformat() for day in sorted(dates)]
     if not iso_dates:
@@ -209,6 +219,8 @@ def build(
     }
     if sensitivities is not None:
         report_object["sensitivities"] = _sensitivities(sensitivities, iso_dates, cutoffs, official, overall)
+    if adjusted is not None:
+        report_object["adjusted_verdict"] = _adjusted(adjusted, iso_dates)
     return report_object
 
 
@@ -345,6 +357,82 @@ def _class_without_roic_peg(overall: Mapping[str, Mapping[str, str]]) -> dict[st
         "excluded_fields": sorted(ROIC_PEG_FIELDS),
         "class": compare.worst(overall[field]["non_financial"] for field in kept),
         "note": ROIC_PEG_NOTE,
+    }
+
+
+def _adjusted(given: Mapping[str, Mapping[str, object]], iso_dates: Sequence[str]) -> dict[str, object]:
+    """The adjusted verdict (ADJ-02..ADJ-07, AUD-05, LAG-02): the 14 ADJUSTED_FIELDS of the non-financial group.
+
+    given[iso] holds the stale-free statistics of one date: "fields" {field: FieldStats}, "excluded" [ticker],
+    "si_lag" {field: [ticker]} over the adjusted scope, and "worst_details" {field: {ticker: {filing, previous_value,
+    si_lag}}}. filing is a mapping with kind, dt_refer, versao and dt_receb (a date or an ISO string). Nothing here is
+    read back by the official verdicts.
+    """
+    missing = [iso for iso in iso_dates if iso not in given]
+    if missing:
+        raise ValueError(f"the adjusted verdict lacks the statistics of {', '.join(missing)}")
+    dates: dict[str, dict[str, dict[str, object]]] = {}
+    verdicts_by_date: dict[str, dict[str, str]] = {}
+    for iso in iso_dates:
+        entry = given[iso]
+        dates[iso] = {}
+        verdicts_by_date[iso] = {}
+        for field in ADJUSTED_FIELDS:
+            stats = entry["fields"][field]
+            verdict = compare.verdict(stats.pct_within, stats.denominator)
+            tickers = sorted(entry.get("si_lag", {}).get(field, []))
+            row = asdict(stats)
+            details = entry.get("worst_details", {}).get(field, {})
+            row["worst"] = [_worst_row(item, field, details) for item in stats.worst]
+            row["verdict"] = verdict
+            row["si_lag"] = {"count": len(tickers), "tickers": tickers}
+            dates[iso][field] = row
+            verdicts_by_date[iso][field] = verdict
+    overall = {field: reduce(compare.overall, [verdicts_by_date[iso][field] for iso in iso_dates]) for field in ADJUSTED_FIELDS}
+    failing = [
+        {"field": field, "date": iso, "pct_within": dates[iso][field]["pct_within"]}
+        for field in ADJUSTED_FIELDS
+        for iso in iso_dates
+        if dates[iso][field]["pct_within"] is None or dates[iso][field]["pct_within"] < ADJUSTED_THRESHOLD_PCT
+    ]
+    return {
+        "scope": ADJUSTED_SCOPE,
+        "fields": list(ADJUSTED_FIELDS),
+        "excluded": {iso: sorted(given[iso].get("excluded", [])) for iso in iso_dates},
+        "dates": {iso: {"fields": dates[iso]} for iso in iso_dates},
+        "verdicts": overall,
+        "class": compare.worst(overall[field] for field in ADJUSTED_FIELDS),
+        "criterion": {
+            "part": 1,
+            "threshold_pct": ADJUSTED_THRESHOLD_PCT,
+            "met": not failing,
+            "failing": failing,
+            "part2": ADJUSTED_PART2,
+        },
+    }
+
+
+def _worst_row(item: Mapping[str, object], field: str, details: Mapping[str, Mapping[str, object]]) -> dict[str, object]:
+    """A worst row with its si_lag, filing and previous value (ADJ-04). DY reads no filing: its filing and previous value are null."""
+    detail = details.get(item["ticker"], {})
+    reads_filing = field != "DY"
+    previous = detail.get("previous_value")
+    return {
+        **item,
+        "si_lag": bool(detail.get("si_lag", False)),
+        "filing": _filing(detail.get("filing")) if reads_filing else None,
+        "previous_value": round(previous, 2) if reads_filing and previous is not None else None,
+    }
+
+
+def _filing(filing: Mapping[str, object] | None) -> dict[str, object] | None:
+    if filing is None:
+        return None
+    return {
+        "kind": filing["kind"],
+        "dt_refer": _iso(filing["dt_refer"]),
+        "versao": filing["versao"],
+        "dt_receb": _iso(filing["dt_receb"]),
     }
 
 
