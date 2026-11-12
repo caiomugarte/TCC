@@ -73,10 +73,11 @@ class Filing:
 
 @dataclass(frozen=True)
 class Dated:
-    """A value and the DT_RECEB of the filing it comes from."""
+    """A value and the DT_RECEB of the filing it comes from; prior_from_itr marks a flow whose prior YTD is last year's ITR (TTM-01)."""
 
     value: float
     dt_receb: date
+    prior_from_itr: bool = False
 
 
 @dataclass(frozen=True)
@@ -206,9 +207,11 @@ def ttm(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str) ->
 
     A DFP gives its annual value. An ITR gives FY_prev + YTD - YTD_prev, where FY_prev is
     the usable DFP whose period ends the day before the ITR's fiscal year-to-date starts.
+    YTD_prev is the ITR's PENÚLTIMO row; when that row is absent or 0 it is the ÚLTIMO row of the
+    usable ITR one year earlier (TTM-01, B-5), and the result is marked prior_from_itr.
     """
     newest = _newest_usable(dfp, itr, cnpj, d)
-    return None if newest is None else _ttm_of(dfp, cnpj, d, account, newest)
+    return None if newest is None else _ttm_of(dfp, itr, cnpj, d, account, newest)
 
 
 def ttm_year_before(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str) -> Dated | None:
@@ -217,7 +220,7 @@ def ttm_year_before(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, acco
     if newest is None:
         return None
     earlier = _usable_in_either(dfp, itr, cnpj, _shift_years(newest.filing.dt_refer, -1), d)
-    return None if earlier is None else _ttm_of(dfp, cnpj, d, account, earlier)
+    return None if earlier is None else _ttm_of(dfp, itr, cnpj, d, account, earlier)
 
 
 def annual(dfp: FilingStore, cnpj: str, d: date, account: str, years_back: int = 0) -> Dated | None:
@@ -316,21 +319,30 @@ def _usable_in_either(dfp: FilingStore, itr: FilingStore, cnpj: str, dt_refer: d
     return None
 
 
-def _ttm_of(dfp: FilingStore, cnpj: str, d: date, account: str, period: _Period) -> Dated | None:
+def _ttm_of(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str, period: _Period) -> Dated | None:
     if period.filing.kind == DFP:
         row = period.dre.get((account, ULTIMO))
         return None if row is None else Dated(row.value, period.filing.dt_receb)
     ytd = period.dre.get((account, ULTIMO))
-    prior = period.dre.get((account, PENULTIMO))
-    if ytd is None or prior is None:
+    if ytd is None:
         return None
+    prior = period.dre.get((account, PENULTIMO))
+    received = [period.filing.dt_receb]
+    from_itr = prior is None or prior.value == 0  # TTM-01: a zero or absent comparative is not a prior YTD
+    if from_itr:
+        earlier = _usable_period(itr, cnpj, _shift_years(period.filing.dt_refer, -1), d)
+        if earlier is None or (account, ULTIMO) not in earlier.dre:
+            return None
+        prior = earlier.dre[(account, ULTIMO)]
+        received.append(earlier.filing.dt_receb)
     fy_prev = _usable_period(dfp, cnpj, ytd.dt_ini - timedelta(days=1), d)
     if fy_prev is None:
         return None
     annual_row = fy_prev.dre.get((account, ULTIMO))
     if annual_row is None:
         return None
-    return Dated(annual_row.value + ytd.value - prior.value, max(period.filing.dt_receb, fy_prev.filing.dt_receb))
+    received.append(fy_prev.filing.dt_receb)
+    return Dated(annual_row.value + ytd.value - prior.value, max(received), prior_from_itr=from_itr)
 
 
 def _shift_years(day: date, years: int) -> date:

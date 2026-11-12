@@ -141,14 +141,14 @@ T23 → T24
 
 **Done when**:
 
-- [ ] DFP 2025 = 1000, ITR 2026-06-30 `ÚLTIMO` 300 / `PENÚLTIMO` 0, ITR 2025-06-30 `ÚLTIMO` 200: `ttm` = 1100, `prior_from_itr` true, dated by the latest `DT_RECEB` of the three (TTM-01)
-- [ ] Same with `PENÚLTIMO` absent: 1100 (TTM-01)
-- [ ] Year-earlier ITR received on `d + 1`, or absent, or without the account: None (TTM-02); received on `d`: 1100
-- [ ] `PENÚLTIMO` 150 (non-zero) with the year-earlier ITR present: 1000 + 300 − 150 = 1150, `prior_from_itr` false (TTM-03)
-- [ ] Newest usable filing a DFP: annual value, no fallback
-- [ ] `ttm_year_before` uses the same fallback on its ITR
-- [ ] Gate check passes: Full (the CLI suite reads `ttm`)
-- [ ] Test count: ≥ 6 new tests in `test_pit_rebuild_cvm.py`; no existing expectation changes unless it fed a zero `PENÚLTIMO` (name it in the commit body)
+- [x] DFP 2025 = 1000, ITR 2026-06-30 `ÚLTIMO` 300 / `PENÚLTIMO` 0, ITR 2025-06-30 `ÚLTIMO` 200: `ttm` = 1100, `prior_from_itr` true, dated by the latest `DT_RECEB` of the three (TTM-01)
+- [x] Same with `PENÚLTIMO` absent: 1100 (TTM-01)
+- [x] Year-earlier ITR received on `d + 1`, or absent, or without the account: None (TTM-02); received on `d`: 1100
+- [x] `PENÚLTIMO` 150 (non-zero) with the year-earlier ITR present: 1000 + 300 − 150 = 1150, `prior_from_itr` false (TTM-03)
+- [x] Newest usable filing a DFP: annual value, no fallback
+- [x] `ttm_year_before` uses the same fallback on its ITR
+- [x] Gate check passes: Full (the CLI suite reads `ttm`)
+- [x] Test count: ≥ 6 new tests in `test_pit_rebuild_cvm.py`; no existing expectation changes unless it fed a zero `PENÚLTIMO` (name it in the commit body)
 
 **Tests**: unit
 **Gate**: full

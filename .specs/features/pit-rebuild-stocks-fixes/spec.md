@@ -257,9 +257,9 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | SHR-06 | P1: Share count at d | AC2 | Tasks | Pending |
 | SHR-07 | P1: Share count at d | AC2 | Tasks | Pending |
 | SHR-08 | P1: Share count at d | AC1 | Tasks | Partial (T1 ISIN sets; T7, T15) |
-| TTM-01 | P1: 12-month flows | AC3 | Tasks | Pending |
-| TTM-02 | P1: 12-month flows | AC3 | Tasks | Pending |
-| TTM-03 | P1: 12-month flows | AC3 | Tasks | Pending |
+| TTM-01 | P1: 12-month flows | AC3 | Tasks | Unit (T2); CLI T17 |
+| TTM-02 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
+| TTM-03 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
 | TTM-04 | P1: 12-month flows | AC3 | Tasks | Pending |
 | STL-01 | P1: Stale filing | AC4 | Tasks | Pending |
 | STL-02 | P1: Stale filing | AC4 | Tasks | Pending |
