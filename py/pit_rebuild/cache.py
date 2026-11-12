@@ -63,6 +63,11 @@ class Cache:
             return None
         return self._store(url, name, data)
 
+    def retrieved_at(self, name: str) -> str | None:
+        """The UTC moment the manifest holds for a cached file (R of B-3, SHR-08), or None when the manifest has no such file."""
+        entry = self._manifest["files"].get(name)
+        return None if entry is None else entry.get("retrieved_at")
+
     def verify(self) -> None:
         """Re-hash every cached file the manifest names; raise IntegrityError on a difference."""
         for name, entry in sorted(self._manifest["files"].items()):
@@ -103,6 +108,7 @@ class Cache:
             with self._opener(_request(url, "HEAD"), timeout=TIMEOUT_SECONDS):
                 present = True
         except urllib.error.HTTPError as exc:
+            exc.close()  # the answer is not read; an open error response is a socket and a ResourceWarning
             if exc.code != 404:
                 raise SourceError(url, f"probe failed: HTTP {exc.code}") from exc
             present = False
@@ -122,6 +128,9 @@ class Cache:
         try:
             with self._opener(_request(url), timeout=TIMEOUT_SECONDS) as response:
                 data = response.read()
+        except urllib.error.HTTPError as exc:
+            exc.close()  # the failed answer is dropped here; close it as well
+            raise SourceError(url, f"download failed: {exc}") from exc
         except (OSError, http.client.HTTPException) as exc:
             raise SourceError(url, f"download failed: {exc}") from exc
         if name.lower().endswith(".zip"):

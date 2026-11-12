@@ -43,6 +43,9 @@ SCORE_FIELDS: tuple[str, ...] = tuple(
     field for fields in metric_groups().values() for field in fields
 )
 ALL_FIELDS: tuple[str, ...] = SCORE_FIELDS + EXTRA_FIELDS
+NON_ACCOUNTING_FIELDS: tuple[str, ...] = EXTRA_FIELDS + ("DY",)  # B-7: the fields that keep their value on a stale filing
+ACCOUNTING_FIELDS: tuple[str, ...] = tuple(field for field in ALL_FIELDS if field not in NON_ACCOUNTING_FIELDS)  # B-7: 15
+ADJUSTED_FIELDS: tuple[str, ...] = tuple(field for field in SCORE_FIELDS if field not in ("ROIC", "PEG RATIO"))  # B-8, DEC-5: 14
 
 
 def tolerance_kind(field: str) -> str:

@@ -1,10 +1,12 @@
 # Reconstrução PIT dos indicadores de ações
 
-- Esquema: `pit-rebuild-stocks/v2` (issue #59)
-- Commit da ferramenta: `03665467f675c935a93c59e7ec7445c0e33a4b4d`
+- Esquema: `pit-rebuild-stocks/v3` (issue #59, correções da #64)
+- Commit da ferramenta: `2b600a90c1429518acd3d6295b5162effa418e1a`
 - Datas de decisão: 2026-08-07, 2026-11-05
 
 ## Veredito
+
+Regra de veredito da #59, aplicada aos valores com as correções da #64; os números da v2 estão no commit `ebaf1fd`.
 
 **Veredito da classe:** `não reconstruível`. Os tickers não classificados não mudam o veredito.
 
@@ -36,6 +38,587 @@ Escopo da classe: 16 indicadores de METRIC_GROUPS, grupo não financeiro incluin
 | `VALOR DE MERCADO` | com ressalvas | com ressalvas | com ressalvas |
 | `LIQUIDEZ MEDIA DIARIA` | com ressalvas | com ressalvas | com ressalvas |
 
+## Veredito ajustado (#64)
+
+14 indicadores do veredito ajustado (sem ROIC e PEG RATIO), grupo não financeiro incluindo os não classificados. Por data, os tickers elegíveis sem os tickers de referência obsoleta (`reference_stale`). Os tickers com `si_lag` ficam no denominador como fora da tolerância.
+
+| indicador | 2026-08-07: % na tolerância (n) | 2026-08-07: si_lag | 2026-11-05: % na tolerância (n) | 2026-11-05: si_lag | veredito |
+| --- | --- | --- | --- | --- | --- |
+| `LIQ. CORRENTE` | 97,69% (216) | 1 | 84,82% (224) | 30 | com ressalvas |
+| `DIVIDA LIQUIDA / EBIT` | 94,44% (216) | 4 | 77,68% (224) | 35 | com ressalvas |
+| `DIV. LIQ. / PATRI.` | 96,23% (212) | 1 | 84,72% (216) | 27 | com ressalvas |
+| `ROE` | 93,52% (216) | 1 | 75,89% (224) | 40 | com ressalvas |
+| `ROA` | 95,37% (216) | 3 | 81,25% (224) | 31 | com ressalvas |
+| `MARG. LIQUIDA` | 92,99% (214) | 2 | 77,48% (222) | 36 | com ressalvas |
+| `MARGEM EBIT` | 94,86% (214) | 1 | 80,18% (222) | 30 | com ressalvas |
+| `P/L` | 87,50% (216) | 5 | 72,77% (224) | 35 | com ressalvas |
+| `P/VP` | 90,74% (216) | 4 | 86,16% (224) | 13 | com ressalvas |
+| `EV/EBIT` | 87,96% (216) | 4 | 74,11% (224) | 31 | com ressalvas |
+| `PSR` | 88,79% (214) | 4 | 86,04% (222) | 14 | com ressalvas |
+| `CAGR RECEITAS 5 ANOS` | 96,70% (212) | 0 | 96,82% (220) | 0 | reconstruível |
+| `CAGR LUCROS 5 ANOS` | 93,92% (148) | 2 | 76,97% (152) | 28 | com ressalvas |
+| `DY` | 76,39% (216) | 0 | 82,14% (224) | 0 | com ressalvas |
+
+Critério de liberação (#64), parte 1 (≥ 70 % nas duas datas): cumprida.
+
+Parte 2 (10 piores conferidos e explicados): ver `pit-rebuild-stocks-audit.md`.
+
+<details>
+<summary>LIQ. CORRENTE, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VTRU3` | 4,48 | 2,13 | 52,46% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 2,23 |
+| `ONCO3` | 0,46 | 0,56 | 21,74% | não | DFP 2025-12-31 v1, recebido em 2026-04-09 | - |
+| `BRST3` | 1,54 | 1,31 | 14,94% | sim | ITR 2026-03-31 v1, recebido em 2026-05-12 | 1,49 |
+| `BHIA3` | 0,76 | 0,72 | 5,26% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 0,66 |
+| `TIMS3` | 0,89 | 0,85 | 4,49% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 0,92 |
+| `CAML3` | 1,95 | 1,87 | 4,10% | não | ITR 2026-05-31 v1, recebido em 2026-07-14 | 1,95 |
+| `AALR3` | 0,28 | 0,28 | 0,00% | não | DFP 2025-12-31 v1, recebido em 2026-07-30 | - |
+| `ABEV3` | 1,02 | 1,02 | 0,00% | não | ITR 2026-06-30 v1, recebido em 2026-07-30 | 1,03 |
+| `AGRO3` | 1,47 | 1,47 | 0,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 1,61 |
+| `ALLD3` | 1,74 | 1,74 | 0,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 1,80 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>LIQ. CORRENTE, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VTRU3` | 4,48 | 2,56 | 42,86% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 2,13 |
+| `PRIO3` | 1,34 | 1,83 | 36,57% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 1,34 |
+| `SUZB3` | 3,38 | 2,54 | 24,85% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 3,38 |
+| `DASA3` | 1,27 | 1,58 | 24,41% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 1,27 |
+| `RECV3` | 2,91 | 2,28 | 21,65% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 2,91 |
+| `CASH3` | 2,68 | 3,24 | 20,90% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 2,68 |
+| `SMTO3` | 2,62 | 3,16 | 20,61% | sim | ITR 2026-06-30 v1, recebido em 2026-08-10 | 2,62 |
+| `ALUP11` | 3,17 | 2,53 | 20,19% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 3,17 |
+| `ALUP3` | 3,17 | 2,53 | 20,19% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 3,17 |
+| `ALUP4` | 3,17 | 2,53 | 20,19% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 3,17 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>DIVIDA LIQUIDA / EBIT, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `BHIA3` | -14,38 | 4,48 | 131,15% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 3,54 |
+| `TIMS3` | -0,73 | -0,28 | 61,64% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | -0,46 |
+| `CAML3` | 5,02 | 7,45 | 48,41% | sim | ITR 2026-05-31 v1, recebido em 2026-07-14 | 5,16 |
+| `VTRU3` | 3,68 | 2,31 | 37,23% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 2,73 |
+| `BRST3` | 5,03 | 6,90 | 37,18% | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 6,81 |
+| `EMAE4` | 1,28 | 1,45 | 13,28% | sim | ITR 2026-06-30 v1, recebido em 2026-08-07 | 1,24 |
+| `SOJA3` | 7,81 | 7,14 | 8,58% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 3,49 |
+| `MOTV3` | 4,18 | 3,88 | 7,18% | sim | ITR 2026-06-30 v1, recebido em 2026-07-29 | 4,18 |
+| `TPIS3` | -2,47 | -2,62 | 6,07% | sim | ITR 2026-03-31 v1, recebido em 2026-05-15 | -2,58 |
+| `AMER3` | 3,69 | 3,88 | 5,15% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 2,84 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: EBIT).
+
+</details>
+
+<details>
+<summary>DIVIDA LIQUIDA / EBIT, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `EQPA3` | 0,32 | 2,61 | 715,62% | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 2,51 |
+| `CASH3` | 1,63 | 13,20 | 709,82% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 1,63 |
+| `AGRO3` | -23,56 | 54,38 | 330,81% | sim | ITR 2026-09-30 v1, recebido em 2026-11-03 | -23,56 |
+| `LJQQ3` | 30,40 | -26,50 | 187,17% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 30,40 |
+| `MDNE3` | 0,37 | 0,86 | 132,43% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 0,37 |
+| `TGMA3` | 0,08 | 0,01 | 87,50% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 0,08 |
+| `BHIA3` | -14,38 | -2,55 | 82,27% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 4,48 |
+| `GRND3` | -1,26 | -0,39 | 69,05% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | -1,26 |
+| `TIMS3` | -0,73 | -0,28 | 61,64% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | -0,46 |
+| `TUPY3` | -5,30 | -8,42 | 58,87% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | -5,30 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>DIV. LIQ. / PATRI., 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `AALR3` | 0,34 | -1,27 | 473,53% | não | DFP 2025-12-31 v1, recebido em 2026-07-30 | - |
+| `VTRU3` | -0,54 | 0,39 | 172,22% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 0,55 |
+| `TIMS3` | -0,39 | -0,08 | 79,49% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | -0,12 |
+| `BRST3` | 0,66 | 1,08 | 63,64% | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 1,07 |
+| `BHIA3` | 2,15 | 3,29 | 53,02% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 1,72 |
+| `ONCO3` | 6,99 | 3,65 | 47,78% | não | DFP 2025-12-31 v1, recebido em 2026-04-09 | - |
+| `CAML3` | 1,08 | 1,50 | 38,89% | sim | ITR 2026-05-31 v1, recebido em 2026-07-14 | 1,08 |
+| `ABEV3` | -0,17 | -0,17 | 0,00% | não | ITR 2026-06-30 v1, recebido em 2026-07-30 | -0,18 |
+| `AGRO3` | 0,66 | 0,66 | 0,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 0,61 |
+| `ALLD3` | 0,09 | 0,09 | 0,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 0,03 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>DIV. LIQ. / PATRI., 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `PCAR3` | 8,95 | -11,67 | 230,39% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 8,95 |
+| `LJQQ3` | -0,16 | 0,20 | 225,00% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | -0,16 |
+| `VTRU3` | -0,54 | 0,29 | 153,70% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 0,39 |
+| `BHIA3` | 2,15 | -0,69 | 132,09% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 3,29 |
+| `MDNE3` | 0,09 | 0,20 | 122,22% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 0,09 |
+| `TGMA3` | 0,03 | 0,00 | 100,00% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 0,03 |
+| `TIMS3` | -0,39 | -0,08 | 79,49% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | -0,12 |
+| `GRND3` | -0,11 | -0,03 | 72,73% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | -0,11 |
+| `BRST3` | 0,66 | 1,07 | 62,12% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 1,08 |
+| `CAML3` | 1,08 | 1,43 | 32,41% | não | ITR 2026-08-31 v1, recebido em 2026-10-08 | 1,50 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>ROE, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `ONCO3` | -720,24 | -402,23 | 318,01 p.p. | não | DFP 2025-12-31 v1, recebido em 2026-04-09 | - |
+| `BHIA3` | -49,14 | -204,95 | 155,81 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | -107,71 |
+| `VTRU3` | -29,57 | 29,95 | 59,52 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 12,64 |
+| `AALR3` | -544,08 | -494,46 | 49,62 p.p. | não | DFP 2025-12-31 v1, recebido em 2026-07-30 | - |
+| `RAIZ4` | -326,87 | -309,75 | 17,12 p.p. | não | DFP 2026-03-31 v1, recebido em 2026-06-29 | -1393,79 |
+| `INTB3` | 18,07 | 8,63 | 9,44 p.p. | sim | ITR 2026-06-30 v1, recebido em 2026-07-29 | 18,29 |
+| `BRST3` | 7,44 | 2,53 | 4,91 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 2,65 |
+| `EMAE4` | -18,27 | -14,30 | 3,97 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-07 | -20,58 |
+| `CAML3` | 6,46 | 3,69 | 2,77 p.p. | não | ITR 2026-05-31 v1, recebido em 2026-07-14 | 4,92 |
+| `TIMS3` | 15,91 | 17,29 | 1,38 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 17,74 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: LL).
+
+</details>
+
+<details>
+<summary>ROE, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `PCAR3` | -520,29 | -932,09 | 411,80 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | -520,29 |
+| `EQPA3` | 366,78 | 29,89 | 336,89 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 27,75 |
+| `BHIA3` | -49,14 | -159,69 | 110,55 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | -204,95 |
+| `RAIZ4` | -325,38 | -241,22 | 84,16 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | -309,75 |
+| `AZUL3` | -31,48 | 31,48 | 62,96 p.p. | não | ITR 2026-06-30 v2, recebido em 2026-08-19 | 119,00 |
+| `VTRU3` | -29,57 | 27,23 | 56,80 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 29,95 |
+| `EMAE4` | -18,27 | -48,30 | 30,03 p.p. | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | -14,30 |
+| `CASH3` | -23,45 | -0,47 | 22,98 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | -23,45 |
+| `AMER3` | 9,10 | -6,74 | 15,84 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 12,51 |
+| `LJQQ3` | -67,62 | -82,54 | 14,92 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | -67,62 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>ROA, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VTRU3` | -24,02 | 16,06 | 40,08 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 6,07 |
+| `ONCO3` | -57,34 | -50,82 | 6,52 p.p. | não | DFP 2025-12-31 v1, recebido em 2026-04-09 | - |
+| `BHIA3` | -5,11 | -10,93 | 5,82 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | -8,88 |
+| `INTB3` | 10,75 | 5,13 | 5,62 p.p. | sim | ITR 2026-06-30 v1, recebido em 2026-07-29 | 10,64 |
+| `TIMS3` | 3,43 | 7,56 | 4,13 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 7,49 |
+| `BRST3` | 2,86 | 0,85 | 2,01 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 0,87 |
+| `EMAE4` | -6,52 | -5,11 | 1,41 p.p. | sim | ITR 2026-06-30 v1, recebido em 2026-08-07 | -7,02 |
+| `CAML3` | 1,81 | 0,92 | 0,89 p.p. | sim | ITR 2026-05-31 v1, recebido em 2026-07-14 | 1,38 |
+| `HBSA3` | -3,20 | -2,80 | 0,40 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-04 | -2,17 |
+| `VIVA3` | 12,00 | 12,40 | 0,40 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | 12,52 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: LL).
+
+</details>
+
+<details>
+<summary>ROA, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `EQPA3` | 96,34 | 7,85 | 88,49 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 7,79 |
+| `BHIA3` | -5,11 | -51,00 | 45,89 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | -10,93 |
+| `VTRU3` | -24,02 | 16,51 | 40,53 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 16,06 |
+| `CASH3` | -18,87 | -0,40 | 18,47 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | -18,87 |
+| `EMAE4` | -6,52 | -17,51 | 10,99 p.p. | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | -5,11 |
+| `PCAR3` | -13,68 | -19,91 | 6,23 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | -13,68 |
+| `EALT4` | 8,97 | 3,93 | 5,04 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 8,97 |
+| `AMER3` | 2,60 | -1,92 | 4,52 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 3,43 |
+| `TIMS3` | 3,43 | 7,56 | 4,13 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 7,49 |
+| `AGRO3` | -2,43 | 1,44 | 3,87 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-03 | -2,43 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>MARG. LIQUIDA, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VTRU3` | -14,81 | 48,63 | 63,44 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 16,37 |
+| `EMAE4` | -29,53 | -19,87 | 9,66 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-07 | -26,20 |
+| `TIMS3` | 7,22 | 15,79 | 8,57 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 16,02 |
+| `ONCO3` | -71,05 | -63,14 | 7,91 p.p. | não | DFP 2025-12-31 v1, recebido em 2026-04-09 | - |
+| `INTB3` | 13,11 | 6,26 | 6,85 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-29 | 12,36 |
+| `BHIA3` | -5,98 | -12,30 | 6,32 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | -10,23 |
+| `BRST3` | 8,46 | 2,27 | 6,19 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 2,43 |
+| `TPIS3` | -42,83 | -39,30 | 3,53 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-15 | -36,60 |
+| `MOTV3` | 20,63 | 19,27 | 1,36 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-29 | 17,40 |
+| `HBSA3` | -8,99 | -7,87 | 1,12 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-04 | -6,29 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: LL).
+
+</details>
+
+<details>
+<summary>MARG. LIQUIDA, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `EQPA3` | 150,85 | 12,29 | 138,56 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 12,31 |
+| `VTRU3` | -14,81 | 46,56 | 61,37 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 48,63 |
+| `EMAE4` | -29,53 | -70,02 | 40,49 p.p. | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | -19,87 |
+| `BHIA3` | -5,98 | -44,42 | 38,44 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | -12,30 |
+| `CASH3` | -20,31 | -0,51 | 19,80 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | -20,31 |
+| `AGRO3` | -9,73 | 5,73 | 15,46 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-03 | -9,73 |
+| `AXIA3` | 27,05 | 41,74 | 14,69 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 27,05 |
+| `AXIA7` | 27,05 | 41,74 | 14,69 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 27,05 |
+| `TIMS3` | 7,22 | 15,79 | 8,57 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 16,02 |
+| `ALUP11` | 27,68 | 19,73 | 7,95 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 27,68 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>MARGEM EBIT, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VTRU3` | -7,31 | 27,71 | 35,02 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 26,03 |
+| `EMAE4` | -85,26 | -65,00 | 20,26 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-07 | -68,80 |
+| `ONCO3` | -43,01 | -34,68 | 8,33 p.p. | não | DFP 2025-12-31 v1, recebido em 2026-04-09 | - |
+| `TPIS3` | -52,90 | -45,84 | 7,06 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-15 | -43,62 |
+| `BHIA3` | -1,82 | 4,41 | 6,23 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 4,60 |
+| `ISAE3` | 48,44 | 46,88 | 1,56 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-03 | 43,10 |
+| `ISAE4` | 48,44 | 46,88 | 1,56 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-03 | 43,10 |
+| `BRST3` | 14,96 | 14,00 | 0,96 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 14,43 |
+| `VIVA3` | 23,33 | 22,40 | 0,93 p.p. | sim | ITR 2026-06-30 v1, recebido em 2026-08-05 | 23,54 |
+| `EQTL3` | 15,18 | 15,53 | 0,35 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 15,63 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: EBIT).
+
+</details>
+
+<details>
+<summary>MARGEM EBIT, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `EQPA3` | 157,82 | 19,27 | 138,55 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 18,62 |
+| `VTRU3` | -7,31 | 28,25 | 35,56 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 27,71 |
+| `EMAE4` | -85,26 | -119,58 | 34,32 p.p. | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | -65,00 |
+| `CASH3` | -13,91 | -1,72 | 12,19 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | -13,91 |
+| `ALUP11` | 68,45 | 56,78 | 11,67 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 68,45 |
+| `ALUP3` | 68,45 | 56,78 | 11,67 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 68,45 |
+| `ALUP4` | 68,45 | 56,78 | 11,67 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 68,45 |
+| `AXIA3` | 25,81 | 37,30 | 11,49 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 25,81 |
+| `AXIA7` | 25,81 | 37,30 | 11,49 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 25,81 |
+| `PRIO3` | 27,60 | 36,29 | 8,69 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 27,60 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>P/L, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VVEO3` | 10,25 | 102,46 | 899,61% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 113,28 |
+| `BRST3` | 10,58 | 31,04 | 193,38% | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 30,03 |
+| `AZEV4` | -0,32 | -0,86 | 168,75% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | -0,84 |
+| `AZEV3` | -0,68 | -1,82 | 167,65% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | -1,77 |
+| `LIGT3` | 1,91 | 4,42 | 131,41% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 54,20 |
+| `VTRU3` | -6,32 | 1,53 | 124,21% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 4,61 |
+| `INTB3` | 8,08 | 16,92 | 109,41% | sim | ITR 2026-06-30 v1, recebido em 2026-07-29 | 8,39 |
+| `CAML3` | 8,25 | 14,57 | 76,61% | não | ITR 2026-05-31 v1, recebido em 2026-07-14 | 10,83 |
+| `BHIA3` | -0,46 | -0,19 | 58,70% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | -0,16 |
+| `TIMS3` | 22,67 | 10,37 | 54,26% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 10,36 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: LL).
+
+</details>
+
+<details>
+<summary>P/L, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `CASH3` | -4,09 | -173,75 | 4148,17% | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | -4,43 |
+| `EQPA3` | 0,57 | 6,97 | 1122,81% | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 7,08 |
+| `SIMH3` | -17,22 | 31,70 | 284,09% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | -17,22 |
+| `AGRO3` | -20,56 | 33,31 | 262,01% | sim | ITR 2026-09-30 v1, recebido em 2026-11-03 | -20,56 |
+| `AMER3` | 2,22 | -3,00 | 235,14% | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 1,52 |
+| `VVEO3` | 15,38 | 38,60 | 150,98% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 108,86 |
+| `LIGT3` | 1,65 | 3,83 | 132,12% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | 3,53 |
+| `VTRU3` | -6,09 | 1,68 | 127,59% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 1,47 |
+| `MYPK3` | 15,83 | 35,92 | 126,91% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 15,83 |
+| `CAML3` | 9,20 | 19,89 | 116,20% | não | ITR 2026-08-31 v1, recebido em 2026-10-08 | 13,11 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>P/VP, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VVEO3` | 0,11 | 1,10 | 900,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 1,07 |
+| `AZEV3` | 3,65 | 9,73 | 166,58% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | 9,82 |
+| `AZEV4` | 1,73 | 4,60 | 165,90% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | 4,64 |
+| `LIGT3` | 0,60 | 1,39 | 131,67% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 2,12 |
+| `VTRU3` | 1,87 | 0,46 | 75,40% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 0,58 |
+| `BHIA3` | 0,23 | 0,38 | 65,22% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 0,17 |
+| `TIMS3` | 3,61 | 1,79 | 50,42% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 1,84 |
+| `ONCO3` | 1,32 | 0,78 | 40,91% | não | DFP 2025-12-31 v1, recebido em 2026-04-09 | - |
+| `ORVR3` | 6,38 | 4,47 | 29,94% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 4,52 |
+| `SIMH3` | 0,97 | 0,71 | 26,80% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 0,68 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>P/VP, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `PCAR3` | 2,88 | -3,67 | 227,43% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 2,88 |
+| `VVEO3` | 0,48 | 1,20 | 150,00% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 1,17 |
+| `BHIA3` | 0,22 | -0,08 | 136,36% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 0,37 |
+| `LIGT3` | 0,43 | 0,99 | 130,23% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | 1,11 |
+| `VTRU3` | 1,80 | 0,46 | 74,44% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 0,44 |
+| `RAIZ4` | -0,38 | -0,12 | 68,42% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | -0,36 |
+| `VIVA3` | 1,35 | 0,45 | 66,67% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 1,35 |
+| `OPCT3` | 4,16 | 1,75 | 57,93% | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 1,81 |
+| `TIMS3` | 3,82 | 1,91 | 50,00% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 1,96 |
+| `EALT4` | 0,68 | 0,41 | 39,71% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 0,66 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>EV/EBIT, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `TFCO4` | 10,90 | 64,31 | 490,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-11 | 65,47 |
+| `VTRU3` | -9,11 | 4,99 | 154,77% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 5,63 |
+| `BHIA3` | -15,89 | 5,00 | 131,47% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 3,89 |
+| `AZEV3` | -1,26 | -2,46 | 95,24% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | -2,40 |
+| `AZEV4` | -1,26 | -2,46 | 95,24% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | -2,40 |
+| `SHUL4` | 23,73 | 6,81 | 71,30% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 5,93 |
+| `VVEO3` | 5,40 | 8,65 | 60,19% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 9,12 |
+| `LIGT3` | 16,63 | 24,76 | 48,89% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 15,38 |
+| `CAML3` | 7,50 | 10,12 | 34,93% | sim | ITR 2026-05-31 v1, recebido em 2026-07-14 | 7,71 |
+| `ORVR3` | 31,80 | 23,50 | 26,10% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 25,14 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: EBIT).
+
+</details>
+
+<details>
+<summary>EV/EBIT, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `CASH3` | -4,33 | -37,88 | 774,83% | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | -4,83 |
+| `EQPA3` | 0,86 | 7,06 | 720,93% | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 7,20 |
+| `TFCO4` | 7,40 | 42,72 | 477,30% | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 44,40 |
+| `AGRO3` | -58,52 | 138,78 | 337,15% | sim | ITR 2026-09-30 v1, recebido em 2026-11-03 | -58,52 |
+| `VTRU3` | -8,65 | 4,52 | 152,25% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 4,90 |
+| `BHIA3` | -15,82 | -2,85 | 81,98% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 4,98 |
+| `TUPY3` | -10,99 | -18,34 | 66,88% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | -10,99 |
+| `VIVA3` | 5,97 | 2,52 | 57,79% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 5,85 |
+| `LIGT3` | 17,61 | 25,79 | 46,45% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | 21,90 |
+| `OPCT3` | 14,12 | 8,18 | 42,07% | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 9,69 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>PSR, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VVEO3` | 0,02 | 0,18 | 800,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 0,18 |
+| `AZEV3` | 0,92 | 2,46 | 167,39% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | 3,14 |
+| `AZEV4` | 0,44 | 1,16 | 163,64% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | 1,48 |
+| `LIGT3` | 0,33 | 0,75 | 127,27% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 0,77 |
+| `BHIA3` | 0,03 | 0,02 | 33,33% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 0,02 |
+| `ORVR3` | 8,17 | 5,72 | 29,99% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 6,21 |
+| `SIMH3` | 0,09 | 0,07 | 22,22% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 0,07 |
+| `VTRU3` | 0,94 | 0,74 | 21,28% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 0,75 |
+| `BRST3` | 0,89 | 0,71 | 20,22% | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 0,73 |
+| `EGIE3` | 3,08 | 2,48 | 19,48% | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | 2,56 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: REC).
+
+</details>
+
+<details>
+<summary>PSR, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `VVEO3` | 0,07 | 0,19 | 171,43% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 0,19 |
+| `LIGT3` | 0,26 | 0,59 | 126,92% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | 0,60 |
+| `VIVA3` | 1,36 | 0,47 | 65,44% | não | ITR 2026-09-30 v1, recebido em 2026-11-05 | 1,28 |
+| `OPCT3` | 1,80 | 0,76 | 57,78% | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 0,84 |
+| `EALT4` | 0,47 | 0,28 | 40,43% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 0,46 |
+| `BHIA3` | 0,03 | 0,02 | 33,33% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 0,02 |
+| `PMAM3` | 1,84 | 1,29 | 29,89% | não | ITR 2026-06-30 v1, recebido em 2026-08-31 | 0,64 |
+| `BRST3` | 0,75 | 0,57 | 24,00% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 0,59 |
+| `EMAE4` | 3,75 | 4,52 | 20,53% | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | 3,22 |
+| `EGIE3` | 2,76 | 2,22 | 19,57% | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | 2,30 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+
+</details>
+
+<details>
+<summary>CAGR RECEITAS 5 ANOS, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `MLAS3` | 6,65 | 4,98 | 1,67 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 4,98 |
+| `EQPA3` | 15,78 | 14,19 | 1,59 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | - |
+| `BHIA3` | 1,39 | 0,20 | 1,19 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 0,20 |
+| `VALE3` | 0,72 | 0,48 | 0,24 p.p. | não | ITR 2026-06-30 v3, recebido em 2026-07-31 | 0,48 |
+| `AALR3` | 4,43 | 4,43 | 0,00 p.p. | não | DFP 2025-12-31 v1, recebido em 2026-07-30 | - |
+| `ABEV3` | 8,61 | 8,61 | 0,00 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-30 | 8,61 |
+| `AGRO3` | 10,70 | 10,70 | 0,00 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 10,70 |
+| `ALLD3` | 3,11 | 3,11 | 0,00 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 3,11 |
+| `ALOS3` | 29,09 | 29,09 | 0,00 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 29,09 |
+| `ALPA3` | 6,29 | 6,29 | 0,00 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 6,29 |
+
+Sem valor reconstruído: `AMBP3` (stale_filing), `AURE3` (short_history), `BRST3` (short_history), `LAND3` (short_history).
+
+</details>
+
+<details>
+<summary>CAGR RECEITAS 5 ANOS, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `MLAS3` | 6,65 | 4,98 | 1,67 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 4,98 |
+| `BHIA3` | 1,39 | 0,20 | 1,19 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 0,20 |
+| `VALE3` | 0,72 | 0,48 | 0,24 p.p. | não | ITR 2026-09-30 v2, recebido em 2026-10-29 | 0,48 |
+| `ABEV3` | 8,61 | 8,61 | 0,00 p.p. | não | ITR 2026-09-30 v1, recebido em 2026-10-29 | 8,61 |
+| `AGRO3` | -5,40 | -5,40 | 0,00 p.p. | não | ITR 2026-09-30 v1, recebido em 2026-11-03 | -5,40 |
+| `ALLD3` | 3,11 | 3,11 | 0,00 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 3,11 |
+| `ALOS3` | 29,09 | 29,09 | 0,00 p.p. | não | ITR 2026-09-30 v1, recebido em 2026-11-05 | 29,09 |
+| `ALPA3` | 6,29 | 6,29 | 0,00 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 6,29 |
+| `ALPA4` | 6,29 | 6,29 | 0,00 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 6,29 |
+| `ALPK3` | 23,59 | 23,59 | 0,00 p.p. | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | 23,59 |
+
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing), `AURE3` (short_history), `BRST3` (short_history), `LAND3` (short_history).
+
+</details>
+
+<details>
+<summary>CAGR LUCROS 5 ANOS, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `TIMS3` | 1,43 | 18,60 | 17,17 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 18,63 |
+| `INTB3` | 12,71 | -2,77 | 15,48 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-29 | 11,88 |
+| `CAML3` | -15,89 | -24,93 | 9,04 p.p. | não | ITR 2026-05-31 v1, recebido em 2026-07-14 | -20,34 |
+| `VIVA3` | 31,91 | 32,77 | 0,86 p.p. | sim | ITR 2026-06-30 v1, recebido em 2026-08-05 | 31,89 |
+| `GMAT3` | 18,99 | 19,56 | 0,57 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 20,36 |
+| `SOJA3` | -18,88 | -18,62 | 0,26 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | -22,21 |
+| `MOTV3` | 82,59 | 82,60 | 0,01 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-29 | 77,45 |
+| `ABEV3` | 7,38 | 7,38 | 0,00 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-30 | 6,48 |
+| `ALLD3` | 15,35 | 15,35 | 0,00 p.p. | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 14,69 |
+| `ALOS3` | 40,77 | 40,77 | 0,00 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 37,40 |
+
+Sem valor reconstruído: `BRST3` (short_history), `DXCO3` (non_positive_base), `EQPA3` (missing_input: LL_TTM), `LAND3` (short_history).
+
+</details>
+
+<details>
+<summary>CAGR LUCROS 5 ANOS, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `EQPA3` | 93,04 | 16,91 | 76,13 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 16,53 |
+| `EALT4` | 18,53 | 1,27 | 17,26 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 18,53 |
+| `TIMS3` | 1,43 | 18,60 | 17,17 p.p. | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 18,63 |
+| `PRIO3` | 53,58 | 68,53 | 14,95 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 53,58 |
+| `CAML3` | -19,43 | -30,94 | 11,51 p.p. | não | ITR 2026-08-31 v1, recebido em 2026-10-08 | -24,93 |
+| `AXIA3` | 13,72 | 24,05 | 10,33 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 13,72 |
+| `AXIA7` | 13,72 | 24,05 | 10,33 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 13,72 |
+| `VBBR3` | 5,30 | 12,72 | 7,42 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 5,30 |
+| `ALUP11` | 8,04 | 1,81 | 6,23 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 8,04 |
+| `ALUP3` | 8,04 | 1,81 | 6,23 p.p. | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 8,04 |
+
+Sem valor reconstruído: `BRST3` (short_history), `DXCO3` (non_positive_base), `SCAR3` (non_positive_base).
+
+</details>
+
+<details>
+<summary>DY, 2026-08-07</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `HBRE3` | 52,50 | 21,87 | 30,63 p.p. | não | - | - |
+| `RIAA3` | 31,29 | 41,94 | 10,65 p.p. | não | - | - |
+| `MDNE3` | 14,37 | 7,24 | 7,13 p.p. | não | - | - |
+| `VLID3` | 9,90 | 3,27 | 6,63 p.p. | não | - | - |
+| `EQPA3` | 2,53 | 8,49 | 5,96 p.p. | não | - | - |
+| `HBOR3` | 1,05 | 6,94 | 5,89 p.p. | não | - | - |
+| `PFRM3` | 4,63 | 9,14 | 4,51 p.p. | não | - | - |
+| `COCE5` | 0,00 | 4,36 | 4,36 p.p. | não | - | - |
+| `CLSC4` | 0,36 | 4,48 | 4,12 p.p. | não | - | - |
+| `TGMA3` | 10,84 | 14,87 | 4,03 p.p. | não | - | - |
+
+</details>
+
+<details>
+<summary>DY, 2026-11-05</summary>
+
+| ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
+| --- | --- | --- | --- | --- | --- | --- |
+| `MBRF3` | 18,41 | 0,00 | 18,41 p.p. | não | - | - |
+| `JSLG3` | 48,30 | 34,82 | 13,48 p.p. | não | - | - |
+| `RIAA3` | 40,52 | 53,98 | 13,46 p.p. | não | - | - |
+| `MDNE3` | 22,31 | 11,24 | 11,07 p.p. | não | - | - |
+| `VLID3` | 13,48 | 5,32 | 8,16 p.p. | não | - | - |
+| `EQPA3` | 4,65 | 11,05 | 6,40 p.p. | não | - | - |
+| `COCE5` | 0,00 | 5,30 | 5,30 p.p. | não | - | - |
+| `PFRM3` | 2,42 | 7,13 | 4,71 p.p. | não | - | - |
+| `PASS3` | 2,90 | 6,48 | 3,58 p.p. | não | - | - |
+| `EQTL3` | 1,36 | 4,77 | 3,41 p.p. | não | - | - |
+
+</details>
+
 ## Sensibilidades (não são o veredito oficial)
 
 Estas linhas não são o veredito oficial. O veredito oficial é o da seção Veredito, e nenhuma sensibilidade entra nele.
@@ -48,6 +631,10 @@ Estas linhas não são o veredito oficial. O veredito oficial é o da seção Ve
 
 Nota (D-C): ROIC e PEG RATIO falham porque as fórmulas do Status Invest para eles não são públicas (A-8 é uma leitura), não por falta de dados.
 
+## Investigações
+
+- `MBRF3`, `DY` em 2026-11-05: A busca do histórico não é a causa: em 2026-08-07 o mesmo histórico dá DY 17,49, igual ao da Status Invest. O último provento que a B3 publica para a companhia, de R$ 2,8105 com data-ex 2025-09-19, está a 412 dias de 2026-11-05 e sai da janela (2025-11-05, 2026-11-05]; por isso o DY é 0,00. A Status Invest mantém 18,41 nessa data. Nenhuma janela contígua de proventos em cache reproduz 18,41 sobre o fechamento de 15,63. A soma de dois registros não contíguos da B3 (R$ 2,833731 de 2024-12-12 e R$ 0,043941 de 2010-04-30) dá 18,41 sobre esse fechamento; a coincidência não mostra a origem do número da Status Invest. Evidência: b3_company_MBRF.json (tradingName MARFRIG, totalNumberShares 1380439543, retrieved_at 2026-11-10T00:37:01Z, dia de São Paulo 2026-11-09) e b3_cash_MARFRIG_p1.json (totalRecords 13, completo; o registro com lastDatePriorEx 18/09/2025 e valueCash 2,8105011104 é o único com data-ex depois de 2025-08-07, e nenhum tem data-ex em (2025-11-05, 2026-11-05]). Com esse registro: 100 × 2,8105011104 / 16,07 = 17,49 em 2026-08-07 (janela (2025-08-07, 2026-08-07]); 100 × 2,8105011104 / 15,63 = 17,98 em 2026-11-05 (CSV de 2026-11-06: PRECO 15,63, DY 18,41). As 91 janelas contíguas dos 13 registros, na ordem das datas-ex, não dão 18,41 sobre 15,63.
+
 ## Parâmetros
 
 - Universo elegível: `VALOR DE MERCADO` ≥ 200000000 e `LIQUIDEZ MEDIA DIARIA` ≥ 50000. Fontes: `py/core/preprocessing.py:103-106`, `api/app/services/premium_policy.py:56`.
@@ -56,7 +643,7 @@ Nota (D-C): ROIC e PEG RATIO falham porque as fórmulas do Status Invest para el
 - Liquidez: média de VOLTOT das últimas 21 sessões até d.
 - Cotações (`quote_codbdi`, CODBDI): `02`, `07`, `08`.
 - Cortes de filings (`filings_cutoffs`): `2026-11-05` com filings recebidos até `2026-11-02`.
-- Escala das ações: A CVM não informa escala em `composicao_capital`. Para cada arquivamento, o fator f ∈ {10^-2, 10^-1, 1, 10, 10^2, 10^3} é o que deixa `N_total × f` mais perto da `totalNumberShares` da B3, medido pela distância em log10. A contagem da B3 só escolhe o fator e nunca entra num valor. Sem registro da B3, ou com contagem zero, `f` é 1 e a empresa aparece em `share_scale.unverified`. As contagens escalonadas são arredondadas. Limite (√10): se a contagem mudou menos de √10 (3,16 vezes) entre o arquivamento e a consulta à B3, ela fica como arquivada; se mudou √10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; um desdobramento de 1:5 dá ×10, errado por 2 vezes, e erra em `d` quando a mudança é posterior a `d`. O resíduo (`residual`), `N_total × f / totalNumberShares`, de cada empresa mostra cada caso.
+- Escala das ações: A CVM não informa escala em `composicao_capital`. Cada contagem de classe em `d` é N = arquivado × f × eventos da B3 da classe com data-ex em (DT_REFER, d], com cada evento entrando pelo seu múltiplo (AD-033). Para cada arquivamento, o fator f ∈ {10^-2, 10^-1, 1, 10, 10^2, 10^3} é a potência de dez que deixa o arquivado vezes os eventos com data-ex em (DT_REFER, R] mais perto da `totalNumberShares` da B3, medido pela distância em log10; R é a data em que o registro da B3 foi obtido. Os eventos com data-ex depois de d só escolhem a potência de dez. A contagem da B3 só escolhe o fator e nunca entra num valor. Sem registro da B3, ou com contagem zero, `f` é 1 e a empresa aparece em `share_scale.unverified`. As contagens escalonadas são arredondadas. Limite (√10), só para mudança sem evento da B3: se a contagem mudou menos de √10 (3,16 vezes) entre o arquivamento e a obtenção do registro e nenhum evento a explica, ela fica como arquivada; se mudou √10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; sem evento da B3, um desdobramento de 1:5 resulta em ×10, errado por 2 vezes. O resíduo (`residual`), arquivado × eventos até R × f / `totalNumberShares`, de cada empresa mostra cada caso.
 
 ### Fórmulas
 
@@ -79,7 +666,7 @@ Nota (D-C): ROIC e PEG RATIO falham porque as fórmulas do Status Invest para el
 | `PEG RATIO` | P/L / (100 × (LL_TTM / LL_TTM,1 ano antes − 1)); vazio se LL_TTM,1 ano antes <= 0 |
 | `DY` | 100 × DPS_12m / p, DPS_12m = soma dos dividendos com d − 365 dias < data-ex <= d (por unidade para units) |
 | `PRECO` | p: último pregão em COTAHIST com data <= d |
-| `VALOR DE MERCADO` | N_ON × p_ON + N_PREF × p_PREF (A-17): p_ON do ticker ON; p_PREF do preferencial mais líquido; classe com N > 0 e sem cotação usa a outra (vm_price_fallback); N com escala de A-18 |
+| `VALOR DE MERCADO` | N_ON × p_ON + N_PREF × p_PREF (A-17): p_ON do ticker ON; p_PREF do preferencial mais líquido; classe com N > 0 e sem cotação usa a outra (vm_price_fallback); N = arquivado × f (A-18) × eventos B3 da classe com data-ex em (DT_REFER, d] (AD-033) |
 | `LIQUIDEZ MEDIA DIARIA` | média de VOLTOT das últimas 21 sessões <= d, CODBDI 02, 07 e 08 (A-7) |
 
 ### Entradas que não são ponto no tempo
@@ -88,14 +675,14 @@ Estas entradas são lidas como foram obtidas, e não como estavam em cada data. 
 
 | entrada | papel | uso | verificação na reconstrução completa |
 | --- | --- | --- | --- |
-| B3 `totalNumberShares` | `unit_only` | escolhe a escala das contagens (A-18); nunca entra num valor | escala datada por arquivamento, com a contagem da B3 de cada data |
+| B3 `totalNumberShares` | `unit_only` | escolhe a escala das contagens (A-18), sobre a contagem ajustada pelos eventos até a obtenção do registro da B3 (AD-033); nunca entra num valor | escala datada por arquivamento, com a contagem da B3 de cada data |
 | Cadastro CNPJ → CD_CVM | `identity` | identifica a empresa (A-9) | empresas canceladas no cadastro |
 | FCA `valor_mobiliario` (ticker → CNPJ, composição da unidade) | `identity` | mapeia ticker e unidade (A-9, MAP-03); a linha vem da maior Data_Referencia até d | linhas escolhidas pela data de entrega, não pela data de referência |
 | B3 `codeCVM` da empresa | `identity` | fallback de mapeamento para tickers fora da FCA (A-9) | empresas sem registro atual na B3 |
 | Cadastro `SETOR_ATIV` | `classification` | decide o grupo financeiro e a classe (A-10) | setor datado; reclassificações ao longo dos anos |
 | B3 `tradingName` | `source_selection` | escolhe o histórico de dividendos buscado (A-15) | empresas renomeadas e canceladas sem registro atual |
 | Valores de dividendos (B3 `valueCash`, Yahoo) | `dated_value_current_amount` | a data-ex é PIT (A-16); o valor é o atual | valores como eram conhecidos em cada data de decisão |
-| B3 `stockDividends` | `dated_event_current_record` | ajusta valores de dividendos por desdobramento, bonificação e grupamento (A-20); só eventos com data-ex ≤ d | eventos societários como eram conhecidos em cada data |
+| B3 `stockDividends` | `dated_event_current_record` | ajusta valores de dividendos por desdobramento, bonificação e grupamento com data-ex depois do dividendo e ≤ d (A-20) e contagens de ações (AD-033): eventos com data-ex em (DT_REFER, d] entram na contagem; eventos com data-ex depois de d e até a obtenção do registro da B3 só escolhem a potência de dez | eventos societários como eram conhecidos em cada data |
 
 ## Cobertura do mapeamento
 
@@ -107,7 +694,7 @@ Estas entradas são lidas como foram obtidas, e não como estavam em cada data. 
 - Usaram o preço da outra classe (`vm_price_fallback`): 7 empresa(s).
 - Sem cotação recente (`reference_stale`, sem registro em [d − 30 dias, d]): `AESB3`, `APER3`, `AXIA6`, `AZUL53`, `AZUL54`, `BPAN4`, `BRFS3`, `CLSA3`, `CPLE5`, `CPLE6`, `CRFB3`, `ELMD3`, `ENAT3`, `GPIV33`, `JBSS3`, `NEOE3`, `NTCO3`, `PETZ3`, `PORT3`, `SOMA3`, `STBP3`, `SULA11`, `ZAMP3`.
 - Preço de classe de pregão antigo (`vm_stale_class_price`): 3 classe(s).
-- Escala das contagens (`share_scale.scaled`): 69 empresa(s). Não verificada (`share_scale.unverified`): nenhum.
+- Escala das contagens (`share_scale.scaled`): 66 empresa(s). Não verificada (`share_scale.unverified`): nenhum.
 
 Escala das contagens, com o fator e o resíduo de cada empresa:
 
@@ -116,13 +703,12 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `1155` | 10^3 | 1,00 |
 | `11762` | 10^3 | 1,00 |
 | `11932` | 10^3 | 1,00 |
-| `11975` | 10^-1 | 0,53 |
+| `11975` | 10^1 | 2,66 |
 | `1210` | 10^3 | 1,00 |
 | `1325` | 10^3 | 1,00 |
 | `13773` | 10^3 | 1,00 |
 | `13781` | 10^3 | 1,00 |
 | `14109` | 10^3 | 1,00 |
-| `14443` | 10^1 | 1,99 |
 | `14460` | 10^3 | 1,01 |
 | `14826` | 10^3 | 1,00 |
 | `16993` | 10^3 | 1,00 |
@@ -160,14 +746,12 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `2437` | 10^3 | 1,07 |
 | `2453` | 10^3 | 1,00 |
 | `2461` | 10^3 | 1,00 |
-| `24961` | 10^1 | 1,00 |
 | `25038` | 10^3 | 1,00 |
 | `25046` | 10^3 | 1,00 |
 | `25062` | 10^-1 | 1,00 |
 | `25330` | 10^3 | 1,00 |
 | `25372` | 10^3 | 1,00 |
-| `25445` | 10^-1 | 1,00 |
-| `25550` | 10^3 | 0,18 |
+| `25550` | 10^3 | 0,70 |
 | `25682` | 10^1 | 2,51 |
 | `25984` | 10^3 | 1,00 |
 | `26000` | 10^3 | 1,00 |
@@ -190,6 +774,70 @@ Empresas com preço de classe de pregão antigo:
 | `14311` | PREF | `CPLE5` | 2025-12-19 |
 | `16993` | ON | `EMAE3` | 2025-08-18 |
 | `8753` | ON | `MTSA3` | 2025-06-23 |
+
+Eventos da B3 que ajustam a contagem, por classe (`share_events.adjusted`):
+
+| cd_cvm | classe | ISINs | DT_REFER | fator de eventos | eventos |
+| --- | --- | --- | --- | --- | --- |
+| `11975` | ON | `BRAZEVACNOR0` | 2026-03-31 | 0,05 | `BRAZEVACNOR0` GRUPAMENTO, data-ex 2026-06-26, ×0,05 |
+| `11975` | PREF | `BRAZEVACNPR7` | 2026-03-31 | 0,05 | `BRAZEVACNPR7` GRUPAMENTO, data-ex 2026-06-26, ×0,05 |
+| `14443` | ON | `BRSBSPACNOR5` | 2026-03-31 | 5 | `BRSBSPACNOR5` DESDOBRAMENTO, data-ex 2026-04-29, ×5 |
+| `24961` | ON | `BRAMBPACNOR6` | 2025-06-30 | 10 | `BRAMBPACNOR6` DESDOBRAMENTO, data-ex 2025-08-05, ×10 |
+| `25445` | ON | `BRESPAACNOR7` | 2026-03-31 | 0,1 | `BRESPAACNOR7` GRUPAMENTO, data-ex 2026-06-15, ×0,1 |
+| `25763` | ON | `BRVITTACNOR4` | 2026-03-31 | 1,1 | `BRVITTACNOR4` BONIFICACAO, data-ex 2026-04-10, ×1,1 |
+
+Classes com ações e sem ISIN em d (`share_events.no_isin`):
+
+| cd_cvm | classe |
+| --- | --- |
+| `14443` | PREF |
+| `14664` | ON |
+| `20958` | ON |
+| `24600` | ON |
+| `25127` | PREF |
+| `25208` | ON |
+| `25860` | ON |
+| `25860` | PREF |
+| `25917` | ON |
+
+Contagens suspeitas, sem evento da B3 que as explique (`share_count_suspect`):
+
+| cd_cvm | DT_REFER anterior | total anterior | DT_REFER | total | razão |
+| --- | --- | --- | --- | --- | --- |
+| `19550` | 2025-12-31 | 1773371000 | 2026-03-31 | 1374558000 | 0,7751 |
+| `20125` | 2026-03-31 | 5458252860 | 2026-06-30 | 2924199731 | 0,5357 |
+| `21067` | 2025-12-31 | 84909375 | 2026-03-31 | 104214394 | 1,2274 |
+| `26123` | 2025-09-30 | 651756313 | 2025-12-31 | 1132929494 | 1,7383 |
+| `6505` | 2025-12-31 | 653878000 | 2026-03-31 | 950628000 | 1,4538 |
+
+Fluxos de 12 meses refeitos com o ITR do ano anterior (`ttm_prior_from_itr`):
+
+| cd_cvm | DT_REFER | contas |
+| --- | --- | --- |
+| `1023` | 2026-03-31 | `3.08` |
+| `11398` | 2026-03-31 | `3.08` |
+| `1155` | 2026-03-31 | `3.08` |
+| `1210` | 2026-03-31 | `3.08` |
+| `1325` | 2026-06-30 | `3.08` |
+| `18724` | 2026-03-31 | `3.01` |
+| `19348` | 2026-06-30 | `3.08` |
+| `20532` | 2026-06-30 | `3.08` |
+| `20567` | 2026-03-31 | `3.08` |
+| `20958` | 2026-06-30 | `3.08` |
+| `21440` | 2026-03-31 | `3.08` |
+| `22616` | 2026-03-31 | `3.08` |
+| `23159` | 2026-06-30 | `3.01` |
+| `23795` | 2026-03-31 | `3.01` |
+| `24600` | 2026-03-31 | `3.08` |
+| `24929` | 2026-06-30 | `3.01`, `3.05`, `3.08`, `LL` |
+| `906` | 2026-06-30 | `3.08` |
+| `922` | 2026-03-31 | `3.08` |
+
+Tickers com filing antigo demais para os indicadores contábeis (`stale_filing`):
+
+| ticker | cd_cvm | DT_REFER | idade (dias) |
+| --- | --- | --- | --- |
+| `AMBP3` | `24961` | 2025-06-30 | 403 |
 
 Tickers não mapeados:
 
@@ -283,7 +931,7 @@ Empresas com preço de outra classe:
 - Usaram o preço da outra classe (`vm_price_fallback`): 8 empresa(s).
 - Sem cotação recente (`reference_stale`, sem registro em [d − 30 dias, d]): `AESB3`, `AXIA6`, `AZUL54`, `BPAN4`, `BRFS3`, `CPLE5`, `CPLE6`, `ENAT3`, `GPIV33`, `JBSS3`, `NEOE3`, `NTCO3`, `PETZ3`, `PORT3`, `STBP3`, `SULA11`, `ZAMP3`.
 - Preço de classe de pregão antigo (`vm_stale_class_price`): 4 classe(s).
-- Escala das contagens (`share_scale.scaled`): 68 empresa(s). Não verificada (`share_scale.unverified`): nenhum.
+- Escala das contagens (`share_scale.scaled`): 66 empresa(s). Não verificada (`share_scale.unverified`): nenhum.
 
 Escala das contagens, com o fator e o resíduo de cada empresa:
 
@@ -335,14 +983,12 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `2437` | 10^3 | 1,05 |
 | `2453` | 10^3 | 1,00 |
 | `2461` | 10^3 | 1,00 |
-| `24961` | 10^1 | 1,00 |
 | `25038` | 10^3 | 1,00 |
 | `25046` | 10^3 | 1,00 |
-| `25160` | 10^-2 | 1,50 |
 | `25330` | 10^3 | 1,00 |
 | `25372` | 10^3 | 1,00 |
 | `25496` | 10^-1 | 1,00 |
-| `25550` | 10^3 | 0,25 |
+| `25550` | 10^3 | 1,00 |
 | `25682` | 10^1 | 2,51 |
 | `25984` | 10^3 | 1,00 |
 | `26000` | 10^3 | 1,00 |
@@ -366,6 +1012,75 @@ Empresas com preço de classe de pregão antigo:
 | `14311` | PREF | `CPLE5` | 2025-12-19 |
 | `16993` | ON | `EMAE3` | 2025-08-18 |
 | `24112` | PREF | `AZUL4` | 2025-05-28 |
+
+Eventos da B3 que ajustam a contagem, por classe (`share_events.adjusted`):
+
+| cd_cvm | classe | ISINs | DT_REFER | fator de eventos | eventos |
+| --- | --- | --- | --- | --- | --- |
+| `24961` | ON | `BRAMBPACNOR6` | 2025-06-30 | 10 | `BRAMBPACNOR6` DESDOBRAMENTO, data-ex 2025-08-05, ×10 |
+| `25160` | ON | `BRSEQLACNOR2` | 2026-06-30 | 0,00666667 | `BRSEQLACNOR2` GRUPAMENTO, data-ex 2026-11-03, ×0,00666667 |
+| `25550` | ON | `BRORVRACNOR0` | 2026-06-30 | 4 | `BRORVRACNOR0` DESDOBRAMENTO, data-ex 2026-08-11, ×4 |
+
+Classes com ações e sem ISIN em d (`share_events.no_isin`):
+
+| cd_cvm | classe |
+| --- | --- |
+| `14443` | PREF |
+| `20958` | ON |
+| `23574` | PREF |
+| `24180` | PREF |
+| `24600` | ON |
+| `25208` | ON |
+| `25860` | ON |
+| `25860` | PREF |
+| `25917` | ON |
+| `6211` | PREF |
+
+Contagens suspeitas, sem evento da B3 que as explique (`share_count_suspect`):
+
+| cd_cvm | DT_REFER anterior | total anterior | DT_REFER | total | razão |
+| --- | --- | --- | --- | --- | --- |
+| `16993` | 2026-06-30 | 36924000 | 2026-09-30 | 51629000 | 1,3983 |
+| `23574` | 2026-03-31 | 573353080 | 2026-06-30 | 315344194 | 0,5500 |
+| `24112` | 2026-03-31 | 547308517788 | 2026-06-30 | 368557924 | 0,0007 |
+| `24805` | 2026-06-30 | 236197769 | 2026-09-30 | 82118477 | 0,3477 |
+| `25550` | 2026-03-31 | 96127000 | 2026-06-30 | 137324000 | 1,4286 |
+| `25917` | 2026-03-31 | 10352509484 | 2026-06-30 | 4557597117 | 0,4402 |
+| `5380` | 2026-06-30 | 22500000 | 2026-09-30 | 14170000 | 0,6298 |
+| `9393` | 2026-03-31 | 1394546420 | 2026-06-30 | 2971982330 | 2,1311 |
+
+Fluxos de 12 meses refeitos com o ITR do ano anterior (`ttm_prior_from_itr`):
+
+| cd_cvm | DT_REFER | contas |
+| --- | --- | --- |
+| `1023` | 2026-06-30 | `3.08` |
+| `11258` | 2026-06-30 | `3.08` |
+| `1155` | 2026-06-30 | `3.08` |
+| `1210` | 2026-06-30 | `3.08` |
+| `1228` | 2026-06-30 | `3.08` |
+| `1325` | 2026-09-30 | `3.08` |
+| `14206` | 2025-06-30 | `3.08` |
+| `18724` | 2026-06-30 | `3.01` |
+| `19348` | 2026-09-30 | `3.08` |
+| `20532` | 2026-09-30 | `3.08` |
+| `20567` | 2026-06-30 | `3.08` |
+| `20958` | 2026-09-30 | `3.08` |
+| `21440` | 2026-06-30 | `3.08` |
+| `22616` | 2026-06-30 | `3.08` |
+| `23159` | 2026-09-30 | `3.01` |
+| `23795` | 2026-06-30 | `3.01` |
+| `24600` | 2026-09-30 | `3.08` |
+| `24929` | 2026-06-30 | `3.01`, `3.05`, `3.08`, `LL` |
+| `906` | 2026-09-30 | `3.08` |
+| `922` | 2026-06-30 | `3.08` |
+
+Tickers com filing antigo demais para os indicadores contábeis (`stale_filing`):
+
+| ticker | cd_cvm | DT_REFER | idade (dias) |
+| --- | --- | --- | --- |
+| `AALR3` | `24058` | 2025-12-31 | 309 |
+| `AMBP3` | `24961` | 2025-06-30 | 493 |
+| `BSLI3` | `14206` | 2025-06-30 | 493 |
 
 Tickers não mapeados:
 
@@ -454,14 +1169,14 @@ Empresas com preço de outra classe:
 
 | indicador | grupo | n | % na tolerância | mediana | p90 | veredito |
 | --- | --- | --- | --- | --- | --- | --- |
-| `LIQ. CORRENTE` | não financeiro | 236 | 89,83% | 0,00% | 0,00% | com ressalvas |
-| `LIQ. CORRENTE` | não financeiro sem não classificados | 235 | 90,21% | 0,00% | 0,00% | reconstruível |
+| `LIQ. CORRENTE` | não financeiro | 236 | 89,41% | 0,00% | 0,00% | com ressalvas |
+| `LIQ. CORRENTE` | não financeiro sem não classificados | 235 | 89,79% | 0,00% | 0,00% | com ressalvas |
 | `LIQ. CORRENTE` | financeiro | 29 | 58,62% | 0,00% | 700,00% | não reconstruível |
-| `DIVIDA LIQUIDA / EBIT` | não financeiro | 236 | 86,86% | 0,00% | 0,00% | com ressalvas |
-| `DIVIDA LIQUIDA / EBIT` | não financeiro sem não classificados | 235 | 87,23% | 0,00% | 0,00% | com ressalvas |
+| `DIVIDA LIQUIDA / EBIT` | não financeiro | 236 | 86,44% | 0,00% | 0,00% | com ressalvas |
+| `DIVIDA LIQUIDA / EBIT` | não financeiro sem não classificados | 235 | 86,81% | 0,00% | 0,00% | com ressalvas |
 | `DIVIDA LIQUIDA / EBIT` | financeiro | 10 | 70,00% | 0,00% | 5,26% | com ressalvas |
-| `DIV. LIQ. / PATRI.` | não financeiro | 230 | 89,13% | 0,00% | 0,00% | com ressalvas |
-| `DIV. LIQ. / PATRI.` | não financeiro sem não classificados | 229 | 89,52% | 0,00% | 0,00% | com ressalvas |
+| `DIV. LIQ. / PATRI.` | não financeiro | 230 | 88,70% | 0,00% | 0,00% | com ressalvas |
+| `DIV. LIQ. / PATRI.` | não financeiro sem não classificados | 229 | 89,08% | 0,00% | 0,00% | com ressalvas |
 | `DIV. LIQ. / PATRI.` | financeiro | 10 | 70,00% | 0,00% | 53,85% | com ressalvas |
 | `ROE` | não financeiro | 236 | 85,59% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `ROE` | não financeiro sem não classificados | 235 | 85,96% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
@@ -469,8 +1184,8 @@ Empresas com preço de outra classe:
 | `ROA` | não financeiro | 236 | 87,29% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `ROA` | não financeiro sem não classificados | 235 | 87,66% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `ROA` | financeiro | 33 | 63,64% | 0,00 p.p. | 0,05 p.p. | não reconstruível |
-| `ROIC` | não financeiro | 236 | 48,73% | 0,44 p.p. | 3,86 p.p. | não reconstruível |
-| `ROIC` | não financeiro sem não classificados | 235 | 48,94% | 0,44 p.p. | 3,86 p.p. | não reconstruível |
+| `ROIC` | não financeiro | 236 | 48,31% | 0,44 p.p. | 4,00 p.p. | não reconstruível |
+| `ROIC` | não financeiro sem não classificados | 235 | 48,51% | 0,44 p.p. | 4,00 p.p. | não reconstruível |
 | `ROIC` | financeiro | 10 | 50,00% | 0,20 p.p. | 43,90 p.p. | não reconstruível |
 | `MARG. LIQUIDA` | não financeiro | 234 | 85,04% | 0,00 p.p. | 0,02 p.p. | com ressalvas |
 | `MARG. LIQUIDA` | não financeiro sem não classificados | 233 | 85,41% | 0,00 p.p. | 0,02 p.p. | com ressalvas |
@@ -478,35 +1193,35 @@ Empresas com preço de outra classe:
 | `MARGEM EBIT` | não financeiro | 234 | 86,75% | 0,00 p.p. | 0,01 p.p. | com ressalvas |
 | `MARGEM EBIT` | não financeiro sem não classificados | 233 | 87,12% | 0,00 p.p. | 0,01 p.p. | com ressalvas |
 | `MARGEM EBIT` | financeiro | 32 | 68,75% | 0,00 p.p. | 39,02 p.p. | não reconstruível |
-| `P/L` | não financeiro | 236 | 79,24% | 0,00% | 6,40% | com ressalvas |
-| `P/L` | não financeiro sem não classificados | 235 | 79,57% | 0,00% | 6,40% | com ressalvas |
+| `P/L` | não financeiro | 236 | 80,08% | 0,00% | 5,57% | com ressalvas |
+| `P/L` | não financeiro sem não classificados | 235 | 80,43% | 0,00% | 5,57% | com ressalvas |
 | `P/L` | financeiro | 33 | 60,61% | 0,00% | 3,30% | não reconstruível |
-| `P/VP` | não financeiro | 236 | 82,63% | 0,00% | 4,62% | com ressalvas |
-| `P/VP` | não financeiro sem não classificados | 235 | 82,98% | 0,00% | 4,62% | com ressalvas |
+| `P/VP` | não financeiro | 236 | 83,05% | 0,00% | 3,51% | com ressalvas |
+| `P/VP` | não financeiro sem não classificados | 235 | 83,40% | 0,00% | 3,51% | com ressalvas |
 | `P/VP` | financeiro | 33 | 27,27% | 86,75% | 1265,32% | não reconstruível |
-| `EV/EBIT` | não financeiro | 236 | 80,51% | 0,00% | 7,21% | com ressalvas |
-| `EV/EBIT` | não financeiro sem não classificados | 235 | 80,85% | 0,00% | 7,21% | com ressalvas |
+| `EV/EBIT` | não financeiro | 236 | 80,51% | 0,00% | 5,92% | com ressalvas |
+| `EV/EBIT` | não financeiro sem não classificados | 235 | 80,85% | 0,00% | 5,92% | com ressalvas |
 | `EV/EBIT` | financeiro | 33 | 18,18% | 0,47% | 356,17% | não reconstruível |
-| `PSR` | não financeiro | 233 | 80,69% | 0,00% | 6,73% | com ressalvas |
-| `PSR` | não financeiro sem não classificados | 233 | 80,69% | 0,00% | 6,73% | com ressalvas |
+| `PSR` | não financeiro | 233 | 81,55% | 0,00% | 5,95% | com ressalvas |
+| `PSR` | não financeiro sem não classificados | 233 | 81,55% | 0,00% | 5,95% | com ressalvas |
 | `PSR` | financeiro | 32 | 75,00% | 0,00% | 111,32% | com ressalvas |
-| `CAGR RECEITAS 5 ANOS` | não financeiro | 230 | 89,57% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
-| `CAGR RECEITAS 5 ANOS` | não financeiro sem não classificados | 230 | 89,57% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
+| `CAGR RECEITAS 5 ANOS` | não financeiro | 230 | 89,13% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
+| `CAGR RECEITAS 5 ANOS` | não financeiro sem não classificados | 230 | 89,13% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `CAGR RECEITAS 5 ANOS` | financeiro | 31 | 80,65% | 0,00 p.p. | 7,77 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | não financeiro | 160 | 86,88% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | não financeiro sem não classificados | 160 | 86,88% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | financeiro | 29 | 51,72% | 0,00 p.p. | 0,03 p.p. | não reconstruível |
-| `PEG RATIO` | não financeiro | 235 | 68,09% | 0,00% | 5,00% | não reconstruível |
-| `PEG RATIO` | não financeiro sem não classificados | 234 | 68,38% | 0,00% | 5,00% | não reconstruível |
-| `PEG RATIO` | financeiro | 33 | 48,48% | 0,00% | 23,08% | não reconstruível |
+| `PEG RATIO` | não financeiro | 235 | 68,94% | 0,00% | 4,00% | não reconstruível |
+| `PEG RATIO` | não financeiro sem não classificados | 234 | 69,23% | 0,00% | 4,00% | não reconstruível |
+| `PEG RATIO` | financeiro | 33 | 54,55% | 0,00% | 0,00% | não reconstruível |
 | `DY` | não financeiro | 236 | 69,92% | 0,00 p.p. | 2,01 p.p. | não reconstruível |
 | `DY` | não financeiro sem não classificados | 235 | 70,21% | 0,00 p.p. | 2,01 p.p. | com ressalvas |
 | `DY` | financeiro | 33 | 78,79% | 0,00 p.p. | 0,56 p.p. | com ressalvas |
 | `PRECO` | não financeiro | 236 | 91,53% | 0,00% | 0,00% | reconstruível |
 | `PRECO` | não financeiro sem não classificados | 235 | 91,91% | 0,00% | 0,00% | reconstruível |
 | `PRECO` | financeiro | 33 | 90,91% | 0,00% | 0,00% | reconstruível |
-| `VALOR DE MERCADO` | não financeiro | 236 | 82,20% | 0,00% | 5,86% | com ressalvas |
-| `VALOR DE MERCADO` | não financeiro sem não classificados | 235 | 82,55% | 0,00% | 5,86% | com ressalvas |
+| `VALOR DE MERCADO` | não financeiro | 236 | 83,05% | 0,00% | 4,13% | com ressalvas |
+| `VALOR DE MERCADO` | não financeiro sem não classificados | 235 | 83,40% | 0,00% | 4,13% | com ressalvas |
 | `VALOR DE MERCADO` | financeiro | 33 | 75,76% | 0,00% | 14,56% | com ressalvas |
 | `LIQUIDEZ MEDIA DIARIA` | não financeiro | 236 | 86,86% | 0,35% | 2,02% | com ressalvas |
 | `LIQUIDEZ MEDIA DIARIA` | não financeiro sem não classificados | 235 | 87,23% | 0,35% | 2,02% | com ressalvas |
@@ -541,7 +1256,7 @@ Referências em branco no Status Invest (grupo não financeiro):
 | `AGRO3` | 1,47 | 1,47 | 0,00% |
 | `ALLD3` | 1,74 | 1,74 | 0,00% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -571,7 +1286,7 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
 | `BHIA3` | -14,38 | 4,48 | 131,15% |
-| `TIMS3` | -0,73 | -0,20 | 72,60% |
+| `TIMS3` | -0,73 | -0,28 | 61,64% |
 | `CAML3` | 5,02 | 7,45 | 48,41% |
 | `VTRU3` | 3,68 | 2,31 | 37,23% |
 | `BRST3` | 5,03 | 6,90 | 37,18% |
@@ -581,7 +1296,7 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 | `TPIS3` | -2,47 | -2,62 | 6,07% |
 | `AMER3` | 3,69 | 3,88 | 5,15% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -619,7 +1334,7 @@ Sem valor reconstruído: `APER3` (no_quote), `SULA11` (no_quote).
 | `AGRO3` | 0,66 | 0,66 | 0,00% |
 | `ALLD3` | 0,09 | 0,09 | 0,00% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -651,13 +1366,13 @@ Sem valor reconstruído: `APER3` (no_quote), `SULA11` (no_quote).
 | `VTRU3` | -29,57 | 29,95 | 59,52 p.p. |
 | `AALR3` | -544,08 | -494,46 | 49,62 p.p. |
 | `RAIZ4` | -326,87 | -309,75 | 17,12 p.p. |
-| `AMBP3` | -23,47 | -9,41 | 14,06 p.p. |
 | `INTB3` | 18,07 | 8,63 | 9,44 p.p. |
-| `TIMS3` | 15,91 | 24,38 | 8,47 p.p. |
 | `BRST3` | 7,44 | 2,53 | 4,91 p.p. |
 | `EMAE4` | -18,27 | -14,30 | 3,97 p.p. |
+| `CAML3` | 6,46 | 3,69 | 2,77 p.p. |
+| `TIMS3` | 15,91 | 17,29 | 1,38 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -687,17 +1402,17 @@ Sem valor reconstruído: `ABCB4` (zero_divisor), `APER3` (no_quote), `BMGB4` (mi
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
 | `VTRU3` | -24,02 | 16,06 | 40,08 p.p. |
-| `TIMS3` | 3,43 | 10,66 | 7,23 p.p. |
 | `ONCO3` | -57,34 | -50,82 | 6,52 p.p. |
 | `BHIA3` | -5,11 | -10,93 | 5,82 p.p. |
 | `INTB3` | 10,75 | 5,13 | 5,62 p.p. |
+| `TIMS3` | 3,43 | 7,56 | 4,13 p.p. |
 | `BRST3` | 2,86 | 0,85 | 2,01 p.p. |
 | `EMAE4` | -6,52 | -5,11 | 1,41 p.p. |
-| `AMBP3` | -1,52 | -0,61 | 0,91 p.p. |
 | `CAML3` | 1,81 | 0,92 | 0,89 p.p. |
 | `HBSA3` | -3,20 | -2,80 | 0,40 p.p. |
+| `VIVA3` | 12,00 | 12,40 | 0,40 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -737,7 +1452,7 @@ Sem valor reconstruído: `APER3` (no_quote), `BMGB4` (missing_input: LL), `BPAC1
 | `CASH3` | -32,33 | -24,37 | 7,96 p.p. |
 | `TGMA3` | 12,62 | 20,57 | 7,95 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -766,16 +1481,16 @@ Sem valor reconstruído: `APER3` (no_quote), `SULA11` (no_quote).
 | --- | --- | --- | --- |
 | `VTRU3` | -14,81 | 48,63 | 63,44 p.p. |
 | `EMAE4` | -29,53 | -19,87 | 9,66 p.p. |
+| `TIMS3` | 7,22 | 15,79 | 8,57 p.p. |
 | `ONCO3` | -71,05 | -63,14 | 7,91 p.p. |
-| `TIMS3` | 7,22 | 15,10 | 7,88 p.p. |
 | `INTB3` | 13,11 | 6,26 | 6,85 p.p. |
 | `BHIA3` | -5,98 | -12,30 | 6,32 p.p. |
 | `BRST3` | 8,46 | 2,27 | 6,19 p.p. |
 | `TPIS3` | -42,83 | -39,30 | 3,53 p.p. |
-| `AMBP3` | -3,54 | -1,42 | 2,12 p.p. |
 | `MOTV3` | 20,63 | 19,27 | 1,36 p.p. |
+| `HBSA3` | -8,99 | -7,87 | 1,12 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -813,9 +1528,9 @@ Sem valor reconstruído: `APER3` (no_quote), `BBSE3` (zero_divisor), `BMGB4` (mi
 | `ISAE4` | 48,44 | 46,88 | 1,56 p.p. |
 | `BRST3` | 14,96 | 14,00 | 0,96 p.p. |
 | `VIVA3` | 23,33 | 22,40 | 0,93 p.p. |
-| `TIMS3` | 24,51 | 23,66 | 0,85 p.p. |
+| `EQTL3` | 15,18 | 15,53 | 0,35 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -846,16 +1561,16 @@ Sem valor reconstruído: `APER3` (no_quote), `BBSE3` (zero_divisor), `BPAN4` (no
 | --- | --- | --- | --- |
 | `VVEO3` | 10,25 | 102,46 | 899,61% |
 | `BRST3` | 10,58 | 31,04 | 193,38% |
-| `AMBP3` | -1,04 | -2,60 | 150,00% |
+| `AZEV4` | -0,32 | -0,86 | 168,75% |
+| `AZEV3` | -0,68 | -1,82 | 167,65% |
 | `LIGT3` | 1,91 | 4,42 | 131,41% |
 | `VTRU3` | -6,32 | 1,53 | 124,21% |
 | `INTB3` | 8,08 | 16,92 | 109,41% |
-| `SBSP3` | 10,86 | 21,71 | 99,91% |
 | `CAML3` | 8,25 | 14,57 | 76,61% |
-| `TIMS3` | 22,67 | 7,36 | 67,53% |
 | `BHIA3` | -0,46 | -0,19 | 58,70% |
+| `TIMS3` | 22,67 | 10,37 | 54,26% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -885,17 +1600,17 @@ Sem valor reconstruído: `APER3` (no_quote), `BMGB4` (missing_input: LL), `BPAC1
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
 | `VVEO3` | 0,11 | 1,10 | 900,00% |
+| `AZEV3` | 3,65 | 9,73 | 166,58% |
+| `AZEV4` | 1,73 | 4,60 | 165,90% |
 | `LIGT3` | 0,60 | 1,39 | 131,67% |
-| `SBSP3` | 2,17 | 4,34 | 100,00% |
 | `VTRU3` | 1,87 | 0,46 | 75,40% |
 | `BHIA3` | 0,23 | 0,38 | 65,22% |
 | `TIMS3` | 3,61 | 1,79 | 50,42% |
-| `AZEV4` | 1,73 | 0,92 | 46,82% |
-| `AZEV3` | 3,65 | 1,95 | 46,58% |
 | `ONCO3` | 1,32 | 0,78 | 40,91% |
 | `ORVR3` | 6,38 | 4,47 | 29,94% |
+| `SIMH3` | 0,97 | 0,71 | 26,80% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -927,15 +1642,15 @@ Sem valor reconstruído: `ABCB4` (zero_divisor), `APER3` (no_quote), `BPAN4` (no
 | `TFCO4` | 10,90 | 64,31 | 490,00% |
 | `VTRU3` | -9,11 | 4,99 | 154,77% |
 | `BHIA3` | -15,89 | 5,00 | 131,47% |
-| `SBSP3` | 9,68 | 16,90 | 74,59% |
+| `AZEV3` | -1,26 | -2,46 | 95,24% |
+| `AZEV4` | -1,26 | -2,46 | 95,24% |
 | `SHUL4` | 23,73 | 6,81 | 71,30% |
 | `VVEO3` | 5,40 | 8,65 | 60,19% |
 | `LIGT3` | 16,63 | 24,76 | 48,89% |
 | `CAML3` | 7,50 | 10,12 | 34,93% |
-| `AZEV3` | -1,26 | -0,93 | 26,19% |
-| `AZEV4` | -1,26 | -0,93 | 26,19% |
+| `ORVR3` | 31,80 | 23,50 | 26,10% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -965,17 +1680,17 @@ Sem valor reconstruído: `APER3` (no_quote), `BBAS3` (missing_input: DB), `BBDC3
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
 | `VVEO3` | 0,02 | 0,18 | 800,00% |
+| `AZEV3` | 0,92 | 2,46 | 167,39% |
+| `AZEV4` | 0,44 | 1,16 | 163,64% |
 | `LIGT3` | 0,33 | 0,75 | 127,27% |
-| `SBSP3` | 2,39 | 4,78 | 100,00% |
-| `AZEV4` | 0,44 | 0,23 | 47,73% |
-| `AZEV3` | 0,92 | 0,49 | 46,74% |
 | `BHIA3` | 0,03 | 0,02 | 33,33% |
-| `TIMS3` | 1,64 | 1,11 | 32,32% |
 | `ORVR3` | 8,17 | 5,72 | 29,99% |
 | `SIMH3` | 0,09 | 0,07 | 22,22% |
 | `VTRU3` | 0,94 | 0,74 | 21,28% |
+| `BRST3` | 0,89 | 0,71 | 20,22% |
+| `EGIE3` | 3,08 | 2,48 | 19,48% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: REC), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: REC), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1015,7 +1730,7 @@ Sem valor reconstruído: `APER3` (no_quote), `BBSE3` (zero_divisor), `BPAN4` (no
 | `ALOS3` | 29,09 | 29,09 | 0,00 p.p. |
 | `ALPA3` | 6,29 | 6,29 | 0,00 p.p. |
 
-Sem valor reconstruído: `AURE3` (short_history), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `BRST3` (short_history), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `JBSS3` (no_quote), `LAND3` (short_history), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AMBP3` (stale_filing), `AURE3` (short_history), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `BRST3` (short_history), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `JBSS3` (no_quote), `LAND3` (short_history), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1044,7 +1759,7 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `TIMS3` | 1,43 | 27,03 | 25,60 p.p. |
+| `TIMS3` | 1,43 | 18,60 | 17,17 p.p. |
 | `INTB3` | 12,71 | -2,77 | 15,48 p.p. |
 | `CAML3` | -15,89 | -24,93 | 9,04 p.p. |
 | `VIVA3` | 31,91 | 32,77 | 0,86 p.p. |
@@ -1086,16 +1801,16 @@ Sem valor reconstruído: `BMEB3` (short_history), `BMEB4` (short_history), `BMGB
 | --- | --- | --- | --- |
 | `INTB3` | 0,26 | -0,45 | 273,08% |
 | `LIGT3` | 0,24 | 0,55 | 129,17% |
-| `SBSP3` | -0,74 | -1,47 | 98,65% |
-| `TIMS3` | 1,06 | 0,11 | 89,62% |
 | `EMAE4` | 0,04 | 0,06 | 50,00% |
+| `TIMS3` | 1,06 | 0,54 | 49,06% |
 | `ORVR3` | 0,56 | 0,40 | 28,57% |
 | `VIVA3` | -0,68 | -0,84 | 23,53% |
 | `EGIE3` | 0,34 | 0,27 | 20,59% |
 | `MOVI3` | 0,22 | 0,18 | 18,18% |
 | `GMAT3` | 0,21 | 0,18 | 14,29% |
+| `VAMO3` | 21,72 | 18,95 | 12,75% |
 
-Sem valor reconstruído: `AALR3` (non_positive_base), `AESB3` (no_quote), `ALPK3` (non_positive_base), `AMAR3` (non_positive_base), `AMBP3` (non_positive_base), `AURE3` (non_positive_base), `AXIA6` (no_quote), `AZEV3` (non_positive_base), `AZEV4` (non_positive_base), `AZUL53` (no_quote), `AZUL54` (no_quote), `BEEF3` (non_positive_base), `BHIA3` (non_positive_base), `BIOM3` (non_positive_base), `BRFS3` (no_quote), `BRKM3` (non_positive_base), `BRKM5` (non_positive_base), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `CRPG5` (non_positive_base), `CSAN3` (non_positive_base), `CSNA3` (non_positive_base), `CVCB3` (non_positive_base), `DASA3` (non_positive_base), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `HAPV3` (non_positive_base), `HBSA3` (non_positive_base), `JALL3` (non_positive_base), `JBSS3` (no_quote), `LJQQ3` (non_positive_base), `MATD3` (non_positive_base), `MLAS3` (non_positive_base), `MRVE3` (non_positive_base), `NEOE3` (no_quote), `NGRD3` (non_positive_base), `NTCO3` (no_quote), `ONCO3` (non_positive_base), `OPCT3` (non_positive_base), `PCAR3` (non_positive_base), `PETZ3` (no_quote), `PORT3` (no_quote), `PTBL3` (non_positive_base), `RAIL3` (non_positive_base), `RAIZ4` (non_positive_base), `SCAR3` (non_positive_base), `SIMH3` (non_positive_base), `SOMA3` (no_quote), `STBP3` (no_quote), `SUZB3` (non_positive_base), `TUPY3` (non_positive_base), `VSTE3` (non_positive_base), `VVEO3` (non_positive_base), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (non_positive_base), `AESB3` (no_quote), `ALPK3` (non_positive_base), `AMAR3` (non_positive_base), `AMBP3` (stale_filing), `AURE3` (non_positive_base), `AXIA6` (no_quote), `AZEV3` (non_positive_base), `AZEV4` (non_positive_base), `AZUL53` (no_quote), `AZUL54` (no_quote), `BEEF3` (non_positive_base), `BHIA3` (non_positive_base), `BIOM3` (non_positive_base), `BRFS3` (no_quote), `BRKM3` (non_positive_base), `BRKM5` (non_positive_base), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `CRPG5` (non_positive_base), `CSAN3` (non_positive_base), `CSNA3` (non_positive_base), `CVCB3` (non_positive_base), `DASA3` (non_positive_base), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `HAPV3` (non_positive_base), `HBSA3` (non_positive_base), `JALL3` (non_positive_base), `JBSS3` (no_quote), `LJQQ3` (non_positive_base), `MATD3` (non_positive_base), `MLAS3` (non_positive_base), `MRVE3` (non_positive_base), `NEOE3` (no_quote), `NGRD3` (non_positive_base), `NTCO3` (no_quote), `ONCO3` (non_positive_base), `OPCT3` (non_positive_base), `PCAR3` (non_positive_base), `PETZ3` (no_quote), `PORT3` (no_quote), `PTBL3` (non_positive_base), `RAIL3` (non_positive_base), `RAIZ4` (non_positive_base), `SCAR3` (non_positive_base), `SIMH3` (non_positive_base), `SOMA3` (no_quote), `STBP3` (no_quote), `SUZB3` (non_positive_base), `TUPY3` (non_positive_base), `VSTE3` (non_positive_base), `VVEO3` (non_positive_base), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1104,9 +1819,9 @@ Sem valor reconstruído: `AALR3` (non_positive_base), `AESB3` (no_quote), `ALPK3
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `ABCB4` | 1,12 | -0,21 | 118,75% |
-| `BAZA3` | -0,13 | -0,10 | 23,08% |
 | `BBAS3` | -0,20 | -0,22 | 10,00% |
+| `ABCB4` | 1,12 | 1,12 | 0,00% |
+| `BAZA3` | -0,13 | -0,13 | 0,00% |
 | `BBDC3` | 0,38 | 0,38 | 0,00% |
 | `BBDC4` | 0,43 | 0,43 | 0,00% |
 | `BBSE3` | 2,66 | 2,66 | 0,00% |
@@ -1207,13 +1922,13 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 | `VVEO3` | 206605189,12 | 2066051891,20 | 900,00% |
 | `TFCO4` | 2238515001,92 | 13773493331,79 | 515,30% |
 | `VTRU3` | 481531784,47 | 1705331559,88 | 254,15% |
+| `AZEV3` | 268547946,85 | 715590439,05 | 166,47% |
+| `AZEV4` | 268547946,85 | 715590439,05 | 166,47% |
 | `LIGT3` | 4990409763,10 | 11549215044,00 | 131,43% |
-| `SBSP3` | 94774719932,25 | 189549440402,30 | 100,00% |
 | `SHUL4` | 5056312514,12 | 1547432797,40 | 69,40% |
-| `AZEV3` | 268547946,85 | 143118088,20 | 46,71% |
-| `AZEV4` | 268547946,85 | 143118088,20 | 46,71% |
 | `COCE5` | 2063151133,37 | 2759315027,57 | 33,74% |
 | `ORVR3` | 9317440252,85 | 6522216950,00 | 30,00% |
+| `SIMH3` | 4109665408,64 | 3004656209,28 | 26,89% |
 
 Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
@@ -1283,59 +1998,59 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 
 | indicador | grupo | n | % na tolerância | mediana | p90 | veredito |
 | --- | --- | --- | --- | --- | --- | --- |
-| `LIQ. CORRENTE` | não financeiro | 239 | 80,33% | 0,00% | 10,13% | com ressalvas |
-| `LIQ. CORRENTE` | não financeiro sem não classificados | 238 | 80,67% | 0,00% | 10,13% | com ressalvas |
-| `LIQ. CORRENTE` | financeiro | 29 | 51,72% | 0,97% | 600,00% | não reconstruível |
-| `DIVIDA LIQUIDA / EBIT` | não financeiro | 239 | 73,64% | 0,00% | 20,81% | com ressalvas |
-| `DIVIDA LIQUIDA / EBIT` | não financeiro sem não classificados | 238 | 73,95% | 0,00% | 20,81% | com ressalvas |
+| `LIQ. CORRENTE` | não financeiro | 239 | 79,50% | 0,00% | 10,13% | com ressalvas |
+| `LIQ. CORRENTE` | não financeiro sem não classificados | 238 | 79,83% | 0,00% | 10,13% | com ressalvas |
+| `LIQ. CORRENTE` | financeiro | 29 | 48,28% | 2,42% | 600,00% | não reconstruível |
+| `DIVIDA LIQUIDA / EBIT` | não financeiro | 239 | 72,80% | 0,00% | 20,81% | com ressalvas |
+| `DIVIDA LIQUIDA / EBIT` | não financeiro sem não classificados | 238 | 73,11% | 0,00% | 20,81% | com ressalvas |
 | `DIVIDA LIQUIDA / EBIT` | financeiro | 9 | 44,44% | 12,78% | 366,67% | não reconstruível |
-| `DIV. LIQ. / PATRI.` | não financeiro | 230 | 80,00% | 0,00% | 8,60% | com ressalvas |
-| `DIV. LIQ. / PATRI.` | não financeiro sem não classificados | 229 | 80,35% | 0,00% | 8,60% | com ressalvas |
+| `DIV. LIQ. / PATRI.` | não financeiro | 230 | 79,57% | 0,00% | 8,60% | com ressalvas |
+| `DIV. LIQ. / PATRI.` | não financeiro sem não classificados | 229 | 79,91% | 0,00% | 8,60% | com ressalvas |
 | `DIV. LIQ. / PATRI.` | financeiro | 9 | 55,56% | 0,31% | 350,00% | não reconstruível |
-| `ROE` | não financeiro | 239 | 71,13% | 0,00 p.p. | 3,72 p.p. | com ressalvas |
-| `ROE` | não financeiro sem não classificados | 238 | 71,43% | 0,00 p.p. | 3,72 p.p. | com ressalvas |
-| `ROE` | financeiro | 35 | 14,29% | 14,93 p.p. | 258,67 p.p. | não reconstruível |
-| `ROA` | não financeiro | 239 | 76,57% | 0,00 p.p. | 1,44 p.p. | com ressalvas |
-| `ROA` | não financeiro sem não classificados | 238 | 76,89% | 0,00 p.p. | 1,44 p.p. | com ressalvas |
-| `ROA` | financeiro | 35 | 65,71% | 0,01 p.p. | 0,12 p.p. | não reconstruível |
-| `ROIC` | não financeiro | 239 | 44,35% | 0,57 p.p. | 5,29 p.p. | não reconstruível |
-| `ROIC` | não financeiro sem não classificados | 238 | 44,54% | 0,57 p.p. | 5,29 p.p. | não reconstruível |
+| `ROE` | não financeiro | 239 | 71,13% | 0,00 p.p. | 3,67 p.p. | com ressalvas |
+| `ROE` | não financeiro sem não classificados | 238 | 71,43% | 0,00 p.p. | 3,67 p.p. | com ressalvas |
+| `ROE` | financeiro | 35 | 14,29% | 12,37 p.p. | 258,67 p.p. | não reconstruível |
+| `ROA` | não financeiro | 239 | 76,15% | 0,00 p.p. | 1,44 p.p. | com ressalvas |
+| `ROA` | não financeiro sem não classificados | 238 | 76,47% | 0,00 p.p. | 1,44 p.p. | com ressalvas |
+| `ROA` | financeiro | 35 | 62,86% | 0,02 p.p. | 0,12 p.p. | não reconstruível |
+| `ROIC` | não financeiro | 239 | 43,93% | 0,57 p.p. | 5,29 p.p. | não reconstruível |
+| `ROIC` | não financeiro sem não classificados | 238 | 44,12% | 0,57 p.p. | 5,29 p.p. | não reconstruível |
 | `ROIC` | financeiro | 9 | 55,56% | 0,30 p.p. | 12,79 p.p. | não reconstruível |
-| `MARG. LIQUIDA` | não financeiro | 237 | 73,00% | 0,00 p.p. | 3,37 p.p. | com ressalvas |
-| `MARG. LIQUIDA` | não financeiro sem não classificados | 236 | 73,31% | 0,00 p.p. | 3,37 p.p. | com ressalvas |
-| `MARG. LIQUIDA` | financeiro | 33 | 54,55% | 0,03 p.p. | 0,95 p.p. | não reconstruível |
-| `MARGEM EBIT` | não financeiro | 237 | 75,53% | 0,00 p.p. | 1,86 p.p. | com ressalvas |
-| `MARGEM EBIT` | não financeiro sem não classificados | 236 | 75,85% | 0,00 p.p. | 1,86 p.p. | com ressalvas |
-| `MARGEM EBIT` | financeiro | 33 | 63,64% | 0,31 p.p. | 11,18 p.p. | não reconstruível |
-| `P/L` | não financeiro | 239 | 67,78% | 0,00% | 37,18% | não reconstruível |
-| `P/L` | não financeiro sem não classificados | 238 | 68,07% | 0,00% | 37,18% | não reconstruível |
-| `P/L` | financeiro | 35 | 62,86% | 0,00% | 4,67% | não reconstruível |
-| `P/VP` | não financeiro | 239 | 80,33% | 0,00% | 8,41% | com ressalvas |
-| `P/VP` | não financeiro sem não classificados | 238 | 80,67% | 0,00% | 8,41% | com ressalvas |
-| `P/VP` | financeiro | 35 | 20,00% | 87,60% | 1461,54% | não reconstruível |
-| `EV/EBIT` | não financeiro | 239 | 69,46% | 0,00% | 24,54% | não reconstruível |
-| `EV/EBIT` | não financeiro sem não classificados | 238 | 69,75% | 0,00% | 24,54% | não reconstruível |
-| `EV/EBIT` | financeiro | 35 | 11,43% | 5,39% | 360,27% | não reconstruível |
-| `PSR` | não financeiro | 236 | 80,51% | 0,00% | 8,20% | com ressalvas |
-| `PSR` | não financeiro sem não classificados | 236 | 80,51% | 0,00% | 8,20% | com ressalvas |
-| `PSR` | financeiro | 33 | 75,76% | 1,32% | 8,00% | com ressalvas |
-| `CAGR RECEITAS 5 ANOS` | não financeiro | 233 | 92,27% | 0,00 p.p. | 0,00 p.p. | reconstruível |
-| `CAGR RECEITAS 5 ANOS` | não financeiro sem não classificados | 233 | 92,27% | 0,00 p.p. | 0,00 p.p. | reconstruível |
-| `CAGR RECEITAS 5 ANOS` | financeiro | 33 | 84,85% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
+| `MARG. LIQUIDA` | não financeiro | 237 | 72,57% | 0,00 p.p. | 3,37 p.p. | com ressalvas |
+| `MARG. LIQUIDA` | não financeiro sem não classificados | 236 | 72,88% | 0,00 p.p. | 3,37 p.p. | com ressalvas |
+| `MARG. LIQUIDA` | financeiro | 33 | 51,52% | 0,03 p.p. | 0,95 p.p. | não reconstruível |
+| `MARGEM EBIT` | não financeiro | 237 | 75,11% | 0,00 p.p. | 1,86 p.p. | com ressalvas |
+| `MARGEM EBIT` | não financeiro sem não classificados | 236 | 75,42% | 0,00 p.p. | 1,86 p.p. | com ressalvas |
+| `MARGEM EBIT` | financeiro | 33 | 60,61% | 0,18 p.p. | 11,18 p.p. | não reconstruível |
+| `P/L` | não financeiro | 239 | 68,20% | 0,00% | 34,49% | não reconstruível |
+| `P/L` | não financeiro sem não classificados | 238 | 68,49% | 0,00% | 34,49% | não reconstruível |
+| `P/L` | financeiro | 35 | 60,00% | 0,00% | 4,67% | não reconstruível |
+| `P/VP` | não financeiro | 239 | 80,75% | 0,00% | 7,53% | com ressalvas |
+| `P/VP` | não financeiro sem não classificados | 238 | 81,09% | 0,00% | 7,53% | com ressalvas |
+| `P/VP` | financeiro | 35 | 20,00% | 87,20% | 1461,54% | não reconstruível |
+| `EV/EBIT` | não financeiro | 239 | 69,46% | 0,00% | 23,48% | não reconstruível |
+| `EV/EBIT` | não financeiro sem não classificados | 238 | 69,75% | 0,00% | 23,48% | não reconstruível |
+| `EV/EBIT` | financeiro | 35 | 11,43% | 5,33% | 225,51% | não reconstruível |
+| `PSR` | não financeiro | 236 | 80,93% | 0,00% | 6,49% | com ressalvas |
+| `PSR` | não financeiro sem não classificados | 236 | 80,93% | 0,00% | 6,49% | com ressalvas |
+| `PSR` | financeiro | 33 | 72,73% | 2,17% | 8,00% | com ressalvas |
+| `CAGR RECEITAS 5 ANOS` | não financeiro | 233 | 91,42% | 0,00 p.p. | 0,00 p.p. | reconstruível |
+| `CAGR RECEITAS 5 ANOS` | não financeiro sem não classificados | 233 | 91,42% | 0,00 p.p. | 0,00 p.p. | reconstruível |
+| `CAGR RECEITAS 5 ANOS` | financeiro | 33 | 81,82% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | não financeiro | 161 | 72,67% | 0,00 p.p. | 4,22 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | não financeiro sem não classificados | 161 | 72,67% | 0,00 p.p. | 4,22 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | financeiro | 32 | 50,00% | 0,00 p.p. | 2,27 p.p. | não reconstruível |
-| `PEG RATIO` | não financeiro | 238 | 52,94% | 0,00% | 102,99% | não reconstruível |
-| `PEG RATIO` | não financeiro sem não classificados | 237 | 53,16% | 0,00% | 102,99% | não reconstruível |
-| `PEG RATIO` | financeiro | 35 | 37,14% | 3,85% | 100,00% | não reconstruível |
+| `PEG RATIO` | não financeiro | 238 | 53,36% | 0,00% | 102,99% | não reconstruível |
+| `PEG RATIO` | não financeiro sem não classificados | 237 | 53,59% | 0,00% | 102,99% | não reconstruível |
+| `PEG RATIO` | financeiro | 35 | 40,00% | 0,00% | 30,77% | não reconstruível |
 | `DY` | não financeiro | 239 | 76,99% | 0,00 p.p. | 2,27 p.p. | com ressalvas |
 | `DY` | não financeiro sem não classificados | 238 | 77,31% | 0,00 p.p. | 2,27 p.p. | com ressalvas |
 | `DY` | financeiro | 35 | 88,57% | 0,00 p.p. | 0,49 p.p. | com ressalvas |
 | `PRECO` | não financeiro | 239 | 93,72% | 0,00% | 0,00% | reconstruível |
 | `PRECO` | não financeiro sem não classificados | 238 | 94,12% | 0,00% | 0,00% | reconstruível |
 | `PRECO` | financeiro | 35 | 94,29% | 0,00% | 0,00% | reconstruível |
-| `VALOR DE MERCADO` | não financeiro | 239 | 83,68% | 0,00% | 5,88% | com ressalvas |
-| `VALOR DE MERCADO` | não financeiro sem não classificados | 238 | 84,03% | 0,00% | 5,88% | com ressalvas |
+| `VALOR DE MERCADO` | não financeiro | 239 | 84,52% | 0,00% | 4,70% | com ressalvas |
+| `VALOR DE MERCADO` | não financeiro sem não classificados | 238 | 84,87% | 0,00% | 4,70% | com ressalvas |
 | `VALOR DE MERCADO` | financeiro | 35 | 71,43% | 0,00% | 9,79% | com ressalvas |
 | `LIQUIDEZ MEDIA DIARIA` | não financeiro | 239 | 91,21% | 0,28% | 1,78% | reconstruível |
 | `LIQUIDEZ MEDIA DIARIA` | não financeiro sem não classificados | 238 | 91,60% | 0,28% | 1,78% | reconstruível |
@@ -1345,7 +2060,7 @@ Referências em branco no Status Invest (grupo não financeiro):
 
 | indicador | em branco | com valor reconstruído | DY tratado como 0,00 |
 | --- | --- | --- | --- |
-| `DIV. LIQ. / PATRI.` | 9 | 8 | 0 |
+| `DIV. LIQ. / PATRI.` | 9 | 7 | 0 |
 | `MARG. LIQUIDA` | 2 | 0 | 0 |
 | `MARGEM EBIT` | 2 | 0 | 0 |
 | `PSR` | 3 | 0 | 0 |
@@ -1370,7 +2085,7 @@ Referências em branco no Status Invest (grupo não financeiro):
 | `ALUP3` | 3,17 | 2,53 | 20,19% |
 | `ALUP4` | 3,17 | 2,53 | 20,19% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1390,7 +2105,7 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `SANB11` | 0,61 | 0,29 | 52,46% |
 | `SANB3` | 0,61 | 0,29 | 52,46% |
 
-Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
+Sem valor reconstruído: `BPAN4` (no_quote), `BSLI3` (stale_filing), `SULA11` (no_quote).
 
 </details>
 
@@ -1406,11 +2121,11 @@ Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
 | `MDNE3` | 0,37 | 0,86 | 132,43% |
 | `TGMA3` | 0,08 | 0,01 | 87,50% |
 | `BHIA3` | -14,38 | -2,55 | 82,27% |
-| `TIMS3` | -0,73 | -0,20 | 72,60% |
 | `GRND3` | -1,26 | -0,39 | 69,05% |
+| `TIMS3` | -0,73 | -0,28 | 61,64% |
 | `TUPY3` | -5,30 | -8,42 | 58,87% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1448,7 +2163,7 @@ Sem valor reconstruído: `SULA11` (no_quote).
 | `BRST3` | 0,66 | 1,07 | 62,12% |
 | `CAML3` | 1,08 | 1,43 | 32,41% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1481,12 +2196,12 @@ Sem valor reconstruído: `SULA11` (no_quote).
 | `RAIZ4` | -325,38 | -241,22 | 84,16 p.p. |
 | `AZUL3` | -31,48 | 31,48 | 62,96 p.p. |
 | `VTRU3` | -29,57 | 27,23 | 56,80 p.p. |
-| `AALR3` | -544,08 | -494,46 | 49,62 p.p. |
 | `EMAE4` | -18,27 | -48,30 | 30,03 p.p. |
 | `CASH3` | -23,45 | -0,47 | 22,98 p.p. |
 | `AMER3` | 9,10 | -6,74 | 15,84 p.p. |
+| `LJQQ3` | -67,62 | -82,54 | 14,92 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1501,12 +2216,12 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `BEES4` | 17,62 | 276,29 | 258,67 p.p. |
 | `BMEB3` | 27,16 | 219,84 | 192,68 p.p. |
 | `BMEB4` | 27,16 | 219,84 | 192,68 p.p. |
-| `BSLI3` | 20,28 | 100,66 | 80,38 p.p. |
 | `BRSR3` | 13,87 | 72,84 | 58,97 p.p. |
 | `BRSR6` | 13,87 | 72,84 | 58,97 p.p. |
 | `BBAS3` | 8,27 | 30,41 | 22,14 p.p. |
+| `BBSE3` | 84,38 | 68,17 | 16,21 p.p. |
 
-Sem valor reconstruído: `ABCB4` (zero_divisor), `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
+Sem valor reconstruído: `ABCB4` (zero_divisor), `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `BSLI3` (stale_filing), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
 
 </details>
 
@@ -1520,13 +2235,13 @@ Sem valor reconstruído: `ABCB4` (zero_divisor), `BMGB4` (missing_input: LL), `B
 | `VTRU3` | -24,02 | 16,51 | 40,53 p.p. |
 | `CASH3` | -18,87 | -0,40 | 18,47 p.p. |
 | `EMAE4` | -6,52 | -17,51 | 10,99 p.p. |
-| `TIMS3` | 3,43 | 10,66 | 7,23 p.p. |
 | `PCAR3` | -13,68 | -19,91 | 6,23 p.p. |
 | `EALT4` | 8,97 | 3,93 | 5,04 p.p. |
 | `AMER3` | 2,60 | -1,92 | 4,52 p.p. |
+| `TIMS3` | 3,43 | 7,56 | 4,13 p.p. |
 | `AGRO3` | -2,43 | 1,44 | 3,87 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1546,7 +2261,7 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `BBDC4` | 1,06 | 1,04 | 0,02 p.p. |
 | `BMEB3` | 2,19 | 2,17 | 0,02 p.p. |
 
-Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
+Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `BSLI3` (stale_filing), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
 
 </details>
 
@@ -1559,14 +2274,14 @@ Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: L
 | `EQPA3` | 140,95 | 15,64 | 125,31 p.p. |
 | `CASH3` | -32,33 | -1,80 | 30,53 p.p. |
 | `VTRU3` | -29,52 | -1,87 | 27,65 p.p. |
-| `AALR3` | -547,76 | -520,46 | 27,30 p.p. |
 | `BRKM3` | -40,22 | -15,88 | 24,34 p.p. |
 | `BRKM5` | -40,22 | -15,88 | 24,34 p.p. |
 | `EMAE4` | -81,96 | -96,94 | 14,98 p.p. |
 | `TGMA3` | 12,62 | 22,70 | 10,08 p.p. |
 | `AXIA3` | -7,20 | 2,01 | 9,21 p.p. |
+| `AXIA7` | -7,20 | 2,01 | 9,21 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1601,10 +2316,10 @@ Sem valor reconstruído: `SULA11` (no_quote).
 | `AGRO3` | -9,73 | 5,73 | 15,46 p.p. |
 | `AXIA3` | 27,05 | 41,74 | 14,69 p.p. |
 | `AXIA7` | 27,05 | 41,74 | 14,69 p.p. |
+| `TIMS3` | 7,22 | 15,79 | 8,57 p.p. |
 | `ALUP11` | 27,68 | 19,73 | 7,95 p.p. |
-| `ALUP3` | 27,68 | 19,73 | 7,95 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1619,12 +2334,12 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `ABCB4` | 12,60 | 13,16 | 0,56 p.p. |
 | `BMEB3` | 8,94 | 8,51 | 0,43 p.p. |
 | `BMEB4` | 8,94 | 8,51 | 0,43 p.p. |
-| `BSLI3` | 7,43 | 7,28 | 0,15 p.p. |
 | `PSSA3` | 8,64 | 8,50 | 0,14 p.p. |
 | `BBDC3` | 8,59 | 8,49 | 0,10 p.p. |
 | `BBDC4` | 8,59 | 8,49 | 0,10 p.p. |
+| `QUAL3` | 1,93 | 1,90 | 0,03 p.p. |
 
-Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
+Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `BSLI3` (stale_filing), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
 
 </details>
 
@@ -1644,7 +2359,7 @@ Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: L
 | `AXIA7` | 25,81 | 37,30 | 11,49 p.p. |
 | `PRIO3` | 27,60 | 36,29 | 8,69 p.p. |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1664,7 +2379,7 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `PSSA3` | 7,40 | 6,59 | 0,81 p.p. |
 | `ABCB4` | 15,46 | 16,14 | 0,68 p.p. |
 
-Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
+Sem valor reconstruído: `BPAN4` (no_quote), `BSLI3` (stale_filing), `SULA11` (no_quote).
 
 </details>
 
@@ -1679,12 +2394,12 @@ Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
 | `AGRO3` | -20,56 | 33,31 | 262,01% |
 | `AMER3` | 2,22 | -3,00 | 235,14% |
 | `VVEO3` | 15,38 | 38,60 | 150,98% |
-| `AMBP3` | -0,91 | -2,27 | 149,45% |
 | `LIGT3` | 1,65 | 3,83 | 132,12% |
 | `VTRU3` | -6,09 | 1,68 | 127,59% |
 | `MYPK3` | 15,83 | 35,92 | 126,91% |
+| `CAML3` | 9,20 | 19,89 | 116,20% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1704,7 +2419,7 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `WIZC3` | 4,79 | 4,83 | 0,84% |
 | `BMEB4` | 7,72 | 7,74 | 0,26% |
 
-Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
+Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `BSLI3` (stale_filing), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
 
 </details>
 
@@ -1717,14 +2432,14 @@ Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: L
 | `VVEO3` | 0,48 | 1,20 | 150,00% |
 | `BHIA3` | 0,22 | -0,08 | 136,36% |
 | `LIGT3` | 0,43 | 0,99 | 130,23% |
-| `ORVR3` | 1,92 | 0,48 | 75,00% |
 | `VTRU3` | 1,80 | 0,46 | 74,44% |
 | `RAIZ4` | -0,38 | -0,12 | 68,42% |
 | `VIVA3` | 1,35 | 0,45 | 66,67% |
 | `OPCT3` | 4,16 | 1,75 | 57,93% |
-| `SEQL3` | -1,04 | -1,56 | 50,00% |
+| `TIMS3` | 3,82 | 1,91 | 50,00% |
+| `EALT4` | 0,68 | 0,41 | 39,71% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1741,10 +2456,10 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `BMEB4` | 2,10 | 17,01 | 710,00% |
 | `BRSR3` | 0,59 | 3,08 | 422,03% |
 | `BRSR6` | 0,44 | 2,29 | 420,45% |
-| `BSLI3` | 0,24 | 1,20 | 400,00% |
 | `BBAS3` | 0,51 | 2,34 | 358,82% |
+| `BNBR3` | 0,60 | 1,15 | 91,67% |
 
-Sem valor reconstruído: `ABCB4` (zero_divisor), `BPAN4` (no_quote), `SULA11` (no_quote).
+Sem valor reconstruído: `ABCB4` (zero_divisor), `BPAN4` (no_quote), `BSLI3` (stale_filing), `SULA11` (no_quote).
 
 </details>
 
@@ -1760,11 +2475,11 @@ Sem valor reconstruído: `ABCB4` (zero_divisor), `BPAN4` (no_quote), `SULA11` (n
 | `VTRU3` | -8,65 | 4,52 | 152,25% |
 | `BHIA3` | -15,82 | -2,85 | 81,98% |
 | `TUPY3` | -10,99 | -18,34 | 66,88% |
-| `ORVR3` | 33,22 | 13,11 | 60,54% |
 | `VIVA3` | 5,97 | 2,52 | 57,79% |
 | `LIGT3` | 17,61 | 25,79 | 46,45% |
+| `OPCT3` | 14,12 | 8,18 | 42,07% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1773,7 +2488,6 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `BSLI3` | 0,81 | 38,15 | 4609,88% |
 | `BAZA3` | 24,74 | 113,87 | 360,27% |
 | `IRBR3` | 38,30 | 124,67 | 225,51% |
 | `ABCB4` | 4,89 | 11,20 | 129,04% |
@@ -1783,8 +2497,9 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `QUAL3` | 4,12 | 4,00 | 2,91% |
 | `CXSE3` | 12,60 | 12,60 | 0,00% |
 | `ITSA3` | 7,80 | 7,80 | 0,00% |
+| `ITSA4` | 7,80 | 7,80 | 0,00% |
 
-Sem valor reconstruído: `BBAS3` (missing_input: DB), `BBDC3` (missing_input: DB), `BBDC4` (missing_input: DB), `BEES3` (missing_input: DB), `BEES4` (missing_input: DB), `BMEB3` (missing_input: DB), `BMEB4` (missing_input: DB), `BMGB4` (missing_input: DB), `BNBR3` (missing_input: DB), `BPAC11` (missing_input: DB), `BPAC3` (missing_input: DB), `BPAC5` (missing_input: DB), `BPAN4` (no_quote), `BRBI11` (no_quote), `BRSR3` (missing_input: DB), `BRSR6` (missing_input: DB), `ITUB3` (missing_input: DB), `ITUB4` (missing_input: DB), `PINE3` (missing_input: DB), `PINE4` (missing_input: DB), `SANB11` (missing_input: DB), `SANB3` (missing_input: DB), `SANB4` (missing_input: DB), `SULA11` (no_quote).
+Sem valor reconstruído: `BBAS3` (missing_input: DB), `BBDC3` (missing_input: DB), `BBDC4` (missing_input: DB), `BEES3` (missing_input: DB), `BEES4` (missing_input: DB), `BMEB3` (missing_input: DB), `BMEB4` (missing_input: DB), `BMGB4` (missing_input: DB), `BNBR3` (missing_input: DB), `BPAC11` (missing_input: DB), `BPAC3` (missing_input: DB), `BPAC5` (missing_input: DB), `BPAN4` (no_quote), `BRBI11` (no_quote), `BRSR3` (missing_input: DB), `BRSR6` (missing_input: DB), `BSLI3` (stale_filing), `ITUB3` (missing_input: DB), `ITUB4` (missing_input: DB), `PINE3` (missing_input: DB), `PINE4` (missing_input: DB), `SANB11` (missing_input: DB), `SANB3` (missing_input: DB), `SANB4` (missing_input: DB), `SULA11` (no_quote).
 
 </details>
 
@@ -1795,16 +2510,16 @@ Sem valor reconstruído: `BBAS3` (missing_input: DB), `BBDC3` (missing_input: DB
 | --- | --- | --- | --- |
 | `VVEO3` | 0,07 | 0,19 | 171,43% |
 | `LIGT3` | 0,26 | 0,59 | 126,92% |
-| `ORVR3` | 6,22 | 1,56 | 74,92% |
 | `VIVA3` | 1,36 | 0,47 | 65,44% |
 | `OPCT3` | 1,80 | 0,76 | 57,78% |
-| `SEQL3` | 0,48 | 0,72 | 50,00% |
 | `EALT4` | 0,47 | 0,28 | 40,43% |
 | `BHIA3` | 0,03 | 0,02 | 33,33% |
-| `TIMS3` | 1,73 | 1,18 | 31,79% |
 | `PMAM3` | 1,84 | 1,29 | 29,89% |
+| `BRST3` | 0,75 | 0,57 | 24,00% |
+| `EMAE4` | 3,75 | 4,52 | 20,53% |
+| `EGIE3` | 2,76 | 2,22 | 19,57% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1824,7 +2539,7 @@ Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_qu
 | `BBDC3` | 0,46 | 0,44 | 4,35% |
 | `PINE4` | 0,46 | 0,48 | 4,35% |
 
-Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
+Sem valor reconstruído: `BPAN4` (no_quote), `BSLI3` (stale_filing), `SULA11` (no_quote).
 
 </details>
 
@@ -1836,15 +2551,15 @@ Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
 | `MLAS3` | 6,65 | 4,98 | 1,67 p.p. |
 | `BHIA3` | 1,39 | 0,20 | 1,19 p.p. |
 | `VALE3` | 0,72 | 0,48 | 0,24 p.p. |
-| `AALR3` | 4,43 | 4,43 | 0,00 p.p. |
 | `ABEV3` | 8,61 | 8,61 | 0,00 p.p. |
 | `AGRO3` | -5,40 | -5,40 | 0,00 p.p. |
 | `ALLD3` | 3,11 | 3,11 | 0,00 p.p. |
 | `ALOS3` | 29,09 | 29,09 | 0,00 p.p. |
 | `ALPA3` | 6,29 | 6,29 | 0,00 p.p. |
 | `ALPA4` | 6,29 | 6,29 | 0,00 p.p. |
+| `ALPK3` | 23,59 | 23,59 | 0,00 p.p. |
 
-Sem valor reconstruído: `AURE3` (short_history), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `BRST3` (short_history), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `JBSS3` (no_quote), `LAND3` (short_history), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing), `AURE3` (short_history), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `BRST3` (short_history), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `JBSS3` (no_quote), `LAND3` (short_history), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1864,7 +2579,7 @@ Sem valor reconstruído: `AURE3` (short_history), `AXIA6` (no_quote), `AZUL54` (
 | `BEES3` | 28,74 | 28,74 | 0,00 p.p. |
 | `BEES4` | 28,74 | 28,74 | 0,00 p.p. |
 
-Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
+Sem valor reconstruído: `BPAN4` (no_quote), `BSLI3` (stale_filing), `SULA11` (no_quote).
 
 </details>
 
@@ -1874,8 +2589,8 @@ Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
 | `EQPA3` | 93,04 | 16,91 | 76,13 p.p. |
-| `TIMS3` | 1,43 | 27,03 | 25,60 p.p. |
 | `EALT4` | 18,53 | 1,27 | 17,26 p.p. |
+| `TIMS3` | 1,43 | 18,60 | 17,17 p.p. |
 | `PRIO3` | 53,58 | 68,53 | 14,95 p.p. |
 | `CAML3` | -19,43 | -30,94 | 11,51 p.p. |
 | `AXIA3` | 13,72 | 24,05 | 10,33 p.p. |
@@ -1904,7 +2619,7 @@ Sem valor reconstruído: `AXIA6` (no_quote), `BRFS3` (no_quote), `BRST3` (short_
 | `BBSE3` | 19,00 | 19,00 | 0,00 p.p. |
 | `BEES3` | 14,84 | 14,84 | 0,00 p.p. |
 
-Sem valor reconstruído: `BMEB3` (short_history), `BMEB4` (short_history), `BMGB4` (missing_input: LL_TTM), `BPAC11` (missing_input: LL_TTM), `BPAC3` (missing_input: LL_TTM), `BPAC5` (missing_input: LL_TTM), `BPAN4` (no_quote), `BSLI3` (short_history), `ITUB3` (missing_input: LL_TTM), `ITUB4` (missing_input: LL_TTM), `SANB11` (missing_input: LL_TTM), `SANB3` (missing_input: LL_TTM), `SANB4` (missing_input: LL_TTM), `SULA11` (no_quote).
+Sem valor reconstruído: `BMEB3` (short_history), `BMEB4` (short_history), `BMGB4` (missing_input: LL_TTM), `BPAC11` (missing_input: LL_TTM), `BPAC3` (missing_input: LL_TTM), `BPAC5` (missing_input: LL_TTM), `BPAN4` (no_quote), `BSLI3` (stale_filing), `ITUB3` (missing_input: LL_TTM), `ITUB4` (missing_input: LL_TTM), `SANB11` (missing_input: LL_TTM), `SANB3` (missing_input: LL_TTM), `SANB4` (missing_input: LL_TTM), `SULA11` (no_quote).
 
 </details>
 
@@ -1924,7 +2639,7 @@ Sem valor reconstruído: `BMEB3` (short_history), `BMEB4` (short_history), `BMGB
 | `RADL3` | 1,97 | -5,83 | 395,94% |
 | `MELK3` | -1,06 | 1,62 | 252,83% |
 
-Sem valor reconstruído: `AALR3` (non_positive_base), `AESB3` (no_quote), `AGRO3` (non_positive_base), `AMAR3` (non_positive_base), `AMBP3` (non_positive_base), `AURE3` (non_positive_base), `AXIA3` (non_positive_base), `AXIA6` (no_quote), `AXIA7` (non_positive_base), `AZEV3` (non_positive_base), `AZEV4` (non_positive_base), `AZUL54` (no_quote), `BEEF3` (non_positive_base), `BHIA3` (non_positive_base), `BIOM3` (non_positive_base), `BRFS3` (no_quote), `BRKM3` (non_positive_base), `BRKM5` (non_positive_base), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRPG5` (non_positive_base), `CSAN3` (non_positive_base), `CSNA3` (non_positive_base), `CVCB3` (non_positive_base), `DASA3` (non_positive_base), `ENAT3` (no_quote), `ENEV3` (non_positive_base), `EVEN3` (non_positive_base), `GPIV33` (no_cvm_code), `HAPV3` (non_positive_base), `HBSA3` (non_positive_base), `JALL3` (non_positive_base), `JBSS3` (no_quote), `LJQQ3` (non_positive_base), `MEAL3` (non_positive_base), `MLAS3` (non_positive_base), `MRVE3` (non_positive_base), `NEOE3` (no_quote), `NTCO3` (no_quote), `ONCO3` (non_positive_base), `OPCT3` (non_positive_base), `PCAR3` (non_positive_base), `PETZ3` (no_quote), `PMAM3` (non_positive_base), `PORT3` (no_quote), `POSI3` (non_positive_base), `PTBL3` (non_positive_base), `RAIZ4` (non_positive_base), `RNEW3` (non_positive_base), `RNEW4` (non_positive_base), `SCAR3` (non_positive_base), `SEQL3` (non_positive_base), `SIMH3` (non_positive_base), `STBP3` (no_quote), `TUPY3` (non_positive_base), `USIM3` (non_positive_base), `USIM5` (non_positive_base), `VVEO3` (non_positive_base), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AGRO3` (non_positive_base), `AMAR3` (non_positive_base), `AMBP3` (stale_filing), `AURE3` (non_positive_base), `AXIA3` (non_positive_base), `AXIA6` (no_quote), `AXIA7` (non_positive_base), `AZEV3` (non_positive_base), `AZEV4` (non_positive_base), `AZUL54` (no_quote), `BEEF3` (non_positive_base), `BHIA3` (non_positive_base), `BIOM3` (non_positive_base), `BRFS3` (no_quote), `BRKM3` (non_positive_base), `BRKM5` (non_positive_base), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRPG5` (non_positive_base), `CSAN3` (non_positive_base), `CSNA3` (non_positive_base), `CVCB3` (non_positive_base), `DASA3` (non_positive_base), `ENAT3` (no_quote), `ENEV3` (non_positive_base), `EVEN3` (non_positive_base), `GPIV33` (no_cvm_code), `HAPV3` (non_positive_base), `HBSA3` (non_positive_base), `JALL3` (non_positive_base), `JBSS3` (no_quote), `LJQQ3` (non_positive_base), `MEAL3` (non_positive_base), `MLAS3` (non_positive_base), `MRVE3` (non_positive_base), `NEOE3` (no_quote), `NTCO3` (no_quote), `ONCO3` (non_positive_base), `OPCT3` (non_positive_base), `PCAR3` (non_positive_base), `PETZ3` (no_quote), `PMAM3` (non_positive_base), `PORT3` (no_quote), `POSI3` (non_positive_base), `PTBL3` (non_positive_base), `RAIZ4` (non_positive_base), `RNEW3` (non_positive_base), `RNEW4` (non_positive_base), `SCAR3` (non_positive_base), `SEQL3` (non_positive_base), `SIMH3` (non_positive_base), `STBP3` (no_quote), `TUPY3` (non_positive_base), `USIM3` (non_positive_base), `USIM5` (non_positive_base), `VVEO3` (non_positive_base), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1933,18 +2648,18 @@ Sem valor reconstruído: `AALR3` (non_positive_base), `AESB3` (no_quote), `AGRO3
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `ABCB4` | 1,12 | -0,15 | 113,39% |
-| `BNBR3` | 1,94 | -0,14 | 107,22% |
 | `WIZC3` | 0,65 | 1,30 | 100,00% |
-| `BAZA3` | -0,17 | -0,09 | 47,06% |
 | `BBSE3` | 2,62 | 3,82 | 45,80% |
 | `BMEB3` | 0,13 | 0,17 | 30,77% |
 | `BRBI11` | -0,57 | -0,41 | 28,07% |
+| `ABCB4` | 1,12 | 0,82 | 26,79% |
 | `BMEB4` | 0,15 | 0,19 | 26,67% |
 | `PSSA3` | 0,42 | 0,51 | 21,43% |
 | `BBDC3` | 0,24 | 0,23 | 4,17% |
+| `BBDC4` | 0,26 | 0,25 | 3,85% |
+| `BAZA3` | -0,17 | -0,17 | 0,00% |
 
-Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `PINE3` (short_history), `PINE4` (short_history), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
+Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: LL), `BPAC3` (missing_input: LL), `BPAC5` (missing_input: LL), `BPAN4` (no_quote), `BSLI3` (stale_filing), `ITUB3` (missing_input: LL), `ITUB4` (missing_input: LL), `PINE3` (short_history), `PINE4` (short_history), `SANB11` (missing_input: LL), `SANB3` (missing_input: LL), `SANB4` (missing_input: LL), `SULA11` (no_quote).
 
 </details>
 
@@ -2038,11 +2753,11 @@ Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
 | `VTRU3` | 464104198,25 | 1835409378,25 | 295,47% |
 | `VVEO3` | 874700407,72 | 2195180134,40 | 150,96% |
 | `LIGT3` | 3994493014,16 | 9239372035,20 | 131,30% |
-| `ORVR3` | 9327052939,92 | 2331761520,00 | 75,00% |
 | `VIVA3` | 4294075440,42 | 1492913911,86 | 65,23% |
 | `OPCT3` | 4308559880,00 | 1815632750,32 | 57,86% |
 | `RAIZ4` | 3105752845,20 | 1367279135,10 | 55,98% |
-| `SEQL3` | 262888829,56 | 394333250,53 | 50,00% |
+| `EALT4` | 263067786,77 | 156856210,00 | 40,37% |
+| `PMAM3` | 1096570827,56 | 772715405,80 | 29,53% |
 
 Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
@@ -2203,16 +2918,16 @@ O DY começa em 1995, pela fonte `b3`.
 
 ### Esforço da reconstrução completa
 
-- Total projetado: 166 s. Carga: 156 s. Compute: 9 s (0,05 s por data × 180 datas).
+- Total projetado: 230 s. Carga: 166 s. Compute: 64 s (0,35 s por data × 180 datas).
 - Premissa: compute por data com o universo de hoje.
 
 | tipo | segundos | bytes medidos | bytes completos | segundos projetados |
 | --- | --- | --- | --- | --- |
 | `CADASTRO` | 0,02 | 1494679 | 1494679 | 0,02 |
-| `COTAHIST` | 13,21 | 179489589 | 616660205 | 45,39 |
-| `DFP` | 12,22 | 90623836 | 175412433 | 23,65 |
+| `COTAHIST` | 15,61 | 179489589 | 616660205 | 53,65 |
+| `DFP` | 12,30 | 90623836 | 175412433 | 23,81 |
 | `FCA` | 0,03 | 6646755 | 6646755 | 0,03 |
-| `ITR` | 17,63 | 86594608 | 428000310 | 87,16 |
+| `ITR` | 17,91 | 86594608 | 428000310 | 88,53 |
 
 ### Anos lidos na reconstrução completa
 

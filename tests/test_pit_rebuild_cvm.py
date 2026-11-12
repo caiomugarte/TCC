@@ -361,7 +361,7 @@ class AccessorTests(StoreCase):
         # GAMA: the ITR 2026-03-31 (received 2026-05-14) is newer than the DFP 2025-12-31 (ON 700000000).
         self.assertEqual(
             cvm.shares(self.dfp, self.itr, GAMA, date(2026, 8, 7)),
-            cvm.Shares(on=705260684, pref=547818424, total=1253079108, dt_receb=date(2026, 5, 14)),
+            cvm.Shares(on=705260684, pref=547818424, total=1253079108, dt_refer=date(2026, 3, 31), dt_receb=date(2026, 5, 14)),
         )
 
     def test_shares_are_none_when_the_newest_total_is_zero_even_if_an_older_filing_has_counts(self):
@@ -518,6 +518,297 @@ class AnnualBaseReceiptTests(unittest.TestCase):
         self.assertEqual(cvm.annual(store, self.CNPJ, self.D, "3.01"), cvm.Dated(1000.0, self.D))
         # Five years back from DFP 2025 is DFP 2020, received 2021-03-20.
         self.assertEqual(cvm.annual(store, self.CNPJ, self.D, "3.01", years_back=5), cvm.Dated(200.0, date(2021, 3, 20)))
+
+
+class YearEarlierItrTests(unittest.TestCase):
+    """TTM-01..TTM-03 (B-5): an ITR whose PENÚLTIMO is absent or 0 takes its prior YTD from the ITR one year earlier."""
+
+    CNPJ = "30.303.303/0001-30"
+    D = date(2026, 8, 7)
+
+    def stores(self, *, penultimo: str | None = "0.00", earlier_receipt: str | None = "2025-08-10 18:00:00",
+               earlier_account: bool = True, dfp_receipt: str = "2026-03-20 18:00:00",
+               itr_receipt: str = "2026-08-06 18:00:00") -> tuple[cvm.FilingStore, cvm.FilingStore]:
+        # DFP 2025 = 1000; ITR 2026-06-30 YTD 300 with the PENÚLTIMO given; ITR 2025-06-30 YTD 200.
+        dfp = inline_store(
+            "DFP", 2025,
+            f"{self.CNPJ};2025-12-31;1;CASE S.A.;1;DFP;1;{dfp_receipt};\n",
+            {"DRE_con": dre_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "1000.00")},
+        )
+        index = f"{self.CNPJ};2026-06-30;1;CASE S.A.;1;ITR;1;{itr_receipt};\n"
+        rows = dre_line(self.CNPJ, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.01", "300.00")
+        if penultimo is not None:
+            rows += dre_line(self.CNPJ, "2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", "3.01", penultimo)
+        if earlier_receipt is not None:
+            index = f"{self.CNPJ};2025-06-30;1;CASE S.A.;1;ITR;1;{earlier_receipt};\n" + index
+            if earlier_account:
+                rows += dre_line(self.CNPJ, "2025-06-30", "ÚLTIMO", "2025-01-01", "2025-06-30", "3.01", "200.00")
+        return dfp, inline_store("ITR", 2026, index, {"DRE_con": rows})
+
+    def test_a_zero_comparative_takes_the_prior_ytd_from_last_years_itr(self):
+        dfp, itr = self.stores(penultimo="0.00")
+        self.assertEqual(
+            cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"),
+            cvm.Dated(1100.0, date(2026, 8, 6), prior_from_itr=True),  # 1000 + 300 - 200
+        )
+
+    def test_an_absent_comparative_takes_the_prior_ytd_from_last_years_itr(self):
+        dfp, itr = self.stores(penultimo=None)
+        self.assertEqual(
+            cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"),
+            cvm.Dated(1100.0, date(2026, 8, 6), prior_from_itr=True),
+        )
+
+    def test_the_year_earlier_itr_must_be_usable_at_d(self):
+        dfp, itr = self.stores(earlier_receipt="2026-08-08 09:00:00")  # received on d + 1
+        self.assertIsNone(cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"))
+        dfp, itr = self.stores(earlier_receipt="2026-08-07 12:00:00")  # received on d: usable, and the latest receipt
+        self.assertEqual(cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"), cvm.Dated(1100.0, date(2026, 8, 7), prior_from_itr=True))
+
+    def test_without_the_year_earlier_itr_or_its_account_there_is_no_value(self):
+        for label, kwargs in (("absent", {"earlier_receipt": None}), ("without the account", {"earlier_account": False})):
+            with self.subTest(case=label):
+                dfp, itr = self.stores(**kwargs)
+                self.assertIsNone(cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"))
+
+    def test_a_non_zero_comparative_is_used_even_when_last_years_itr_exists(self):
+        dfp, itr = self.stores(penultimo="150.00")
+        self.assertEqual(
+            cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"),
+            cvm.Dated(1150.0, date(2026, 8, 6), prior_from_itr=False),  # 1000 + 300 - 150
+        )
+
+    def test_the_date_is_the_latest_receipt_of_the_three_filings_used(self):
+        dfp, itr = self.stores(dfp_receipt="2026-08-07 12:00:00")  # the DFP is the latest of the three
+        self.assertEqual(cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"), cvm.Dated(1100.0, date(2026, 8, 7), prior_from_itr=True))
+
+    def test_a_newest_dfp_gives_its_annual_value_without_the_fallback(self):
+        dfp, itr = self.stores(itr_receipt="2026-08-08 09:00:00")  # the ITR is not usable at d: the DFP is the newest
+        self.assertEqual(cvm.ttm(dfp, itr, self.CNPJ, self.D, "3.01"), cvm.Dated(1000.0, date(2026, 3, 20), prior_from_itr=False))
+
+    def test_ttm_year_before_takes_the_same_fallback_on_its_itr(self):
+        # The period one year before 2026-06-30 is the ITR 2025-06-30 (YTD 200, PENÚLTIMO 0); its prior YTD is the ITR
+        # 2024-06-30 (150), and its fiscal year before is the DFP 2024 (800): 800 + 200 - 150 = 850.
+        dfp = inline_store(
+            "DFP", 2025,
+            f"{self.CNPJ};2024-12-31;1;CASE S.A.;1;DFP;1;2025-03-20 18:00:00;\n"
+            f"{self.CNPJ};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n",
+            {"DRE_con": dre_line(self.CNPJ, "2024-12-31", "ÚLTIMO", "2024-01-01", "2024-12-31", "3.01", "800.00")
+             + dre_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "1000.00")},
+        )
+        itr = inline_store(
+            "ITR", 2026,
+            f"{self.CNPJ};2024-06-30;1;CASE S.A.;1;ITR;1;2024-08-10 18:00:00;\n"
+            f"{self.CNPJ};2025-06-30;1;CASE S.A.;1;ITR;1;2025-08-10 18:00:00;\n"
+            f"{self.CNPJ};2026-06-30;1;CASE S.A.;1;ITR;1;2026-08-06 18:00:00;\n",
+            {"DRE_con": dre_line(self.CNPJ, "2024-06-30", "ÚLTIMO", "2024-01-01", "2024-06-30", "3.01", "150.00")
+             + dre_line(self.CNPJ, "2025-06-30", "ÚLTIMO", "2025-01-01", "2025-06-30", "3.01", "200.00")
+             + dre_line(self.CNPJ, "2025-06-30", "PENÚLTIMO", "2024-01-01", "2024-06-30", "3.01", "0.00")
+             + dre_line(self.CNPJ, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.01", "300.00")},
+        )
+        self.assertEqual(
+            cvm.ttm_year_before(dfp, itr, self.CNPJ, self.D, "3.01"),
+            cvm.Dated(850.0, date(2025, 8, 10), prior_from_itr=True),
+        )
+
+
+class NewestFilingTests(unittest.TestCase):
+    """STL-01 (age input) and ADJ-04 (the filing of a worst row): the newest usable period end and filing at d (B-6)."""
+
+    CNPJ = "40.404.404/0001-40"
+    D = date(2026, 8, 7)
+
+    def stores(self, itr_receipt: str = "2026-05-14 18:00:00") -> tuple[cvm.FilingStore, cvm.FilingStore]:
+        # DFP 2025-12-31 (received 2026-03-20) and ITR 2026-03-31 (received as given).
+        dfp = inline_store(
+            "DFP", 2025,
+            f"{self.CNPJ};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n",
+            {"DRE_con": dre_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "1000.00")},
+        )
+        itr = inline_store(
+            "ITR", 2026,
+            f"{self.CNPJ};2026-03-31;1;CASE S.A.;1;ITR;1;{itr_receipt};\n",
+            {"DRE_con": dre_line(self.CNPJ, "2026-03-31", "ÚLTIMO", "2026-01-01", "2026-03-31", "3.01", "250.00")},
+        )
+        return dfp, itr
+
+    def test_the_usable_itr_is_the_newest_period_and_its_filing_is_returned(self):
+        dfp, itr = self.stores()
+        self.assertEqual(cvm.newest_period_end(dfp, itr, self.CNPJ, self.D), date(2026, 3, 31))
+        self.assertEqual(cvm.newest_filing(dfp, itr, self.CNPJ, self.D), itr.period(self.CNPJ, date(2026, 3, 31)).filing)
+
+    def test_an_itr_received_on_d_plus_one_leaves_the_dfp_as_the_newest(self):
+        dfp, itr = self.stores(itr_receipt="2026-08-08 09:00:00")
+        self.assertEqual(cvm.newest_period_end(dfp, itr, self.CNPJ, self.D), date(2025, 12, 31))
+        self.assertEqual(cvm.newest_filing(dfp, itr, self.CNPJ, self.D), dfp.period(self.CNPJ, date(2025, 12, 31)).filing)
+
+    def test_no_usable_filing_gives_none_for_both(self):
+        dfp, itr = self.stores()
+        before_any_receipt = date(2026, 1, 1)
+        self.assertIsNone(cvm.newest_period_end(dfp, itr, self.CNPJ, before_any_receipt))
+        self.assertIsNone(cvm.newest_filing(dfp, itr, self.CNPJ, before_any_receipt))
+        self.assertIsNone(cvm.newest_period_end(dfp, itr, "00.000.000/0001-00", self.D))
+
+    def test_the_stale_filing_limit_is_270_days(self):
+        self.assertEqual(cvm.STALE_FILING_DAYS, 270)
+
+
+COMPOSITION_HEADER = "CNPJ_CIA;DT_REFER;VERSAO;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR\n"
+
+
+def inline_filings(kind: str, year: int, index_rows: str, statements: dict[str, str] | None = None,
+                   composition_rows: str | None = None) -> cvm.FilingStore:
+    """A FilingStore from inline CSV text: the index rows, the statement rows of each scope and the capital composition rows."""
+    prefix = kind.lower()
+    members = {f"{prefix}_cia_aberta_{year}.csv": INDEX_HEADER + index_rows}
+    for scope, rows in (statements or {}).items():
+        members[f"{prefix}_cia_aberta_{scope}_{year}.csv"] = DRE_HEADER + rows
+    if composition_rows is not None:
+        members[f"{prefix}_cia_aberta_composicao_capital_{year}.csv"] = COMPOSITION_HEADER + composition_rows
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / f"{prefix}_cia_aberta_{year}.zip"
+        path.write_bytes(make_zip(members))
+        return cvm.load_filings([path], kind)
+
+
+class PreviousSharesTests(unittest.TestCase):
+    """SHR-05 (B-4): the newest usable period older than the newest usable one whose composition total is above zero."""
+
+    CNPJ = "50.505.505/0001-50"
+    D = date(2025, 8, 7)
+
+    def stores(self, filings: list[tuple[str, str, str, tuple[int, int, int] | None]]):
+        """Each filing is (kind, DT_REFER, DT_RECEB, (ON, PREF, TOTAL) or None when it has no composition row)."""
+        index = {"DFP": "", "ITR": ""}
+        composition = {"DFP": "", "ITR": ""}
+        for kind, dt_refer, receipt, counts in filings:
+            index[kind] += f"{self.CNPJ};{dt_refer};1;CASE S.A.;1;{kind};1;{receipt};\n"
+            if counts is not None:
+                composition[kind] += f"{self.CNPJ};{dt_refer};1;{counts[0]};{counts[1]};{counts[2]}\n"
+        return (
+            inline_filings("DFP", 2024, index["DFP"], composition_rows=composition["DFP"]),
+            inline_filings("ITR", 2025, index["ITR"], composition_rows=composition["ITR"]),
+        )
+
+    def test_the_middle_period_without_a_composition_is_skipped(self):
+        dfp, itr = self.stores([
+            ("DFP", "2023-12-31", "2024-03-20 18:00:00", (100, 50, 150)),
+            ("ITR", "2024-06-30", "2024-08-10 18:00:00", None),
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+        ])
+        self.assertEqual(
+            cvm.previous_shares(dfp, itr, self.CNPJ, self.D),
+            cvm.Shares(on=100, pref=50, total=150, dt_refer=date(2023, 12, 31), dt_receb=date(2024, 3, 20)),
+        )
+
+    def test_a_period_whose_composition_total_is_zero_is_skipped(self):
+        dfp, itr = self.stores([
+            ("DFP", "2023-12-31", "2024-03-20 18:00:00", (100, 50, 150)),
+            ("ITR", "2024-06-30", "2024-08-10 18:00:00", (0, 0, 0)),
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+        ])
+        self.assertEqual(cvm.previous_shares(dfp, itr, self.CNPJ, self.D).dt_refer, date(2023, 12, 31))
+
+    def test_none_when_no_older_usable_period_has_a_composition(self):
+        dfp, itr = self.stores([
+            ("DFP", "2023-12-31", "2024-03-20 18:00:00", None),
+            ("ITR", "2024-06-30", "2024-08-10 18:00:00", None),
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+        ])
+        self.assertIsNone(cvm.previous_shares(dfp, itr, self.CNPJ, self.D))
+
+    def test_a_previous_period_received_after_d_is_skipped(self):
+        # ITR 2025-03-31 is received on d + 1, so the previous count is the DFP 2024, not the newer ITR.
+        dfp, itr = self.stores([
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+            ("ITR", "2025-03-31", "2025-08-08 09:00:00", (300, 50, 350)),
+            ("ITR", "2025-06-30", "2025-08-06 18:00:00", (260, 50, 310)),
+        ])
+        self.assertEqual(cvm.shares(dfp, itr, self.CNPJ, self.D).dt_refer, date(2025, 6, 30))
+        self.assertEqual(
+            cvm.previous_shares(dfp, itr, self.CNPJ, self.D),
+            cvm.Shares(on=200, pref=50, total=250, dt_refer=date(2024, 12, 31), dt_receb=date(2025, 3, 20)),
+        )
+
+    def test_shares_carry_the_period_end_of_the_newest_usable_filing(self):
+        dfp, itr = self.stores([
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+            ("ITR", "2025-06-30", "2025-08-06 18:00:00", (260, 50, 310)),
+        ])
+        self.assertEqual(
+            cvm.shares(dfp, itr, self.CNPJ, self.D),
+            cvm.Shares(on=260, pref=50, total=310, dt_refer=date(2025, 6, 30), dt_receb=date(2025, 8, 6)),
+        )
+
+
+class WithoutPeriodTests(unittest.TestCase):
+    """LAG-01 (B-9): a filing store that answers as the original, except that one company has no one of its periods."""
+
+    X = "60.606.606/0001-60"
+    Y = "70.707.707/0001-70"
+    D = date(2026, 8, 7)
+
+    @classmethod
+    def setUpClass(cls):
+        dfp_index = f"{cls.X};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n" + f"{cls.Y};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n"
+        dfp_dre = dre_line(cls.X, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "1000.00") + dre_line(cls.Y, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "2000.00")
+        dfp_bpp = dre_line(cls.X, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "2.03", "5000.00")
+        cls.dfp = inline_filings("DFP", 2025, dfp_index, {"DRE_con": dfp_dre, "BPP_con": dfp_bpp},
+                                 composition_rows=f"{cls.X};2025-12-31;1;100;50;150\n{cls.Y};2025-12-31;1;300;0;300\n")
+        itr_index = (
+            f"{cls.X};2026-03-31;1;CASE S.A.;1;ITR;1;2026-05-14 18:00:00;\n"
+            f"{cls.X};2026-06-30;1;CASE S.A.;1;ITR;1;2026-08-06 18:00:00;\n"
+            f"{cls.Y};2026-06-30;1;CASE S.A.;1;ITR;1;2026-08-06 18:00:00;\n"
+        )
+        itr_dre = (
+            dre_line(cls.X, "2026-03-31", "ÚLTIMO", "2026-01-01", "2026-03-31", "3.01", "250.00")
+            + dre_line(cls.X, "2026-03-31", "PENÚLTIMO", "2025-01-01", "2025-03-31", "3.01", "200.00")
+            + dre_line(cls.X, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.01", "300.00")
+            + dre_line(cls.X, "2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", "3.01", "260.00")
+            + dre_line(cls.Y, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.01", "400.00")
+            + dre_line(cls.Y, "2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", "3.01", "380.00")
+        )
+        itr_bpp = (
+            dre_line(cls.X, "2026-03-31", "ÚLTIMO", "2026-01-01", "2026-03-31", "2.03", "4000.00")
+            + dre_line(cls.X, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "2.03", "3000.00")
+            + dre_line(cls.Y, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "2.03", "9000.00")
+        )
+        cls.itr = inline_filings(
+            "ITR", 2026, itr_index, {"DRE_con": itr_dre, "BPP_con": itr_bpp},
+            composition_rows=f"{cls.X};2026-03-31;1;110;50;160\n{cls.X};2026-06-30;1;120;50;170\n{cls.Y};2026-06-30;1;300;0;300\n",
+        )
+
+    def test_the_view_answers_from_the_next_newest_period_of_the_company(self):
+        view = self.itr.without(self.X, date(2026, 6, 30))
+        self.assertEqual(cvm.newest_period_end(self.dfp, view, self.X, self.D), date(2026, 3, 31))
+        self.assertEqual(cvm.shares(self.dfp, view, self.X, self.D).on, 110)
+        self.assertEqual(cvm.balance(self.dfp, view, self.X, self.D, "2.03"), cvm.Dated(4000.0, date(2026, 5, 14)))
+        self.assertEqual(cvm.ttm(self.dfp, view, self.X, self.D, "3.01"), cvm.Dated(1050.0, date(2026, 5, 14)))  # 1000 + 250 - 200
+
+    def test_the_original_store_keeps_the_period_and_its_answers(self):
+        self.itr.without(self.X, date(2026, 6, 30))
+        self.assertIsNotNone(self.itr.period(self.X, date(2026, 6, 30)))
+        self.assertEqual(cvm.newest_period_end(self.dfp, self.itr, self.X, self.D), date(2026, 6, 30))
+        self.assertEqual(cvm.ttm(self.dfp, self.itr, self.X, self.D, "3.01"), cvm.Dated(1040.0, date(2026, 8, 6)))  # 1000 + 300 - 260
+
+    def test_another_company_answers_the_same_on_both_stores(self):
+        view = self.itr.without(self.X, date(2026, 6, 30))
+        for call in (
+            lambda store: cvm.newest_period_end(self.dfp, store, self.Y, self.D),
+            lambda store: cvm.shares(self.dfp, store, self.Y, self.D),
+            lambda store: cvm.balance(self.dfp, store, self.Y, self.D, "2.03"),
+            lambda store: cvm.ttm(self.dfp, store, self.Y, self.D, "3.01"),
+        ):
+            with self.subTest(call=call):
+                self.assertEqual(call(view), call(self.itr))
+
+    def test_a_period_the_company_does_not_have_gives_an_equivalent_store(self):
+        view = self.itr.without(self.X, date(2020, 12, 31))
+        self.assertEqual(
+            [p.filing.dt_refer for p in view.periods(self.X)],
+            [p.filing.dt_refer for p in self.itr.periods(self.X)],
+        )
+        self.assertEqual(cvm.newest_period_end(self.dfp, view, self.X, self.D), date(2026, 6, 30))
 
 
 if __name__ == "__main__":

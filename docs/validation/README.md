@@ -358,7 +358,7 @@ mesmo código e a mesma seed reescreve os dois arquivos byte a byte.
 A primeira, a segunda e a última também ficam gravadas em `limitations` no
 relatório gerado.
 
-# Reconstrução PIT de ações (issue #59)
+# Reconstrução PIT de ações (issues #59 e #64)
 
 Pergunta: dá para reconstruir, só com CVM e B3, os 19 campos do seletor de ações
 em cada data, de modo que batam com o Status Invest daquela data? A ferramenta
@@ -367,6 +367,11 @@ em cada data, de modo que batam com o Status Invest daquela data? A ferramenta
 demonstrações (AD-031) em `.specs/STATE.md`. Esta seção descreve como rodar a
 medição e as regras dela. Os resultados ficam no relatório gerado
 (`pit-rebuild-stocks.json` e `pit-rebuild-stocks.md`), não aqui.
+
+A #64 corrige as contagens de ações, os 12 meses, os filings obsoletos e o ISIN em `d`, e
+acrescenta o veredito ajustado e o critério de liberação. A seção "Revisão da #64" lista as
+regras. O escopo está em `.specs/features/pit-rebuild-stocks-fixes/`, e a decisão AD-033 em
+`.specs/STATE.md`.
 
 ## Fontes
 
@@ -446,6 +451,60 @@ F6 e F12, e D-A a D-C) são os da especificação, em
 - **Units (A-9, F2).** A composição lê `e` ou `E` como separador e `PNs` como PN, e
   aceita tickers de três ou quatro letras (`1 ENG3 e 4 ENGI4`).
 
+## Revisão da #64 (2026-11-12)
+
+A #64 corrige as regras da #59 que davam números errados e acrescenta o veredito ajustado.
+Os relatórios a partir da v3 trazem `amended_by` (`[64]`) e `previous_report` (a v2, no commit
+`ebaf1fd`). A seção de veredito diz que a regra é a da #59, aplicada aos valores corrigidos.
+Os identificadores são os da especificação em `.specs/features/pit-rebuild-stocks-fixes/spec.md`.
+
+- **Contagem de ações com eventos (SHR-01 a SHR-04, SHR-08, AD-033).** A contagem de cada classe
+  em `d` é o arquivado × fator × eventos da B3 da classe com data-ex em (DT_REFER, d]. Entram os
+  eventos dos ISINs da classe em `d` e dos que ela teve desde o arquivamento, sem repetição. O
+  fator é escolhido sobre a contagem ajustada pelos eventos até `R`, o dia em que o registro da B3
+  foi obtido (horário de São Paulo, a partir de `retrieved_at` do manifesto). Eventos com data-ex
+  depois de `d` só escolhem a potência de dez. Os eventos que entram ficam em
+  `share_events.adjusted`, e as classes sem ISIN em `d` ficam em `share_events.no_isin`.
+- **Contagem suspeita (SHR-05 a SHR-07, DEC-4).** Uma contagem escalonada que muda mais de 20%
+  entre dois arquivamentos, sem evento da B3 no intervalo, vai para `share_count_suspect`, com os
+  dois totais. Ela não é corrigida.
+- **Fluxo de 12 meses (TTM-01 a TTM-04, B-5).** Com o `PENÚLTIMO` do ITR ausente ou zero, o
+  acumulado do ano anterior vem do `ÚLTIMO` do ITR do mesmo período do ano anterior, se ele
+  estava recebido em `d`. Os fluxos que usaram esse caminho ficam em `ttm_prior_from_itr`.
+- **Filing obsoleto (STL-01 a STL-04, DEC-3, B-6).** Um filing que termina mais de 270 dias antes
+  de `d` deixa os 15 campos contábeis sem valor, com motivo `stale_filing`. A empresa continua no
+  denominador e aparece em `stale_filing`.
+- **ISIN em `d` (ISN-01 a ISN-03).** O ISIN e a classe de um ticker são os da última sessão até
+  `d`, e não os da última sessão carregada.
+- **Veredito ajustado e critério (ADJ-01 a ADJ-07, B-8, DEC-2).** `adjusted_verdict` mede os 14
+  campos de `ADJUSTED_FIELDS`, no grupo não financeiro, sem os tickers de `reference_stale` e sem
+  ROIC e PEG RATIO. O veredito oficial (`verdicts`) não lê esse bloco. O critério de liberação tem
+  duas partes. A parte 1 está em `adjusted_verdict.criterion`: cada um dos 14 campos tem 70% ou
+  mais dentro da tolerância nas duas datas. A parte 2 são os dez piores casos de cada campo e data,
+  conferidos e explicados em `pit-rebuild-stocks-audit.md`, que também dá o critério inteiro.
+- **Defasagem do Status Invest (LAG-01 a LAG-04, B-9).** `si_lag` marca o ticker fora da tolerância
+  com o filing mais recente e dentro dela com o filing anterior, recalculado com as mesmas cotações
+  e proventos. A marca não muda nenhuma estatística. `PRECO`, `LIQUIDEZ MEDIA DIARIA` e `DY` não
+  leem filing e nunca recebem a marca.
+- **DY da MBRF3 (MBR-02, B-11).** A busca do histórico da B3 não é a causa. O DY de 2026-11-05 é
+  zero porque o último provento que a B3 publica para a companhia saiu da janela de 12 meses
+  (`d − 365 dias < data-ex ≤ d`). A nota está em `investigations` e na seção "Investigações" do
+  Markdown.
+
+Resultado da regeneração, com as chaves do JSON:
+
+- Veredito oficial da classe (`verdicts.class`, geral, sobre as duas datas): `não reconstruível`,
+  como na v2. Um veredito por data muda: LIQ. CORRENTE em 2026-08-07, no grupo sem os não
+  classificados, de `reconstruível` para `com ressalvas` (90,21% na v2; 89,79% agora). A causa é
+  a AMBP3, que está em `stale_filing`.
+- Veredito ajustado da classe (`adjusted_verdict.class`): `com ressalvas`.
+- Critério, parte 1 (`adjusted_verdict.criterion.met`): cumprida. O menor percentual é o de P/L
+  em 2026-11-05, 72,77% (`adjusted_verdict.dates["2026-11-05"].fields["P/L"].pct_within`).
+- Marcas `si_lag` (soma de `si_lag.count` nos 14 campos): 32 em 2026-08-07 e 350 em 2026-11-05.
+- Listas de 2026-08-07 e 2026-11-05: `share_events.adjusted` com 6 e 3 classes;
+  `share_events.no_isin` com 9 e 10 classes; `share_count_suspect` com 5 e 8 empresas;
+  `ttm_prior_from_itr` com 18 e 20 empresas; `stale_filing` com 1 e 3 tickers.
+
 ## Sensibilidades (não são o veredito)
 
 O relatório traz três sensibilidades, calculadas na mesma execução (A-22). Elas ajudam
@@ -475,7 +534,9 @@ nem na linha do veredito.
   usa o período anterior. O ticker entra em `refiled_after_d` só quando o período
   mais recente foi reapresentado: uma versão dele chegou em `d` ou antes, e a
   versão mais recente depois de `d`. Um período sem nenhuma versão em `d` não
-  entra.
+  entra. Um ITR com o `PENÚLTIMO` ausente ou zero usa o `ÚLTIMO` do ITR do ano anterior, se
+  ele estava recebido em `d` (TTM-01 a TTM-03). Os fluxos que usaram esse caminho ficam em
+  `ttm_prior_from_itr`.
 - **Cotações.** Só entram sessões até `d`. O preço é o último pregão até 30 dias
   antes de `d`; sem pregão nesse prazo, o ticker fica sem cotação (`no_quote`).
   Entram os códigos `CODBDI` 02, 07 e 08 (F1). A liquidez é a média de `VOLTOT`
@@ -487,11 +548,15 @@ nem na linha do veredito.
   checagem é só evidência e não escolhe `d`. Quando a sessão que bate melhor não é `d`,
   o Markdown avisa.
 - **Proventos.** Só entram os que têm data-ex em `d − 365 dias < data-ex ≤ d`.
+- **Idade do filing (STL-01, B-6).** A idade é `d` menos o `DT_REFER` do filing mais recente, em
+  dias. Acima de 270 dias, os 15 campos contábeis não têm valor (`stale_filing`). Aos 270 dias
+  exatos, o filing ainda vale.
 - **Entradas que não são ponto no tempo (A-19, A-20).** Oito entradas são lidas como
   foram obtidas no `fetch`, e não como estavam em `d`. Cada uma tem um papel fixo, e o
   relatório lista as oito com o papel e a verificação que a reconstrução completa
-  precisa fazer. A oitava são os `stockDividends` da B3, que só contam com data-ex até
-  `d`.
+  precisa fazer. A oitava são os `stockDividends` da B3: os proventos usam os de data-ex até
+  `d`, e as contagens usam os de data-ex em (DT_REFER, d] e, para a potência de dez, os até `R`
+  (AD-033).
 
 ## Ações: valor de mercado e escala (A-17, A-18)
 
@@ -501,16 +566,22 @@ nem na linha do veredito.
   pregão recente na classe, usa-se o último pregão dela, mesmo antigo, e a empresa
   aparece em `vm_stale_class_price`. Uma classe com ações e nenhum pregão até `d` usa o
   preço da outra, e a empresa aparece em `vm_price_fallback`.
-- A CVM não informa a escala de `composicao_capital`. O fator é a potência de dez, de
-  10⁻² a 10³, que deixa a soma das ações mais perto da `totalNumberShares` da B3. A
-  contagem da B3 só escolhe o fator e nunca entra num valor. Empresas com fator
-  diferente de 1 aparecem em `share_scale.scaled`, com o fator e o resíduo
-  (`N_total × f / totalNumberShares`). Sem registro da B3, ou com total zero nela, o
-  fator é 1 e a empresa aparece em `share_scale.unverified`.
-- Limite (√10): se a contagem mudou menos de √10 vezes entre o arquivamento e a consulta
-  à B3, ela fica como arquivada. Se mudou √10 vezes ou mais, o fator absorve a mudança
-  como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1, e erra em
-  `d` quando a mudança é posterior a `d`. O resíduo mostra cada caso.
+- A CVM não informa a escala de `composicao_capital`. Cada contagem de classe em `d` é o
+  arquivado × f × os eventos da B3 da classe com data-ex em (DT_REFER, d] (AD-033). O fator
+  f é a potência de dez, de 10⁻² a 10³, que deixa o arquivado × os eventos até `R` mais perto
+  da `totalNumberShares` da B3. A contagem da B3 só escolhe o fator e nunca entra num valor.
+  Empresas com fator diferente de 1 aparecem em `share_scale.scaled`, com o fator e o
+  resíduo. Sem registro da B3, ou com total zero nela, o fator é 1 e a empresa aparece em
+  `share_scale.unverified`.
+- Limite (√10), só para mudança sem evento da B3: se a contagem mudou menos de √10 vezes
+  entre o arquivamento e a obtenção do registro da B3, e nenhum evento a explica, ela fica
+  como arquivada. Se mudou √10 vezes ou mais, o fator absorve a mudança como a potência de
+  dez mais próxima. Isso é exato só para grupamento de 10:1. Com evento da B3, o limite não
+  vale: o evento entra na contagem. O resíduo mostra cada caso, como o de `cd_cvm` 11975 em
+  `share_scale.scaled`.
+- Contagem suspeita: uma mudança de mais de 20% sem evento da B3 no intervalo vai para
+  `share_count_suspect`, com os totais antes e depois dos fatores. Não há correção (DEC-4).
+- Classe com ações e sem ISIN em `d`: não recebe evento, e aparece em `share_events.no_isin`.
 - Contagem de ações zero: os campos que dependem dela ficam sem valor, com motivo
   `no_share_count`.
 
@@ -535,6 +606,9 @@ nem na linha do veredito.
   como sem proventos no período, com DY 0 e motivo `b3_empty_yahoo_failed`.
 - Se algum DY vem do Yahoo, o relatório marca a fonte do DY como `secondary`. O
   Yahoo não tem empresas que saíram da bolsa, e o relatório diz isso.
+- **ISIN em `d` (ISN-01 a ISN-03).** Cada provento é dividido pelos eventos do ISIN da classe em
+  `d`, e não pelo ISIN da última sessão carregada. Uma troca de ISIN depois de `d` não entra
+  nesse ajuste.
 
 ## Cobertura histórica
 
@@ -591,6 +665,18 @@ leitura ou escrita.
 `docs/validation`) são opcionais. A primeira execução baixa todos os arquivos
 planejados; as seguintes não baixam de novo o que já está no cache.
 
+Para regerar o relatório sem refazer os downloads, copie antes do `report` o cache de uma
+execução anterior, com hard links:
+
+```sh
+mkdir -p .cache && cp -al <checkout-com-cache>/.cache/pit-rebuild .cache/pit-rebuild
+```
+
+O cache grava cada arquivo por troca de nome (`os.replace`), então a cópia não altera o
+original. Antes de comitar um relatório regerado, rode o código do commit anterior sobre o
+mesmo cache: o JSON anterior tem de sair igual, exceto `tool_commit`, os tempos de
+`coverage.effort` e o `retrieved_at` dos arquivos.
+
 Os testes da ferramenta rodam sem rede:
 `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`.
 
@@ -631,3 +717,14 @@ Uma falha não escreve nenhum arquivo do relatório e imprime uma linha no stder
 - **APIs da B3.** As duas são sem documentação e podem mudar ou limitar
   requisições. O cache guarda cada resposta com o sha256, para que o relatório
   possa ser refeito a partir dele.
+- **Escala com resíduo.** Um resíduo longe de 1 mostra que a contagem da B3 não bate com os
+  eventos sob nenhuma potência de dez. O caso fica em `share_scale.scaled`, com o resíduo, e não
+  é corrigido. É o caso de `cd_cvm` 11975: o grupamento de 2026-06-26 aumenta o resíduo.
+- **ISIN depois da última sessão.** Uma troca de ISIN entre a última sessão de COTAHIST carregada
+  e `R` não é vista, e os eventos do ISIN novo ficam fora da escala (AD-033).
+- **Referência zero.** Num indicador relativo, o ticker com referência zero não entra na lista dos
+  piores casos e não é contado no JSON: é um limite declarado. O documento de auditoria conta só os
+  tickers sem valor reconstruído (`missing`) por data, campo e motivo (AUD-05).
+- **Defasagem não é erro comprovado.** `si_lag` conta as marcas que somem com o filing anterior.
+  Ele não diz quem errou. Em 2026-11-05 a maior parte das marcas tem como filing mais recente um
+  ITR de 2026-09-30, recebido entre 2026-11-03 e 2026-11-05.

@@ -179,5 +179,48 @@ class VerdictTests(unittest.TestCase):
         self.assertFalse(compare.class_verdict(without_unclassified)["differs"])
 
 
+class SiLagTests(unittest.TestCase):
+    """LAG-01, LAG-03, LAG-04 and B-9: a miss that the previous filing explains is si_lag; a newest value within tolerance never is."""
+
+    def test_a_miss_that_the_previous_filing_explains_is_si_lag(self):
+        # P/L reference 10.00: the newest rebuilt value 15 is far out, the previous filing's 10.4 is within 5 %.
+        self.assertTrue(compare.is_si_lag("P/L", 10.0, 15.0, 10.4))
+
+    def test_the_previous_value_must_be_within_the_five_percent_edge_on_the_inclusive_side(self):
+        self.assertTrue(compare.is_si_lag("P/L", 10.0, 15.0, 10.5))  # exactly 5.00 %: within
+        self.assertFalse(compare.is_si_lag("P/L", 10.0, 15.0, 10.6))  # 6.00 %: outside
+
+    def test_a_newest_value_within_tolerance_is_never_si_lag(self):
+        self.assertFalse(compare.is_si_lag("P/L", 10.0, 10.2, 10.4))  # both within: the newest filing is not late
+        self.assertFalse(compare.is_si_lag("P/L", 10.0, 10.2, 15.0))  # newest within, previous outside
+
+    def test_a_missing_newest_value_is_outside_so_only_the_previous_value_decides(self):
+        self.assertTrue(compare.is_si_lag("P/L", 10.0, None, 10.4))
+        self.assertFalse(compare.is_si_lag("P/L", 10.0, None, None))  # no previous value either
+        self.assertFalse(compare.is_si_lag("P/L", 10.0, None, 15.0))  # previous outside too
+
+    def test_a_blank_reference_of_a_non_dy_field_is_outside_the_denominator_and_never_si_lag(self):
+        self.assertFalse(compare.is_si_lag("P/L", None, 15.0, 10.4))
+
+    def test_a_blank_dy_is_a_zero_reference_judged_within_half_a_point(self):
+        # A-4: a blank DY is 0.00 and stays in the denominator; within is 0.50 points either side of it.
+        self.assertTrue(compare.is_si_lag("DY", None, 2.0, 0.3))  # newest 2.0 outside, previous 0.3 within
+        self.assertFalse(compare.is_si_lag("DY", None, 0.3, 0.2))  # newest within: not si_lag
+        self.assertFalse(compare.is_si_lag("DY", None, 2.0, 2.2))  # previous outside too
+
+    def test_a_percent_field_uses_the_half_point_edge_on_both_sides(self):
+        self.assertTrue(compare.is_si_lag("ROE", 10.0, 10.6, 10.5))  # 0.50 points above: within
+        self.assertFalse(compare.is_si_lag("ROE", 10.0, 10.6, 10.51))  # 0.51 points above: outside
+        self.assertTrue(compare.is_si_lag("ROE", 10.0, 9.4, 9.5))  # 0.50 points below: within
+        self.assertFalse(compare.is_si_lag("ROE", 10.0, 9.4, 9.49))  # 0.51 points below: outside
+
+    def test_summarize_of_the_same_pairs_is_unchanged_by_the_si_lag_mark(self):
+        # LAG-04: the ticker that is si_lag stays outside the within count, the denominator and pct_within.
+        pairs = [("A", 10.0, 15.0, None), ("B", 10.0, 10.2, None)]
+        self.assertTrue(compare.is_si_lag("P/L", 10.0, 15.0, 10.4))
+        stats = compare.summarize("P/L", pairs)
+        self.assertEqual((stats.denominator, stats.within, stats.pct_within), (2, 1, 50.0))
+
+
 if __name__ == "__main__":
     unittest.main()

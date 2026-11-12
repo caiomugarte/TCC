@@ -7,7 +7,7 @@ the object only (RPT-04): a number changed in the object changes the document. e
 object as sorted, indented JSON with a final newline.
 """
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import asdict
 from datetime import date
@@ -17,12 +17,14 @@ import math
 
 from . import compare
 from .cotahist import LIQUIDITY_SESSIONS, QUOTE_CODBDI
-from .fields import ALL_FIELDS, PERCENT_FIELDS, SCORE_FIELDS
+from .fields import ADJUSTED_FIELDS, ALL_FIELDS, PERCENT_FIELDS, SCORE_FIELDS
 from .indicators import FORMULAS
 from .status_invest import ELIGIBILITY
 
-SCHEMA = "pit-rebuild-stocks/v2"
+SCHEMA = "pit-rebuild-stocks/v3"
 ISSUE = 59
+AMENDED_BY = (64,)  # B-12: the issue whose rules changed the numbers of this report, rendered as "correções da #64"
+PREVIOUS_REPORT = {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"}  # B-12: where the v2 numbers are
 GROUPS = (
     ("non_financial", "não financeiro"),
     ("non_financial_without_unclassified", "não financeiro sem não classificados"),
@@ -37,20 +39,23 @@ CAVEAT = (
 )
 ELIGIBILITY_SOURCE = ["py/core/preprocessing.py:103-106", "api/app/services/premium_policy.py:56"]
 SHARE_SCALE_RULE = (
-    "A CVM não informa escala em `composicao_capital`. Para cada arquivamento, o fator f ∈ {10^-2, 10^-1, 1, 10, 10^2, 10^3} "
-    "é o que deixa `N_total × f` mais perto da `totalNumberShares` da B3, medido pela distância em log10. "
-    "A contagem da B3 só escolhe o fator e nunca entra num valor. Sem registro da B3, ou com contagem zero, `f` é 1 "
-    "e a empresa aparece em `share_scale.unverified`. As contagens escalonadas são arredondadas. Limite (√10): se a "
-    "contagem mudou menos de √10 (3,16 vezes) entre o arquivamento e a consulta à B3, ela fica como arquivada; se mudou "
-    "√10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; "
-    "um desdobramento de 1:5 dá ×10, errado por 2 vezes, e erra em `d` quando a mudança é posterior a `d`. "
-    "O resíduo (`residual`), `N_total × f / totalNumberShares`, de cada empresa mostra cada caso."
+    "A CVM não informa escala em `composicao_capital`. Cada contagem de classe em `d` é N = arquivado × f × eventos da B3 "
+    "da classe com data-ex em (DT_REFER, d], com cada evento entrando pelo seu múltiplo (AD-033). Para cada arquivamento, o "
+    "fator f ∈ {10^-2, 10^-1, 1, 10, 10^2, 10^3} é a potência de dez que deixa o arquivado vezes os eventos com data-ex em "
+    "(DT_REFER, R] mais perto da `totalNumberShares` da B3, medido pela distância em log10; R é a data em que o registro da "
+    "B3 foi obtido. Os eventos com data-ex depois de d só escolhem a potência de dez. A contagem da B3 só escolhe o fator e "
+    "nunca entra num valor. Sem registro da B3, ou com contagem zero, `f` é 1 e a empresa aparece em `share_scale.unverified`. "
+    "As contagens escalonadas são arredondadas. Limite (√10), só para mudança sem evento da B3: se a contagem mudou menos de "
+    "√10 (3,16 vezes) entre o arquivamento e a obtenção do registro e nenhum evento a explica, ela fica como arquivada; se "
+    "mudou √10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; "
+    "sem evento da B3, um desdobramento de 1:5 resulta em ×10, errado por 2 vezes. O resíduo (`residual`), "
+    "arquivado × eventos até R × f / `totalNumberShares`, de cada empresa mostra cada caso."
 )
 NON_PIT_INPUTS: list[dict[str, str]] = [
     {
         "input": "B3 `totalNumberShares`",
         "role": "unit_only",
-        "use": "escolhe a escala das contagens (A-18); nunca entra num valor",
+        "use": "escolhe a escala das contagens (A-18), sobre a contagem ajustada pelos eventos até a obtenção do registro da B3 (AD-033); nunca entra num valor",
         "full_rebuild_check": "escala datada por arquivamento, com a contagem da B3 de cada data",
     },
     {
@@ -92,7 +97,7 @@ NON_PIT_INPUTS: list[dict[str, str]] = [
     {
         "input": "B3 `stockDividends`",
         "role": "dated_event_current_record",
-        "use": "ajusta valores de dividendos por desdobramento, bonificação e grupamento (A-20); só eventos com data-ex ≤ d",
+        "use": "ajusta valores de dividendos por desdobramento, bonificação e grupamento com data-ex depois do dividendo e ≤ d (A-20) e contagens de ações (AD-033): eventos com data-ex em (DT_REFER, d] entram na contagem; eventos com data-ex depois de d e até a obtenção do registro da B3 só escolhem a potência de dez",
         "full_rebuild_check": "eventos societários como eram conhecidos em cada data",
     },
 ]
@@ -110,6 +115,36 @@ ROIC_PEG_NOTE = (
     "não por falta de dados."
 )
 DIVIDEND_EXTRAS = ("b3_filters", "split_adjust_no_isin", "slash_names")  # carried from the run when given (r5)
+ADJUSTED_SCOPE = (
+    "14 indicadores do veredito ajustado (sem ROIC e PEG RATIO), grupo não financeiro incluindo os não classificados. "
+    "Por data, os tickers elegíveis sem os tickers de referência obsoleta (`reference_stale`). Os tickers com `si_lag` "
+    "ficam no denominador como fora da tolerância."
+)
+ADJUSTED_THRESHOLD_PCT = 70  # ADJ-05: the share within tolerance that part 1 of the release criterion asks, per field and date
+ADJUSTED_PART2 = "docs/validation/pit-rebuild-stocks-audit.md"  # ADJ-05, AUD-06: part 2 is the audit document
+INVESTIGATIONS: tuple[dict[str, str], ...] = (  # MBR-02: fixed notes {ticker, date, field, finding, evidence} (T20)
+    {
+        "ticker": "MBRF3",
+        "date": "2026-11-05",
+        "field": "DY",
+        "finding": (
+            "A busca do histórico não é a causa: em 2026-08-07 o mesmo histórico dá DY 17,49, igual ao da Status Invest. "
+            "O último provento que a B3 publica para a companhia, de R$ 2,8105 com data-ex 2025-09-19, está a 412 dias de "
+            "2026-11-05 e sai da janela (2025-11-05, 2026-11-05]; por isso o DY é 0,00. A Status Invest mantém 18,41 nessa "
+            "data. Nenhuma janela contígua de proventos em cache reproduz 18,41 sobre o fechamento de 15,63. A soma de dois "
+            "registros não contíguos da B3 (R$ 2,833731 de 2024-12-12 e R$ 0,043941 de 2010-04-30) dá 18,41 sobre esse "
+            "fechamento; a coincidência não mostra a origem do número da Status Invest."
+        ),
+        "evidence": (
+            "b3_company_MBRF.json (tradingName MARFRIG, totalNumberShares 1380439543, retrieved_at 2026-11-10T00:37:01Z, "
+            "dia de São Paulo 2026-11-09) e b3_cash_MARFRIG_p1.json (totalRecords 13, completo; o registro com "
+            "lastDatePriorEx 18/09/2025 e valueCash 2,8105011104 é o único com data-ex depois de 2025-08-07, e nenhum tem "
+            "data-ex em (2025-11-05, 2026-11-05]). Com esse registro: 100 × 2,8105011104 / 16,07 = 17,49 em 2026-08-07 "
+            "(janela (2025-08-07, 2026-08-07]); 100 × 2,8105011104 / 15,63 = 17,98 em 2026-11-05 (CSV de 2026-11-06: "
+            "PRECO 15,63, DY 18,41). As 91 janelas contíguas dos 13 registros, na ordem das datas-ex, não dão 18,41 sobre 15,63."
+        ),
+    },
+)
 
 
 def build(
@@ -123,6 +158,7 @@ def build(
     coverage: Mapping[str, object],
     filings_cutoffs: Mapping[object, object] | None = None,
     sensitivities: Mapping[str, object] | None = None,
+    adjusted: Mapping[str, Mapping[str, object]] | None = None,
 ) -> dict[str, object]:
     """The report object of one run (RPT-02, RPT-03, VER-05..VER-08).
 
@@ -130,7 +166,9 @@ def build(
     dividends holds by_source, yahoo_reasons and b3_empty_yahoo_failed, each keyed by ISO date; b3_filters,
     split_adjust_no_isin and slash_names are carried when given. filings_cutoffs maps a decision date to its
     cutoff (--filings-cutoff, A-22 (b)). sensitivities holds the statistics of the non-official sensitivities
-    (see _sensitivities); without it the object has no "sensitivities" key.
+    (see _sensitivities); without it the object has no "sensitivities" key. adjusted holds the stale-free statistics of
+    the adjusted verdict (see _adjusted), built after the official verdicts and never read by them (ADJ-07); without it
+    the object has no "adjusted_verdict" key.
     """
     iso_dates = [day.isoformat() for day in sorted(dates)]
     if not iso_dates:
@@ -196,6 +234,8 @@ def build(
     report_object: dict[str, object] = {
         "schema": SCHEMA,
         "issue": ISSUE,
+        "amended_by": list(AMENDED_BY),
+        "previous_report": dict(PREVIOUS_REPORT),
         "tool_commit": tool_commit,
         "parameters": parameters,
         "inputs": {
@@ -206,9 +246,12 @@ def build(
         "verdicts": verdicts,
         "dividends": dividends_out,
         "coverage": dict(coverage),
+        "investigations": [dict(item) for item in INVESTIGATIONS],
     }
     if sensitivities is not None:
         report_object["sensitivities"] = _sensitivities(sensitivities, iso_dates, cutoffs, official, overall)
+    if adjusted is not None:
+        report_object["adjusted_verdict"] = _adjusted(adjusted, iso_dates)
     return report_object
 
 
@@ -348,18 +391,98 @@ def _class_without_roic_peg(overall: Mapping[str, Mapping[str, str]]) -> dict[st
     }
 
 
+def _adjusted(given: Mapping[str, Mapping[str, object]], iso_dates: Sequence[str]) -> dict[str, object]:
+    """The adjusted verdict (ADJ-02..ADJ-07, AUD-05, LAG-02): the 14 ADJUSTED_FIELDS of the non-financial group.
+
+    given[iso] holds the stale-free statistics of one date: "fields" {field: FieldStats}, "excluded" [ticker],
+    "si_lag" {field: [ticker]} over the adjusted scope, and "worst_details" {field: {ticker: {filing, previous_value,
+    si_lag}}}. filing is a mapping with kind, dt_refer, versao and dt_receb (a date or an ISO string). Nothing here is
+    read back by the official verdicts.
+    """
+    missing = [iso for iso in iso_dates if iso not in given]
+    if missing:
+        raise ValueError(f"the adjusted verdict lacks the statistics of {', '.join(missing)}")
+    dates: dict[str, dict[str, dict[str, object]]] = {}
+    verdicts_by_date: dict[str, dict[str, str]] = {}
+    for iso in iso_dates:
+        entry = given[iso]
+        dates[iso] = {}
+        verdicts_by_date[iso] = {}
+        for field in ADJUSTED_FIELDS:
+            stats = entry["fields"][field]
+            verdict = compare.verdict(stats.pct_within, stats.denominator)
+            tickers = sorted(entry.get("si_lag", {}).get(field, []))
+            row = asdict(stats)
+            details = entry.get("worst_details", {}).get(field, {})
+            row["worst"] = [_worst_row(item, field, details) for item in stats.worst]
+            row["verdict"] = verdict
+            row["si_lag"] = {"count": len(tickers), "tickers": tickers}
+            dates[iso][field] = row
+            verdicts_by_date[iso][field] = verdict
+    overall = {field: reduce(compare.overall, [verdicts_by_date[iso][field] for iso in iso_dates]) for field in ADJUSTED_FIELDS}
+    failing = [
+        {"field": field, "date": iso, "pct_within": dates[iso][field]["pct_within"]}
+        for field in ADJUSTED_FIELDS
+        for iso in iso_dates
+        if dates[iso][field]["pct_within"] is None or dates[iso][field]["pct_within"] < ADJUSTED_THRESHOLD_PCT
+    ]
+    return {
+        "scope": ADJUSTED_SCOPE,
+        "fields": list(ADJUSTED_FIELDS),
+        "excluded": {iso: sorted(given[iso].get("excluded", [])) for iso in iso_dates},
+        "dates": {iso: {"fields": dates[iso]} for iso in iso_dates},
+        "verdicts": overall,
+        "class": compare.worst(overall[field] for field in ADJUSTED_FIELDS),
+        "criterion": {
+            "part": 1,
+            "threshold_pct": ADJUSTED_THRESHOLD_PCT,
+            "met": not failing,
+            "failing": failing,
+            "part2": ADJUSTED_PART2,
+        },
+    }
+
+
+def _worst_row(item: Mapping[str, object], field: str, details: Mapping[str, Mapping[str, object]]) -> dict[str, object]:
+    """A worst row with its si_lag, filing and previous value (ADJ-04). DY reads no filing: its filing and previous value are null."""
+    detail = details.get(item["ticker"], {})
+    reads_filing = field != "DY"
+    previous = detail.get("previous_value")
+    return {
+        **item,
+        "si_lag": bool(detail.get("si_lag", False)),
+        "filing": _filing(detail.get("filing")) if reads_filing else None,
+        "previous_value": round(previous, 2) if reads_filing and previous is not None else None,
+    }
+
+
+def _filing(filing: Mapping[str, object] | None) -> dict[str, object] | None:
+    if filing is None:
+        return None
+    return {
+        "kind": filing["kind"],
+        "dt_refer": _iso(filing["dt_refer"]),
+        "versao": filing["versao"],
+        "dt_receb": _iso(filing["dt_receb"]),
+    }
+
+
 def encode_json(report: Mapping[str, object]) -> bytes:
     """The report as sorted, indented UTF-8 JSON with a final newline (RPT-02)."""
     return (json.dumps(report, sort_keys=True, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
 
 
 def render_markdown(report: Mapping[str, object]) -> str:
-    """The Markdown of the report, written from the object alone (RPT-04)."""
+    """The Markdown of the report, written from the object alone (RPT-04). A section whose key the object lacks is not rendered (a v2 object)."""
     lines: list[str] = ["# Reconstrução PIT dos indicadores de ações", ""]
     lines += _metadata(report)
-    lines += _verdict_section(report["verdicts"])
+    lines += _verdict_section(report)
+    if "adjusted_verdict" in report:
+        lines += _adjusted_section(report["adjusted_verdict"])
     if "sensitivities" in report:
         lines += _sensitivity_section(report["sensitivities"])
+    if "investigations" in report:
+        lines += _investigations_section(report["investigations"])
     lines += _parameters_section(report["parameters"])
     lines += _mapping_section(report["dates"])
     lines += _results_section(report["dates"])
@@ -372,16 +495,33 @@ def render_markdown(report: Mapping[str, object]) -> str:
 def _metadata(report: Mapping[str, object]) -> list[str]:
     commit = report["tool_commit"] or "-"
     dates = ", ".join(report["parameters"]["dates"])
+    issue = f"issue #{report['issue']}"
+    if "amended_by" in report:
+        issue += ", correções da " + " e ".join(f"#{number}" for number in report["amended_by"])
     return [
-        f"- Esquema: `{report['schema']}` (issue #{report['issue']})",
+        f"- Esquema: `{report['schema']}` ({issue})",
         f"- Commit da ferramenta: `{commit}`",
         f"- Datas de decisão: {dates}",
         "",
     ]
 
 
-def _verdict_section(verdicts: Mapping[str, object]) -> list[str]:
+def _amendment_line(report: Mapping[str, object]) -> str:
+    """B-12 (ADJ-01): the official rule is #59's, applied to the values the amendments give; the v2 numbers are at their commit."""
+    previous = report["previous_report"]
+    amended = " e ".join(f"#{number}" for number in report["amended_by"])
+    schema = str(previous["schema"]).rsplit("/", 1)[-1]
+    return (
+        f"Regra de veredito da #{report['issue']}, aplicada aos valores com as correções da {amended}; "
+        f"os números da {schema} estão no commit `{previous['commit']}`."
+    )
+
+
+def _verdict_section(report: Mapping[str, object]) -> list[str]:
+    verdicts = report["verdicts"]
     lines = ["## Veredito", ""]
+    if "amended_by" in report:
+        lines += [_amendment_line(report), ""]
     class_value = f"`{verdicts['class']}`"
     if verdicts["class_differs"]:
         line = (
@@ -435,6 +575,83 @@ def _sensitivity_section(sensitivities: Mapping[str, object]) -> list[str]:
     lines += _table(["sensibilidade", "veredito da classe", "veredito do grupo financeiro", "o que muda"], rows)
     lines += [f"Nota (D-C): {roic['note']}", ""]
     return lines
+
+
+def _investigations_section(investigations: Sequence[Mapping[str, object]]) -> list[str]:
+    """The fixed notes on causes the cache settles (MBR-02): one bullet per note, or "Nenhuma." when there is none."""
+    lines = ["## Investigações", ""]
+    if not investigations:
+        return lines + ["Nenhuma.", ""]
+    for item in investigations:
+        lines.append(f"- `{item['ticker']}`, `{item['field']}` em {item['date']}: {item['finding']} Evidência: {item['evidence']}")
+    return lines + [""]
+
+
+def _adjusted_section(adjusted: Mapping[str, object]) -> list[str]:
+    """The adjusted verdict below the official one: scope, the share and si_lag per field and date, part 1 and part 2 of the criterion, and the worst rows (ADJ-01, ADJ-05, LAG-02). Every number is read from the object."""
+    dates = list(adjusted["dates"])
+    criterion = adjusted["criterion"]
+    lines = ["## Veredito ajustado (#64)", "", adjusted["scope"], ""]
+    header = ["indicador"]
+    for iso in dates:
+        header += [f"{iso}: % na tolerância (n)", f"{iso}: si_lag"]
+    rows = []
+    for field in adjusted["fields"]:
+        row: list[object] = [_code(field)]
+        for iso in dates:
+            stats = adjusted["dates"][iso]["fields"][field]
+            row += [f"{_pct(stats['pct_within'])} ({stats['denominator']})", stats["si_lag"]["count"]]
+        rows.append(row + [adjusted["verdicts"][field]])
+    lines += _table(header + ["veredito"], rows)
+    word = "cumprida" if criterion["met"] else "não cumprida"
+    lines += [f"Critério de liberação (#64), parte 1 (≥ {criterion['threshold_pct']} % nas duas datas): {word}.", ""]
+    if not criterion["met"] and criterion["failing"]:
+        lines += [f"Linhas abaixo da meta: {_failing_text(criterion['failing'])}.", ""]
+    part2 = criterion["part2"].rsplit("/", 1)[-1]
+    lines += [f"Parte 2 (10 piores conferidos e explicados): ver `{part2}`.", ""]
+    for field in adjusted["fields"]:
+        for iso in dates:
+            lines += _adjusted_worst(field, iso, adjusted["dates"][iso]["fields"][field])
+    return lines
+
+
+def _adjusted_worst(field: str, iso: str, stats: Mapping[str, object]) -> list[str]:
+    if not stats["worst"] and not stats["missing"]:
+        return []
+    lines = ["<details>", f"<summary>{field}, {iso}</summary>", ""]
+    if stats["worst"]:
+        rows = [
+            [
+                _code(item["ticker"]),
+                _num(item["reference"]),
+                _num(item["rebuilt"]),
+                _delta(item["diff"], stats["diff_unit"]),
+                _cell(item["si_lag"]),
+                _filing_text(item["filing"]),
+                _num_or_none(item["previous_value"]),
+            ]
+            for item in stats["worst"]
+        ]
+        lines += _table(["ticker", "referência", "reconstruído", "diferença", "si_lag", "arquivo", "valor anterior"], rows)
+    if stats["missing"]:
+        missing = ", ".join(f"`{item['ticker']}` ({item['reason']})" for item in stats["missing"])
+        lines += [f"Sem valor reconstruído: {missing}.", ""]
+    lines += ["</details>", ""]
+    return lines
+
+
+def _filing_text(filing: Mapping[str, object] | None) -> str:
+    if filing is None:
+        return "-"
+    return f"{filing['kind']} {filing['dt_refer']} v{filing['versao']}, recebido em {filing['dt_receb']}"
+
+
+def _failing_text(rows: Sequence[Mapping[str, object]]) -> str:
+    texts = []
+    for row in rows:
+        share = "sem denominador" if row["pct_within"] is None else _pct(row["pct_within"])
+        texts.append(f"`{row['field']}` em {row['date']} ({share})")
+    return "; ".join(texts)
 
 
 def _excluded_text(excluded: Mapping[str, Sequence[str]]) -> str:
@@ -517,6 +734,7 @@ def _mapping_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:
                 ["cd_cvm", "classe", "ticker", "último pregão"],
                 [[_code(row["cd_cvm"]), row["class"], _code(row["ticker"]), row["session"]] for row in stale_prices],
             )
+        lines += _share_and_flow_lists(mapping)
         lines += ["Tickers não mapeados:", ""]
         lines += _table(["ticker", "motivo"], [[_code(row["ticker"]), _code(row["reason"])] for row in mapping["unmapped"]] or [["-", "-"]])
         lines += ["Grupo financeiro, com a regra que classificou cada ticker:", ""]
@@ -533,6 +751,91 @@ def _mapping_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:
                 [[_code(row["cd_cvm"]), _code(row["class_without_quote"]), _code(row["price_from"])] for row in fallback["companies"]],
             )
     return lines
+
+
+def _share_and_flow_lists(mapping: Mapping[str, object]) -> list[str]:
+    """The lists of the share and flow rules of one date (SHR-03..SHR-05, TTM-04, STL-03). A key the mapping lacks renders nothing."""
+    lines: list[str] = []
+    if "share_events" in mapping:
+        events = mapping["share_events"]
+        lines += _listed(
+            "Eventos da B3 que ajustam a contagem, por classe",
+            "share_events.adjusted",
+            events["adjusted"],
+            ["cd_cvm", "classe", "ISINs", "DT_REFER", "fator de eventos", "eventos"],
+            lambda row: [
+                _code(row["cd_cvm"]),
+                row["class"],
+                _codes(row["isins"]),
+                row["dt_refer"],
+                _factor(row["factor"]),
+                _events_text(row["events"]),
+            ],
+        )
+        lines += _listed(
+            "Classes com ações e sem ISIN em d",
+            "share_events.no_isin",
+            events["no_isin"],
+            ["cd_cvm", "classe"],
+            lambda row: [_code(row["cd_cvm"]), row["class"]],
+        )
+    if "share_count_suspect" in mapping:
+        lines += _listed(
+            "Contagens suspeitas, sem evento da B3 que as explique",
+            "share_count_suspect",
+            mapping["share_count_suspect"],
+            ["cd_cvm", "DT_REFER anterior", "total anterior", "DT_REFER", "total", "razão"],
+            lambda row: [
+                _code(row["cd_cvm"]),
+                row["dt_refer_prev"],
+                row["total_prev"],
+                row["dt_refer"],
+                row["total"],
+                _num(row["ratio"], 4),
+            ],
+        )
+    if "ttm_prior_from_itr" in mapping:
+        lines += _listed(
+            "Fluxos de 12 meses refeitos com o ITR do ano anterior",
+            "ttm_prior_from_itr",
+            mapping["ttm_prior_from_itr"],
+            ["cd_cvm", "DT_REFER", "contas"],
+            lambda row: [_code(row["cd_cvm"]), row["dt_refer"], _codes(row["accounts"])],
+        )
+    if "stale_filing" in mapping:
+        lines += _listed(
+            "Tickers com filing antigo demais para os indicadores contábeis",
+            "stale_filing",
+            mapping["stale_filing"],
+            ["ticker", "cd_cvm", "DT_REFER", "idade (dias)"],
+            lambda row: [_code(row["ticker"]), _code(row["cd_cvm"]), row["dt_refer"], row["age_days"]],
+        )
+    return lines
+
+
+def _listed(
+    label: str,
+    key: str,
+    rows: Sequence[Mapping[str, object]],
+    header: Sequence[str],
+    row_of: Callable[[Mapping[str, object]], Sequence[object]],
+) -> list[str]:
+    """A labelled list of rows: its table, or "nenhum" when it is empty."""
+    if not rows:
+        return [f"{label} (`{key}`): nenhum.", ""]
+    return [f"{label} (`{key}`):", ""] + _table(header, [row_of(row) for row in rows])
+
+
+def _events_text(events: Sequence[Mapping[str, object]]) -> str:
+    text = "; ".join(
+        f"`{event['isin']}` {event['label']}, data-ex {event['ex_date']}, ×{_factor(event['multiplier'])}" for event in events
+    )
+    return text or "-"
+
+
+def _factor(value: float) -> str:
+    """A product of event multipliers with no fixed decimals: 2, 0,1, 1,5 (SHR-03)."""
+    return f"{value:.6g}".replace(".", ",")
 
 
 def _results_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:

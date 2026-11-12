@@ -4,11 +4,11 @@ The inputs are assembled by the caller from the CVM, COTAHIST and dividend modul
 carries the date that dates it (DT_RECEB of the filing, session date). compute asserts that no
 input is dated after d (PIT-02). A field with a zero divisor or a missing input has no value and
 a reason (IND-03). Reasons: no_share_count, no_quote, no_dividend_source, short_history,
-zero_divisor, non_positive_base, missing_input: <name>.
+zero_divisor, non_positive_base, missing_input: <name>, stale_filing (STL-01).
 
 Per-share fields divide the ticker price by its unit divisor k (1 for a share, the composition
 total for a unit, MAP-03). VALOR DE MERCADO takes its class prices from the company (A-17). Share
-counts arrive already multiplied by the A-18 scale.
+counts arrive already multiplied by the A-18 scale and by the B3 events of the class with ex-date in (DT_REFER, d] (AD-033).
 """
 
 from dataclasses import dataclass, fields
@@ -16,11 +16,11 @@ from datetime import date
 
 from .dividends import Dividend, dps_12m
 from .errors import PITLeakError
-from .fields import ALL_FIELDS
+from .fields import ACCOUNTING_FIELDS, ALL_FIELDS
 
 FORMULAS: dict[str, str] = {
     "PRECO": "p: último pregão em COTAHIST com data <= d",
-    "VALOR DE MERCADO": "N_ON × p_ON + N_PREF × p_PREF (A-17): p_ON do ticker ON; p_PREF do preferencial mais líquido; classe com N > 0 e sem cotação usa a outra (vm_price_fallback); N com escala de A-18",
+    "VALOR DE MERCADO": "N_ON × p_ON + N_PREF × p_PREF (A-17): p_ON do ticker ON; p_PREF do preferencial mais líquido; classe com N > 0 e sem cotação usa a outra (vm_price_fallback); N = arquivado × f (A-18) × eventos B3 da classe com data-ex em (DT_REFER, d] (AD-033)",
     "LIQUIDEZ MEDIA DIARIA": "média de VOLTOT das últimas 21 sessões <= d, CODBDI 02, 07 e 08 (A-7)",
     "P/L": "p_eq / (LL / N_total), p_eq = p / k, N_total = N_ON + N_PREF",
     "P/VP": "p_eq / (PL_ctrl / N_total), PL_ctrl = 2.03 − 2.03.09 (A-21)",
@@ -124,6 +124,17 @@ def compute(inputs: TickerInputs, d: date) -> dict[str, Value]:
         "PEG RATIO": _peg(inputs, p_l, ll),
     }
     return {field: results[field] for field in ALL_FIELDS}
+
+
+STALE_FILING_REASON = "stale_filing"  # STL-01: the reason of an accounting field whose newest filing ends more than 270 days before d
+
+
+def mask_accounting(values: dict[str, Value], reason: str) -> dict[str, Value]:
+    """A copy of values in which every accounting field (B-7) has no value and the given reason (STL-01).
+
+    The market fields and DY keep their value, reason and note (STL-02). The input dict is not changed.
+    """
+    return {field: Value(None, reason) if field in ACCOUNTING_FIELDS else value for field, value in values.items()}
 
 
 def _assert_point_in_time(inputs: TickerInputs, d: date) -> None:

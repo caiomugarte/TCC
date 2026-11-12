@@ -30,8 +30,8 @@ import argparse
 from bisect import bisect_left
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
-from dataclasses import dataclass, field
-from datetime import date, timedelta
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime, timedelta, timezone
 import json
 from pathlib import Path
 import re
@@ -40,10 +40,11 @@ import sys
 import time
 
 from . import compare, coverage, cotahist, cvm, dividends, mapping, report, safety, sources, status_invest
+from . import shares as share_counts
 from .cache import Cache
 from .errors import ArgumentError, MissingPathError, OutputError, RebuildError, SourceError
-from .fields import ALL_FIELDS
-from .indicators import Input, TickerInputs, Value, compute
+from .fields import ADJUSTED_FIELDS, ALL_FIELDS
+from .indicators import STALE_FILING_REASON, Input, TickerInputs, Value, compute, mask_accounting
 
 DEFAULT_CACHE_DIR = safety.REPO_ROOT / ".cache" / "pit-rebuild"
 DEFAULT_OUT_DIR = safety.REPO_ROOT / "docs" / "validation"
@@ -267,14 +268,29 @@ def _timed(clock, timings: dict, kind: str, paths: Sequence[Path], load: Callabl
     return value
 
 
+SAO_PAULO = timezone(timedelta(hours=-3))  # B-3: the retrieval day R is read in São Paulo time (UTC−3, no daylight saving)
+
+
+def _retrieved_on(retrieved_at: str | None) -> date | None:
+    """The São Paulo day of a manifest retrieved_at, a UTC moment written "%Y-%m-%dT%H:%M:%SZ" (B-3, SHR-08)."""
+    if retrieved_at is None:
+        return None
+    moment = datetime.strptime(retrieved_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    return moment.astimezone(SAO_PAULO).date()
+
+
 def _b3_company(cache: Cache, root: str) -> dividends.B3Company | None:
-    path = cache.get(sources.b3_company_url(root), b3_company_name(root), required=False)
+    name = b3_company_name(root)
+    path = cache.get(sources.b3_company_url(root), name, required=False)
     if path is None:
         return None
     try:
-        return dividends.parse_b3_company(path.read_bytes())
+        company = dividends.parse_b3_company(path.read_bytes())
     except (ValueError, KeyError, TypeError, AttributeError, IndexError):
         return None
+    if company is None:
+        return None
+    return replace(company, retrieved_on=_retrieved_on(cache.retrieved_at(name)))
 
 
 def _b3_history(cache: Cache, name: str, acq: _Acquired, clock) -> dividends.B3History | None:
@@ -367,6 +383,12 @@ class _Company:
     stale: list[dict]  # vm_stale_class_price: a class priced from a session older than 30 days (F14)
     inputs: dict
     dre_desc: str | None
+    share_events: list[dict]  # share_events.adjusted: the classes whose B3 events moved their count (AD-033, SHR-03)
+    no_isin: list[dict]  # share_events.no_isin: the classes with shares and no ISIN at d (SHR-04)
+    suspect: dict | None  # share_count_suspect: a jump of the count with no B3 event between two filings (SHR-05)
+    period_end: date | None  # DT_REFER of the newest usable filing, read at filings_day (B-6, STL-01)
+    ttm_prior: tuple[str, ...]  # the flows whose prior year-to-date is last year's ITR at d (TTM-04)
+    newest: cvm.Filing | None  # the newest usable filing at filings_day: the filing a worst row of the adjusted verdict cites (ADJ-04)
 
 
 def _dated(item) -> Input | None:
@@ -422,29 +444,128 @@ def _quote_candidates(acq: _Acquired, cnpj: str, tickers: Sequence[str], day: da
     return set(acq.fca.tickers_of(cnpj)) | set(tickers) | {t for t in acq.si[day].rows if t[:4] in roots}
 
 
-def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date) -> _Company:
-    """Share counts with the A-18 scale, the A-17 class prices (F14) and the class fallback of one company.
+@dataclass(frozen=True)
+class _Counts:
+    """The share counts of one company at the decision date and the rows of the share rules that moved them (AD-033)."""
 
-    The CVM reads use filings_day; the quotes use day (A-22 (b)).
+    n_on: int | None
+    n_pref: int | None
+    scaled: dict | None  # {cd_cvm, factor, residual} for a verified factor other than 1 (A-18)
+    unverified: bool  # no B3 count: the counts are used as filed (A-18)
+    share_events: list[dict]  # share_events.adjusted (SHR-03)
+    no_isin: list[dict]  # share_events.no_isin (SHR-04)
+    suspect: dict | None  # share_count_suspect (SHR-05)
+
+
+def _class_isin_sets(quotes: cotahist.Quotes, ticker: str | None, dt_refer: date, day: date) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """I_d and I_all of a share class from its A-17 ticker (B-2, B-3): its ISINs from dt_refer to day, and those it had after day too."""
+    if ticker is None:
+        return (), ()
+    at_day = cotahist.class_isins(quotes, ticker, dt_refer, day)
+    return at_day, tuple(dict.fromkeys((*at_day, *cotahist.isins(quotes, ticker, day, None))))
+
+
+def _counts(
+    acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date,
+    shares: cvm.Shares | None, prices: dict[str, tuple[str, float, date] | None],
+) -> _Counts:
+    """The filed counts times the A-18 factor and the B3 events of each class up to day (shares.adjust), and the suspect check.
+
+    The B3 total and its retrieval day come from the first company record with a total; the events come from every record
+    of the company's tickers (AD-033). The previous filing is read at filings_day (B-4).
+    """
+    if shares is None or shares.on + shares.pref <= 0:
+        return _Counts(None, None, None, False, [], [], None)
+    b3_total, retrieved_on = None, None
+    for ticker in sorted(tickers):
+        company = acq.b3.get(ticker[:4])
+        if company is not None and company.total_shares:
+            b3_total, retrieved_on = company.total_shares, company.retrieved_on
+            break
+    records = [acq.b3[root] for root in sorted({ticker[:4] for ticker in tickers}) if acq.b3.get(root) is not None]
+    events = tuple(event for company in records for event in company.stock_events)
+
+    def next_session(value: date) -> date | None:
+        return cotahist.next_session(acq.quotes, value)
+
+    isin_sets = {
+        cls: _class_isin_sets(acq.quotes, None if prices[cls] is None else prices[cls][0], shares.dt_refer, day)
+        for cls in ("ON", "PREF")
+    }
+    isins_d = {cls: sets[0] for cls, sets in isin_sets.items()}
+    isins_all = {cls: sets[1] for cls, sets in isin_sets.items()}
+    adjusted = share_counts.adjust(shares, isins_d, isins_all, events, b3_total, retrieved_on, day, next_session)
+    share_events = [
+        {
+            "cd_cvm": cd_cvm,
+            "class": row["class"],
+            "isins": row["isins"],
+            "dt_refer": shares.dt_refer.isoformat(),
+            "factor": row["factor"],
+            "events": [
+                {"isin": event["isin"], "label": event["label"], "ex_date": event["ex_date"].isoformat(), "multiplier": event["multiplier"]}
+                for event in row["events"]
+            ],
+        }
+        for row in adjusted.applied
+    ]
+    no_isin = [{"cd_cvm": cd_cvm, "class": cls} for cls in adjusted.no_isin]
+    suspect = None
+    previous = cvm.previous_shares(acq.dfp, acq.itr, cnpj, filings_day)
+    if previous is not None:
+        previous_factor = share_counts.adjust(previous, isins_d, isins_all, events, b3_total, retrieved_on, day, next_session).factor
+        interval = tuple(dict.fromkeys(
+            isin
+            for cls in ("ON", "PREF") if prices[cls] is not None
+            for isin in cotahist.class_isins(acq.quotes, prices[cls][0], previous.dt_refer, day)
+        ))
+        row = share_counts.suspect(previous, previous_factor, shares, adjusted.factor, events, interval, next_session)
+        if row is not None:
+            suspect = {
+                "cd_cvm": cd_cvm,
+                **row,
+                "dt_refer_prev": row["dt_refer_prev"].isoformat(),
+                "dt_refer": row["dt_refer"].isoformat(),
+            }
+    if not adjusted.verified:
+        return _Counts(adjusted.n_on, adjusted.n_pref, None, True, share_events, no_isin, suspect)
+    scaled = {"cd_cvm": cd_cvm, "factor": adjusted.factor, "residual": adjusted.residual} if adjusted.factor != 1 else None
+    return _Counts(adjusted.n_on, adjusted.n_pref, scaled, False, share_events, no_isin, suspect)
+
+
+TTM_FLOWS = (cvm.NET_INCOME, "3.01", "3.05", "3.08")  # the flows that the indicators read as 12-month values (IND-01)
+
+
+def _flows_from_itr(acq: _Acquired, cnpj: str, day: date) -> tuple[str, ...]:
+    """The flows whose prior year-to-date at day is last year's ITR, because the comparative of this year's ITR is absent or 0 (TTM-01, TTM-04)."""
+    used: list[str] = []
+    for account in TTM_FLOWS:
+        flow = cvm.ttm(acq.dfp, acq.itr, cnpj, day, account)
+        if flow is not None and flow.prior_from_itr:
+            used.append(account)
+    return tuple(used)
+
+
+def _is_stale(period_end: date | None, day: date) -> bool:
+    """Whether the newest usable filing ends more than STALE_FILING_DAYS before day, so its accounting fields have no value (STL-01, STL-04, B-6)."""
+    return period_end is not None and (day - period_end).days > cvm.STALE_FILING_DAYS
+
+
+def _without_newest(acq: _Acquired, cnpj: str, filings_day: date) -> _Acquired | None:
+    """The reads of acq with the newest usable period of cnpj taken out (B-9), or None when no older usable period is left."""
+    newest = cvm.newest_period_end(acq.dfp, acq.itr, cnpj, filings_day)
+    if newest is None:
+        return None
+    older = replace(acq, dfp=acq.dfp.without(cnpj, newest), itr=acq.itr.without(cnpj, newest))
+    return older if cvm.newest_period_end(older.dfp, older.itr, cnpj, filings_day) is not None else None
+
+
+def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date) -> _Company:
+    """Share counts with the A-18 scale and the B3 events of their classes (AD-033), the A-17 class prices (F14) and the class fallback of one company.
+
+    The CVM reads use filings_day; the quotes, the events and the B3 record use day (A-22 (b)).
     """
     shares = cvm.shares(acq.dfp, acq.itr, cnpj, filings_day)
-    n_on = n_pref = None
-    scaled = None
-    unverified = False
-    if shares is not None and shares.on + shares.pref > 0:
-        b3_total = None
-        for ticker in sorted(tickers):
-            company = acq.b3.get(ticker[:4])
-            if company is not None and company.total_shares:
-                b3_total = company.total_shares
-                break
-        total = shares.on + shares.pref
-        factor, verified = cvm.share_scale(total, b3_total)
-        n_on, n_pref = round(shares.on * factor), round(shares.pref * factor)
-        if not verified:
-            unverified = True
-        elif factor != 1:
-            scaled = {"cd_cvm": cd_cvm, "factor": factor, "residual": total * factor / b3_total}
     prices = cotahist.class_prices(acq.quotes, _quote_candidates(acq, cnpj, tickers, day), day)
     quoted = {cls: None if item is None else Input(item[1], item[2]) for cls, item in prices.items()}
     stale = [
@@ -452,15 +573,20 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
         for cls, item in sorted(prices.items())
         if item is not None and (day - item[2]).days > cotahist.MAX_QUOTE_AGE_DAYS
     ]
+    counts = _counts(acq, day, cnpj, cd_cvm, tickers, filings_day, shares, prices)
     fallback = None
-    for cls, other, count in (("ON", "PREF", n_on), ("PREF", "ON", n_pref)):
+    for cls, other, count in (("ON", "PREF", counts.n_on), ("PREF", "ON", counts.n_pref)):
         if count and count > 0 and prices[cls] is None and prices[other] is not None:
             fallback = {"cd_cvm": cd_cvm, "class_without_quote": cls, "price_from": prices[other][0]}
             break
     return _Company(
-        cnpj=cnpj, cd_cvm=cd_cvm, n_on=n_on, n_pref=n_pref, scaled=scaled, unverified=unverified,
+        cnpj=cnpj, cd_cvm=cd_cvm, n_on=counts.n_on, n_pref=counts.n_pref, scaled=counts.scaled, unverified=counts.unverified,
         price_on=quoted["ON"], price_pref=quoted["PREF"], fallback=fallback, stale=stale,
         inputs=_company_inputs(acq, cnpj, filings_day), dre_desc=cvm.dre_description(acq.dfp, acq.itr, cnpj, filings_day),
+        share_events=counts.share_events, no_isin=counts.no_isin, suspect=counts.suspect,
+        period_end=cvm.newest_period_end(acq.dfp, acq.itr, cnpj, filings_day),
+        ttm_prior=_flows_from_itr(acq, cnpj, filings_day),
+        newest=cvm.newest_filing(acq.dfp, acq.itr, cnpj, filings_day),
     )
 
 
@@ -469,11 +595,11 @@ def _known_at(dividend_list: list[dividends.Dividend], day: date) -> list[divide
     return [item for item in dividend_list if item.ex_date is None or item.ex_date <= day]
 
 
-def _class_isin(quotes: cotahist.Quotes, share_class: str, tickers: Iterable[str]) -> str | None:
-    """The ISIN of a share class: that of the smallest ticker of the company in the class which has one (A-20)."""
+def _class_isin(quotes: cotahist.Quotes, share_class: str, tickers: Iterable[str], d: date) -> str | None:
+    """The ISIN of a share class at d: that of the smallest ticker of the company in the class which has one (A-20, ISN-03)."""
     for ticker in sorted(tickers):
-        if cotahist.share_class(quotes, ticker) == share_class:
-            isin = cotahist.isin(quotes, ticker)
+        if cotahist.share_class(quotes, ticker, d) == share_class:
+            isin = cotahist.isin(quotes, ticker, d)
             if isin is not None:
                 return isin
     return None
@@ -496,20 +622,20 @@ def _b3_dividends(
         return cotahist.next_session(q, value)
 
     if item.composition is None:
-        cls = cotahist.share_class(q, ticker)
+        cls = cotahist.share_class(q, ticker, day)
         if cls is None:
             return None, [], 0
         records = dividends.class_records(history.records, cls)
-        isin = cotahist.isin(q, ticker)
+        isin = cotahist.isin(q, ticker, day)
         missing = 1 if records and isin is None else 0
         return dividends.b3_ex_dates(records, next_session, events=events, isin=isin, d=day), records, missing
-    isins: dict[str, str | None] = {"UNT": cotahist.isin(q, ticker)}
+    isins: dict[str, str | None] = {"UNT": cotahist.isin(q, ticker, day)}
     composition: dict[str, int] = {}
     for key, count in item.composition.items():
         if _TICKER.match(key):
-            cls, isin = cotahist.share_class(q, key), cotahist.isin(q, key)
+            cls, isin = cotahist.share_class(q, key, day), cotahist.isin(q, key, day)
         else:
-            cls, isin = key, _class_isin(q, key, candidates)
+            cls, isin = key, _class_isin(q, key, candidates, day)
         if cls is None:
             return None, [], 0
         composition[cls] = composition.get(cls, 0) + count
@@ -557,10 +683,15 @@ class _DayResult:
     pairs: dict[str, dict[str, list]]
     dividends: dict
     dy_dates: dict[str, dict[str, date | None]]  # per dividend source, each ticker's earliest date (COV-02)
+    previous: dict[str, dict[str, float | None]] = field(default_factory=dict)  # B-9: each ticker's values on its previous filing
+    filings: dict[str, cvm.Filing | None] = field(default_factory=dict)  # each computed ticker's newest usable filing (ADJ-04)
 
 
-def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) -> _DayResult:
-    """One decision date. Every CVM read uses filings_day (A-22 (b)); quotes, dividends and eligibility use day."""
+def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *, previous: bool = False) -> _DayResult:
+    """One decision date. Every CVM read uses filings_day (A-22 (b)); quotes, dividends and eligibility use day.
+
+    previous=True also reads each company on its previous filing (B-9); those values feed the si_lag marks only.
+    """
     fday = filings_day or day
     eligible = acq.eligible[day]
     csv = acq.si[day]
@@ -573,12 +704,22 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
     companies: dict[str, _Company] = {}
     for cnpj, tickers in members.items():
         companies[cnpj] = _company(acq, day, cnpj, mapped[tickers[0]].cd_cvm, tickers, fday)
+    older_companies: dict[str, _Company] = {}
+    if previous:
+        for cnpj, tickers in members.items():
+            older = _without_newest(acq, cnpj, fday)
+            if older is not None:
+                older_companies[cnpj] = _company(older, day, cnpj, companies[cnpj].cd_cvm, tickers, fday)
     candidates_of = {cnpj: _quote_candidates(acq, cnpj, tickers, day) for cnpj, tickers in members.items()}
     out = {
         "mapped": 0, "unmapped": [], "refiled_after_d": [], "mapped_via_b3": [],
         "vm_price_fallback": {"count": 0, "companies": []},
         "vm_stale_class_price": [],
         "share_scale": {"scaled": [], "unverified": []},
+        "share_events": {"adjusted": [], "no_isin": []},
+        "share_count_suspect": [],
+        "stale_filing": [],
+        "ttm_prior_from_itr": [],
         "reference_stale": sorted(ticker for ticker in eligible if cotahist.reference_stale(acq.quotes, ticker, day)),
         "financial": [], "unclassified": [],
     }
@@ -591,14 +732,28 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
             out["share_scale"]["scaled"].append(company.scaled)
         if company.unverified:
             out["share_scale"]["unverified"].append(company.cd_cvm)
+        out["share_events"]["adjusted"].extend(company.share_events)
+        out["share_events"]["no_isin"].extend(company.no_isin)
+        if company.suspect is not None:
+            out["share_count_suspect"].append(company.suspect)
+        if company.ttm_prior:
+            out["ttm_prior_from_itr"].append({
+                "cd_cvm": company.cd_cvm, "dt_refer": company.period_end.isoformat(), "accounts": sorted(company.ttm_prior),
+            })
     out["vm_price_fallback"]["companies"].sort(key=lambda row: row["cd_cvm"])
     out["vm_price_fallback"]["count"] = len(out["vm_price_fallback"]["companies"])
     out["vm_stale_class_price"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
     out["share_scale"]["scaled"].sort(key=lambda row: row["cd_cvm"])
     out["share_scale"]["unverified"].sort()
+    out["share_events"]["adjusted"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
+    out["share_events"]["no_isin"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
+    out["share_count_suspect"].sort(key=lambda row: row["cd_cvm"])
+    out["ttm_prior_from_itr"].sort(key=lambda row: row["cd_cvm"])
 
     values: dict[str, dict[str, Value]] = {}
     group_of: dict[str, str] = {}
+    previous_values: dict[str, dict[str, float | None]] = {}
+    filings: dict[str, cvm.Filing | None] = {}
     counts = {
         "by_source": {name: 0 for name in SOURCES}, "yahoo_reasons": {r: 0 for r in YAHOO_REASONS},
         "b3_empty_yahoo_failed": 0, "split_adjust_no_isin": 0,
@@ -650,6 +805,20 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
             **company.inputs,
         )
         values[ticker] = compute(inputs, day)
+        if _is_stale(company.period_end, day):  # STL-01: a stale filing gives its accounting fields no value
+            values[ticker] = mask_accounting(values[ticker], STALE_FILING_REASON)
+            out["stale_filing"].append({
+                "ticker": ticker, "cd_cvm": company.cd_cvm, "dt_refer": company.period_end.isoformat(),
+                "age_days": (day - company.period_end).days,
+            })
+        filings[ticker] = company.newest
+        older = older_companies.get(item.cnpj)
+        if older is not None:  # B-9: the same ticker read on the previous filing, with the same quotes and dividends
+            before = compute(replace(inputs, n_on=older.n_on, n_pref=older.n_pref, **older.inputs), day)
+            if _is_stale(older.period_end, day):
+                before = mask_accounting(before, STALE_FILING_REASON)
+            previous_values[ticker] = {name: before[name].value for name in ALL_FIELDS}
+    out["stale_filing"].sort(key=lambda row: row["ticker"])
     pairs: dict[str, dict[str, list]] = {name: {group: [] for group in GROUP_KEYS} for name in ALL_FIELDS}
     for ticker in eligible:
         group = group_of[ticker]
@@ -668,6 +837,8 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
         pairs=pairs,
         dividends=counts,
         dy_dates=dy_dates,
+        previous=previous_values,
+        filings=filings,
     )
 
 
@@ -748,6 +919,48 @@ def _sensitivities(acq: _Acquired, req: _Request, results: dict[date, _DayResult
     }
 
 
+NO_FILING_FIELDS = ("PRECO", "LIQUIDEZ MEDIA DIARIA", "DY")  # B-9: these fields read no filing, so none of them can be si_lag
+
+
+def _adjusted_input(result: _DayResult, excluded: Sequence[str], stats: dict[str, compare.FieldStats]) -> dict:
+    """One date of the adjusted verdict for report.build (ADJ-02, ADJ-04, LAG-01): the stale-free statistics of the non-financial
+    group, the si_lag tickers over the same rows, and for each worst row its filing, previous value and si_lag mark.
+
+    A si_lag ticker is in the field's denominator (its raw value is a reference and its rebuilt value is outside tolerance).
+    The marks read the previous values of the official evaluation and change no statistic (LAG-04).
+    """
+    left_out = set(excluded)
+    marks: dict[str, dict[str, bool]] = {}
+    for name in ADJUSTED_FIELDS:
+        marks[name] = {}
+        if name in NO_FILING_FIELDS:
+            continue
+        for ticker, raw, calc, _reason in result.pairs[name]["non_financial"]:
+            if ticker not in left_out:
+                marks[name][ticker] = compare.is_si_lag(name, raw, calc, result.previous.get(ticker, {}).get(name))
+    worst_details: dict[str, dict[str, dict]] = {}
+    for name in ADJUSTED_FIELDS:
+        worst_details[name] = {}
+        for item in stats[name].worst:
+            ticker = item["ticker"]
+            filing = result.filings.get(ticker)
+            cited = None if filing is None or name in NO_FILING_FIELDS else {
+                "kind": filing.kind, "dt_refer": filing.dt_refer.isoformat(), "versao": filing.versao,
+                "dt_receb": filing.dt_receb.isoformat(),
+            }
+            worst_details[name][ticker] = {
+                "filing": cited,
+                "previous_value": result.previous.get(ticker, {}).get(name),
+                "si_lag": marks[name].get(ticker, False),
+            }
+    return {
+        "excluded": list(excluded),
+        "fields": stats,
+        "si_lag": {name: sorted(ticker for ticker, mark in marks[name].items() if mark) for name in ADJUSTED_FIELDS},
+        "worst_details": worst_details,
+    }
+
+
 def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[[], float], tool_commit: str | None) -> dict:
     compute_seconds = 0.0
     results: dict[date, _DayResult] = {}
@@ -756,7 +969,7 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
     dy_dates: dict[str, dict[str, date | None]] = defaultdict(dict)
     for day in sorted(req.dates):
         start = clock()
-        result = _evaluate_day(acq, day)
+        result = _evaluate_day(acq, day, previous=True)
         fields_out = {
             name: {group: compare.summarize(name, result.pairs[name][group]) for group in GROUP_KEYS}
             for name in ALL_FIELDS
@@ -796,6 +1009,15 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
     raw = list(cache.used)
     collected = dict(zip(req.dates, req.collected_on))
     sensitivities = _sensitivities(acq, req, results)
+    stale_free = sensitivities["without_reference_stale"]
+    adjusted = {
+        day.isoformat(): _adjusted_input(
+            results[day],
+            stale_free["excluded"][day.isoformat()],
+            {name: stale_free["fields"][day.isoformat()][name]["non_financial"] for name in ADJUSTED_FIELDS},
+        )
+        for day in req.dates
+    }
     return report.build(
         dates=list(req.dates),
         tool_commit=tool_commit,
@@ -815,6 +1037,7 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
         coverage=coverage_out,
         filings_cutoffs=req.filings_cutoffs,
         sensitivities=sensitivities,
+        adjusted=adjusted,
     )
 
 

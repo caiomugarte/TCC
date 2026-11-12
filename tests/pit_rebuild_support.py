@@ -97,7 +97,7 @@ def universe_routes(dates, universe: Path = UNIVERSE) -> dict[str, FakeResponse]
     for year in DFP_YEARS:
         serve(sources.dfp_url(year), _zip_folder(universe / "dfp" / str(year)))
     for year in ITR_YEARS:
-        serve(sources.itr_url(year), make_zip({}))
+        serve(sources.itr_url(year), _zip_folder(universe / "itr" / str(year)))
     for year in FCA_YEARS:
         serve(sources.fca_url(year), _zip_folder(universe / "fca" / str(year)))
     for year in COTAHIST_YEARS:

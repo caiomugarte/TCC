@@ -20,6 +20,7 @@ Each test copies a cache populated once for the class, so tests that damage file
 """
 
 import base64
+from collections import defaultdict
 import contextlib
 import csv
 import hashlib
@@ -45,6 +46,9 @@ sys.path.insert(0, str(PROJECT_ROOT / "py"))
 sys.path.insert(0, str(PROJECT_ROOT / "tests"))
 
 from pit_rebuild import cli, cotahist, cvm, safety, sources  # noqa: E402
+from pit_rebuild.cache import Cache  # noqa: E402
+from pit_rebuild.dividends import B3Company, StockEvent  # noqa: E402
+from pit_rebuild.fields import ACCOUNTING_FIELDS  # noqa: E402
 from pit_rebuild_support import UNIVERSE, FakeOpener, FakeResponse, make_zip, populate_cache, universe_routes  # noqa: E402
 
 D1 = date(2026, 8, 7)
@@ -149,13 +153,17 @@ class ReportSuccessTests(ReportCase):
         self.assertTrue((self.out / MARKDOWN).is_file())
         report = self.report_json()
         self.assertEqual(report["parameters"]["dates"], [ISO1, ISO2])
-        # P/L, non-financial (the 15 eligible non-financial tickers with a Status Invest P/L): 11 within
-        # 5 %; COBR3 (no share count), NOUS3 (no usable filing), NOQT3 (no quote) and ZZZZ3 (unmapped) are out.
-        for iso in (ISO1, ISO2):
-            pl = report["dates"][iso]["fields"]["P/L"]["non_financial"]
-            self.assertEqual((pl["denominator"], pl["within"]), (15, 11), iso)
-            self.assertEqual(report["dates"][iso]["verdicts"]["P/L"]["non_financial"], "com ressalvas")
-        self.assertEqual(report["dates"][ISO1]["fields"]["P/L"]["non_financial"]["pct_within"], 100 * 11 / 15)
+        # P/L, non-financial (the 15 eligible non-financial tickers with a Status Invest P/L). COBR3 (no share count),
+        # NOUS3 (no usable filing), NOQT3 (no quote) and ZZZZ3 (unmapped) are out. REFL3 uses its 2024 filing on the first
+        # date, 584 days old at 2026-08-07, so STL-01 blanks it: 10 within of 15, 66.7 %, which is "não reconstruível".
+        pl1 = report["dates"][ISO1]["fields"]["P/L"]["non_financial"]
+        self.assertEqual((pl1["denominator"], pl1["within"]), (15, 10), ISO1)
+        self.assertEqual(report["dates"][ISO1]["verdicts"]["P/L"]["non_financial"], "não reconstruível")
+        self.assertEqual(pl1["pct_within"], 100 * 10 / 15)
+        # On the second date every usable filing is the 2025 DFP, 310 days old at 2026-11-06: all 15 P/L values are blanked.
+        pl2 = report["dates"][ISO2]["fields"]["P/L"]["non_financial"]
+        self.assertEqual((pl2["denominator"], pl2["within"]), (15, 0), ISO2)
+        self.assertEqual(report["dates"][ISO2]["verdicts"]["P/L"]["non_financial"], "não reconstruível")
         # PRECO, LIQUIDEZ and DY: 15 in the denominator, 12 within (NOUS3, NOQT3 and ZZZZ3 out).
         for field in ("PRECO", "LIQUIDEZ MEDIA DIARIA", "DY"):
             stats = report["dates"][ISO1]["fields"][field]["non_financial"]
@@ -163,7 +171,9 @@ class ReportSuccessTests(ReportCase):
         # P/VP, PSR, EV/EBIT and PEG RATIO: COBR3 is the only reference and has no share count, so 0 of 1.
         self.assertEqual(report["dates"][ISO1]["verdicts"]["P/VP"]["non_financial"], "não reconstruível")
         self.assertEqual(report["verdicts"]["class"], "não reconstruível")
-        self.assertEqual(report["verdicts"]["financial_group"], "reconstruível")  # BANC3 alone, 100 % within
+        # BANC3 alone: 100 % within on both dates before #64. Its 2025 DFP is 310 days old at 2026-11-06, so its accounting
+        # fields have no value on the second date (STL-01) and the financial group is "não reconstruível" overall.
+        self.assertEqual(report["verdicts"]["financial_group"], "não reconstruível")
         self.assertFalse(report["verdicts"]["class_differs"])
 
     def test_the_report_is_written_from_a_run_that_made_no_request(self):
@@ -201,9 +211,13 @@ class ReportSuccessTests(ReportCase):
         report = self.success()
         for iso in (ISO1, ISO2):
             day = report["dates"][iso]
-            for field in ("VALOR DE MERCADO", "P/L", "P/VP", "PSR", "EV/EBIT", "PEG RATIO"):
+            # VALOR DE MERCADO is a market field: it keeps the reason of the missing count
+            self.assertIn({"ticker": "COBR3", "reason": "no_share_count"}, day["fields"]["VALOR DE MERCADO"]["non_financial"]["missing"], iso)
+            # the accounting fields: the share count is missing on both dates; on the second date its filing is stale (STL-01)
+            reason = "no_share_count" if iso == ISO1 else "stale_filing"
+            for field in ("P/L", "P/VP", "PSR", "EV/EBIT", "PEG RATIO"):
                 missing = day["fields"][field]["non_financial"]["missing"]
-                self.assertIn({"ticker": "COBR3", "reason": "no_share_count"}, missing, (iso, field))
+                self.assertIn({"ticker": "COBR3", "reason": reason}, missing, (iso, field))
             self.assertNotIn("1004", [row["cd_cvm"] for row in day["mapping"]["share_scale"]["scaled"]])
             self.assertNotIn("1004", day["mapping"]["share_scale"]["unverified"])
 
@@ -223,7 +237,14 @@ class ReportSuccessTests(ReportCase):
         # so that date uses its 2024 filing and REFL3 is flagged.
         self.assertEqual(report["dates"][ISO1]["mapping"]["refiled_after_d"], ["REFL3"])
         self.assertEqual(report["dates"][ISO2]["mapping"]["refiled_after_d"], [])
-        self.assertEqual(report["dates"][ISO2]["fields"]["P/L"]["non_financial"]["within"], 11)
+        self.assertEqual(report["dates"][ISO2]["fields"]["P/L"]["non_financial"]["within"], 0)  # every usable filing is stale (STL-01)
+        # STL-03: each stale ticker with its filing and its age in days; the list is sorted by ticker. REFL3's 2024 filing
+        # is 584 days old on the first date (2026-08-07) and BANC3's 2025 filing 310 days old on the second (2026-11-06).
+        first = {row["ticker"]: row for row in report["dates"][ISO1]["mapping"]["stale_filing"]}
+        self.assertEqual((first["REFL3"]["dt_refer"], first["REFL3"]["age_days"]), ("2024-12-31", 584))
+        second = report["dates"][ISO2]["mapping"]["stale_filing"]
+        self.assertEqual([row["ticker"] for row in second], sorted(row["ticker"] for row in second))
+        self.assertEqual({row["ticker"]: row["age_days"] for row in second}["BANC3"], 310)
 
     def test_dividends_are_cut_at_the_decision_date_and_counted_per_source(self):
         report = self.success()
@@ -593,7 +614,19 @@ SHAPE_COMPANIES = {  # root: (CNPJ, CD_CVM, name, ON shares, PN shares)
     "FOOX": ("31.000.000/0001-31", "2011", "FOO S.A.", 100_000_000, 0),
     "OKPX": ("32.000.000/0001-32", "2012", "OKPX S.A.", 1_000_000, 0),
     "STAL": ("33.000.000/0001-33", "2013", "STAL S.A.", 1_000_000, 0),
+    "BONU": ("34.000.000/0001-34", "2014", "BONU S.A.", 100_000_000, 0),
+    "LATE": ("35.000.000/0001-35", "2015", "LATE S.A.", 100_000_000, 0),
+    "JUMP": ("36.000.000/0001-36", "2016", "JUMP S.A.", 150_000_000, 0),  # 100 M in 2024, 150 M in 2025, no B3 event (SHR-05)
+    "OLDF": ("37.000.000/0001-37", "2017", "OLDF S.A.", 100_000_000, 0),  # its only filing ends 2025-10-31 (STL-01)
+    "ANTE": ("38.000.000/0001-38", "2018", "ANTE S.A.", 100_000_000, 0),  # another stale filing, listed after OLDF in the SI rows
+    "TTMX": ("39.000.000/0001-39", "2019", "TTMX S.A.", 100_000_000, 0),  # a zero comparative: last year's ITR is read (TTM-01)
+    "TTMZ": ("41.000.000/0001-41", "2020", "TTMZ S.A.", 100_000_000, 0),  # a comparative of 30 M: last year's ITR is not read (TTM-03)
+    "ISNX": ("42.000.000/0001-42", "2021", "ISNX S.A.", 100_000_000, 0),  # its ISIN changes on 2026-07-27 (ISN-03)
 }
+# ISN-03: the ticker whose ISIN changes, the first session with the new ISIN, and the new ISIN (the old one is in SHAPE_QUOTES)
+SHAPE_ISIN_CHANGE = ("ISNX3", date(2026, 7, 27), "BRISNX3NEW01")
+# the period end of the DFP of a company whose fiscal year does not end in December (default 2025-12-31)
+SHAPE_PERIOD_END = {"OLDF": "2025-10-31", "ANTE": "2025-10-31"}
 # the stale ticker of the as-of and reference-stale tests: its last session is d - 31 (2026-07-07)
 SHAPE_STALE = ("STAL3", "STAL", "ON", 10.0, "BRSTAL3CNOR1", date(2026, 7, 7))
 # ticker, company root, ESPECI, close on every session, ISIN (12 columns)
@@ -610,6 +643,14 @@ SHAPE_QUOTES = [
     ("DUPL3", "DUPL", "ON", 10.0, "BRDUPL3CNOR1"),
     ("FOOX3", "FOOX", "ON", 10.0, "BRFOOX3CNOR1"),
     ("OKP3", "OKPX", "ON", 10.0, "BROKP3CNOR1"),
+    ("BONU3", "BONU", "ON", 10.0, "BRBONU3CNOR1"),
+    ("LATE3", "LATE", "ON", 10.0, "BRLATE3CNOR1"),
+    ("JUMP3", "JUMP", "ON", 10.0, "BRJUMP3CNOR1"),
+    ("OLDF3", "OLDF", "ON", 10.0, "BROLDF3CNOR1"),
+    ("ANTE3", "ANTE", "ON", 10.0, "BRANTE3CNOR1"),
+    ("TTMX3", "TTMX", "ON", 10.0, "BRTTMX3CNOR1"),
+    ("TTMZ3", "TTMZ", "ON", 10.0, "BRTTMZ3CNOR1"),
+    ("ISNX3", "ISNX", "ON", 10.0, "BRISNX3OLD01"),
 ]
 # FCA rows: ticker, root, valor mobiliario, composition (units only)
 SHAPE_FCA = [
@@ -629,6 +670,14 @@ SHAPE_FCA = [
     ("FOOX3", "FOOX", "Ações Ordinárias", ""),
     ("OKP3", "OKPX", "Ações Ordinárias", ""),
     (SHAPE_STALE[0], SHAPE_STALE[1], "Ações Ordinárias", ""),
+    ("BONU3", "BONU", "Ações Ordinárias", ""),
+    ("LATE3", "LATE", "Ações Ordinárias", ""),
+    ("JUMP3", "JUMP", "Ações Ordinárias", ""),
+    ("OLDF3", "OLDF", "Ações Ordinárias", ""),
+    ("ANTE3", "ANTE", "Ações Ordinárias", ""),
+    ("TTMX3", "TTMX", "Ações Ordinárias", ""),
+    ("TTMZ3", "TTMZ", "Ações Ordinárias", ""),
+    ("ISNX3", "ISNX", "Ações Ordinárias", ""),
 ]
 # Status Invest rows of the eligible tickers (VM and liquidity make them eligible; the reference values are off on purpose)
 SHAPE_SI = [
@@ -646,12 +695,24 @@ SHAPE_SI = [
     {"TICKER": "FOOX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
     {"TICKER": "OKP3", "VALOR DE MERCADO": 500_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "PRECO": 10.0},
     {"TICKER": SHAPE_STALE[0], "VALOR DE MERCADO": 500_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "PRECO": 9.0},
+    {"TICKER": "BONU3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "LATE3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "JUMP3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    # every accounting field has a Status Invest reference, so the stale ticker is in each field's missing list (STL-03)
+    {"TICKER": "OLDF3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, **{field: 1.0 for field in ACCOUNTING_FIELDS}},
+    {"TICKER": "ANTE3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, **{field: 1.0 for field in ACCOUNTING_FIELDS}},
+    {"TICKER": "TTMX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0, "PSR": 2.0},
+    {"TICKER": "TTMZ3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0},
+    # its value reference is the rebuilt 600 M x 10.00, so it does not rank among the worst VALOR DE MERCADO cases
+    {"TICKER": "ISNX3", "VALOR DE MERCADO": 6_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "DY": 5.0},
 ]
 SHAPE_DFP_STATEMENTS = {  # root: (BPP rows, consolidated DRE rows, individual DRE rows)
     "MINO": ([("2.03", 200_000_000.0), ("2.03.09", 50_000_000.0)], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
     "UNIT": ([], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
     "ZERO": ([], [("3.11", -100_000_000.0), ("3.11.01", 0.0)], []),
     "TIMX": ([], [("3.01", 0.0), ("3.11", 0.0)], [("3.01", 1_000_000_000.0), ("3.11", 100_000_000.0)]),
+    "TTMX": ([], [("3.01", 400_000_000.0), ("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
+    "TTMZ": ([], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
 }
 
 
@@ -682,7 +743,9 @@ def _shape_cotahist_2026() -> str:
         # CODB3 is CODBDI 08 only: its VOLTOT on session j is 1 000 000 + 100 000 j and its last close is 30.00
         lines.append(_cotahist_line(day, "CODB3", "08", "ON", 30.0 if index == last else 20.0, 1_000_000.0 + 100_000.0 * index, "BRCODB3CNOR1"))
         for ticker, _root, especi, close, isin in SHAPE_QUOTES:
-            lines.append(_cotahist_line(day, ticker, "02", especi, close, 1_000_000.0, isin))
+            change_ticker, change_day, new_isin = SHAPE_ISIN_CHANGE
+            session_isin = new_isin if ticker == change_ticker and day >= change_day else isin
+            lines.append(_cotahist_line(day, ticker, "02", especi, close, 1_000_000.0, session_isin))
     stale_ticker, _root, stale_especi, stale_close, stale_isin, stale_last = SHAPE_STALE
     for day in SHAPE_SESSIONS:
         if day <= stale_last:
@@ -709,14 +772,31 @@ def _shape_b3_pages(root: Path) -> None:
     old = {"typeStock": "ON", "valueCash": "0,10", "lastDatePriorEx": "01/05/2025", "corporateAction": "DIVIDENDO"}
     sbsp = {"typeStock": "ON", "valueCash": "5,00", "lastDatePriorEx": "01/06/2026", "corporateAction": "DIVIDENDO"}
     _latin1(root / "b3" / "cash" / "SBSP_p1.json", page([sbsp, old], 2))
+    # ISNX pays 1.00 on 2026-05-10 (ex-date), before both of its splits; the 2025 record is outside every window (ISN-03)
+    isnx = {"typeStock": "ON", "valueCash": "1,00", "lastDatePriorEx": "10/05/2026", "corporateAction": "DIVIDENDO"}
+    isnx_old = {"typeStock": "ON", "valueCash": "0,10", "lastDatePriorEx": "10/01/2025", "corporateAction": "DIVIDENDO"}
+    _latin1(root / "b3" / "cash" / "ISNX_p1.json", page([isnx, isnx_old], 2))
     _latin1(root / "b3" / "cash" / "DUPL_p1.json", page([dividend, dict(dividend), capital, old], 4))
     _latin1(root / "b3" / "cash" / "FOOX_p1.json", page([], 0))
     companies = {
-        "SBSP": {"tradingName": "SBSP S.A.", "code": "SBSP", "codeCVM": "2009", "totalNumberShares": "100.000.000",
+        # SBSP's split (x5, ex-date 2026-07-13) is in the count the B3 holds on the retrieval day: 100 M x 5
+        "SBSP": {"tradingName": "SBSP S.A.", "code": "SBSP", "codeCVM": "2009", "totalNumberShares": "500.000.000",
                  "stockDividends": [{"label": "DESDOBRAMENTO", "factor": "400", "isinCode": "BRSBSP3CNOR5", "lastDatePrior": "10/07/2026"}]},
         "DUPL": {"tradingName": "DUPL S.A.", "code": "DUPL", "codeCVM": "2010", "totalNumberShares": "100.000.000"},
         "FOOX": {"tradingName": "FOO S/A", "code": "FOOX", "codeCVM": "2011", "totalNumberShares": "100.000.000"},
         "ESPA": {"tradingName": "ESPA S.A.", "code": "ESPA", "codeCVM": "2006", "totalNumberShares": "10.000.000"},
+        # BONU: a bonus x2 (ex-date 2026-07-13), B3 count 200 M retrieved after it (pinned in ShapeReportTests)
+        "BONU": {"tradingName": "BONU S.A.", "code": "BONU", "codeCVM": "2014", "totalNumberShares": "200.000.000",
+                 "stockDividends": [{"label": "BONIFICACAO", "factor": "100", "isinCode": "BRBONU3CNOR1", "lastDatePrior": "10/07/2026"}]},
+        # LATE: a split x5 (ex-date 2026-07-13), B3 count 100 M retrieved before it (pinned in ShapeReportTests)
+        "LATE": {"tradingName": "LATE S.A.", "code": "LATE", "codeCVM": "2015", "totalNumberShares": "100.000.000",
+                 "stockDividends": [{"label": "DESDOBRAMENTO", "factor": "400", "isinCode": "BRLATE3CNOR1", "lastDatePrior": "10/07/2026"}]},
+        # ISNX: an old-ISIN bonus x2 (ex-date 2026-07-13) and, after the ISIN change, a new-ISIN split x3 (ex-date 2026-08-03)
+        "ISNX": {"tradingName": "ISNX S.A.", "code": "ISNX", "codeCVM": "2021", "totalNumberShares": "600.000.000",
+                 "stockDividends": [
+                     {"label": "BONIFICACAO", "factor": "100", "isinCode": "BRISNX3OLD01", "lastDatePrior": "10/07/2026"},
+                     {"label": "DESDOBRAMENTO", "factor": "200", "isinCode": "BRISNX3NEW01", "lastDatePrior": "31/07/2026"},
+                 ]},
     }
     for root_name, body in companies.items():
         _latin1(root / "b3" / f"company_{root_name}.json", json.dumps([body]))
@@ -744,17 +824,18 @@ def write_shape_universe(root: Path) -> Path:
     writer.writerows(si_rows)
     _latin1(root / "si_2026-08-07.csv", buffer.getvalue())
     dfp = root / "dfp" / "2025"
+    end = {key: SHAPE_PERIOD_END.get(key, "2025-12-31") for key in SHAPE_COMPANIES}
     _latin1(
         dfp / "dfp_cia_aberta_2025.csv",
         "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
-        + "".join(f"{cnpj[k]};2025-12-31;1;{name[k]};{cd[k]};DFP;1;2026-03-01 18:00:00;\n" for k in SHAPE_COMPANIES),
+        + "".join(f"{cnpj[k]};{end[k]};1;{name[k]};{cd[k]};DFP;1;2026-03-01 18:00:00;\n" for k in SHAPE_COMPANIES),
     )
     _latin1(
         dfp / "dfp_cia_aberta_composicao_capital_2025.csv",
         "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
         "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
         + "".join(
-            f"{cnpj[k]};2025-12-31;1;{name[k]};{value[3]};{value[4]};{value[3] + value[4]};0;0;0\n"
+            f"{cnpj[k]};{end[k]};1;{name[k]};{value[3]};{value[4]};{value[3] + value[4]};0;0;0\n"
             for k, value in SHAPE_COMPANIES.items()
         ),
     )
@@ -781,6 +862,60 @@ def write_shape_universe(root: Path) -> Path:
         for key, account, value in statement_rows(2)
     )
     _latin1(dfp / "dfp_cia_aberta_DRE_ind_2025.csv", dre_header + "\n" + dre_ind)
+    # ITRs (TTM-01, TTM-03). Each 2026 ITR has 70 M of 2026 profit. TTMX's comparative is 0, so its prior YTD is the 40 M
+    # of the 2025 ITR; TTMZ's comparative is 30 M and no earlier ITR is read.
+    itr_index = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+
+    def itr_profit(key: str, ordem: str, ini: str, fim: str, dt_refer: str, value: float, accounts=("3.11", "3.11.01")) -> str:
+        return "".join(
+            f"{cnpj[key]};{dt_refer};1;{name[key]};{cd[key]};UNIDADE;{ordem};{ini};{fim};{account};Conta {account};{value:.2f};S\n"
+            for account in accounts
+        )
+
+    itr = root / "itr"
+    _latin1(itr / "2025" / "itr_cia_aberta_2025.csv", itr_index + f"{cnpj['TTMX']};2025-06-30;1;TTMX S.A.;2019;ITR;1;2025-07-30 18:00:00;\n")
+    _latin1(
+        itr / "2025" / "itr_cia_aberta_DRE_con_2025.csv",
+        dre_header + "\n"
+        + itr_profit("TTMX", "ÚLTIMO", "2025-01-01", "2025-06-30", "2025-06-30", 40_000_000.0)
+        + itr_profit("TTMX", "ÚLTIMO", "2025-01-01", "2025-06-30", "2025-06-30", 120_000_000.0, ("3.01",)),
+    )
+    _latin1(
+        itr / "2026" / "itr_cia_aberta_2026.csv",
+        itr_index
+        + f"{cnpj['TTMX']};2026-06-30;1;TTMX S.A.;2019;ITR;1;2026-07-30 18:00:00;\n"
+        + f"{cnpj['TTMZ']};2026-06-30;1;TTMZ S.A.;2020;ITR;1;2026-07-30 18:00:00;\n",
+    )
+    _latin1(
+        itr / "2026" / "itr_cia_aberta_composicao_capital_2026.csv",
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
+        "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
+        f"{cnpj['TTMX']};2026-06-30;1;TTMX S.A.;100000000;0;100000000;0;0;0\n"
+        f"{cnpj['TTMZ']};2026-06-30;1;TTMZ S.A.;100000000;0;100000000;0;0;0\n",
+    )
+    _latin1(
+        itr / "2026" / "itr_cia_aberta_DRE_con_2026.csv",
+        dre_header + "\n"
+        + itr_profit("TTMX", "ÚLTIMO", "2026-01-01", "2026-06-30", "2026-06-30", 70_000_000.0)
+        + itr_profit("TTMX", "ÚLTIMO", "2026-01-01", "2026-06-30", "2026-06-30", 300_000_000.0, ("3.01",))
+        + itr_profit("TTMX", "PENÚLTIMO", "2025-01-01", "2025-06-30", "2026-06-30", 0.0)
+        + itr_profit("TTMX", "PENÚLTIMO", "2025-01-01", "2025-06-30", "2026-06-30", 0.0, ("3.01",))
+        + itr_profit("TTMZ", "ÚLTIMO", "2026-01-01", "2026-06-30", "2026-06-30", 70_000_000.0)
+        + itr_profit("TTMZ", "PENÚLTIMO", "2025-01-01", "2025-06-30", "2026-06-30", 30_000_000.0),
+    )
+    # JUMP's count of 2024 is 100 M: the 2025 count of 150 M is a jump of 50 % with no B3 event (SHR-05)
+    dfp_2024 = root / "dfp" / "2024"
+    _latin1(
+        dfp_2024 / "dfp_cia_aberta_2024.csv",
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+        f"{cnpj['JUMP']};2024-12-31;1;JUMP S.A.;2016;DFP;1;2025-03-01 18:00:00;\n",
+    )
+    _latin1(
+        dfp_2024 / "dfp_cia_aberta_composicao_capital_2024.csv",
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
+        "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
+        f"{cnpj['JUMP']};2024-12-31;1;JUMP S.A.;100000000;0;100000000;0;0;0\n",
+    )
     fca_rows = []
     for ticker, company_root, valor, composition in SHAPE_FCA:
         fca_rows.append(f"{cnpj[company_root]};2025-12-31;1;{valor};{ticker};{composition}\n")
@@ -792,6 +927,24 @@ def write_shape_universe(root: Path) -> Path:
     _latin1(root / "cotahist" / "2026.txt", _shape_cotahist_2026())
     _shape_b3_pages(root)  # the B3 company records and the cash pages of SBSP, DUPL, FOOX and ESPA
     return root
+
+
+# B-3 and SHR-08: R of the shape companies with events. BONU and SBSP were retrieved after their events; LATE before its one.
+SHAPE_RETRIEVED = {
+    "b3_company_BONU.json": "2026-11-10T00:34:49Z",
+    "b3_company_SBSP.json": "2026-11-10T00:34:49Z",
+    "b3_company_LATE.json": "2026-07-10T12:00:00Z",
+    "b3_company_ISNX.json": "2026-11-10T00:34:49Z",
+}
+
+
+def pin_retrieval(cache_dir: Path, retrieved: dict[str, str]) -> None:
+    """Set the manifest's retrieved_at of the named files, so R does not follow the clock of the run."""
+    path = cache_dir / "manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    for name, value in retrieved.items():
+        manifest["files"][name]["retrieved_at"] = value
+    path.write_text(json.dumps(manifest, sort_keys=True, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def worst_value(report_object: dict, field: str, ticker: str, group: str = "non_financial") -> float:
@@ -811,6 +964,7 @@ class ShapeReportTests(unittest.TestCase):
         cls.cache = base / "cache"
         cls.out = base / "out"
         populate_cache(cls.cache, (D1,), cls.universe)
+        pin_retrieval(cls.cache, SHAPE_RETRIEVED)
         code, err = run(
             ["report", "--date", ISO1, "--si", str(cls.universe / "si_2026-08-07.csv"), "--cache-dir", str(cls.cache),
              "--out-dir", str(cls.out), "--offline"]
@@ -896,6 +1050,90 @@ class ShapeReportTests(unittest.TestCase):
         missing = self.report["dates"][ISO1]["fields"]["DY"]["non_financial"]["missing"]
         self.assertIn({"ticker": "FOOX3", "reason": "no_dividend_source"}, missing)
         self.assertEqual(dividends_out["b3_empty_yahoo_failed"][ISO1], 0)
+
+    def share_event_rows(self, cd_cvm: str) -> list[dict]:
+        return [row for row in self.report["dates"][ISO1]["mapping"]["share_events"]["adjusted"] if row["cd_cvm"] == cd_cvm]
+
+    def scaled_companies(self) -> list[str]:
+        return [row["cd_cvm"] for row in self.report["dates"][ISO1]["mapping"]["share_scale"]["scaled"]]
+
+    def test_a_bonus_with_ex_date_after_the_filing_doubles_the_count_and_is_listed_with_its_event(self):
+        # BONU: 100 M ON filed, bonus x2 with ex-date 2026-07-13; the B3 count of 200 M already has it, so f is 1 and N_ON = 200 M
+        self.assertNotIn("2014", self.scaled_companies())
+        self.assertEqual(
+            self.share_event_rows("2014"),
+            [
+                {
+                    "cd_cvm": "2014",
+                    "class": "ON",
+                    "isins": ["BRBONU3CNOR1"],
+                    "dt_refer": "2025-12-31",
+                    "factor": 2,
+                    "events": [{"isin": "BRBONU3CNOR1", "label": "BONIFICACAO", "ex_date": "2026-07-13", "multiplier": 2}],
+                }
+            ],
+        )
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "BONU3"), 2_000_000_000.0)  # 200 M x 10.00
+
+    def test_a_split_retrieved_before_its_ex_date_keeps_the_factor_at_one_and_still_multiplies_the_count(self):
+        # LATE: 100 M ON filed and a split x5 with ex-date 2026-07-13, after the B3 retrieval on 2026-07-10 (SHR-08): the
+        # scale window stops at 2026-07-10, so f is 1, and the event still multiplies N_ON: 100 M x 5 = 500 M
+        self.assertNotIn("2015", self.scaled_companies())
+        self.assertEqual([row["factor"] for row in self.share_event_rows("2015")], [5])
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "LATE3"), 5_000_000_000.0)  # 500 M x 10.00
+
+    def test_a_split_the_b3_count_already_has_leaves_the_factor_to_that_count(self):
+        # SBSP: 100 M ON filed, split x5 with ex-date 2026-07-13; the B3 count of 500 M has it, so f is 1 and N_ON = 500 M
+        self.assertNotIn("2009", self.scaled_companies())
+        self.assertEqual([row["factor"] for row in self.share_event_rows("2009")], [5])
+
+    def test_a_jump_of_the_count_between_two_filings_with_no_event_is_listed_as_suspect_and_its_value_uses_the_jump(self):
+        # JUMP: 100 M ON filed for 2024 and 150 M for 2025 with no B3 event: 150 / 100 is a ratio of 1.5 (SHR-05, SHR-06)
+        self.assertEqual(
+            self.report["dates"][ISO1]["mapping"]["share_count_suspect"],
+            [{"cd_cvm": "2016", "dt_refer_prev": "2024-12-31", "total_prev": 100_000_000, "dt_refer": "2025-12-31", "total": 150_000_000, "ratio": 1.5}],
+        )
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "JUMP3"), 1_500_000_000.0)  # 150 M x 10.00
+
+    def test_a_class_with_shares_and_no_isin_at_d_is_listed_in_no_isin_and_gets_no_event(self):
+        # MINO: 50 M PREF shares and no PREF ticker with a session on or before d (SHR-04)
+        self.assertIn({"cd_cvm": "2003", "class": "PREF"}, self.report["dates"][ISO1]["mapping"]["share_events"]["no_isin"])
+        self.assertEqual(self.share_event_rows("2003"), [])
+
+    def test_a_filing_older_than_270_days_gives_no_accounting_value_and_keeps_its_market_value(self):
+        # OLDF: its only filing ends 2025-10-31, 280 days before 2026-08-07 (STL-01): the 15 accounting fields have no value with
+        # stale_filing, the ticker is listed and stays mapped with its market value (STL-02, STL-03)
+        self.assertEqual(
+            self.report["dates"][ISO1]["mapping"]["stale_filing"],
+            [
+                {"ticker": "ANTE3", "cd_cvm": "2018", "dt_refer": "2025-10-31", "age_days": 280},
+                {"ticker": "OLDF3", "cd_cvm": "2017", "dt_refer": "2025-10-31", "age_days": 280},
+            ],
+        )
+        fields = self.report["dates"][ISO1]["fields"]
+        for field in ACCOUNTING_FIELDS:
+            reasons = {row["ticker"]: row["reason"] for row in fields[field]["non_financial"]["missing"]}
+            self.assertEqual(reasons.get("OLDF3"), "stale_filing", field)
+        self.assertNotIn("OLDF3", self.unmapped())
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "OLDF3"), 1_000_000_000.0)  # 100 M x 10.00
+        for field in ("PRECO", "LIQUIDEZ MEDIA DIARIA", "DY"):  # the market fields keep their own reasons (STL-02)
+            reasons = {row["ticker"]: row["reason"] for row in fields[field]["non_financial"]["missing"]}
+            self.assertNotEqual(reasons.get("OLDF3"), "stale_filing", field)
+
+    def test_a_12_month_profit_with_a_zero_comparative_uses_last_years_itr_and_is_listed_with_its_account(self):
+        # TTMX: the 2026 ITR's comparatives are 0, so the prior YTDs are the 2025 ITR's: LL = 100 M + 70 M - 40 M = 130 M,
+        # REC = 400 M + 300 M - 120 M = 580 M; P/L = 10.00 / (130 M / 100 M) = 7.69, PSR = 10.00 / (580 M / 100 M) = 1.72 (TTM-01, TTM-04)
+        self.assertEqual(
+            self.report["dates"][ISO1]["mapping"]["ttm_prior_from_itr"],
+            [{"cd_cvm": "2019", "dt_refer": "2026-06-30", "accounts": ["3.01", "LL"]}],
+        )
+        self.assertAlmostEqual(worst_value(self.report, "P/L", "TTMX3"), 10 / 1.3, places=2)
+        self.assertAlmostEqual(worst_value(self.report, "PSR", "TTMX3"), 10 / 5.8, places=2)
+
+    def test_a_12_month_profit_with_a_non_zero_comparative_is_not_listed(self):
+        # TTMZ: the comparative is 30 M, so it is used and no earlier ITR is read: LL = 100 M + 70 M - 30 M = 140 M (TTM-03)
+        self.assertNotIn("2020", [row["cd_cvm"] for row in self.report["dates"][ISO1]["mapping"]["ttm_prior_from_itr"]])
+        self.assertAlmostEqual(worst_value(self.report, "P/L", "TTMZ3"), 10 / 1.4, places=2)
 
 
 class ShapeAsOfTests(unittest.TestCase):
@@ -1042,13 +1280,16 @@ class CollectedOnAndCutoffTests(ReportCase):
         self.assertEqual(cut["dates"], plain["dates"])
         self.assertEqual(cut["parameters"]["filings_cutoffs"], {ISO2: "2026-09-14"})
         self.assertIs(cut["sensitivities"]["official"], False)
-        # REFL3 (2025 filing received 2026-09-15): P/L 5.00 in the official run, within; with the 2024 filing (10.00) it is out
+        # At 2026-11-06 every usable filing is the 2025 DFP, 310 days old (STL-01), so no P/L is within in either run.
+        # REFL3's filing received 2026-09-15 is not used by the cutoff, and its 2025 version 1 is stale all the same.
         official = cut["dates"][ISO2]["fields"]["P/L"]["non_financial"]
-        self.assertEqual((official["denominator"], official["within"]), (15, 11))
+        self.assertEqual((official["denominator"], official["within"]), (15, 0))
         recomputed = cut["sensitivities"]["filings_cutoff"][ISO2]
         self.assertEqual(recomputed["cutoff"], "2026-09-14")
         self.assertEqual((recomputed["fields"]["P/L"]["non_financial"]["denominator"],
-                          recomputed["fields"]["P/L"]["non_financial"]["within"]), (15, 10))
+                          recomputed["fields"]["P/L"]["non_financial"]["within"]), (15, 0))
+        reasons = {row["ticker"]: row["reason"] for row in recomputed["fields"]["P/L"]["non_financial"]["missing"]}
+        self.assertEqual(reasons["REFL3"], "stale_filing")  # the cutoff applies the same rule (T16)
 
     def test_class_without_roic_peg_is_on_every_exit_0_run(self):
         sensitivities = self.success()["sensitivities"]
@@ -1150,7 +1391,7 @@ class ScaledShareCountTests(unittest.TestCase):
         acq = SimpleNamespace(
             dfp=dfp,
             itr=cvm.load_filings([], cvm.ITR),
-            b3={"ROUN": SimpleNamespace(total_shares=4_000_001)},
+            b3={"ROUN": SimpleNamespace(total_shares=4_000_001, stock_events=(), retrieved_on=None)},
             fca=SimpleNamespace(tickers_of=lambda cnpj: []),
             si={self.D: SimpleNamespace(rows={})},
             quotes=cotahist.Quotes(),
@@ -1158,6 +1399,513 @@ class ScaledShareCountTests(unittest.TestCase):
         company = cli._company(acq, self.D, self.CNPJ, "9999", ["ROUN3"], self.D)
         self.assertEqual(company.scaled["factor"], 0.1)
         self.assertEqual((company.n_on, company.n_pref), (3_000_001, 1_000_000))
+
+
+CASE_CNPJ = "40.000.000/0001-40"
+DAY = date(2026, 8, 7)
+
+
+def composition_members(kind: str, dt_refer: str, dt_receb: str, on: int, pref: int) -> dict[str, str]:
+    """The index and the composicao_capital of one CVM filing of CASE_CNPJ (kind is cvm.DFP or cvm.ITR), as the loader reads them."""
+    year, prefix = dt_refer[:4], kind.lower()
+    return {
+        f"{prefix}_cia_aberta_{year}.csv": (
+            "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+            f"{CASE_CNPJ};{dt_refer};1;CASE S.A.;1234;{kind};1;{dt_receb};\n"
+        ),
+        f"{prefix}_cia_aberta_composicao_capital_{year}.csv": (
+            "CNPJ_CIA;DT_REFER;VERSAO;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR\n"
+            f"{CASE_CNPJ};{dt_refer};1;{on};{pref};{on + pref}\n"
+        ),
+    }
+
+
+def filing_store(kind: str, members: dict[str, str]) -> cvm.FilingStore:
+    """The CVM store of one kind, read from a temporary zip of the members."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / f"{kind.lower()}.zip"
+        path.write_bytes(make_zip(members))
+        return cvm.load_filings([path], kind)
+
+
+def quotes_of(lines: list[str], tickers: list[str]) -> cotahist.Quotes:
+    """The quotes of COTAHIST lines, loaded for the tickers from a temporary zip."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "cotahist.zip"
+        path.write_bytes(make_zip({"COTAHIST_A2026.TXT": "\n".join(lines) + "\n"}))
+        return cotahist.load([path], set(tickers))
+
+
+def acquisition(dfp: cvm.FilingStore, itr: cvm.FilingStore, b3: dict, quotes: cotahist.Quotes) -> SimpleNamespace:
+    """The inputs cli._company reads, with no FCA ticker and no Status Invest row."""
+    return SimpleNamespace(
+        dfp=dfp,
+        itr=itr,
+        b3=b3,
+        quotes=quotes,
+        fca=SimpleNamespace(tickers_of=lambda cnpj: []),
+        si=defaultdict(lambda: SimpleNamespace(rows={})),
+    )
+
+
+def jump_company(itr_on: int) -> cli._Company:
+    """A company with 100 M ON filed at 2025-12-31 and itr_on ON filed at 2026-06-30, and no B3 event, as _company reads it."""
+    dfp = filing_store(cvm.DFP, composition_members(cvm.DFP, "2025-12-31", "2026-03-20 18:00:00", 100_000_000, 0))
+    itr = filing_store(cvm.ITR, composition_members(cvm.ITR, "2026-06-30", "2026-07-30 18:00:00", itr_on, 0))
+    b3 = {"JUMP": B3Company(trading_name="JUMP S.A.", code_cvm="1234", total_shares=itr_on)}
+    return cli._company(acquisition(dfp, itr, b3, cotahist.Quotes()), DAY, CASE_CNPJ, "1234", ["JUMP3"], DAY)
+
+
+class ShareCountRulesTests(unittest.TestCase):
+    """SHR-01, SHR-02, SHR-05, SHR-06 and SHR-07 through cli._company: an event counts from its ex-date on, and a jump with no event is suspect."""
+
+    def test_a_day_before_the_ex_date_keeps_the_filed_count_and_the_ex_date_brings_the_bonus(self):
+        # BONU: 100 M ON filed at 2025-12-31; bonus x2 with ex-date 2026-07-13. The B3 count of 200 M has the bonus, so f is 1
+        # on both days: only a decision date on or after the ex-date multiplies the count.
+        lines = [_cotahist_line(date(2026, 7, day), "BONU3", "02", "ON", 10.0, 1_000_000.0, "BRBONU3CNOR1") for day in (6, 7, 8, 9, 10, 13)]
+        event = StockEvent(isin="BRBONU3CNOR1", label="BONIFICACAO", multiplier=2.0, last_date_prior=date(2026, 7, 10))
+        b3 = {"BONU": B3Company(trading_name="BONU S.A.", code_cvm="2014", total_shares=200_000_000, stock_events=(event,), retrieved_on=date(2026, 11, 9))}
+        dfp = filing_store(cvm.DFP, composition_members(cvm.DFP, "2025-12-31", "2026-03-20 18:00:00", 100_000_000, 0))
+        acq = acquisition(dfp, filing_store(cvm.ITR, {}), b3, quotes_of(lines, ["BONU3"]))
+
+        before = cli._company(acq, date(2026, 7, 10), CASE_CNPJ, "2014", ["BONU3"], date(2026, 7, 10))
+        after = cli._company(acq, date(2026, 7, 13), CASE_CNPJ, "2014", ["BONU3"], date(2026, 7, 13))
+
+        self.assertEqual((before.n_on, before.share_events, before.suspect), (100_000_000, [], None))
+        self.assertEqual(after.n_on, 200_000_000)
+        self.assertEqual(
+            after.share_events,
+            [
+                {
+                    "cd_cvm": "2014",
+                    "class": "ON",
+                    "isins": ["BRBONU3CNOR1"],
+                    "dt_refer": "2025-12-31",
+                    "factor": 2.0,
+                    "events": [{"isin": "BRBONU3CNOR1", "label": "BONIFICACAO", "ex_date": "2026-07-13", "multiplier": 2.0}],
+                }
+            ],
+        )
+
+    def test_a_count_that_jumps_more_than_20_percent_without_an_event_is_suspect_and_its_jumped_count_is_used(self):
+        company = jump_company(150_000_000)  # 100 M to 150 M: a change of 50 %
+        self.assertEqual(
+            company.suspect,
+            {"cd_cvm": "1234", "dt_refer_prev": "2025-12-31", "total_prev": 100_000_000, "dt_refer": "2026-06-30", "total": 150_000_000, "ratio": 1.5},
+        )
+        self.assertEqual((company.n_on, company.n_pref), (150_000_000, 0))
+
+    def test_a_jump_of_exactly_20_percent_is_not_suspect(self):
+        company = jump_company(120_000_000)  # 100 M to 120 M: exactly 20 %, which is not "more than 20 %"
+        self.assertIsNone(company.suspect)
+        self.assertEqual(company.n_on, 120_000_000)
+
+    def test_the_previous_filing_is_read_at_the_filings_day_like_the_count(self):
+        # filings_day 2026-07-29: the ITR of 2026-06-30 (300 M, received 2026-07-30) is not read yet, so the count is the
+        # 2025 DFP's 150 M and its previous filing the 2024 DFP's 100 M: a ratio of 1.5 (A-22 (b), B-4)
+        members = {**composition_members(cvm.DFP, "2024-12-31", "2025-03-01 18:00:00", 100_000_000, 0),
+                   **composition_members(cvm.DFP, "2025-12-31", "2026-03-20 18:00:00", 150_000_000, 0)}
+        dfp = filing_store(cvm.DFP, members)
+        itr = filing_store(cvm.ITR, composition_members(cvm.ITR, "2026-06-30", "2026-07-30 18:00:00", 300_000_000, 0))
+        company = cli._company(acquisition(dfp, itr, {}, cotahist.Quotes()), DAY, CASE_CNPJ, "1234", ["CASE3"], date(2026, 7, 29))
+        self.assertEqual(company.n_on, 150_000_000)
+        self.assertEqual(
+            company.suspect,
+            {"cd_cvm": "1234", "dt_refer_prev": "2024-12-31", "total_prev": 100_000_000, "dt_refer": "2025-12-31", "total": 150_000_000, "ratio": 1.5},
+        )
+
+    def test_the_previous_count_is_scaled_by_its_own_factor_so_a_filing_in_thousands_is_not_suspect(self):
+        # The 2024 DFP is filed in thousands: 100 000 ON, whose A-18 factor is 1 000 (the B3 total is 100 M). The 2025 DFP is filed
+        # in units: 100 M ON, factor 1. The real count is the same and no B3 event moves it, so both totals are 100 M and the ratio
+        # is 1. Scaling the previous count by the current factor would give a ratio of 1 000 and a suspect row: SHR-05 uses the
+        # previous filing's own factor (B-4).
+        b3 = {"CASE": B3Company(trading_name="CASE S.A.", code_cvm="1234", total_shares=100_000_000)}
+        members = {**composition_members(cvm.DFP, "2024-12-31", "2025-03-01 18:00:00", 100_000, 0),
+                   **composition_members(cvm.DFP, "2025-12-31", "2026-03-20 18:00:00", 100_000_000, 0)}
+        dfp = filing_store(cvm.DFP, members)
+        company = cli._company(acquisition(dfp, filing_store(cvm.ITR, {}), b3, cotahist.Quotes()), DAY, CASE_CNPJ, "1234", ["CASE3"], DAY)
+        self.assertEqual(company.n_on, 100_000_000)
+        self.assertIsNone(company.suspect)
+
+
+class RetrievedOnTests(unittest.TestCase):
+    """B-3 and SHR-08: R is the São Paulo day (UTC−3) of the manifest's retrieved_at of the B3 company record."""
+
+    def company_retrieved_at(self, retrieved_at: str) -> B3Company | None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "cache"
+            root.mkdir()
+            name = cli.b3_company_name("SBSP")
+            body = json.dumps([{"tradingName": "SBSP S.A.", "code": "SBSP", "codeCVM": "2009", "totalNumberShares": "100.000.000"}]).encode("latin-1")
+            (root / name).write_bytes(body)
+            entry = {
+                "bytes": len(body),
+                "name": name,
+                "retrieved_at": retrieved_at,
+                "sha256": hashlib.sha256(body).hexdigest(),
+                "url": sources.b3_company_url("SBSP"),
+            }
+            (root / "manifest.json").write_text(json.dumps({"files": {name: entry}, "sizes": {}}), encoding="utf-8")
+            return cli._b3_company(Cache(root, offline=True, opener=no_network), "SBSP")
+
+    def test_retrieved_on_is_the_sao_paulo_day_of_the_manifest_moment(self):
+        self.assertEqual(self.company_retrieved_at("2026-11-10T00:34:49Z").retrieved_on, date(2026, 11, 9))
+
+    def test_the_utc_hours_before_three_in_the_morning_belong_to_the_day_before(self):
+        self.assertEqual(self.company_retrieved_at("2026-11-10T02:59:59Z").retrieved_on, date(2026, 11, 9))
+        self.assertEqual(self.company_retrieved_at("2026-11-10T03:00:00Z").retrieved_on, date(2026, 11, 10))
+
+
+class StaleFilingCutoffTests(unittest.TestCase):
+    """STL-01 in the --filings-cutoff sensitivity: the cutoff evaluation applies the same rule, and the decision date does not move (B-6)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        base = Path(cls._tmp.name)
+        universe = write_shape_universe(base / "universe")
+        cache = base / "cache"
+        populate_cache(cache, (D1,), universe)
+        pin_retrieval(cache, SHAPE_RETRIEVED)
+        code, err = run(
+            ["report", "--date", ISO1, "--si", str(universe / "si_2026-08-07.csv"), "--cache-dir", str(cache),
+             "--out-dir", str(base / "out"), "--offline", "--filings-cutoff", f"{ISO1}:2026-08-03"]
+        )
+        if code != 0:
+            raise RuntimeError(f"the cutoff report exited {code}: {err}")
+        cls.report = json.loads((base / "out" / REPORT).read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_the_cutoff_evaluation_gives_the_stale_ticker_no_accounting_value_as_well(self):
+        block = self.report["sensitivities"]["filings_cutoff"][ISO1]
+        self.assertEqual(block["cutoff"], "2026-08-03")
+        reasons = {row["ticker"]: row["reason"] for row in block["fields"]["P/L"]["non_financial"]["missing"]}
+        self.assertEqual(reasons.get("OLDF3"), "stale_filing")
+
+
+class StaleFilingRuleTests(unittest.TestCase):
+    """STL-04 and B-6: a filing is stale when its age is more than 270 days; exactly 270 days is not stale."""
+
+    def test_exactly_270_days_is_not_stale_and_271_days_is(self):
+        period_end = date(2025, 10, 31)
+        self.assertFalse(cli._is_stale(period_end, date(2026, 7, 28)))  # 270 days
+        self.assertTrue(cli._is_stale(period_end, date(2026, 7, 29)))  # 271 days
+
+    def test_a_company_with_no_usable_filing_has_no_stale_age(self):
+        self.assertFalse(cli._is_stale(None, date(2026, 8, 7)))
+
+
+FIRST_DAY = date(2026, 7, 20)  # before ISNX's ISIN change on 2026-07-27 (SHAPE_ISIN_CHANGE)
+
+
+class IsinAtDateTests(unittest.TestCase):
+    """ISN-03 through the report command: the ISIN at each decision date chooses the split that divides a dividend (A-20)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        base = Path(cls._tmp.name)
+        universe = write_shape_universe(base / "universe")
+        shutil.copy(universe / "si_2026-08-07.csv", universe / "si_2026-07-20.csv")  # the same Status Invest rows, for the first date
+        cache = base / "cache"
+        populate_cache(cache, (FIRST_DAY, D1), universe)
+        pin_retrieval(cache, SHAPE_RETRIEVED)
+        code, err = run(
+            ["report", "--date", FIRST_DAY.isoformat(), "--date", ISO1,
+             "--si", str(universe / "si_2026-07-20.csv"), "--si", str(universe / "si_2026-08-07.csv"),
+             "--cache-dir", str(cache), "--out-dir", str(base / "out"), "--offline"]
+        )
+        if code != 0:
+            raise RuntimeError(f"the ISIN report exited {code}: {err}")
+        cls.report = json.loads((base / "out" / REPORT).read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_the_isin_at_each_date_chooses_the_split_that_divides_the_dividend(self):
+        # ISNX pays 1.00 with ex-date 2026-05-10. On 2026-07-20 its ISIN is the old one, whose x2 bonus (ex-date 2026-07-13)
+        # divides the dividend to 0.50: DY = 100 x 0.50 / 10.00 = 5.00. On 2026-08-07 the ISIN is the new one, whose x3 split
+        # (ex-date 2026-08-03) divides it to 1/3: DY = 100 x (1/3) / 10.00 = 3.33 (ISN-03).
+        dy = {
+            iso: {row["ticker"]: row["rebuilt"] for row in self.report["dates"][iso]["fields"]["DY"]["non_financial"]["worst"]}
+            for iso in (FIRST_DAY.isoformat(), ISO1)
+        }
+        self.assertAlmostEqual(dy[FIRST_DAY.isoformat()]["ISNX3"], 5.0, places=2)
+        self.assertAlmostEqual(dy[ISO1]["ISNX3"], 100 / 30, places=2)
+
+
+# --- the adjusted verdict and the Status Invest lag (T19): four companies, worked out by hand, no network -------------
+
+LAG_COMPANIES = {  # root: (CNPJ, CD_CVM, name)
+    "LAGX": ("43.000.000/0001-43", "2030", "LAGX S.A."),
+    "ONEF": ("44.000.000/0001-44", "2031", "ONEF S.A."),
+    "STLQ": ("45.000.000/0001-45", "2032", "STLQ S.A."),
+    "OLDQ": ("46.000.000/0001-46", "2033", "OLDQ S.A."),
+}
+LAG_QUOTES = [  # ticker, root, ESPECI, close on every session, ISIN
+    ("LAGX3", "LAGX", "ON", 10.0, "BRLAGX3CNOR1"),
+    ("ONEF3", "ONEF", "ON", 10.0, "BRONEF3CNOR1"),
+    ("STLQ3", "STLQ", "ON", 10.0, "BRSTLQ3CNOR1"),
+    ("OLDQ3", "OLDQ", "ON", 10.0, "BROLDQ3CNOR1"),
+]
+LAG_LAST_SESSION = {"STLQ3": date(2026, 7, 7)}  # 31 days before D1: no session in the 30 days before it (reference stale)
+LAG_PERIOD_END = {"OLDQ": "2025-10-31"}  # its newest DFP ends 280 days before D1 (stale); the DFP before it ends 2024-12-31
+LAG_SESSIONS = [day for day in (date(2026, 5, 1) + timedelta(days=n) for n in range(100)) if day.weekday() < 5 and day <= D1]
+LAG_SI = [  # Status Invest: LAGX3's P/L is the one of the ITR of 2026-03-31; ONEF3 misses by 16.7 %; OLDQ3 is 10.00
+    {"TICKER": "LAGX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 9.52, "DY": 8.0},
+    {"TICKER": "ONEF3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 12.0},
+    {"TICKER": "STLQ3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0},
+    {"TICKER": "OLDQ3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0},
+]
+LAG_COMPOSITION_HEADER = (
+    "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
+    "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
+)
+LAG_FILING_HEADER = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+
+
+def _lag_statement(cnpj_text: str, name_text: str, cd_text: str, dt_refer: str, ordem: str, ini: str, fim: str, account: str, value: float) -> str:
+    return f"{cnpj_text};{dt_refer};1;{name_text};{cd_text};UNIDADE;{ordem};{ini};{fim};{account};Conta {account};{value:.2f};S\n"
+
+
+def write_lag_universe(root: Path) -> Path:
+    """Four companies for the adjusted verdict and the lag (T19). The shared and the shape universes are not touched.
+
+    LAGX: 100 M ON shares at 10.00. Its LL is 100 M in 2025. The ITR of 2026-03-31 (received 2026-05-14) has 20 M of 2026
+    profit against 15 M a year before; the ITR of 2026-06-30 (received 2026-08-05) has 70 M against 40 M. The TTM profit is
+    105 M on the first and 130 M on the second, so P/L is 9.52 and 7.69. A dividend of 1.00 (June 2026) gives DY 10.00.
+    ONEF: one DFP and no ITR, so P/L 10.00. STLQ: one DFP and no session since 2026-07-07 (reference stale).
+    OLDQ: its newest DFP ends 2025-10-31 (stale) and the DFP before it ends 2024-12-31 (stale too), both with LL 100 M.
+    """
+    si_header = (UNIVERSE / "si_2026-08-07.csv").read_text(encoding="utf-8").splitlines()[0]
+    bpp_header = (UNIVERSE / "dfp" / "2025" / "dfp_cia_aberta_BPP_con_2025.csv").read_text(encoding="latin-1").splitlines()[0]
+    dre_header = (UNIVERSE / "dfp" / "2025" / "dfp_cia_aberta_DRE_con_2025.csv").read_text(encoding="latin-1").splitlines()[0]
+    cnpj = {key: value[0] for key, value in LAG_COMPANIES.items()}
+    cd = {key: value[1] for key, value in LAG_COMPANIES.items()}
+    name = {key: value[2] for key, value in LAG_COMPANIES.items()}
+    end = {key: LAG_PERIOD_END.get(key, "2025-12-31") for key in LAG_COMPANIES}
+    root.mkdir(parents=True, exist_ok=True)
+    _latin1(
+        root / "cad_cia_aberta.csv",
+        "CNPJ_CIA;DENOM_SOCIAL;SIT;CD_CVM;SETOR_ATIV\n" + "".join(f"{cnpj[k]};{name[k]};ATIVO;{cd[k]};Comercio\n" for k in LAG_COMPANIES),
+    )
+    si_columns = si_header.split(",")
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=si_columns)
+    writer.writeheader()
+    writer.writerows([{**{column: "" for column in si_columns}, "SETOR": "Comercio", **row} for row in LAG_SI])
+    _latin1(root / "si_2026-08-07.csv", buffer.getvalue())
+    dfp = root / "dfp" / "2025"
+    _latin1(
+        dfp / "dfp_cia_aberta_2025.csv",
+        LAG_FILING_HEADER + "".join(f"{cnpj[k]};{end[k]};1;{name[k]};{cd[k]};DFP;1;2026-03-01 18:00:00;\n" for k in LAG_COMPANIES),
+    )
+    _latin1(
+        dfp / "dfp_cia_aberta_composicao_capital_2025.csv",
+        LAG_COMPOSITION_HEADER + "".join(f"{cnpj[k]};{end[k]};1;{name[k]};100000000;0;100000000;0;0;0\n" for k in LAG_COMPANIES),
+    )
+    _latin1(dfp / "dfp_cia_aberta_BPP_con_2025.csv", bpp_header + "\n")
+    _latin1(dfp / "dfp_cia_aberta_DRE_ind_2025.csv", dre_header + "\n")
+    _latin1(
+        dfp / "dfp_cia_aberta_DRE_con_2025.csv",
+        dre_header + "\n" + "".join(
+            _lag_statement(cnpj[k], name[k], cd[k], "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", account, 100_000_000.0)
+            for k in LAG_COMPANIES if k != "OLDQ" for account in ("3.11", "3.11.01")
+        ),
+    )
+    before = root / "dfp" / "2024"  # the DFP before OLDQ's newest one: its 2024 profit gives the P/L a stale filing would still show
+    _latin1(
+        before / "dfp_cia_aberta_2024.csv",
+        LAG_FILING_HEADER + f"{cnpj['OLDQ']};2024-12-31;1;{name['OLDQ']};{cd['OLDQ']};DFP;1;2025-03-01 18:00:00;\n",
+    )
+    _latin1(
+        before / "dfp_cia_aberta_composicao_capital_2024.csv",
+        LAG_COMPOSITION_HEADER + f"{cnpj['OLDQ']};2024-12-31;1;{name['OLDQ']};100000000;0;100000000;0;0;0\n",
+    )
+    _latin1(
+        before / "dfp_cia_aberta_DRE_con_2024.csv",
+        dre_header + "\n" + "".join(
+            _lag_statement(cnpj["OLDQ"], name["OLDQ"], cd["OLDQ"], "2024-12-31", "ÚLTIMO", "2024-01-01", "2024-12-31", account, 100_000_000.0)
+            for account in ("3.11", "3.11.01")
+        ),
+    )
+    itr = root / "itr" / "2026"
+    _latin1(
+        itr / "itr_cia_aberta_2026.csv",
+        LAG_FILING_HEADER
+        + f"{cnpj['LAGX']};2026-03-31;1;{name['LAGX']};{cd['LAGX']};ITR;1;2026-05-14 18:00:00;\n"
+        + f"{cnpj['LAGX']};2026-06-30;1;{name['LAGX']};{cd['LAGX']};ITR;1;2026-08-05 18:00:00;\n",
+    )
+    _latin1(
+        itr / "itr_cia_aberta_composicao_capital_2026.csv",
+        LAG_COMPOSITION_HEADER
+        + f"{cnpj['LAGX']};2026-03-31;1;{name['LAGX']};100000000;0;100000000;0;0;0\n"
+        + f"{cnpj['LAGX']};2026-06-30;1;{name['LAGX']};100000000;0;100000000;0;0;0\n",
+    )
+    lagx_periods = [  # DT_REFER, ORDEM_EXERC, DT_INI_EXERC, DT_FIM_EXERC, VL_CONTA
+        ("2026-03-31", "ÚLTIMO", "2026-01-01", "2026-03-31", 20_000_000.0),
+        ("2026-03-31", "PENÚLTIMO", "2025-01-01", "2025-03-31", 15_000_000.0),
+        ("2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", 70_000_000.0),
+        ("2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", 40_000_000.0),
+    ]
+    _latin1(
+        itr / "itr_cia_aberta_DRE_con_2026.csv",
+        dre_header + "\n" + "".join(
+            _lag_statement(cnpj["LAGX"], name["LAGX"], cd["LAGX"], dt_refer, ordem, ini, fim, account, value)
+            for dt_refer, ordem, ini, fim, value in lagx_periods for account in ("3.11", "3.11.01")
+        ),
+    )
+    _latin1(
+        root / "fca" / "2025" / "fca_cia_aberta_valor_mobiliario_2025.csv",
+        "CNPJ_Companhia;Data_Referencia;Versao;Valor_Mobiliario;Codigo_Negociacao;Composicao_BDR_Unit\n"
+        + "".join(f"{cnpj[root_name]};2025-12-31;1;Ações Ordinárias;{ticker};\n" for ticker, root_name, *_rest in LAG_QUOTES),
+    )
+    _latin1(root / "cotahist" / "2025.txt", _shape_cotahist_2025())
+    sessions = []
+    for day in LAG_SESSIONS:
+        for ticker, _root, especi, close, isin in LAG_QUOTES:
+            if day <= LAG_LAST_SESSION.get(ticker, D1):
+                sessions.append(_cotahist_line(day, ticker, "02", especi, close, 1_000_000.0, isin))
+    _latin1(root / "cotahist" / "2026.txt", "\n".join(sessions) + "\n")
+    _latin1(
+        root / "b3" / "company_LAGX.json",
+        json.dumps([{"tradingName": "LAGX S.A.", "code": "LAGX", "codeCVM": "2030", "totalNumberShares": "100.000.000"}]),
+    )
+    # the B3 history reaches back past d - 365 (2025-08-07), or the source is Yahoo (short history); the 2025 record is out of the window
+    dividend = {"typeStock": "ON", "valueCash": "1,00", "lastDatePriorEx": "10/06/2026", "corporateAction": "DIVIDENDO"}
+    old = {"typeStock": "ON", "valueCash": "0,10", "lastDatePriorEx": "01/05/2025", "corporateAction": "DIVIDENDO"}
+    _latin1(
+        root / "b3" / "cash" / "LAGX_p1.json",
+        json.dumps({"page": {"pageNumber": 1, "pageSize": 120, "totalRecords": 2, "totalPages": 1}, "results": [dividend, old]}),
+    )
+    return root
+
+
+class AdjustedVerdictTests(unittest.TestCase):
+    """The adjusted verdict and the Status Invest lag on the lag universe (T19: LAG-01..LAG-04, ADJ-02, ADJ-04..ADJ-07, B-9)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        base = Path(cls._tmp.name)
+        cls.universe = write_lag_universe(base / "universe")
+        cls.si = cls.universe / "si_2026-08-07.csv"
+        cls.cache = base / "cache"
+        cls.out = base / "out"
+        populate_cache(cls.cache, (D1,), cls.universe)
+        code, err = run(report_args(cls.cache, cls.out, dates=(D1,), si=(cls.si,)))
+        if code != 0:
+            raise RuntimeError(f"the lag report exited {code}: {err}")
+        cls.report = json.loads((cls.out / REPORT).read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def adjusted(self) -> dict:
+        return self.report["adjusted_verdict"]
+
+    def worst_row(self, field: str, ticker: str) -> dict:
+        rows = self.adjusted()["dates"][ISO1]["fields"][field]["worst"]
+        return {row["ticker"]: row for row in rows}[ticker]
+
+    def test_a_ticker_outside_tolerance_that_the_previous_filing_explains_is_si_lag(self):
+        # LAGX3: 7.69 on the ITR of 2026-06-30, 9.52 on the ITR of 2026-03-31, and Status Invest says 9.52 (LAG-01, LAG-02)
+        self.assertEqual(self.adjusted()["dates"][ISO1]["fields"]["P/L"]["si_lag"], {"count": 1, "tickers": ["LAGX3"]})
+        self.assertTrue(self.worst_row("P/L", "LAGX3")["si_lag"])
+
+    def test_a_company_with_one_usable_filing_is_never_si_lag(self):
+        # ONEF3 misses by 16.7 % with its only filing, the DFP of 2025; no older filing can explain it (LAG-03)
+        row = self.worst_row("P/L", "ONEF3")
+        self.assertEqual((row["reference"], row["rebuilt"]), (12.0, 10.0))
+        self.assertFalse(row["si_lag"])
+        self.assertIsNone(row["previous_value"])
+        self.assertNotIn("ONEF3", self.adjusted()["dates"][ISO1]["fields"]["P/L"]["si_lag"]["tickers"])
+
+    def test_a_ticker_whose_newest_filing_is_stale_is_not_si_lag_though_the_older_filing_would_match(self):
+        # OLDQ3: its newest filing ends 2025-10-31, 280 days before D1, so its P/L has no value (STL-01). The filing before it
+        # ends 2024-12-31 and is stale too, so its P/L of 10.00 does not explain the miss (LAG-03, B-9).
+        self.assertIn(
+            {"ticker": "OLDQ3", "cd_cvm": "2033", "dt_refer": "2025-10-31", "age_days": 280},
+            self.report["dates"][ISO1]["mapping"]["stale_filing"],
+        )
+        pl = self.adjusted()["dates"][ISO1]["fields"]["P/L"]
+        self.assertIn({"ticker": "OLDQ3", "reason": "stale_filing"}, pl["missing"])
+        self.assertNotIn("OLDQ3", pl["si_lag"]["tickers"])
+
+    def test_a_reference_stale_ticker_has_no_value_so_no_si_lag_mark_can_hold_it(self):  # V3, LAG-02
+        # STLQ3 has no session in the 30 days before D1. reference_stale and no_quote are the same test (cotahist.reference_stale
+        # and cli._unmapped_reason both read quote_at), so every field of STLQ3 is empty and no si_lag mark can be on it. The cut
+        # of the reference-stale tickers in adjusted_input is redundant under these definitions (V3: an equivalent mutant).
+        mapping = self.report["dates"][ISO1]["mapping"]
+        self.assertIn("STLQ3", mapping["reference_stale"])
+        self.assertIn({"ticker": "STLQ3", "reason": "no_quote"}, mapping["unmapped"])
+        for field, block in self.adjusted()["dates"][ISO1]["fields"].items():
+            self.assertNotIn("STLQ3", block["si_lag"]["tickers"], field)
+
+    def test_the_si_lag_mark_changes_no_statistic(self):
+        # LAG-04: LAGX3, ONEF3 and OLDQ3 are all outside tolerance, so the share within is 0 % whether or not LAGX3 is si_lag
+        pl = self.adjusted()["dates"][ISO1]["fields"]["P/L"]
+        self.assertEqual((pl["denominator"], pl["within"], pl["pct_within"]), (3, 0, 0.0))
+        self.assertEqual(pl["verdict"], "não reconstruível")
+
+    def test_the_adjusted_scope_leaves_out_the_reference_stale_ticker_and_roic_and_peg(self):
+        adjusted = self.adjusted()
+        self.assertEqual(adjusted["excluded"], {ISO1: ["STLQ3"]})
+        self.assertEqual(self.report["dates"][ISO1]["mapping"]["reference_stale"], ["STLQ3"])
+        self.assertEqual(len(adjusted["fields"]), 14)
+        self.assertNotIn("ROIC", adjusted["fields"])
+        self.assertNotIn("PEG RATIO", adjusted["fields"])
+        self.assertEqual(adjusted["dates"][ISO1]["fields"]["P/L"]["denominator"], 3)  # STLQ3 is out of the scope
+
+    def test_the_criterion_fails_on_the_pl_and_on_a_field_without_reference_and_the_class_follows(self):
+        adjusted = self.adjusted()
+        criterion = adjusted["criterion"]
+        self.assertEqual((criterion["part"], criterion["threshold_pct"], criterion["met"]), (1, 70, False))
+        self.assertIn({"field": "P/L", "date": ISO1, "pct_within": 0.0}, criterion["failing"])
+        self.assertIn({"field": "PSR", "date": ISO1, "pct_within": None}, criterion["failing"])  # no reference: ADJ-06
+        self.assertEqual(criterion["part2"], "docs/validation/pit-rebuild-stocks-audit.md")
+        self.assertEqual(adjusted["verdicts"]["P/L"], "não reconstruível")
+        self.assertEqual(adjusted["class"], "não reconstruível")
+
+    def test_a_worst_row_cites_its_filing_and_previous_value_and_a_dy_row_has_neither(self):
+        row = self.worst_row("P/L", "LAGX3")
+        self.assertEqual(row["filing"], {"kind": "ITR", "dt_refer": "2026-06-30", "versao": 1, "dt_receb": "2026-08-05"})
+        self.assertEqual((row["reference"], row["rebuilt"], row["previous_value"]), (9.52, 7.69, 9.52))
+        self.assertEqual(
+            self.worst_row("P/L", "ONEF3")["filing"], {"kind": "DFP", "dt_refer": "2025-12-31", "versao": 1, "dt_receb": "2026-03-01"}
+        )
+        dy = self.worst_row("DY", "LAGX3")  # DY reads no filing (ADJ-04)
+        self.assertEqual((dy["reference"], dy["rebuilt"]), (8.0, 10.0))
+        self.assertIsNone(dy["filing"])
+        self.assertIsNone(dy["previous_value"])
+        self.assertFalse(dy["si_lag"])
+
+    def test_the_official_verdicts_and_fields_are_the_same_with_the_adjusted_block_removed(self):
+        real_build = cli.report.build
+
+        def without_adjusted(**kwargs):
+            return real_build(**{**kwargs, "adjusted": None})
+
+        plain = self.out.parent / "plain"
+        with mock.patch.object(cli.report, "build", side_effect=without_adjusted):
+            code, err = run(report_args(self.cache, plain, dates=(D1,), si=(self.si,)))
+        self.assertEqual(code, 0, err)
+        without = json.loads((plain / REPORT).read_text(encoding="utf-8"))
+        self.assertNotIn("adjusted_verdict", without)
+        self.assertEqual(without["verdicts"], self.report["verdicts"])  # ADJ-07
+        self.assertEqual(without["dates"], self.report["dates"])  # LAG-04: the statistics and the mapping are unchanged
+
+    def test_the_filings_cutoff_sensitivity_has_no_si_lag(self):
+        out = self.out.parent / "cutoff"
+        code, err = run(report_args(self.cache, out, dates=(D1,), si=(self.si,)) + ["--filings-cutoff", f"{ISO1}:2026-07-31"])
+        self.assertEqual(code, 0, err)
+        block = json.loads((out / REPORT).read_text(encoding="utf-8"))["sensitivities"]["filings_cutoff"][ISO1]
+        self.assertNotIn("si_lag", json.dumps(block))  # B-9: the previous-filing pass is for the official evaluation only
 
 
 if __name__ == "__main__":

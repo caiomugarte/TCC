@@ -37,6 +37,7 @@ NET_INCOME = "LL"  # A-21 (F7): per DRE column, 3.11.01 when non-zero, else 3.11
 STATEMENT_ACCOUNTS = ("3.01", "3.11")  # F18: a consolidated DRE with either one non-zero is consolidated
 NET_INCOME_ACCOUNTS = ("3.01", "3.11", "3.11.01")  # the rows load_filings keeps whatever accounts it is asked for
 SHARE_SCALE_FACTORS = (0.01, 0.1, 1, 10, 100, 1000)  # A-18 (F13): the powers of ten from 10^-2 to 10^3
+STALE_FILING_DAYS = 270  # DEC-3 (B-6): a newest usable filing more than this many days before d gives no accounting indicator
 
 _INDEX = re.compile(r"^(dfp|itr)_cia_aberta_(\d{4})\.csv$", re.IGNORECASE)
 _STATEMENT = re.compile(r"^(dfp|itr)_cia_aberta_(BPA|BPP|DRE)_(con|ind)_(\d{4})\.csv$", re.IGNORECASE)
@@ -73,19 +74,21 @@ class Filing:
 
 @dataclass(frozen=True)
 class Dated:
-    """A value and the DT_RECEB of the filing it comes from."""
+    """A value and the DT_RECEB of the filing it comes from; prior_from_itr marks a flow whose prior YTD is last year's ITR (TTM-01)."""
 
     value: float
     dt_receb: date
+    prior_from_itr: bool = False
 
 
 @dataclass(frozen=True)
 class Shares:
-    """Issued shares of the newest usable filing, treasury included (A-17)."""
+    """Issued shares of one filing, treasury included (A-17): its period end (SHR-01) and the DT_RECEB of its latest version."""
 
     on: int
     pref: int
     total: int
+    dt_refer: date
     dt_receb: date
 
 
@@ -116,6 +119,14 @@ class FilingStore:
 
     def periods(self, cnpj: str) -> list[_Period]:
         return sorted(self._periods.get(cnpj, {}).values(), key=lambda p: p.filing.dt_refer)
+
+    def without(self, cnpj: str, dt_refer: date) -> "FilingStore":
+        """This store, except that cnpj has no period dt_refer (B-9). This store is not changed; other companies share their periods."""
+        periods = dict(self._periods)
+        company = dict(periods.get(cnpj, {}))
+        company.pop(dt_refer, None)
+        periods[cnpj] = company
+        return FilingStore(self.kind, periods)
 
 
 def load_filings(zip_paths: Iterable[Path], kind: str, accounts: Iterable[str] | None = None) -> FilingStore:
@@ -206,9 +217,11 @@ def ttm(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str) ->
 
     A DFP gives its annual value. An ITR gives FY_prev + YTD - YTD_prev, where FY_prev is
     the usable DFP whose period ends the day before the ITR's fiscal year-to-date starts.
+    YTD_prev is the ITR's PENÚLTIMO row; when that row is absent or 0 it is the ÚLTIMO row of the
+    usable ITR one year earlier (TTM-01, B-5), and the result is marked prior_from_itr.
     """
     newest = _newest_usable(dfp, itr, cnpj, d)
-    return None if newest is None else _ttm_of(dfp, cnpj, d, account, newest)
+    return None if newest is None else _ttm_of(dfp, itr, cnpj, d, account, newest)
 
 
 def ttm_year_before(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str) -> Dated | None:
@@ -217,7 +230,7 @@ def ttm_year_before(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, acco
     if newest is None:
         return None
     earlier = _usable_in_either(dfp, itr, cnpj, _shift_years(newest.filing.dt_refer, -1), d)
-    return None if earlier is None else _ttm_of(dfp, cnpj, d, account, earlier)
+    return None if earlier is None else _ttm_of(dfp, itr, cnpj, d, account, earlier)
 
 
 def annual(dfp: FilingStore, cnpj: str, d: date, account: str, years_back: int = 0) -> Dated | None:
@@ -242,6 +255,18 @@ def balance(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str
     return None if value is None else Dated(value, newest.filing.dt_receb)
 
 
+def newest_period_end(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> date | None:
+    """DT_REFER of the newest usable filing at d, DFP or ITR (B-6, STL-01)."""
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    return None if newest is None else newest.filing.dt_refer
+
+
+def newest_filing(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Filing | None:
+    """The newest usable filing at d, DFP or ITR: the filing a worst row of the adjusted verdict cites (ADJ-04)."""
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    return None if newest is None else newest.filing
+
+
 def shares(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Shares | None:
     """Issued shares per class from the newest usable filing, DFP or ITR (A-17).
 
@@ -254,7 +279,28 @@ def shares(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Shares | N
     on, pref, total = newest.composition
     if total <= 0:
         return None
-    return Shares(on=on, pref=pref, total=total, dt_receb=newest.filing.dt_receb)
+    return Shares(on=on, pref=pref, total=total, dt_refer=newest.filing.dt_refer, dt_receb=newest.filing.dt_receb)
+
+
+def previous_shares(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Shares | None:
+    """The count of the newest usable period older than the newest usable one whose composition total is above zero (B-4).
+
+    None when there is no newest usable period, or when no older usable period has a total above zero.
+    """
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    if newest is None:
+        return None
+    older = [
+        period
+        for store in (dfp, itr)
+        for period in store.periods(cnpj)
+        if period.filing.dt_receb <= d and period.filing.dt_refer < newest.filing.dt_refer
+    ]
+    for period in sorted(older, key=lambda item: item.filing.dt_refer, reverse=True):
+        if period.composition is not None and period.composition[2] > 0:
+            on, pref, total = period.composition
+            return Shares(on=on, pref=pref, total=total, dt_refer=period.filing.dt_refer, dt_receb=period.filing.dt_receb)
+    return None
 
 
 def share_scale(cvm_total: int, b3_total: int | None) -> tuple[float, bool]:
@@ -316,21 +362,30 @@ def _usable_in_either(dfp: FilingStore, itr: FilingStore, cnpj: str, dt_refer: d
     return None
 
 
-def _ttm_of(dfp: FilingStore, cnpj: str, d: date, account: str, period: _Period) -> Dated | None:
+def _ttm_of(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str, period: _Period) -> Dated | None:
     if period.filing.kind == DFP:
         row = period.dre.get((account, ULTIMO))
         return None if row is None else Dated(row.value, period.filing.dt_receb)
     ytd = period.dre.get((account, ULTIMO))
-    prior = period.dre.get((account, PENULTIMO))
-    if ytd is None or prior is None:
+    if ytd is None:
         return None
+    prior = period.dre.get((account, PENULTIMO))
+    received = [period.filing.dt_receb]
+    from_itr = prior is None or prior.value == 0  # TTM-01: a zero or absent comparative is not a prior YTD
+    if from_itr:
+        earlier = _usable_period(itr, cnpj, _shift_years(period.filing.dt_refer, -1), d)
+        if earlier is None or (account, ULTIMO) not in earlier.dre:
+            return None
+        prior = earlier.dre[(account, ULTIMO)]
+        received.append(earlier.filing.dt_receb)
     fy_prev = _usable_period(dfp, cnpj, ytd.dt_ini - timedelta(days=1), d)
     if fy_prev is None:
         return None
     annual_row = fy_prev.dre.get((account, ULTIMO))
     if annual_row is None:
         return None
-    return Dated(annual_row.value + ytd.value - prior.value, max(period.filing.dt_receb, fy_prev.filing.dt_receb))
+    received.append(fy_prev.filing.dt_receb)
+    return Dated(annual_row.value + ytd.value - prior.value, max(received), prior_from_itr=from_itr)
 
 
 def _shift_years(day: date, years: int) -> date:

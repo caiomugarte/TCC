@@ -11,7 +11,7 @@ The parsers take the bytes of the cached responses. A response that is not valid
 raises ValueError; the caller reports that source as failed.
 """
 
-from collections.abc import Callable, Iterable, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 import json
@@ -40,6 +40,7 @@ class B3Company:
     code_cvm: str | None
     total_shares: int | None  # totalNumberShares without the "." grouping; unit only (A-18)
     stock_events: tuple[StockEvent, ...] = ()
+    retrieved_on: date | None = None  # R of B-3: the day the record was retrieved; set by the CLI, never by parse_b3_company
 
 
 @dataclass(frozen=True)
@@ -278,6 +279,42 @@ def split_divisor(
         if event_ex is not None and ex_date < event_ex <= d:
             divisor *= event.multiplier
     return divisor
+
+
+def event_ex_date(event: StockEvent, next_session: Callable[[date], date | None]) -> date:
+    """The ex-date of a stock event: the first market session after its last_date_prior (B-1, A-20).
+
+    When the calendar holds no such session (before its first or after its last session), it is the calendar day after last_date_prior.
+    """
+    session = next_session(event.last_date_prior)
+    return session if session is not None else event.last_date_prior + timedelta(days=1)
+
+
+def class_events(
+    events: Iterable[StockEvent],
+    isins: Collection[str],
+    after: date,
+    until: date | None,
+    next_session: Callable[[date], date | None],
+) -> list[tuple[StockEvent, date]]:
+    """The events of the ISINs in isins with after < ex-date <= until, in ex-date order; until None has no upper bound (SHR-01, SHR-02, B-2).
+
+    An event that B3 lists under two of the ISINs counts once, under the first of them in events: the key is its label,
+    multiplier and lastDatePrior.
+    """
+    wanted = set(isins)
+    seen: set[tuple[str, float, date]] = set()
+    found: list[tuple[StockEvent, date]] = []
+    for event in events:
+        key = (event.label, event.multiplier, event.last_date_prior)
+        if event.isin not in wanted or key in seen:
+            continue
+        seen.add(key)
+        ex = event_ex_date(event, next_session)
+        if ex <= after or (until is not None and ex > until):
+            continue
+        found.append((event, ex))
+    return sorted(found, key=lambda item: item[1])
 
 
 def b3_earliest_raw(records: Iterable[B3Dividend]) -> date | None:

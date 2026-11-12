@@ -13,12 +13,13 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
 
 from pit_rebuild import compare, coverage, report  # noqa: E402
-from pit_rebuild.fields import ALL_FIELDS, PERCENT_FIELDS  # noqa: E402
+from pit_rebuild.fields import ADJUSTED_FIELDS, ALL_FIELDS, PERCENT_FIELDS  # noqa: E402
 
 GROUP_NAMES = [group for group, _label in report.GROUPS]
 BASE = [("AAAA3", 10.0, 10.0, None), ("BBBB3", 20.0, 20.0, None)]
@@ -212,8 +213,8 @@ class ProvenanceAndParametersTests(ReportCase):
         for row in rows:
             self.assertTrue(row["use"] and row["full_rebuild_check"])
 
-    def test_the_schema_is_v2_and_the_parameters_hold_the_quote_codes_and_the_filings_cutoffs(self):
-        self.assertEqual(self.report["schema"], "pit-rebuild-stocks/v2")
+    def test_the_schema_is_v3_and_the_parameters_hold_the_quote_codes_and_the_filings_cutoffs(self):
+        self.assertEqual(self.report["schema"], "pit-rebuild-stocks/v3")
         self.assertEqual(self.report["parameters"]["quote_codbdi"], ["02", "07", "08"])
         self.assertEqual(self.report["parameters"]["filings_cutoffs"], {})
         cut = report.build(**run_kwargs(filings_cutoffs={date(2026, 11, 6): date(2026, 11, 2)}))
@@ -225,6 +226,13 @@ class ProvenanceAndParametersTests(ReportCase):
         for text in ("10^-2", "10^3", "√10", "resíduo"):
             self.assertIn(text, rule)
         self.assertNotIn("31,6", rule)
+        # AD-033 (RPT-06): the count takes the events of (DT_REFER, d]; the scale window ends at R; the √10 limit is for no event
+        self.assertIn("(DT_REFER, d]", rule)
+        self.assertIn("(DT_REFER, R]", rule)
+        self.assertIn("depois de d só escolhem a potência de dez", rule)
+        self.assertIn("sem evento da B3", rule)
+        self.assertNotIn("1:5 dá ×10", rule)  # the #59 sentence, as the rule for every change
+        self.assertIn("sem evento da B3, um desdobramento de 1:5 resulta em ×10", rule)  # the same fact, only for no event
 
 
 class MarkdownTests(ReportCase):
@@ -499,6 +507,355 @@ class SensitivityTests(unittest.TestCase):
         verdict_line = next(line for line in markdown.splitlines() if line.startswith("**Veredito da classe:**"))
         self.assertEqual(verdict_line, "**Veredito da classe:** `reconstruível`. Os tickers não classificados não mudam o veredito.")
         self.assertEqual(out["sensitivities"]["without_reference_stale"]["verdicts"]["class"], compare.NAO_RECONSTRUIVEL)
+
+
+def adjusted_stats(pct_by_field: dict | None = None, default: float = 100.0) -> dict:
+    """{field: FieldStats} of the non-financial group, the statistics the adjusted scope reads for every indicator."""
+    return {field: groups["non_financial"] for field, groups in stats_fields(pct_by_field, default).items()}
+
+
+def adjusted_entry(fields: dict | None = None, *, excluded=(), si_lag=None, worst_details=None) -> dict:
+    """The stale-free statistics of one date for the adjusted block: all at 100 % unless given."""
+    return {
+        "excluded": list(excluded),
+        "fields": adjusted_stats() if fields is None else fields,
+        "si_lag": si_lag or {},
+        "worst_details": worst_details or {},
+    }
+
+
+def adjusted_run(first: dict | None = None, second: dict | None = None) -> dict:
+    """The report object of the run with the adjusted statistics of its two dates."""
+    adjusted = {"2026-08-07": first or adjusted_entry(), "2026-11-06": second or adjusted_entry()}
+    return report.build(**run_kwargs(adjusted=adjusted))
+
+
+class AdjustedVerdictTests(unittest.TestCase):
+    """ADJ-02..ADJ-07, AUD-05, LAG-02 and LAG-04: the adjusted block is built after the official verdicts, from the given statistics."""
+
+    def test_the_block_lists_the_14_adjusted_fields_and_no_roic_or_peg_ratio(self):
+        block = adjusted_run()["adjusted_verdict"]
+        self.assertEqual(block["fields"], list(ADJUSTED_FIELDS))
+        self.assertEqual(len(block["fields"]), 14)
+        self.assertNotIn("ROIC", block["fields"])
+        self.assertNotIn("PEG RATIO", block["fields"])
+        self.assertEqual(set(block["dates"]["2026-11-06"]["fields"]), set(ADJUSTED_FIELDS))
+        self.assertEqual(block["class"], compare.RECONSTRUIVEL)  # every field at 100 % on both dates
+
+    def test_each_field_takes_the_worse_of_its_two_dates_and_the_class_the_worst_field(self):
+        block = adjusted_run(adjusted_entry(adjusted_stats({"P/L": 75.0})), adjusted_entry(adjusted_stats({"ROE": 50.0})))["adjusted_verdict"]
+        self.assertEqual(block["dates"]["2026-08-07"]["fields"]["P/L"]["verdict"], compare.COM_RESSALVAS)
+        self.assertEqual(block["verdicts"]["P/L"], compare.COM_RESSALVAS)  # com ressalvas and reconstruível: the worse
+        self.assertEqual(block["verdicts"]["ROE"], compare.NAO_RECONSTRUIVEL)
+        self.assertEqual(block["verdicts"]["DIVIDA LIQUIDA / EBIT"], compare.RECONSTRUIVEL)
+        self.assertEqual(block["class"], compare.NAO_RECONSTRUIVEL)  # the worst of the 14 fields
+
+    def test_worst_rows_carry_si_lag_the_filing_and_the_rounded_previous_value_and_dy_rows_have_no_filing(self):
+        filing = {"kind": "ITR", "dt_refer": date(2026, 3, 31), "versao": 1, "dt_receb": date(2026, 5, 14)}
+        pl = adjusted_stats()["P/L"]
+        pl.worst = [
+            {"ticker": "AAAA3", "reference": 10.0, "rebuilt": 15.0, "diff": 50.0},
+            {"ticker": "BBBB3", "reference": 20.0, "rebuilt": 30.0, "diff": 50.0},
+        ]
+        dy = adjusted_stats()["DY"]
+        dy.worst = [{"ticker": "CCCC3", "reference": 3.0, "rebuilt": 0.0, "diff": 3.0}]
+        fields = {**adjusted_stats(), "P/L": pl, "DY": dy}
+        details = {
+            "P/L": {"AAAA3": {"filing": filing, "previous_value": 10.4567, "si_lag": True}},  # BBBB3 has no details
+            "DY": {"CCCC3": {"filing": filing, "previous_value": 0.3, "si_lag": False}},
+        }
+        block = adjusted_run(adjusted_entry(fields, worst_details=details))["adjusted_verdict"]
+        rows = {row["ticker"]: row for row in block["dates"]["2026-08-07"]["fields"]["P/L"]["worst"]}
+        self.assertTrue(rows["AAAA3"]["si_lag"])
+        self.assertEqual(rows["AAAA3"]["filing"], {"kind": "ITR", "dt_refer": "2026-03-31", "versao": 1, "dt_receb": "2026-05-14"})
+        self.assertEqual(rows["AAAA3"]["previous_value"], 10.46)
+        self.assertEqual((rows["BBBB3"]["si_lag"], rows["BBBB3"]["filing"], rows["BBBB3"]["previous_value"]), (False, None, None))
+        dy_row = block["dates"]["2026-08-07"]["fields"]["DY"]["worst"][0]
+        self.assertEqual((dy_row["filing"], dy_row["previous_value"]), (None, None))
+
+    def test_the_criterion_is_met_at_70_percent_on_every_field_and_date(self):
+        criterion = adjusted_run(adjusted_entry(adjusted_stats(default=70.0)), adjusted_entry(adjusted_stats(default=70.0)))["adjusted_verdict"]["criterion"]
+        self.assertEqual(
+            criterion,
+            {"part": 1, "threshold_pct": 70, "met": True, "failing": [], "part2": "docs/validation/pit-rebuild-stocks-audit.md"},
+        )
+
+    def test_the_criterion_fails_at_69_99_percent_and_names_that_field_and_date(self):
+        second = adjusted_entry(adjusted_stats({"P/L": 69.99}, default=70.0))
+        criterion = adjusted_run(adjusted_entry(adjusted_stats(default=70.0)), second)["adjusted_verdict"]["criterion"]
+        self.assertFalse(criterion["met"])
+        self.assertEqual(criterion["failing"], [{"field": "P/L", "date": "2026-11-06", "pct_within": 69.99}])
+
+    def test_a_field_with_no_denominator_on_a_date_fails_the_criterion_with_a_null_pct_within(self):
+        empty = adjusted_stats()
+        empty["ROE"] = compare.FieldStats(field="ROE", diff_unit="pp")  # denominator 0 and no pct_within on 2026-11-06
+        block = adjusted_run(adjusted_entry(), adjusted_entry(empty))["adjusted_verdict"]
+        self.assertFalse(block["criterion"]["met"])
+        self.assertEqual(block["criterion"]["failing"], [{"field": "ROE", "date": "2026-11-06", "pct_within": None}])
+        self.assertEqual(block["dates"]["2026-11-06"]["fields"]["ROE"]["verdict"], compare.SEM_REFERENCIA)
+
+    def test_each_field_and_date_keeps_the_missing_list_of_its_statistics(self):
+        stats = adjusted_stats()
+        stats["P/L"].missing = [{"ticker": "UUUU3", "reason": "stale_filing"}]
+        block = adjusted_run(adjusted_entry(stats))["adjusted_verdict"]
+        self.assertEqual(block["dates"]["2026-08-07"]["fields"]["P/L"]["missing"], [{"ticker": "UUUU3", "reason": "stale_filing"}])
+        self.assertEqual(block["dates"]["2026-11-06"]["fields"]["P/L"]["missing"], [])
+
+    def test_the_si_lag_count_is_the_number_of_listed_tickers_and_the_within_counts_do_not_change(self):
+        entry = adjusted_entry(adjusted_stats({"P/L": 60.0}), si_lag={"P/L": ["BBBB3", "AAAA3"]})
+        block = adjusted_run(entry)["adjusted_verdict"]
+        pl = block["dates"]["2026-08-07"]["fields"]["P/L"]
+        self.assertEqual(pl["si_lag"], {"count": 2, "tickers": ["AAAA3", "BBBB3"]})
+        self.assertEqual((pl["denominator"], pl["within"], pl["pct_within"]), (10, 6, 60.0))
+        self.assertEqual(block["dates"]["2026-08-07"]["fields"]["ROE"]["si_lag"], {"count": 0, "tickers": []})
+
+    def test_the_excluded_tickers_are_listed_per_date_in_order(self):
+        block = adjusted_run(adjusted_entry(excluded=["ZZZZ3", "YYYY3"]))["adjusted_verdict"]
+        self.assertEqual(block["excluded"], {"2026-08-07": ["YYYY3", "ZZZZ3"], "2026-11-06": []})
+
+    def test_the_official_verdicts_are_byte_identical_with_and_without_the_adjusted_block(self):
+        official = report.build(**run_kwargs())
+        with_block = adjusted_run(adjusted_entry(), adjusted_entry())  # every adjusted field at 100 %: a class that differs from the official one
+        self.assertEqual(official["verdicts"]["class"], compare.NAO_RECONSTRUIVEL)
+        self.assertEqual(with_block["adjusted_verdict"]["class"], compare.RECONSTRUIVEL)
+        self.assertNotIn("adjusted_verdict", official)
+        self.assertEqual(report.encode_json(with_block["verdicts"]), report.encode_json(official["verdicts"]))
+        self.assertEqual(report.encode_json(with_block["dates"]), report.encode_json(official["dates"]))
+
+    def test_build_refuses_adjusted_statistics_that_miss_one_of_the_dates(self):
+        with self.assertRaises(ValueError):
+            report.build(**run_kwargs(adjusted={"2026-08-07": adjusted_entry()}))
+
+
+class AdjustedMarkdownTests(unittest.TestCase):
+    """ADJ-01, ADJ-05 and LAG-02 in the Markdown: the adjusted section after the official verdict, read from the object only."""
+
+    def test_the_adjusted_section_follows_the_official_verdict_and_keeps_its_line(self):
+        markdown = report.render_markdown(adjusted_run(adjusted_entry(), adjusted_entry(adjusted_stats(default=0.0))))
+        verdict_at = markdown.index("## Veredito\n")
+        adjusted_at = markdown.index("## Veredito ajustado (#64)")
+        parameters_at = markdown.index("## Parâmetros")
+        self.assertTrue(verdict_at < adjusted_at < parameters_at)
+        self.assertIn(
+            "**Veredito da classe:** `não reconstruível`. Sem os tickers não classificados, o veredito seria `reconstruível`.",
+            markdown,
+        )
+
+    def test_the_part_1_line_reads_cumprida_when_met_and_lists_the_failing_rows_when_not(self):
+        met = report.render_markdown(adjusted_run(adjusted_entry(adjusted_stats(default=70.0)), adjusted_entry(adjusted_stats(default=70.0))))
+        self.assertIn("Critério de liberação (#64), parte 1 (≥ 70 % nas duas datas): cumprida.", met)
+        self.assertNotIn("não cumprida", met)
+        second = adjusted_entry(adjusted_stats({"P/L": 69.99}, default=70.0))
+        not_met = report.render_markdown(adjusted_run(adjusted_entry(adjusted_stats(default=70.0)), second))
+        self.assertIn("Critério de liberação (#64), parte 1 (≥ 70 % nas duas datas): não cumprida.", not_met)
+        self.assertIn("Linhas abaixo da meta: `P/L` em 2026-11-06 (69,99%).", not_met)
+        self.assertNotIn("Critério de liberação (#64): cumprido", met + not_met)
+
+    def test_the_part_2_line_names_the_audit_document(self):
+        markdown = report.render_markdown(adjusted_run())
+        self.assertIn("Parte 2 (10 piores conferidos e explicados): ver `pit-rebuild-stocks-audit.md`.", markdown)
+
+    def test_each_field_row_shows_the_share_with_its_denominator_and_the_si_lag_count_of_each_date(self):
+        first = adjusted_entry(adjusted_stats(), si_lag={"P/L": ["AAAA3", "BBBB3"]})
+        second = adjusted_entry(adjusted_stats({"P/L": 75.0}))
+        markdown = report.render_markdown(adjusted_run(first, second))
+        self.assertIn("| `P/L` | 100,00% (10) | 2 | 75,00% (10) | 0 | com ressalvas |", markdown)
+
+    def test_the_worst_rows_render_with_their_si_lag_filing_and_previous_value_and_dy_rows_show_none(self):
+        filing = {"kind": "ITR", "dt_refer": date(2026, 3, 31), "versao": 1, "dt_receb": date(2026, 5, 14)}
+        pl = adjusted_stats()["P/L"]
+        pl.worst = [{"ticker": "AAAA3", "reference": 10.0, "rebuilt": 15.0, "diff": 50.0}]
+        details = {"P/L": {"AAAA3": {"filing": filing, "previous_value": 10.4567, "si_lag": True}}}
+        markdown = report.render_markdown(adjusted_run(adjusted_entry({**adjusted_stats(), "P/L": pl}, worst_details=details)))
+        self.assertIn("| `AAAA3` | 10,00 | 15,00 | 50,00% | sim | ITR 2026-03-31 v1, recebido em 2026-05-14 | 10,46 |", markdown)
+        self.assertIn("<summary>P/L, 2026-08-07</summary>", markdown)
+
+    def test_without_the_adjusted_key_the_markdown_has_no_adjusted_section(self):
+        markdown = report.render_markdown(report.build(**run_kwargs()))
+        self.assertNotIn("## Veredito ajustado (#64)", markdown)
+        self.assertIn("## Veredito\n", markdown)
+
+
+SHARE_EVENTS = {
+    "adjusted": [
+        {
+            "cd_cvm": "1603",
+            "class": "ON",
+            "isins": ["BRTESTACN001", "BRTESTACN002"],
+            "dt_refer": "2026-06-30",
+            "factor": 2.0,
+            "events": [{"isin": "BRTESTACN001", "label": "Bonificação", "ex_date": "2026-07-14", "multiplier": 2.0}],
+        },
+        {
+            "cd_cvm": "1603",
+            "class": "PREF",
+            "isins": ["BRTESTACNPR1"],
+            "dt_refer": "2026-06-30",
+            "factor": 0.1,
+            "events": [{"isin": "BRTESTACNPR1", "label": "Grupamento", "ex_date": "2026-07-20", "multiplier": 0.1}],
+        },
+    ],
+    "no_isin": [{"cd_cvm": "1607", "class": "PREF"}],
+}
+SHARE_COUNT_SUSPECT = [
+    {"cd_cvm": "1608", "dt_refer_prev": "2025-12-31", "total_prev": 1000, "dt_refer": "2026-03-31", "total": 1300, "ratio": 1.3}
+]
+TTM_PRIOR_FROM_ITR = [{"cd_cvm": "1609", "dt_refer": "2026-06-30", "accounts": ["3.01", "3.11"]}]
+STALE_FILING = [{"ticker": "STAL3", "cd_cvm": "1610", "dt_refer": "2025-10-31", "age_days": 280}]
+LIST_KEYS = ("share_events.adjusted", "share_events.no_isin", "share_count_suspect", "ttm_prior_from_itr", "stale_filing")
+
+
+def mapping_with(**lists) -> dict:
+    """The sample run with extra keys in the mapping of 2026-08-07 (the share and flow lists of the #64 rules)."""
+    entries = {"2026-08-07": {**per_date_entry(3), "mapping": {**MAPPING, **lists}}, "2026-11-06": per_date_entry(5)}
+    return report.build(**run_kwargs(per_date=entries))
+
+
+def mapping_block(markdown: str, iso: str) -> str:
+    """The mapping section of one date: from its heading to the next date's heading."""
+    section = markdown.split("## Cobertura do mapeamento", 1)[1].split("## Resultados por data", 1)[0]
+    return section.split(f"### {iso}", 1)[1].split("### ", 1)[0]
+
+
+def investigations_of(markdown: str) -> str:
+    return markdown.split("## Investigações", 1)[1].split("\n## ", 1)[0]
+
+
+class SchemaV3AndAmendmentTests(ReportCase):
+    """B-12 and ADJ-01: the object names the amendment and the v2 report; the Veredito section says so in one line."""
+
+    def test_the_object_names_the_amendment_by_64_and_the_v2_report_it_replaces(self):
+        self.assertEqual(self.report["amended_by"], [64])
+        self.assertEqual(self.report["previous_report"], {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"})
+        self.assertIn("- Esquema: `pit-rebuild-stocks/v3` (issue #59, correções da #64)", self.markdown)
+
+    def test_the_veredito_section_carries_the_b12_line_before_the_class_verdict(self):
+        line = "Regra de veredito da #59, aplicada aos valores com as correções da #64; os números da v2 estão no commit `ebaf1fd`."
+        self.assertIn(line, self.markdown)
+        self.assertLess(self.markdown.index("## Veredito\n"), self.markdown.index(line))
+        self.assertLess(self.markdown.index(line), self.markdown.index("**Veredito da classe:**"))
+
+    def test_a_report_without_amended_by_keeps_the_v2_header_and_has_no_b12_line(self):
+        legacy = deepcopy(self.report)
+        legacy["schema"] = "pit-rebuild-stocks/v2"
+        for key in ("amended_by", "previous_report", "investigations"):
+            del legacy[key]
+        rendered = report.render_markdown(legacy)
+        self.assertIn("- Esquema: `pit-rebuild-stocks/v2` (issue #59)", rendered)
+        self.assertNotIn("Regra de veredito da #59", rendered)
+        self.assertNotIn("## Investigações", rendered)
+
+
+class InvestigationsTests(unittest.TestCase):
+    """MBR-02: each note of INVESTIGATIONS is stored and rendered; with none the section says Nenhuma."""
+
+    def test_an_investigation_renders_its_ticker_date_field_finding_and_evidence(self):
+        note = {"ticker": "MBRF3", "date": "2026-11-05", "field": "DY", "finding": "achado de teste", "evidence": "evidência de teste"}
+        with patch.object(report, "INVESTIGATIONS", (note,)):
+            out = report.build(**run_kwargs())
+        self.assertEqual(out["investigations"], [note])
+        section = investigations_of(report.render_markdown(out))
+        for text in ("MBRF3", "2026-11-05", "DY", "achado de teste", "evidência de teste"):
+            self.assertIn(text, section)
+        self.assertNotIn("Nenhuma.", section)
+
+    def test_the_mbrf3_note_is_the_cause_the_cache_settles_and_its_section_renders_it(self):
+        # T20: the DY of 2026-11-05 is 0 because the only B3 dividend of the company left the 12-month window; the note keeps the
+        # numbers the cached files give (the same record gives 17.49 on 2026-08-07, the Status Invest value)
+        out = report.build(**run_kwargs())
+        (note,) = out["investigations"]
+        self.assertEqual((note["ticker"], note["date"], note["field"]), ("MBRF3", "2026-11-05", "DY"))
+        for text in ("2025-09-19", "412 dias", "(2025-11-05, 2026-11-05]", "17,49"):
+            self.assertIn(text, note["finding"])
+        for text in ("b3_company_MBRF.json", "b3_cash_MARFRIG_p1.json", "17,49", "17,98", "2,8105011104"):
+            self.assertIn(text, note["evidence"])
+        section = investigations_of(report.render_markdown(out))
+        for text in ("MBRF3", "2026-11-05", "DY", note["finding"], note["evidence"]):
+            self.assertIn(text, section)
+        self.assertNotIn("Nenhuma.", section)
+
+    def test_without_investigations_the_section_says_nenhuma_and_a_v2_object_has_no_section(self):
+        with patch.object(report, "INVESTIGATIONS", ()):
+            out = report.build(**run_kwargs())
+        self.assertEqual(out["investigations"], [])
+        self.assertIn("Nenhuma.", investigations_of(report.render_markdown(out)))
+        legacy = deepcopy(out)
+        del legacy["investigations"]
+        self.assertNotIn("## Investigações", report.render_markdown(legacy))
+
+
+class ShareAndFlowListsTests(unittest.TestCase):
+    """SHR-03, SHR-04, SHR-05, TTM-04 and STL-03 in the Markdown: one row per entry in the object's order, nenhum when empty."""
+
+    def test_each_list_renders_one_row_per_entry_in_the_objects_order(self):
+        markdown = report.render_markdown(
+            mapping_with(
+                share_events=SHARE_EVENTS,
+                share_count_suspect=SHARE_COUNT_SUSPECT,
+                ttm_prior_from_itr=TTM_PRIOR_FROM_ITR,
+                stale_filing=STALE_FILING,
+            )
+        )
+        block = mapping_block(markdown, "2026-08-07")
+        expected = [
+            "| `1603` | ON | `BRTESTACN001`, `BRTESTACN002` | 2026-06-30 | 2 | `BRTESTACN001` Bonificação, data-ex 2026-07-14, ×2 |",
+            "| `1603` | PREF | `BRTESTACNPR1` | 2026-06-30 | 0,1 | `BRTESTACNPR1` Grupamento, data-ex 2026-07-20, ×0,1 |",
+            "| `1607` | PREF |",
+            "| `1608` | 2025-12-31 | 1000 | 2026-03-31 | 1300 | 1,3000 |",
+            "| `1609` | 2026-06-30 | `3.01`, `3.11` |",
+            "| `STAL3` | `1610` | 2025-10-31 | 280 |",
+        ]
+        positions = []
+        for row in expected:
+            self.assertEqual(block.count(row), 1, row)
+            positions.append(block.index(row))
+        self.assertEqual(positions, sorted(positions))
+
+    def test_each_list_says_nenhum_when_it_is_empty(self):
+        markdown = report.render_markdown(
+            mapping_with(share_events={"adjusted": [], "no_isin": []}, share_count_suspect=[], ttm_prior_from_itr=[], stale_filing=[])
+        )
+        block = mapping_block(markdown, "2026-08-07")
+        for key in LIST_KEYS:
+            self.assertIn(f"(`{key}`): nenhum.", block, key)
+
+    def test_a_list_missing_from_the_mapping_renders_nothing_so_a_v2_mapping_renders_as_before(self):
+        full = report.render_markdown(
+            mapping_with(share_events=SHARE_EVENTS, share_count_suspect=SHARE_COUNT_SUSPECT, ttm_prior_from_itr=TTM_PRIOR_FROM_ITR, stale_filing=STALE_FILING)
+        )
+        bare = report.render_markdown(mapping_with())
+        block = mapping_block(bare, "2026-08-07")
+        for key in LIST_KEYS:
+            self.assertNotIn(f"`{key}`", block, key)
+        self.assertNotEqual(full, bare)
+
+
+class ShareRuleTextTests(ReportCase):
+    """RPT-06 (AD-033): the rule texts the report prints state the event-adjusted count, not the #59 sentences."""
+
+    def rule_row(self, name: str) -> dict:
+        return next(row for row in self.report["parameters"]["non_pit_inputs"] if name in row["input"])
+
+    def test_the_stock_dividends_row_adjusts_dividends_and_share_counts_under_ad033(self):
+        use = self.rule_row("stockDividends")["use"]
+        self.assertIn("(A-20)", use)
+        self.assertIn("contagens de ações", use)
+        self.assertIn("(DT_REFER, d]", use)
+        self.assertIn("(AD-033)", use)
+        self.assertNotIn("só eventos com data-ex ≤ d", use)
+
+    def test_the_total_number_shares_row_keeps_never_in_a_value_and_names_the_adjusted_count(self):
+        use = self.rule_row("totalNumberShares")["use"]
+        self.assertIn("nunca entra num valor", use)
+        self.assertIn("ajustada pelos eventos", use)
+        self.assertIn("(AD-033)", use)
+
+    def test_the_markdown_prints_the_rule_the_stock_dividends_row_and_the_market_value_formula(self):
+        markdown = report.render_markdown(self.report)
+        parameters = self.report["parameters"]
+        self.assertIn(parameters["share_scale_rule"], markdown)
+        self.assertIn(self.rule_row("stockDividends")["use"], markdown)
+        self.assertIn(parameters["formulas"]["VALOR DE MERCADO"], markdown)
 
 
 if __name__ == "__main__":

@@ -335,5 +335,65 @@ class EarliestRawAndSourceEdgeTests(unittest.TestCase):
         self.assertEqual(dividends.choose_source(history, date(2026, 8, 24)), ("yahoo", "b3_short_history"))
 
 
+class StockEventWindowTests(unittest.TestCase):
+    """B-1, B-2 (SHR-02, SHR-08): the ex-date of a stock event, and the events of a class's ISINs in a window."""
+
+    AAA, BBB = "BRAAAAACNOR1", "BRBBBBACNOR1"
+    E_A = dividends.StockEvent("BRAAAAACNOR1", "BONIFICACAO", 2.0, date(2026, 7, 14))  # ex 2026-07-15
+    E_B = dividends.StockEvent("BRBBBBACNOR1", "DESDOBRAMENTO", 5.0, date(2026, 7, 20))  # ex 2026-07-21
+    E_C = dividends.StockEvent("BRAAAAACNOR1", "GRUPAMENTO", 0.1, date(2026, 8, 3))  # ex 2026-08-04
+
+    def test_the_ex_date_is_the_first_session_after_last_date_prior(self):
+        self.assertEqual(dividends.event_ex_date(self.E_A, next_session), date(2026, 7, 15))
+        saturday = dividends.StockEvent(self.AAA, "BONIFICACAO", 2.0, date(2026, 7, 18))
+        self.assertEqual(dividends.event_ex_date(saturday, next_session), date(2026, 7, 20))  # Monday
+
+    def test_outside_the_calendar_the_ex_date_is_the_day_after_last_date_prior(self):
+        saturday = dividends.StockEvent(self.AAA, "BONIFICACAO", 2.0, date(2026, 7, 18))
+        no_session = lambda day: None  # noqa: E731 - the calendar holds no session after last_date_prior
+        self.assertEqual(dividends.event_ex_date(saturday, no_session), date(2026, 7, 19))
+        self.assertEqual(
+            dividends.class_events([saturday], {self.AAA}, date(2026, 7, 1), None, no_session),
+            [(saturday, date(2026, 7, 19))],
+        )
+
+    def test_the_window_is_after_exclusive_and_until_inclusive(self):
+        isins = {self.AAA}  # E_A's ex-date is 2026-07-15
+        self.assertEqual(dividends.class_events([self.E_A], isins, date(2026, 7, 15), None, next_session), [])  # on after: out
+        self.assertEqual(
+            dividends.class_events([self.E_A], isins, date(2026, 7, 14), date(2026, 7, 15), next_session),
+            [(self.E_A, date(2026, 7, 15))],  # on until: in
+        )
+        self.assertEqual(dividends.class_events([self.E_A], isins, date(2026, 7, 14), date(2026, 7, 14), next_session), [])  # after until: out
+
+    def test_an_event_of_an_isin_outside_the_collection_is_left_out_and_two_isins_both_count(self):
+        events = [self.E_B, self.E_A]  # listed out of ex-date order
+        self.assertEqual(
+            dividends.class_events(events, {self.AAA, self.BBB}, date(2026, 7, 1), None, next_session),
+            [(self.E_A, date(2026, 7, 15)), (self.E_B, date(2026, 7, 21))],  # sorted by ex-date
+        )
+        self.assertEqual(
+            dividends.class_events(events, {self.BBB}, date(2026, 7, 1), None, next_session),
+            [(self.E_B, date(2026, 7, 21))],
+        )
+
+    def test_the_same_event_listed_under_two_isins_of_the_collection_counts_once(self):
+        # B3 lists one bonus under the old and the new ISIN: the same label, multiplier and lastDatePrior (B-2).
+        old = dividends.StockEvent("BROLDACNOR1", "BONIFICACAO", 2.0, date(2026, 7, 14))
+        new = dividends.StockEvent("BRNEWACNOR1", "BONIFICACAO", 2.0, date(2026, 7, 14))
+        found = dividends.class_events([old, new], {"BROLDACNOR1", "BRNEWACNOR1"}, date(2026, 7, 1), None, next_session)
+        self.assertEqual([(event.isin, ex) for event, ex in found], [("BROLDACNOR1", date(2026, 7, 15))])
+
+    def test_until_none_keeps_every_later_event(self):
+        events = [self.E_A, self.E_B, self.E_C]
+        everything = dividends.class_events(events, {self.AAA, self.BBB}, date(2026, 7, 14), None, next_session)
+        self.assertEqual([ex for _, ex in everything], [date(2026, 7, 15), date(2026, 7, 21), date(2026, 8, 4)])
+        bounded = dividends.class_events(events, {self.AAA, self.BBB}, date(2026, 7, 14), date(2026, 7, 21), next_session)
+        self.assertEqual([ex for _, ex in bounded], [date(2026, 7, 15), date(2026, 7, 21)])
+
+    def test_parsing_a_company_record_leaves_its_retrieval_date_unset(self):
+        self.assertIsNone(dividends.parse_b3_company(fixture("b3_company_sbsp.json")).retrieved_on)
+
+
 if __name__ == "__main__":
     unittest.main()
