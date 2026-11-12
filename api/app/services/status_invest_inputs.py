@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 import hashlib
 import io
@@ -10,6 +10,13 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 from snapshot_manifest import file_sha256
+
+from app.services.b3_trading import (
+    B3TradingUnavailableError,
+    CotahistCache,
+    b3_today,
+    filter_recent_trades,
+)
 
 
 STATUS_INVEST_TIMEOUT_SECONDS = 30
@@ -71,11 +78,15 @@ def _validate_csv(path: Path, validator: Callable[[list[Mapping[str, str]]], Non
     validator(rows)
 
 
-def _source_snapshot(path: Path) -> SourceSnapshot:
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _source_snapshot(path: Path, retrieved_at: str) -> SourceSnapshot:
     return SourceSnapshot(
         path=path.resolve(),
         provider="statusinvest",
-        retrieved_at=datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        retrieved_at=retrieved_at,
         sha256=file_sha256(path),
     )
 
@@ -86,8 +97,15 @@ def refresh_inputs(
     stock_collector: Callable[..., Any] | None = None,
     fii_collector: Callable[..., Any] | None = None,
     timeout: int = STATUS_INVEST_TIMEOUT_SECONDS,
+    cotahist_cache: CotahistCache | None = None,
+    collected_on: date | None = None,
 ) -> StatusInvestInputs:
-    """Refresh and validate immutable Status Invest files for one run workspace."""
+    """Refresh and validate immutable Status Invest files for one run workspace.
+
+    The validated CSVs are then filtered by recent B3 trading (issue #63); the
+    recorded SHA-256 is that of the filtered files. B3TradingUnavailableError
+    fails the run when COTAHIST cannot be had.
+    """
 
     from fetch_status_invest import refresh as refresh_stocks, validate_rows as validate_stocks
     from fetch_status_invest_fii import refresh as refresh_fiis, validate_rows as validate_fiis
@@ -106,19 +124,33 @@ def refresh_inputs(
             Path(workspace) / "status-invest" / "fiis.csv",
         ),
     )
-    snapshots: dict[str, SourceSnapshot] = {}
+    retrieved: dict[str, str] = {}
     failures: list[tuple[str, Exception]] = []
     for role, collector, validator, path in collectors:
         try:
             path.parent.mkdir(parents=True, exist_ok=True)
             collector(output_path=path, timeout=timeout)
             _validate_csv(path, validator)
-            snapshots[role] = _source_snapshot(path)
+            retrieved[role] = _utc_now()
         except Exception as exc:
             failures.append((role, exc))
     if failures:
         role, error = failures[0]
         raise StatusInvestInputError(f"Status Invest {role} input failed validation") from error
+
+    paths = {role: path for role, _, _, path in collectors}
+    try:
+        filter_recent_trades(
+            paths,
+            Path(workspace),
+            collected_on=collected_on or b3_today(),
+            cache=cotahist_cache or CotahistCache(),
+        )
+    except B3TradingUnavailableError:
+        raise
+    except Exception as exc:
+        raise StatusInvestInputError("Status Invest inputs could not be filtered by recent B3 trading") from exc
+    snapshots = {role: _source_snapshot(path, retrieved[role]) for role, path in paths.items()}
     return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
