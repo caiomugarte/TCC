@@ -8,6 +8,7 @@ import sys
 import unittest
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 
 REPO = Path(__file__).resolve().parents[1]
 sys.dont_write_bytecode = True  # AD-013: the in-process loader of this suite writes no bytecode
@@ -57,6 +58,58 @@ class DySubsetTests(unittest.TestCase):
     def test_identical_lines_are_separate_items_as_the_status_invest_sums_them(self):  # two lines of 0.4 make 0.8
         found = audit.dy_search([_line(0.4), _line(0.4)], 0.8, [("d", 100.0)])
         self.assertEqual(found["d"], [0, 1])
+
+
+def _cached(received):
+    """A stand-in for a cached Period: the search reads only the receipt date of its filing."""
+    return SimpleNamespace(filing=SimpleNamespace(dt_receb=received))
+
+
+class SearchScopeTests(unittest.TestCase):
+    def test_every_cached_version_received_by_R_is_read_with_no_age_limit(self):  # B-10 r4: no age mask, no STL-01
+        versions = {
+            "DFP": {"C1": {(date(2015, 12, 31), 1): _cached(date(2016, 3, 31)),
+                           (date(2025, 12, 31), 2): _cached(date(2026, 3, 30)),
+                           (date(2026, 6, 30), 1): _cached(date(2026, 11, 10))}},  # received after R: not read
+            "ITR": {"C1": {(date(2026, 3, 31), 1): _cached(date(2026, 5, 10)),
+                           (date(2026, 6, 30), 1): _cached(date(2026, 8, 20))}},  # received after d: read at R
+        }
+        self.assertEqual(audit.candidate_reads(versions, "C1", date(2026, 8, 7)), [
+            ("DFP", date(2015, 12, 31), 1, date(2016, 3, 31), date(2026, 8, 7)),  # a period ended 10 years before d is read whole
+            ("DFP", date(2025, 12, 31), 2, date(2026, 3, 30), date(2026, 8, 7)),
+            ("ITR", date(2026, 3, 31), 1, date(2026, 5, 10), date(2026, 8, 7)),
+            ("ITR", date(2026, 6, 30), 1, date(2026, 8, 20), audit.R_DATE),
+        ])
+
+    def test_a_company_without_cached_versions_has_no_reads(self):
+        self.assertEqual(audit.candidate_reads({"DFP": {}, "ITR": {}}, "C1", date(2026, 8, 7)), [])
+
+
+def _facts(**kw):
+    facts = dict(lag=False, post=False, erro_nosso=False, b3_count=False, cited_af=False, ll_method=False,
+                 pl_method=False, cited_any=False, price_two=False)
+    facts.update(kw)
+    return facts
+
+
+class RuleOrderTests(unittest.TestCase):  # `Ordem das regras` (HEADER): the first rule whose facts hold gives the class
+    def test_each_rule_beats_every_rule_below_it(self):
+        cases = [
+            (dict(lag=True, post=True, erro_nosso=True, b3_count=True, cited_af=True, ll_method=True), (audit.ERRO_SI, "defasagem (B-9)")),
+            (dict(post=True, erro_nosso=True, cited_af=True), (audit.ERRO_SI, "post-d")),
+            (dict(erro_nosso=True, cited_af=True, ll_method=True), (audit.ERRO_NOSSO, "erro nosso")),
+            (dict(b3_count=True, cited_af=True, ll_method=True), (audit.ERRO_SI, "reproduzido (sobre a contagem da B3)")),
+            (dict(b3_count=True, ll_method=True, pl_method=True), (audit.METODO, "contagem da B3 de R")),
+            (dict(ll_method=True, pl_method=True, cited_af=True), (audit.METODO, "lucro total 3.11")),
+            (dict(pl_method=True, cited_af=True), (audit.METODO, "patrimônio total 2.03")),
+            (dict(cited_af=True, cited_any=True, price_two=True), (audit.ERRO_SI, "reproduzido")),
+            (dict(cited_any=True, price_two=True), (audit.ERRO_SI, "reproduzido (visão de método)")),
+            (dict(price_two=True), (audit.ERRO_SI, "preço d−1")),
+            (dict(), (audit.ERRO_SI, "sem base")),
+        ]
+        for facts, expected in cases:
+            with self.subTest(facts=facts):
+                self.assertEqual(audit.decide(_facts(**facts)), expected)
 
 
 if __name__ == "__main__":

@@ -499,6 +499,13 @@ def company_values(acq, view, day, fday, cnpj, cd_cvm, tickers, *, count_from=No
     return out
 
 
+def candidate_reads(versions, cnpj, day):
+    """The reads of the search for one company at day: (kind, dt_refer, versao, DT_RECEB, fday) of every cached version
+    received on or before R. A version received on or before d is read at d; one received after d is read at R (the
+    lote-5 read). No age limit: a period that ended years before d is read whole (no STL-01 mask)."""
+    return [(kind, dt, v, rec, day if rec <= day else R_DATE) for kind, dt, v, rec in filings_of(versions, cnpj)]
+
+
 def search_date(acq, versions, iso, rows):
     """Reproducers of each worst row of one date: {(field, ticker): [version or count views that reproduce]}.
 
@@ -512,8 +519,7 @@ def search_date(acq, versions, iso, rows):
         cnpj, cd, tickers = members_of(acq, day, r["ticker"])
         companies.setdefault(cnpj, (cd, tickers, []))[2].append(r)
     for cnpj, (cd, tickers, crows) in companies.items():
-        for kind, dt, v, rec in filings_of(versions, cnpj):
-            fday = day if rec <= day else R_DATE
+        for kind, dt, v, rec, fday in candidate_reads(versions, cnpj, day):
             nums, comp = version_nums(versions[kind][cnpj][(dt, v)])
             views = []
             for m in METHODS:
@@ -790,6 +796,36 @@ def base_items(acq, t, f, f0, det, rule, lag, older, price):
     return items
 
 
+def decide(f):
+    """The class and rule of one accounting row: the first rule of `Ordem das regras` (HEADER) whose facts hold.
+
+    `f` holds booleans: lag (B-9); post (a filing received after d reproduces); erro_nosso (A-18 without support);
+    b3_count (the B3 total count reproduces, the filed count is at most twice it, no suspicion); cited_af (a reproducer
+    as filed or by count, F0 excluded); ll_method and pl_method (the total 3.11 or 2.03 reproduces and differs from
+    ours); cited_any (a method view reproduces); price_two (the close of d − 1 reproduces two count fields)."""
+    if f["lag"]:
+        return ERRO_SI, "defasagem (B-9)"
+    if f["post"]:
+        return ERRO_SI, "post-d"
+    if f["erro_nosso"]:
+        return ERRO_NOSSO, "erro nosso"
+    if f["b3_count"] and f["cited_af"]:
+        return ERRO_SI, "reproduzido (sobre a contagem da B3)"
+    if f["b3_count"]:
+        return METODO, "contagem da B3 de R"
+    if f["ll_method"]:
+        return METODO, "lucro total 3.11"
+    if f["pl_method"]:
+        return METODO, "patrimônio total 2.03"
+    if f["cited_af"]:
+        return ERRO_SI, "reproduzido"
+    if f["cited_any"]:
+        return ERRO_SI, "reproduzido (visão de método)"
+    if f["price_two"]:
+        return ERRO_SI, "preço d−1"
+    return ERRO_SI, "sem base"
+
+
 def classify_accounting(ctx, iso, day, row):
     acq = ctx["acq"]
     f, t, ref, reb, lag = row["field"], row["ticker"], row["reference"], row["rebuilt"], row["si_lag"]
@@ -809,7 +845,6 @@ def classify_accounting(ctx, iso, day, row):
     best_any = oldest(others) if others else None
     n_af = len({(p["kind"], p["dt"], p["versao"]) for p in as_filed})
     n_any = len({(p["kind"], p["dt"], p["versao"]) for p in others})
-    b3_count = f in SHARE_FIELDS and "B3_TOTAL" in reproduces and residual is not None and residual <= 2.0 and not suspect
     older = older_filing(acq, day, cnpj) if lag else None
     post = None
     if f in SHARE_FIELDS and not lag:
@@ -823,55 +858,49 @@ def classify_accounting(ctx, iso, day, row):
                 ref_r = compare.reference(r["field"], acq.si[day].rows[t][r["field"]])[0]
                 if alternatives(acq, day, t, r["field"], ref_r, r["rebuilt"]).get("PRICE_PREV", (None, False))[1]:
                     price_fields.append(r["field"])
-    extra = []
-    cited = None
-    if lag:
-        cls, rule = ERRO_SI, "defasagem (B-9)"
+    facts = {
+        "lag": bool(lag),
+        "post": post is not None,
+        "erro_nosso": f in SHARE_FIELDS and residual is not None and residual > 2.0 and not suspect,
+        "b3_count": f in SHARE_FIELDS and "B3_TOTAL" in reproduces and residual is not None and residual <= 2.0 and not suspect,
+        "cited_af": best_af is not None,
+        "ll_method": f in ("P/L", "CAGR LUCROS 5 ANOS", "ROE", "ROA", "MARG. LIQUIDA") and "LL_TOTAL" in reproduces and abs(alts["LL_TOTAL"][0] - reb) > 0.01,
+        "pl_method": f in ("ROE", "P/VP", "DIV. LIQ. / PATRI.") and "PL_TOTAL" in reproduces and abs(alts["PL_TOTAL"][0] - reb) > 0.01,
+        "cited_any": best_any is not None,
+        "price_two": f in SHARE_FIELDS and "PRICE_PREV" in reproduces and len(price_fields) >= 2,
+    }
+    cls, rule = decide(facts)
+    cited, extra = None, []
+
+    def cite(pool, n):
+        return reproduced_motive(pool, n, day, ref), reproducer_items(pool, f)
+
+    if rule == "defasagem (B-9)":
         motive = "o filing anterior reproduz o Status Invest (B-9): a defasagem é do SI"
-    elif post is not None:
-        cls, rule = ERRO_SI, "post-d"
+    elif rule == "post-d":
         motive, extra = post
         if best_af is not None:
-            motive = reproduced_motive(best_af, n_af, day, ref)
-            extra = reproducer_items(best_af, f)
-            cited = best_af
-    elif f in SHARE_FIELDS and residual is not None and residual > 2.0 and not suspect:
-        cls, rule = ERRO_NOSSO, "erro nosso"
+            (motive, extra), cited = cite(best_af, n_af), best_af
+    elif rule == "erro nosso":
         motive = (f"fator A-18 sem suporte: a contagem em d ({fmt((cur.n_on or 0) + (cur.n_pref or 0))}) é {residual:.2f} vezes a contagem B3 de R "
                   f"({fmt(b3_total)}, `b3_company_{det['b3_root']}.json`); a potência de dez escolhida (×{fmt(adj.factor)}) não corresponde a erro de unidade")
-    elif b3_count and best_af is not None:
-        cls, rule = ERRO_SI, "reproduzido (sobre a contagem da B3)"
-        motive = reproduced_motive(best_af, n_af, day, ref)
-        extra = reproducer_items(best_af, f)
-        cited = best_af
-    elif b3_count:
-        cls, rule = METODO, "contagem da B3 de R"
+    elif rule in ("reproduzido (sobre a contagem da B3)", "reproduzido"):
+        (motive, extra), cited = cite(best_af, n_af), best_af
+    elif rule == "contagem da B3 de R":
         motive = (f"o Status Invest usa a contagem total da B3 de R ({fmt(b3_total)}, `b3_company_{det['b3_root']}.json`), posterior a d; "
                   f"a contagem arquivada em d com eventos é {residual:.2f} vezes a da B3 (AD-033); "
                   f"nenhum demonstrativo do cache, além do usado em d, reproduz o valor do SI ({ref})")
-    elif f in ("P/L", "CAGR LUCROS 5 ANOS", "ROE", "ROA", "MARG. LIQUIDA") and "LL_TOTAL" in reproduces and abs(alts["LL_TOTAL"][0] - reb) > 0.01:
-        cls, rule = METODO, "lucro total 3.11"
+    elif rule == "lucro total 3.11":
         motive = (f"o Status Invest usa o lucro total do DRE (3.11), não o do controlador (3.11.01, A-21/F7): "
                   f"com 3.11 o valor fica em {alts['LL_TOTAL'][0]:.2f} (SI {ref})")
-    elif f in ("ROE", "P/VP", "DIV. LIQ. / PATRI.") and "PL_TOTAL" in reproduces and abs(alts["PL_TOTAL"][0] - reb) > 0.01:
-        cls, rule = METODO, "patrimônio total 2.03"
+    elif rule == "patrimônio total 2.03":
         motive = (f"o Status Invest usa o patrimônio total (2.03), não o do controlador (2.03 − 2.03.09, A-21/F8): "
                   f"com 2.03 o valor fica em {alts['PL_TOTAL'][0]:.2f} (SI {ref})")
-    elif best_af is not None:
-        cls, rule = ERRO_SI, "reproduzido"
-        motive = reproduced_motive(best_af, n_af, day, ref)
-        extra = reproducer_items(best_af, f)
-        cited = best_af
-    elif best_any is not None:
-        cls, rule = ERRO_SI, "reproduzido (visão de método)"
-        motive = reproduced_motive(best_any, n_any, day, ref)
-        extra = reproducer_items(best_any, f)
-        cited = best_any
-    elif f in SHARE_FIELDS and "PRICE_PREV" in reproduces and len(price_fields) >= 2:
-        cls, rule = ERRO_SI, "preço d−1"
+    elif rule == "reproduzido (visão de método)":
+        (motive, extra), cited = cite(best_any, n_any), best_any
+    elif rule == "preço d−1":
         motive = f"o Status Invest usa o fechamento da sessão anterior: reproduz {', '.join(price_fields)} com esse preço"
     else:
-        cls, rule = ERRO_SI, "sem base"
         n_checked, n_index = ctx["counts"][cnpj]
         pp = "; o fechamento de d − 1 reproduz este campo (um só campo, sem regra de preço)" if "PRICE_PREV" in reproduces else ""
         motive = (f"nenhum dos {n_checked} demonstrativos do cache com linhas de demonstrativo (DFP e ITR, todas as versões recebidas até 2026-11-09; "
