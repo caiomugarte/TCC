@@ -294,19 +294,19 @@ T23 → T24
 
 **Done when**:
 
-- [ ] ON 1,000,000 filed at 2026-06-30, 100 % bonus (multiplier 2) ex 2026-07-15, `d` 2026-08-07, B3 total 2,000,000: `n_on` 2,000,000, factor 1, applied `[{class ON, factor 2, ...}]` (SHR-01)
-- [ ] Same with `d` 2026-07-14: `n_on` 1,000,000 and nothing applied (SHR-02)
-- [ ] 1:5 split after `d` and on or before `retrieved_on`, B3 total 5,000,000: factor 1 (not 10), `n_on` 1,000,000 (B-3, the double-count guard)
-- [ ] 1:5 split with ex-date one day after `retrieved_on`, B3 total 1,000,000: the split is out of `M_all`, factor 1; the same split on `retrieved_on`: in (SHR-08, S3)
-- [ ] `retrieved_on` None: every later event enters `M_all`
-- [ ] ISIN changed after `d` (`isins_d` = {A}, `isins_all` = {A, B}), 1:5 split of B after `d`, B3 total 5,000,000: factor 1, `n_on` 1,000,000; with `isins_all` = {A}: factor 10 (SHR-08, S4)
-- [ ] ISIN changed between `DT_REFER` and `d` (`isins_d` = {A, B}): an event of A in the window is applied (B-2)
-- [ ] 1:2 split and 2:1 grouping in the window: `M_d` 1 within 1e-9, class not in `applied` (SHR-03, S10)
-- [ ] Two events in the window multiply; a grouping (multiplier 0.1) divides
-- [ ] PREF with shares and ISIN None: not adjusted, `no_isin == ["PREF"]` (SHR-04)
-- [ ] No B3 total: factor 1, `verified` false, events still applied
-- [ ] Gate check passes: Build (end of Phase 1)
-- [ ] Test count: ≥ 12 tests in `test_pit_rebuild_shares.py`
+- [x] ON 1,000,000 filed at 2026-06-30, 100 % bonus (multiplier 2) ex 2026-07-15, `d` 2026-08-07, B3 total 2,000,000: `n_on` 2,000,000, factor 1, applied `[{class ON, factor 2, ...}]` (SHR-01)
+- [x] Same with `d` 2026-07-14: `n_on` 1,000,000 and nothing applied (SHR-02)
+- [x] 1:5 split after `d` and on or before `retrieved_on`, B3 total 5,000,000: factor 1 (not 10), `n_on` 1,000,000 (B-3, the double-count guard)
+- [x] 1:5 split with ex-date one day after `retrieved_on`, B3 total 1,000,000: the split is out of `M_all`, factor 1; the same split on `retrieved_on`: in (SHR-08, S3)
+- [x] `retrieved_on` None: every later event enters `M_all`
+- [x] ISIN changed after `d` (`isins_d` = {A}, `isins_all` = {A, B}), 1:5 split of B after `d`, B3 total 5,000,000: factor 1, `n_on` 1,000,000; with `isins_all` = {A}: factor 10 (SHR-08, S4)
+- [x] ISIN changed between `DT_REFER` and `d` (`isins_d` = {A, B}): an event of A in the window is applied (B-2)
+- [x] 1:2 split and 2:1 grouping in the window: `M_d` 1 within 1e-9, class not in `applied` (SHR-03, S10)
+- [x] Two events in the window multiply; a grouping (multiplier 0.1) divides
+- [x] PREF with shares and ISIN None: not adjusted, `no_isin == ["PREF"]` (SHR-04)
+- [x] No B3 total: factor 1, `verified` false, events still applied
+- [x] Gate check passes: Build (end of Phase 1)
+- [x] Test count: ≥ 12 tests in `test_pit_rebuild_shares.py`
 
 **Tests**: unit
 **Gate**: build
