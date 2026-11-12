@@ -19,22 +19,32 @@ Feature-local state. Project decisions stay in `.specs/STATE.md` `## Decisions`;
 ## Handoff
 
 - **Feature**: pit-rebuild-stocks-fixes (issue #64) - `.specs/features/pit-rebuild-stocks-fixes/`
-- **Phase / Task**: Specify, Design and Tasks done, r2 after the spec review iw-64-judge-spec-r1 (2026-11-12). 44 requirements, 24 tasks, 32 weighted. Next: spec re-review by the orchestrator, then Execute in five batches, one per phase (T1-T7: 7, T8-T13: 7, T14-T18: 7, T19-T22: 7, T23-T24: 4 weighted), then the Verifier (author != verifier).
-- **Completed**: none (no production code or test written).
+- **Phase / Task**: Execute. Lote 1 de 5 concluído (Phase 1, T1-T7). Próximo: lote 2 (Phase 2, T8-T13), depois os lotes 3, 4 e 5 e o Verifier (autor != verificador).
+- **Completed** (commits locais, um por tarefa, Conventional Commits com `(#64)`):
+  - T1 `1764831`: `cotahist.isin`/`share_class` leem a sessão em `d`; `isins` (B-2, B-3); `class_isins` (I_d, S12); call sites de `cli.py` passam `d`.
+  - T2 `dd08ff6`: TTM com o ITR do ano anterior quando `PENÚLTIMO` é ausente ou 0 (TTM-01..03); `Dated.prior_from_itr`.
+  - T3 `0e203fe`: `newest_period_end`, `newest_filing`, `STALE_FILING_DAYS = 270`.
+  - T4 `d0b8070`: `Shares.dt_refer`; `previous_shares` (B-4).
+  - T5 `af7f5d0`: `FilingStore.without` (B-9); helper de teste `inline_filings`.
+  - T6 `d51e425`: `event_ex_date`, `class_events` (B-1, B-2); `B3Company.retrieved_on`.
+  - T7 `a39c8af`: `py/pit_rebuild/shares.py` com `adjust` (AD-033: M_all até `R`, M_d até `d`, sem-ISIN, epsilon).
 - **In-progress (file:line)**: none.
-- **Next step**: re-review `spec.md` (B-2, B-3, B-4, B-10, B-12, SHR-03, SHR-08, ADJ-01, ADJ-04, ADJ-05, AUD-02, AUD-05, AUD-06, RPT-06) and AD-033; on approval, dispatch Phase 1 (T1-T7).
-- **Blockers**: none. No task needs the network; T20 stops and asks if its evidence needs a request outside the cache.
+- **Next step**: despachar o lote 2 (T8-T13). T8 entra em `py/pit_rebuild/shares.py` (`suspect`, `SUSPECT_CHANGE = 0.20`), com `dividends.class_events`.
+- **Blockers**: none.
 - **Uncommitted files**: none.
 - **Branch**: `t3/issue-64` (base `develop` at `ebaf1fd`); not pushed, no PR.
-- **Baseline**: pit suite 322 OK at `ebaf1fd` (`python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`). Root suite 909 OK, 2 skipped at `53fde43` (#59 Handoff), not rerun here.
+- **Baseline**: pit suite 371 OK (`python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`; 322 no `ebaf1fd`). Suíte raiz 958 OK, 2 skipped (`/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest discover -s tests -p "test_*.py"`, ~3 min, na árvore de T7).
+- **S12 (fechado no lote 1)**: `cotahist.class_isins(q, t, DT_REFER, d)` é o I_d e inclui `isin(q, t, DT_REFER)`, porque `isins` deixa a sessão de DT_REFER de fora. Testes: `ClassAtDTests` (`test_pit_rebuild_cotahist.py`) e `IsinSetTests` (`test_pit_rebuild_shares.py`). T15 monta I_d com `class_isins` e I_all com `class_isins` mais `isins(q, t, d, None)`.
 - **Real data**: the #59 cache is at `/home/caio/.t3/worktrees/TCC/t3-issue-59-d1f86a5f2296a99f/.cache/pit-rebuild` (362 MB, 585 manifest entries). This worktree has no `.cache/pit-rebuild`; T21 step 1 copies it with hard links. The 2026-11-06 CSV is `/home/caio/Documents/projetos/TCC/snapshots/data/selectors-2026-11-06/stocks.csv` (outside the worktree, read only).
 - **Seen during design (evidence, not a conclusion)**: `b3_company_MBRF.json` has `tradingName` `MARFRIG` with no `stockDividends`; `b3_cash_MARFRIG_p1.json` has 13 records, the latest with `lastDatePriorEx` 18/09/2025, which is outside the 2026-11-05 window. MBRF3 is DY 0.00 against 18.41 only on 2026-11-05 in the committed v2 JSON. T20 checks this first.
 - **Pitfalls carried from #59** (`.specs/STATE.md` Handoff of 2026-11-10):
   - Commit with `git commit -F <file>`: the shell hook rewrites a `-m` message containing the word "make".
   - `check_commit.py` warns above 72 characters.
-  - `tests/fixtures/pit_rebuild/cotahist.txt`: no session between 2026-08-21 and 2026-08-24, none after 2026-11-06 (calendar tests).
+  - `tests/fixtures/pit_rebuild/cotahist.txt`: no session between 2026-08-21 and 2026-08-24, none after 2026-11-06 (calendar tests). Lote 1 monta sessões em zip temporário (`cotahist_line`), sem tocar na fixture.
   - `tests/test_pit_rebuild_cli.py` sets `sys.dont_write_bytecode`; the isolation guard reads docstrings, so `py/` must not contain the literal `baselines/`.
   - The Markdown is rendered in a fixed order (`_canonical`, sorted keys); keep new lists sorted by their keys.
   - In a gate, use `git diff --exit-code`, not `git diff --stat`.
   - A mutation copy of `py/` and `tests/` also needs `api/app/services/premium_policy.py`, `docs/validation/` and `data/raw/status_invest_fundamentals.csv`.
   - `mkstemp` writes the report files with mode 0600; git's file mode is unaffected.
+  - pytest não está instalado no venv nem no sistema: o runner é `unittest` (o brief do lote 1 citava pytest; o gate do tasks.md é o correto).
+  - `isins` (B-2) não inclui a sessão de `after`: quem monta I_d precisa de `isin(q, t, DT_REFER)` (S12, já no `class_isins`).
