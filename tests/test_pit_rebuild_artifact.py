@@ -382,7 +382,8 @@ class AuditDocumentTests(unittest.TestCase):
 
     def test_no_sentence_of_the_document_says_what_the_status_invest_did(self):  # V13: the header and the rules too, not only the motives
         causes = ("o Status Invest usa", "o Status Invest reproduz", "reproduz o Status Invest", "o SI usa", "o SI reproduz", "o SI soma",
-                  "o SI as soma", "o SI deixa de fora", "o SI tirou", "do SI parece", "a defasagem é do SI")
+                  "o SI as soma", "o SI deixa de fora", "o SI tirou", "do SI parece", "a defasagem é do SI",
+                  "o CSV foi coletado depois", "vem de dado posterior")
         for cause in causes:  # "reproduz o valor com" stays motive-only: the rules use it as the defined measure
             self.assertNotIn(cause, self.text, cause)
 
