@@ -189,6 +189,8 @@ AUDIT_CLASSES = ("erro nosso", "erro do Status Invest", "diferença de método",
 AUDIT_PREFIXES = ("CVM ", "B3 evento ", "COTAHIST ", "B3 proventos ", "Yahoo ", "Conferidos: ")  # B-10: the fixed evidence prefixes
 AUDIT_CVM_ITEM = re.compile(r"^CVM (DFP|ITR) \d{4}-\d{2}-\d{2} v\d+ rec \d{4}-\d{2}-\d{2}: .+$")
 AUDIT_WITHIN = "dentro da tolerância"  # a row of the worst list inside the tolerance: no error to explain
+# a cited accounting reproducer: its motive says the value is equal to, or within the tolerance of, a filing as the rows print it
+AUDIT_CITATION = re.compile(r"^valor do SI: (igual a duas casas a|dentro da tolerância CMP-01 de) (DFP|ITR) \d{4}-\d{2}-\d{2} v\d+, recebido em ")
 
 
 def parse_audit(text):
@@ -360,6 +362,15 @@ class AuditDocumentTests(unittest.TestCase):
                 if cells[1] == "—":
                     self.assertEqual(cells[2], "0", (iso, cells[0]))
                     self.assertFalse(self.adjusted["dates"][iso]["fields"][cells[0]]["missing"], (iso, cells[0]))
+
+    def test_the_count_sentences_of_the_document_are_recounted_from_its_rows(self):  # AUD-02, V11: "São N linhas `sem base`", "Das N citações ..."
+        rows = [(field, cells) for block in self.doc.values() for field, cells in block["rows"]]
+        sem_base = sum(1 for _, cells in rows if cells[6] == "erro do Status Invest" and cells[7].startswith(SEM_BASE_MOTIVES))
+        cited = [cells for field, cells in rows if field != "DY" and AUDIT_CITATION.match(cells[7])]
+        exact = [cells for cells in cited if cells[7].startswith("valor do SI: igual a duas casas a ")]
+        self.assertIn(f"São {sem_base} linhas `sem base`", self.text)
+        self.assertIn(f"Das {len(cited)} citações contábeis de reprodução, {len(exact)} são iguais ao valor do SI a duas casas; "
+                      f"as outras {len(cited) - len(exact)} estão só dentro da tolerância", self.text)
 
     def test_no_motive_says_what_the_status_invest_did_with_a_filing_or_a_subset(self):  # V9, decision 1: a measure, never a cause
         causes = ("o Status Invest usa", "o Status Invest reproduz", "o SI usa", "o SI reproduz", "o SI soma", "o SI deixa de fora", "reproduz o valor com")
