@@ -120,6 +120,14 @@ class FilingStore:
     def periods(self, cnpj: str) -> list[_Period]:
         return sorted(self._periods.get(cnpj, {}).values(), key=lambda p: p.filing.dt_refer)
 
+    def without(self, cnpj: str, dt_refer: date) -> "FilingStore":
+        """This store, except that cnpj has no period dt_refer (B-9). This store is not changed; other companies share their periods."""
+        periods = dict(self._periods)
+        company = dict(periods.get(cnpj, {}))
+        company.pop(dt_refer, None)
+        periods[cnpj] = company
+        return FilingStore(self.kind, periods)
+
 
 def load_filings(zip_paths: Iterable[Path], kind: str, accounts: Iterable[str] | None = None) -> FilingStore:
     """Read the DFP or ITR zips of one kind (PIT-01, A-6, IND-01).

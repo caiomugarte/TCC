@@ -277,7 +277,7 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | ADJ-05 | P1: Adjusted verdict | AC7 (DEC-2) | Tasks | Pending |
 | ADJ-06 | P1: Adjusted verdict | AC7 | Tasks | Pending |
 | ADJ-07 | P1: Adjusted verdict | AC7 | Tasks | Pending |
-| LAG-01 | P1: SI lag | AC8 | Tasks | Pending |
+| LAG-01 | P1: SI lag | AC8 | Tasks | Partial (T5 view; T11, T19) |
 | LAG-02 | P1: SI lag | AC8 | Tasks | Pending |
 | LAG-03 | P1: SI lag | AC8 | Tasks | Pending |
 | LAG-04 | P1: SI lag | AC8 | Tasks | Pending |

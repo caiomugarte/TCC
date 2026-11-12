@@ -232,11 +232,11 @@ T23 → T24
 
 **Done when**:
 
-- [ ] On the view, `ttm`, `balance`, `shares` and `newest_period_end` of the company answer from the next newest period
-- [ ] The original store still has the period; another company's answers are identical on both
-- [ ] `without` on a period the company does not have returns an equivalent store
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 3 new tests
+- [x] On the view, `ttm`, `balance`, `shares` and `newest_period_end` of the company answer from the next newest period
+- [x] The original store still has the period; another company's answers are identical on both
+- [x] `without` on a period the company does not have returns an equivalent store
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 3 new tests
 
 **Tests**: unit
 **Gate**: quick

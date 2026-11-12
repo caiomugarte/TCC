@@ -656,13 +656,15 @@ class NewestFilingTests(unittest.TestCase):
 COMPOSITION_HEADER = "CNPJ_CIA;DT_REFER;VERSAO;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR\n"
 
 
-def inline_composition(kind: str, year: int, index_rows: str, composition_rows: str) -> cvm.FilingStore:
-    """A FilingStore from inline CSV text: the index rows and the capital composition rows (composicao_capital)."""
+def inline_filings(kind: str, year: int, index_rows: str, statements: dict[str, str] | None = None,
+                   composition_rows: str | None = None) -> cvm.FilingStore:
+    """A FilingStore from inline CSV text: the index rows, the statement rows of each scope and the capital composition rows."""
     prefix = kind.lower()
-    members = {
-        f"{prefix}_cia_aberta_{year}.csv": INDEX_HEADER + index_rows,
-        f"{prefix}_cia_aberta_composicao_capital_{year}.csv": COMPOSITION_HEADER + composition_rows,
-    }
+    members = {f"{prefix}_cia_aberta_{year}.csv": INDEX_HEADER + index_rows}
+    for scope, rows in (statements or {}).items():
+        members[f"{prefix}_cia_aberta_{scope}_{year}.csv"] = DRE_HEADER + rows
+    if composition_rows is not None:
+        members[f"{prefix}_cia_aberta_composicao_capital_{year}.csv"] = COMPOSITION_HEADER + composition_rows
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / f"{prefix}_cia_aberta_{year}.zip"
         path.write_bytes(make_zip(members))
@@ -684,8 +686,8 @@ class PreviousSharesTests(unittest.TestCase):
             if counts is not None:
                 composition[kind] += f"{self.CNPJ};{dt_refer};1;{counts[0]};{counts[1]};{counts[2]}\n"
         return (
-            inline_composition("DFP", 2024, index["DFP"], composition["DFP"]),
-            inline_composition("ITR", 2025, index["ITR"], composition["ITR"]),
+            inline_filings("DFP", 2024, index["DFP"], composition_rows=composition["DFP"]),
+            inline_filings("ITR", 2025, index["ITR"], composition_rows=composition["ITR"]),
         )
 
     def test_the_middle_period_without_a_composition_is_skipped(self):
@@ -737,6 +739,76 @@ class PreviousSharesTests(unittest.TestCase):
             cvm.shares(dfp, itr, self.CNPJ, self.D),
             cvm.Shares(on=260, pref=50, total=310, dt_refer=date(2025, 6, 30), dt_receb=date(2025, 8, 6)),
         )
+
+
+class WithoutPeriodTests(unittest.TestCase):
+    """LAG-01 (B-9): a filing store that answers as the original, except that one company has no one of its periods."""
+
+    X = "60.606.606/0001-60"
+    Y = "70.707.707/0001-70"
+    D = date(2026, 8, 7)
+
+    @classmethod
+    def setUpClass(cls):
+        dfp_index = f"{cls.X};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n" + f"{cls.Y};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n"
+        dfp_dre = dre_line(cls.X, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "1000.00") + dre_line(cls.Y, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "2000.00")
+        dfp_bpp = dre_line(cls.X, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "2.03", "5000.00")
+        cls.dfp = inline_filings("DFP", 2025, dfp_index, {"DRE_con": dfp_dre, "BPP_con": dfp_bpp},
+                                 composition_rows=f"{cls.X};2025-12-31;1;100;50;150\n{cls.Y};2025-12-31;1;300;0;300\n")
+        itr_index = (
+            f"{cls.X};2026-03-31;1;CASE S.A.;1;ITR;1;2026-05-14 18:00:00;\n"
+            f"{cls.X};2026-06-30;1;CASE S.A.;1;ITR;1;2026-08-06 18:00:00;\n"
+            f"{cls.Y};2026-06-30;1;CASE S.A.;1;ITR;1;2026-08-06 18:00:00;\n"
+        )
+        itr_dre = (
+            dre_line(cls.X, "2026-03-31", "ÚLTIMO", "2026-01-01", "2026-03-31", "3.01", "250.00")
+            + dre_line(cls.X, "2026-03-31", "PENÚLTIMO", "2025-01-01", "2025-03-31", "3.01", "200.00")
+            + dre_line(cls.X, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.01", "300.00")
+            + dre_line(cls.X, "2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", "3.01", "260.00")
+            + dre_line(cls.Y, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "3.01", "400.00")
+            + dre_line(cls.Y, "2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", "3.01", "380.00")
+        )
+        itr_bpp = (
+            dre_line(cls.X, "2026-03-31", "ÚLTIMO", "2026-01-01", "2026-03-31", "2.03", "4000.00")
+            + dre_line(cls.X, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "2.03", "3000.00")
+            + dre_line(cls.Y, "2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", "2.03", "9000.00")
+        )
+        cls.itr = inline_filings(
+            "ITR", 2026, itr_index, {"DRE_con": itr_dre, "BPP_con": itr_bpp},
+            composition_rows=f"{cls.X};2026-03-31;1;110;50;160\n{cls.X};2026-06-30;1;120;50;170\n{cls.Y};2026-06-30;1;300;0;300\n",
+        )
+
+    def test_the_view_answers_from_the_next_newest_period_of_the_company(self):
+        view = self.itr.without(self.X, date(2026, 6, 30))
+        self.assertEqual(cvm.newest_period_end(self.dfp, view, self.X, self.D), date(2026, 3, 31))
+        self.assertEqual(cvm.shares(self.dfp, view, self.X, self.D).on, 110)
+        self.assertEqual(cvm.balance(self.dfp, view, self.X, self.D, "2.03"), cvm.Dated(4000.0, date(2026, 5, 14)))
+        self.assertEqual(cvm.ttm(self.dfp, view, self.X, self.D, "3.01"), cvm.Dated(1050.0, date(2026, 5, 14)))  # 1000 + 250 - 200
+
+    def test_the_original_store_keeps_the_period_and_its_answers(self):
+        self.itr.without(self.X, date(2026, 6, 30))
+        self.assertIsNotNone(self.itr.period(self.X, date(2026, 6, 30)))
+        self.assertEqual(cvm.newest_period_end(self.dfp, self.itr, self.X, self.D), date(2026, 6, 30))
+        self.assertEqual(cvm.ttm(self.dfp, self.itr, self.X, self.D, "3.01"), cvm.Dated(1040.0, date(2026, 8, 6)))  # 1000 + 300 - 260
+
+    def test_another_company_answers_the_same_on_both_stores(self):
+        view = self.itr.without(self.X, date(2026, 6, 30))
+        for call in (
+            lambda store: cvm.newest_period_end(self.dfp, store, self.Y, self.D),
+            lambda store: cvm.shares(self.dfp, store, self.Y, self.D),
+            lambda store: cvm.balance(self.dfp, store, self.Y, self.D, "2.03"),
+            lambda store: cvm.ttm(self.dfp, store, self.Y, self.D, "3.01"),
+        ):
+            with self.subTest(call=call):
+                self.assertEqual(call(view), call(self.itr))
+
+    def test_a_period_the_company_does_not_have_gives_an_equivalent_store(self):
+        view = self.itr.without(self.X, date(2020, 12, 31))
+        self.assertEqual(
+            [p.filing.dt_refer for p in view.periods(self.X)],
+            [p.filing.dt_refer for p in self.itr.periods(self.X)],
+        )
+        self.assertEqual(cvm.newest_period_end(self.dfp, view, self.X, self.D), date(2026, 6, 30))
 
 
 if __name__ == "__main__":
