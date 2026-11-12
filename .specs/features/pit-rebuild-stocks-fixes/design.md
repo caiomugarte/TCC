@@ -174,7 +174,7 @@ investigations: [{ticker, date, field, finding, evidence}]
 
 | Error Scenario | Handling | User Impact |
 | -------------- | -------- | ----------- |
-| Class with shares and no ISIN at `d` | No events, listed in `share_events.no_isin` | Count as filed × f; visible in the report |
+| Class with shares and an empty `I_d` | No events, listed in `share_events.no_isin` | Count as filed × f; visible in the report |
 | No previous filing with a composition | No suspect check | None |
 | Zero or missing `PENÚLTIMO` and no usable year-earlier ITR | Flow has no value (`missing_input: <name>` downstream) | Field outside tolerance with that reason |
 | Newest filing older than 270 days | 15 accounting fields `stale_filing` | Listed per date; denominators unchanged |
@@ -198,7 +198,7 @@ No new exit code (RPT-05).
 | MBRF3 cause unknown at design time | `py/pit_rebuild/cli.py:280-306` (`_b3_history`), cache `b3_company_MBRF.json` | The fix branch (MBR-01) would add code after the design | Seen during the design, not a conclusion: `b3_company_MBRF.json` has `tradingName` `MARFRIG` and `b3_cash_MARFRIG_p1.json` has 13 records, the latest with `lastDatePriorEx` 18/09/2025, outside the 2026-11-05 window (ex-date after 2025-11-05 needed). T20 tests the lookup hypothesis first; a code fix, if needed, stays inside T20 with its fixture test. |
 | Regeneration depends on the #59 cache in another worktree | `/home/caio/.t3/worktrees/TCC/t3-issue-59-d1f86a5f2296a99f/.cache/pit-rebuild` (362 MB, 585 manifest entries) | The worktree may be removed | T21 step 1 copies it with hard links into this worktree's `.cache/pit-rebuild` (T20 may make the copy first) and T21 step 3 verifies it by reproducing the v2 report from `git archive ebaf1fd` before regenerating. |
 | The #59 rule texts reach `docs/validation/` | `py/pit_rebuild/report.py:39-48`, `report.py:91-96`, `py/pit_rebuild/indicators.py:10-11`, `indicators.py:23` | A regenerated report that prints the #59 share rule beside AD-033 numbers is false text in `docs/validation/` (REVIEW.md Important) | T14 rewrites them (RPT-06) with tests in `test_pit_rebuild_report.py` and `test_pit_rebuild_indicators.py`; T21 pins them in the committed JSON. |
-| The B3 count is dated by its retrieval, the ISIN by the session | B-3, `cache.py` manifest | An event with ex-date after the retrieval, or an ISIN change after the last loaded session, moves the scale | `M_all` stops at `R` (SHR-08); `I_all` reads every loaded session after `d`; an ISIN change between the last loaded session (2026-11-06) and `R` (2026-11-10) is a limit written in AD-033. |
+| The B3 count is dated by its retrieval, the ISIN by the session | B-3, `cache.py` manifest | An event with ex-date after the retrieval, or an ISIN change after the last loaded session, moves the scale | `M_all` stops at `R` (SHR-08); `I_all` reads every loaded session after `d`; an ISIN change between the last loaded session (2026-11-06) and `R` (2026-11-09) is a limit written in AD-033. |
 
 ---
 

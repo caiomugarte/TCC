@@ -303,7 +303,7 @@ T23 → T24
 - [x] ISIN changed between `DT_REFER` and `d` (`isins_d` = {A, B}): an event of A in the window is applied (B-2)
 - [x] 1:2 split and 2:1 grouping in the window: `M_d` 1 within 1e-9, class not in `applied` (SHR-03, S10)
 - [x] Two events in the window multiply; a grouping (multiplier 0.1) divides
-- [x] PREF with shares and ISIN None: not adjusted, `no_isin == ["PREF"]` (SHR-04)
+- [x] PREF with shares and an empty `I_d`: not adjusted, `no_isin == ["PREF"]` (SHR-04)
 - [x] No B3 total: factor 1, `verified` false, events still applied
 - [x] Gate check passes: Build (end of Phase 1)
 - [x] Test count: ≥ 12 tests in `test_pit_rebuild_shares.py`
