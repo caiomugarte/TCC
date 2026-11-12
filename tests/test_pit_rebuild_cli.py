@@ -1514,6 +1514,19 @@ class ShareCountRulesTests(unittest.TestCase):
             {"cd_cvm": "1234", "dt_refer_prev": "2024-12-31", "total_prev": 100_000_000, "dt_refer": "2025-12-31", "total": 150_000_000, "ratio": 1.5},
         )
 
+    def test_the_previous_count_is_scaled_by_its_own_factor_so_a_filing_in_thousands_is_not_suspect(self):
+        # The 2024 DFP is filed in thousands: 100 000 ON, whose A-18 factor is 1 000 (the B3 total is 100 M). The 2025 DFP is filed
+        # in units: 100 M ON, factor 1. The real count is the same and no B3 event moves it, so both totals are 100 M and the ratio
+        # is 1. Scaling the previous count by the current factor would give a ratio of 1 000 and a suspect row: SHR-05 uses the
+        # previous filing's own factor (B-4).
+        b3 = {"CASE": B3Company(trading_name="CASE S.A.", code_cvm="1234", total_shares=100_000_000)}
+        members = {**composition_members(cvm.DFP, "2024-12-31", "2025-03-01 18:00:00", 100_000, 0),
+                   **composition_members(cvm.DFP, "2025-12-31", "2026-03-20 18:00:00", 100_000_000, 0)}
+        dfp = filing_store(cvm.DFP, members)
+        company = cli._company(acquisition(dfp, filing_store(cvm.ITR, {}), b3, cotahist.Quotes()), DAY, CASE_CNPJ, "1234", ["CASE3"], DAY)
+        self.assertEqual(company.n_on, 100_000_000)
+        self.assertIsNone(company.suspect)
+
 
 class RetrievedOnTests(unittest.TestCase):
     """B-3 and SHR-08: R is the São Paulo day (UTC−3) of the manifest's retrieved_at of the B3 company record."""
