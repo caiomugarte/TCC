@@ -4,7 +4,11 @@ The audit document states these rules (Reproduzir, Ordem das regras, Proventos (
 """
 
 import importlib.util
+import os
+import shutil
+import subprocess
 import sys
+import tempfile
 import unittest
 from datetime import date
 from pathlib import Path
@@ -162,6 +166,18 @@ class RuleOrderTests(unittest.TestCase):  # `Ordem das regras` (HEADER): the fir
         self.assertEqual(audit.decide(_facts(b3_count=True, cited_af=True, exact_af=False)),  # within the tolerance only
                          (audit.METODO, "contagem da B3 de R"))
         self.assertEqual(audit.decide(_facts(b3_count=True)), (audit.METODO, "contagem da B3 de R"))
+
+
+class GeneratorWritesNoBytecodeTests(unittest.TestCase):  # V12: the generator writes only its --out file, no bytecode beside the pit package
+    def test_a_run_of_the_generator_writes_no_bytecode_into_the_repository(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shutil.copytree(REPO / "py", root / "py", ignore=shutil.ignore_patterns("__pycache__"))
+            (root / "scripts").mkdir()
+            shutil.copy(REPO / "scripts" / "pit_rebuild_audit.py", root / "scripts" / "pit_rebuild_audit.py")
+            env = {key: value for key, value in os.environ.items() if key != "PYTHONDONTWRITEBYTECODE"}  # the run must not rely on it
+            subprocess.run([sys.executable, str(root / "scripts" / "pit_rebuild_audit.py"), "--help"], check=True, env=env, capture_output=True)
+            self.assertEqual(sorted(root.rglob("*.pyc")), [])
 
 
 if __name__ == "__main__":

@@ -31,6 +31,7 @@ from dataclasses import replace
 from datetime import date, datetime, timedelta
 from pathlib import Path
 
+sys.dont_write_bytecode = True  # V12: the run writes only its --out file, no bytecode into the pit package
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "py"))
 
