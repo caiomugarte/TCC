@@ -5199,46 +5199,46 @@
     },
     "effort": {
       "assumption": "compute por data com o universo de hoje",
-      "compute_projected_seconds": 20.491617690204293,
-      "compute_seconds_per_date": 0.11384232050113496,
+      "compute_projected_seconds": 63.51605126998038,
+      "compute_seconds_per_date": 0.352866951499891,
       "dates_measured": 2,
       "decision_dates": 180,
       "dividend_files": 300,
-      "dividends_parse_seconds": 0.12131413095630705,
+      "dividends_parse_seconds": 0.1278439448797144,
       "full_bytes": 1228214382,
       "load": {
         "CADASTRO": {
           "bytes": 1494679,
           "full_bytes": 1494679,
-          "projected_seconds": 0.016122283006552607,
-          "seconds": 0.016122283006552607
+          "projected_seconds": 0.016177636993234046,
+          "seconds": 0.016177636993234046
         },
         "COTAHIST": {
           "bytes": 179489589,
           "full_bytes": 616660205,
-          "projected_seconds": 53.53776500959113,
-          "seconds": 15.583089940999344
+          "projected_seconds": 53.64540095348467,
+          "seconds": 15.614419239005656
         },
         "DFP": {
           "bytes": 90623836,
           "full_bytes": 175412433,
-          "projected_seconds": 23.794352386094403,
-          "seconds": 12.292945553999743
+          "projected_seconds": 23.811031522861718,
+          "seconds": 12.301562544991612
         },
         "FCA": {
           "bytes": 6646755,
           "full_bytes": 6646755,
-          "projected_seconds": 0.033471132002887316,
-          "seconds": 0.033471132002887316
+          "projected_seconds": 0.03363299899501726,
+          "seconds": 0.03363299899501726
         },
         "ITR": {
           "bytes": 86594608,
           "full_bytes": 428000310,
-          "projected_seconds": 88.92331771824074,
-          "seconds": 17.991295006002474
+          "projected_seconds": 88.53246968874383,
+          "seconds": 17.9122171850031
         }
       },
-      "load_projected_seconds": 166.3050285289357,
+      "load_projected_seconds": 166.03871280107847,
       "sizes": [
         {
           "bytes": 10856136,
@@ -5509,7 +5509,7 @@
           "url": "https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_2026.zip"
         }
       ],
-      "total_projected_seconds": 186.79664621914
+      "total_projected_seconds": 229.55476407105886
     },
     "years": {
       "COTAHIST": [
@@ -27719,9 +27719,9 @@
   "investigations": [
     {
       "date": "2026-11-05",
-      "evidence": "b3_company_MBRF.json (tradingName MARFRIG, totalNumberShares 1380439543, retrieved_at 2026-11-10T00:37:01Z, dia de São Paulo 2026-11-09) e b3_cash_MARFRIG_p1.json (totalRecords 13, completo; o registro com lastDatePriorEx 18/09/2025 e valueCash 2,8105011104 é o único com data-ex depois de 2025-08-07, e nenhum tem data-ex em (2025-11-05, 2026-11-05]). Com esse registro: 100 × 2,8105011104 / 16,07 = 17,49 em 2026-08-07 (janela (2025-08-07, 2026-08-07]); 100 × 2,8105011104 / 15,63 = 17,98 em 2026-11-05 (CSV de 2026-11-06: PRECO 15,63, DY 18,41).",
+      "evidence": "b3_company_MBRF.json (tradingName MARFRIG, totalNumberShares 1380439543, retrieved_at 2026-11-10T00:37:01Z, dia de São Paulo 2026-11-09) e b3_cash_MARFRIG_p1.json (totalRecords 13, completo; o registro com lastDatePriorEx 18/09/2025 e valueCash 2,8105011104 é o único com data-ex depois de 2025-08-07, e nenhum tem data-ex em (2025-11-05, 2026-11-05]). Com esse registro: 100 × 2,8105011104 / 16,07 = 17,49 em 2026-08-07 (janela (2025-08-07, 2026-08-07]); 100 × 2,8105011104 / 15,63 = 17,98 em 2026-11-05 (CSV de 2026-11-06: PRECO 15,63, DY 18,41). As 91 janelas contíguas dos 13 registros, na ordem das datas-ex, não dão 18,41 sobre 15,63.",
       "field": "DY",
-      "finding": "A busca do histórico não é a causa: em 2026-08-07 o mesmo histórico dá DY 17,49, igual ao da Status Invest. O último provento que a B3 publica para a companhia, de R$ 2,8105 com data-ex 2025-09-19, está a 412 dias de 2026-11-05 e sai da janela (2025-11-05, 2026-11-05]; por isso o DY é 0,00. A Status Invest mantém 18,41 nessa data, valor que nenhuma fonte em cache reproduz.",
+      "finding": "A busca do histórico não é a causa: em 2026-08-07 o mesmo histórico dá DY 17,49, igual ao da Status Invest. O último provento que a B3 publica para a companhia, de R$ 2,8105 com data-ex 2025-09-19, está a 412 dias de 2026-11-05 e sai da janela (2025-11-05, 2026-11-05]; por isso o DY é 0,00. A Status Invest mantém 18,41 nessa data. Nenhuma janela contígua de proventos em cache reproduz 18,41 sobre o fechamento de 15,63. A soma de dois registros não contíguos da B3 (R$ 2,833731 de 2024-12-12 e R$ 0,043941 de 2010-04-30) dá 18,41 sobre esse fechamento; a coincidência não mostra a origem do número da Status Invest.",
       "ticker": "MBRF3"
     }
   ],
@@ -46483,7 +46483,7 @@
       }
     }
   },
-  "tool_commit": "550c89f312a3bb50dc66c5f23b48b3d813872d40",
+  "tool_commit": "2b600a90c1429518acd3d6295b5162effa418e1a",
   "verdicts": {
     "class": "não reconstruível",
     "class_differs": false,

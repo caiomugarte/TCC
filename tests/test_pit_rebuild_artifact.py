@@ -182,6 +182,7 @@ class V3ArtifactTests(unittest.TestCase):
         self.assertEqual([(note["ticker"], note["date"], note["field"]) for note in notes], [("MBRF3", "2026-11-05", "DY")])
         self.assertIn("## Investigações", self.markdown)
         self.assertIn(notes[0]["finding"], self.markdown)  # MBR-02: the note is in the Markdown too
+        self.assertEqual(notes, [dict(item) for item in report.INVESTIGATIONS])  # the committed note is the code's note: regenerate after a change
 
 
 AUDIT = VALIDATION / "pit-rebuild-stocks-audit.md"

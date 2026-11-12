@@ -1,7 +1,7 @@
 # Reconstrução PIT dos indicadores de ações
 
 - Esquema: `pit-rebuild-stocks/v3` (issue #59, correções da #64)
-- Commit da ferramenta: `550c89f312a3bb50dc66c5f23b48b3d813872d40`
+- Commit da ferramenta: `2b600a90c1429518acd3d6295b5162effa418e1a`
 - Datas de decisão: 2026-08-07, 2026-11-05
 
 ## Veredito
@@ -633,7 +633,7 @@ Nota (D-C): ROIC e PEG RATIO falham porque as fórmulas do Status Invest para el
 
 ## Investigações
 
-- `MBRF3`, `DY` em 2026-11-05: A busca do histórico não é a causa: em 2026-08-07 o mesmo histórico dá DY 17,49, igual ao da Status Invest. O último provento que a B3 publica para a companhia, de R$ 2,8105 com data-ex 2025-09-19, está a 412 dias de 2026-11-05 e sai da janela (2025-11-05, 2026-11-05]; por isso o DY é 0,00. A Status Invest mantém 18,41 nessa data, valor que nenhuma fonte em cache reproduz. Evidência: b3_company_MBRF.json (tradingName MARFRIG, totalNumberShares 1380439543, retrieved_at 2026-11-10T00:37:01Z, dia de São Paulo 2026-11-09) e b3_cash_MARFRIG_p1.json (totalRecords 13, completo; o registro com lastDatePriorEx 18/09/2025 e valueCash 2,8105011104 é o único com data-ex depois de 2025-08-07, e nenhum tem data-ex em (2025-11-05, 2026-11-05]). Com esse registro: 100 × 2,8105011104 / 16,07 = 17,49 em 2026-08-07 (janela (2025-08-07, 2026-08-07]); 100 × 2,8105011104 / 15,63 = 17,98 em 2026-11-05 (CSV de 2026-11-06: PRECO 15,63, DY 18,41).
+- `MBRF3`, `DY` em 2026-11-05: A busca do histórico não é a causa: em 2026-08-07 o mesmo histórico dá DY 17,49, igual ao da Status Invest. O último provento que a B3 publica para a companhia, de R$ 2,8105 com data-ex 2025-09-19, está a 412 dias de 2026-11-05 e sai da janela (2025-11-05, 2026-11-05]; por isso o DY é 0,00. A Status Invest mantém 18,41 nessa data. Nenhuma janela contígua de proventos em cache reproduz 18,41 sobre o fechamento de 15,63. A soma de dois registros não contíguos da B3 (R$ 2,833731 de 2024-12-12 e R$ 0,043941 de 2010-04-30) dá 18,41 sobre esse fechamento; a coincidência não mostra a origem do número da Status Invest. Evidência: b3_company_MBRF.json (tradingName MARFRIG, totalNumberShares 1380439543, retrieved_at 2026-11-10T00:37:01Z, dia de São Paulo 2026-11-09) e b3_cash_MARFRIG_p1.json (totalRecords 13, completo; o registro com lastDatePriorEx 18/09/2025 e valueCash 2,8105011104 é o único com data-ex depois de 2025-08-07, e nenhum tem data-ex em (2025-11-05, 2026-11-05]). Com esse registro: 100 × 2,8105011104 / 16,07 = 17,49 em 2026-08-07 (janela (2025-08-07, 2026-08-07]); 100 × 2,8105011104 / 15,63 = 17,98 em 2026-11-05 (CSV de 2026-11-06: PRECO 15,63, DY 18,41). As 91 janelas contíguas dos 13 registros, na ordem das datas-ex, não dão 18,41 sobre 15,63.
 
 ## Parâmetros
 
@@ -2918,16 +2918,16 @@ O DY começa em 1995, pela fonte `b3`.
 
 ### Esforço da reconstrução completa
 
-- Total projetado: 187 s. Carga: 166 s. Compute: 20 s (0,11 s por data × 180 datas).
+- Total projetado: 230 s. Carga: 166 s. Compute: 64 s (0,35 s por data × 180 datas).
 - Premissa: compute por data com o universo de hoje.
 
 | tipo | segundos | bytes medidos | bytes completos | segundos projetados |
 | --- | --- | --- | --- | --- |
 | `CADASTRO` | 0,02 | 1494679 | 1494679 | 0,02 |
-| `COTAHIST` | 15,58 | 179489589 | 616660205 | 53,54 |
-| `DFP` | 12,29 | 90623836 | 175412433 | 23,79 |
+| `COTAHIST` | 15,61 | 179489589 | 616660205 | 53,65 |
+| `DFP` | 12,30 | 90623836 | 175412433 | 23,81 |
 | `FCA` | 0,03 | 6646755 | 6646755 | 0,03 |
-| `ITR` | 17,99 | 86594608 | 428000310 | 88,92 |
+| `ITR` | 17,91 | 86594608 | 428000310 | 88,53 |
 
 ### Anos lidos na reconstrução completa
 
