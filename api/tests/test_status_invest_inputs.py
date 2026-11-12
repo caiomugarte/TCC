@@ -13,10 +13,12 @@ from app.services.status_invest_inputs import (
     SourceSnapshot,
     StatusInvestInputError,
     load_selector_prices,
-    refresh_inputs,
+    refresh_inputs as _refresh_inputs,
 )
+from app.services.b3_trading import CotahistCache
 from fetch_status_invest import OUTPUT_COLUMNS as STOCK_COLUMNS
 from fetch_status_invest_fii import OUTPUT_COLUMNS as FII_COLUMNS
+from tests.cotahist_fixture import COLLECTED_ON, cotahist_zip, trade
 
 
 def _write_dataset(path: Path, columns: tuple[str, ...], ticker: str = "AAA3") -> None:
@@ -27,6 +29,17 @@ def _write_dataset(path: Path, columns: tuple[str, ...], ticker: str = "AAA3") -
         writer.writerow(
             {column: ticker if column == "TICKER" else "1" for column in columns}
         )
+
+
+def refresh_inputs(workspace, **kwargs):
+    """The real refresh_inputs with a no-network COTAHIST where AAA3 and AAA11 traded on the collection day."""
+    data = cotahist_zip([trade("AAA3", COLLECTED_ON), trade("AAA11", COLLECTED_ON, codbdi="12")])
+    kwargs.setdefault(
+        "cotahist_cache",
+        CotahistCache(Path(workspace).parent / "cotahist-cache", downloader=lambda _url: data),
+    )
+    kwargs.setdefault("collected_on", COLLECTED_ON)
+    return _refresh_inputs(workspace, **kwargs)
 
 
 class StatusInvestInputsTests(unittest.TestCase):

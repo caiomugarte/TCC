@@ -300,6 +300,7 @@ class PremiumExecutor:
         return {
             "snapshot_changed": "Os dados Premium foram alterados e a execução foi cancelada.",
             "snapshot_unavailable": "Os dados Premium não estão disponíveis para esta execução.",
+            "b3_trading_unavailable": "Os dados de negociação da B3 não estão disponíveis para esta execução.",
             "infeasible_constraints": "As restrições do perfil não produziram uma carteira factível.",
             "policy_invalid": "O perfil não produziu uma política Premium válida.",
             "submission_failed": "A execução Premium não pôde ser enviada ao worker.",
