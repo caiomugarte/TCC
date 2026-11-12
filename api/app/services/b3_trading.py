@@ -15,6 +15,14 @@ on the previous year's file, fails the run, and so does a window with no market
 session. The yearly file is about 94 MB (COTAHIST_A2026.ZIP: 93,641,013 bytes),
 so it is downloaded at most once per day into a cache directory outside the run
 workspace and reused across runs; a 404 is never cached.
+
+Each removed ticker is recorded with reason "no_recent_trade" and "last_trade",
+the date of its last session under its role's CODBDI codes ("nenhum" when it has
+none). Some removed tickers did trade on the cash market inside the window under
+another CODBDI (e.g. 35, 22 or 14), which the decided codes do not count; so
+"other_codbdi_last_trade" gives {"date", "codbdi"} of the ticker's last cash-market
+session on or before the collection date under any CODBDI outside its role's
+codes, at any age, or null when there is none.
 """
 
 from __future__ import annotations
@@ -164,7 +172,7 @@ def filter_recent_trades(
             f"B3 COTAHIST has no session between {window_start.isoformat()} and {collected_on.isoformat()}"
         )
 
-    removed: dict[str, list[dict[str, str]]] = {}
+    removed: dict[str, list[dict[str, object]]] = {}
     for role, path in csv_paths.items():
         dropped: dict[str, str] = {}
         for ticker in tickers[role]:
@@ -177,6 +185,7 @@ def filter_recent_trades(
             {"ticker": ticker, "reason": REASON_NO_RECENT_TRADE, "last_trade": last}
             for ticker, last in sorted(dropped.items())
         ]
+    _add_other_codbdi_trades(removed, files, collected_on)
 
     record = {
         "collected_on": collected_on.isoformat(),
@@ -190,6 +199,29 @@ def filter_recent_trades(
     record_path.parent.mkdir(parents=True, exist_ok=True)
     record_path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return record
+
+
+def _add_other_codbdi_trades(
+    removed: dict[str, list[dict[str, object]]], files: list[CotahistFile], collected_on: date
+) -> None:
+    """Set other_codbdi_last_trade on each removed ticker: its last cash-market session under another CODBDI."""
+    tickers = {str(item["ticker"]) for items in removed.values() for item in items}
+    if not tickers:
+        return
+    try:
+        sessions = cotahist.cash_market_codbdi([file.path for file in files], tickers)
+    except Exception as exc:
+        raise B3TradingUnavailableError("B3 COTAHIST could not be read") from exc
+    for role, items in removed.items():
+        for item in items:
+            other = [
+                (day, code) for day, code in sessions.get(str(item["ticker"]), ())
+                if code not in ROLE_CODBDI[role] and day <= collected_on
+            ]
+            last = max(other, default=None)
+            item["other_codbdi_last_trade"] = (
+                {"date": last[0].isoformat(), "codbdi": last[1]} if last is not None else None
+            )
 
 
 def _cotahist_files(cache: CotahistCache, collected_on: date) -> tuple[list[CotahistFile], list[dict[str, object]]]:

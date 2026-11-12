@@ -99,7 +99,8 @@ class RecentTradeFilterTests(unittest.TestCase):
         self.assertEqual(self.tickers(result.fiis.path), ["LIVE11"])
         self.assertEqual(
             record["removed"],
-            {"stocks": [{"ticker": "DEAD3", "reason": "no_recent_trade", "last_trade": "nenhum"}], "fiis": []},
+            {"stocks": [{"ticker": "DEAD3", "reason": "no_recent_trade", "last_trade": "nenhum",
+                         "other_codbdi_last_trade": None}], "fiis": []},
         )
 
     def test_last_session_31_days_before_is_removed_and_30_days_stays(self):
@@ -116,7 +117,7 @@ class RecentTradeFilterTests(unittest.TestCase):
         self.assertEqual(
             record["removed"]["stocks"],
             [{"ticker": "OLD3", "reason": "no_recent_trade",
-              "last_trade": (COLLECTED_ON - timedelta(days=31)).isoformat()}],
+              "last_trade": (COLLECTED_ON - timedelta(days=31)).isoformat(), "other_codbdi_last_trade": None}],
         )
 
     def test_a_session_after_the_collection_date_does_not_count(self):
@@ -142,6 +143,46 @@ class RecentTradeFilterTests(unittest.TestCase):
         self.assertEqual(self.tickers(result.stocks.path), ["LIVE3", "RECO3"])
         self.assertEqual(self.tickers(result.fiis.path), ["FUND11"])
         self.assertEqual([item["ticker"] for item in record["removed"]["fiis"]], ["LOTE11"])
+        self.assertEqual(record["removed"]["fiis"][0]["other_codbdi_last_trade"],
+                         {"date": COLLECTED_ON.isoformat(), "codbdi": "02"})
+
+    def test_removed_ticker_trading_under_another_codbdi_records_that_session(self):
+        result, record, _ = self.run_refresh(
+            ["G2DI33", "PINE14", "OLDR3", "LIVE3"], ["PPLA11", "CTEM11", "LIVE11"],
+            [
+                trade("LIVE3", COLLECTED_ON),
+                trade("LIVE11", COLLECTED_ON, codbdi="12"),
+                trade("G2DI33", date(2026, 11, 3), codbdi="35"),
+                trade("G2DI33", date(2026, 11, 6), codbdi="35"),
+                trade("G2DI33", COLLECTED_ON + timedelta(days=1), codbdi="35"),
+                trade("PINE14", date(2026, 11, 5), codbdi="22"),
+                trade("OLDR3", date(2026, 9, 1)),
+                trade("OLDR3", date(2026, 8, 20), codbdi="96"),
+                trade("PPLA11", date(2026, 11, 5), codbdi="35"),
+                trade("CTEM11", date(2026, 9, 1), codbdi="12"),
+                trade("CTEM11", date(2026, 10, 30), codbdi="14"),
+                trade("CTEM11", date(2026, 10, 30), codbdi="14", tpmerc="030"),
+            ],
+        )
+
+        self.assertEqual(self.tickers(result.stocks.path), ["LIVE3"])
+        self.assertEqual(self.tickers(result.fiis.path), ["LIVE11"])
+        self.assertEqual(record["removed"], {
+            "stocks": [
+                {"ticker": "G2DI33", "reason": "no_recent_trade", "last_trade": "nenhum",
+                 "other_codbdi_last_trade": {"date": "2026-11-06", "codbdi": "35"}},
+                {"ticker": "OLDR3", "reason": "no_recent_trade", "last_trade": "2026-09-01",
+                 "other_codbdi_last_trade": {"date": "2026-08-20", "codbdi": "96"}},
+                {"ticker": "PINE14", "reason": "no_recent_trade", "last_trade": "nenhum",
+                 "other_codbdi_last_trade": {"date": "2026-11-05", "codbdi": "22"}},
+            ],
+            "fiis": [
+                {"ticker": "CTEM11", "reason": "no_recent_trade", "last_trade": "2026-09-01",
+                 "other_codbdi_last_trade": {"date": "2026-10-30", "codbdi": "14"}},
+                {"ticker": "PPLA11", "reason": "no_recent_trade", "last_trade": "nenhum",
+                 "other_codbdi_last_trade": {"date": "2026-11-05", "codbdi": "35"}},
+            ],
+        })
 
     def test_only_the_cash_market_counts(self):
         result, _, _ = self.run_refresh(
@@ -308,7 +349,8 @@ class RecentTradeFilterTests(unittest.TestCase):
             self.assertEqual(source.sha256, filtered)
             self.assertEqual(record["csv_sha256"][role], filtered)
         self.assertEqual(record["removed"]["fiis"],
-                         [{"ticker": "DEAD11", "reason": "no_recent_trade", "last_trade": "nenhum"}])
+                         [{"ticker": "DEAD11", "reason": "no_recent_trade", "last_trade": "nenhum",
+                           "other_codbdi_last_trade": None}])
 
     def test_filtered_csv_keeps_bom_line_ends_header_and_order(self):
         original = _csv_bytes(STOCK_COLUMNS, ["ZZZ3", "DEAD3", "AAA3"], bom=True)

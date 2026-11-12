@@ -10,7 +10,7 @@ record, whatever the ticker, so next_session holds for the whole market (A-16).
 """
 
 from bisect import bisect_right
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from datetime import date
 import io
@@ -56,6 +56,39 @@ def load(zip_paths: Iterable[Path], tickers: set[str], codbdi: Iterable[str] = Q
     kept_codbdi = frozenset(codbdi)
     days: set[date] = set()
     by_ticker: dict[str, dict[date, Session]] = {}
+    for record in _records(zip_paths):
+        days.add(record.day)
+        if record.tpmerc != "010" or record.codbdi not in kept_codbdi or record.ticker not in tickers:
+            continue
+        close = record.price / record.fatcot if record.fatcot > 1 else record.price
+        session = Session(
+            day=record.day, close=close, voltot=record.voltot, isin=record.isin,
+            especi=record.especi, codbdi=record.codbdi,
+        )
+        by_session = by_ticker.setdefault(record.ticker, {})
+        kept = by_session.get(record.day)
+        if kept is not None and kept.codbdi == LOT_CODBDI and session.codbdi != LOT_CODBDI:
+            continue  # a recovery line never replaces the lot line of its session (A-7)
+        by_session[record.day] = session
+    quotes = Quotes(sessions=sorted(days))
+    for ticker, by_day in by_ticker.items():
+        ordered = [by_day[day] for day in sorted(by_day)]
+        quotes.rows[ticker] = ordered
+        quotes.dates[ticker] = [row.day for row in ordered]
+    return quotes
+
+
+def cash_market_codbdi(zip_paths: Iterable[Path], tickers: set[str]) -> dict[str, set[tuple[date, str]]]:
+    """(session date, CODBDI) of every cash-market record (TPMERC 010) of the tickers, whatever its CODBDI."""
+    found: dict[str, set[tuple[date, str]]] = {}
+    for record in _records(zip_paths):
+        if record.tpmerc == "010" and record.ticker in tickers:
+            found.setdefault(record.ticker, set()).add((record.day, record.codbdi))
+    return found
+
+
+def _records(zip_paths: Iterable[Path]) -> Iterator[_Line]:
+    """Every TIPREG 01 record of the zips' .TXT members, in file order."""
     for path in zip_paths:
         with zipfile.ZipFile(path) as archive:
             for info in archive.infolist():
@@ -63,28 +96,8 @@ def load(zip_paths: Iterable[Path], tickers: set[str], codbdi: Iterable[str] = Q
                     continue
                 with archive.open(info) as raw:
                     for text in io.TextIOWrapper(raw, encoding="latin-1"):
-                        if not text.startswith("01"):
-                            continue
-                        record = _parse(text.rstrip("\r\n"), info.filename)
-                        days.add(record.day)
-                        if record.tpmerc != "010" or record.codbdi not in kept_codbdi or record.ticker not in tickers:
-                            continue
-                        close = record.price / record.fatcot if record.fatcot > 1 else record.price
-                        session = Session(
-                            day=record.day, close=close, voltot=record.voltot, isin=record.isin,
-                            especi=record.especi, codbdi=record.codbdi,
-                        )
-                        by_session = by_ticker.setdefault(record.ticker, {})
-                        kept = by_session.get(record.day)
-                        if kept is not None and kept.codbdi == LOT_CODBDI and session.codbdi != LOT_CODBDI:
-                            continue  # a recovery line never replaces the lot line of its session (A-7)
-                        by_session[record.day] = session
-    quotes = Quotes(sessions=sorted(days))
-    for ticker, by_day in by_ticker.items():
-        ordered = [by_day[day] for day in sorted(by_day)]
-        quotes.rows[ticker] = ordered
-        quotes.dates[ticker] = [row.day for row in ordered]
-    return quotes
+                        if text.startswith("01"):
+                            yield _parse(text.rstrip("\r\n"), info.filename)
 
 
 def quote_at(q: Quotes, ticker: str, d: date, max_age_days: int | None = MAX_QUOTE_AGE_DAYS) -> tuple[date, float] | None:
