@@ -122,6 +122,19 @@ def summarize(field: str, pairs: Iterable[tuple[str, float | None, float | None,
     return stats
 
 
+def is_si_lag(field: str, raw: float | None, calc: float | None, calc_prev: float | None) -> bool:
+    """Whether the previous filing explains a miss of the newest one (LAG-01, LAG-03, B-9).
+
+    True when the ticker is in the field's denominator (A-4), its newest rebuilt value is outside tolerance (a missing
+    value counts as outside), and the value recomputed on the previous filing is within tolerance. A previous value of
+    None is never within. The mark changes no statistic: summarize is not called here (LAG-04).
+    """
+    ref, _ = reference(field, raw)
+    if ref is None or within(field, ref, calc) or calc_prev is None:
+        return False
+    return within(field, ref, calc_prev)
+
+
 def verdict(pct: float | None, denominator: int) -> str:
     """The verdict of one indicator at one date from its share within tolerance (VER-01)."""
     if denominator == 0 or pct is None:

@@ -420,14 +420,14 @@ T23 → T24
 
 **Done when**:
 
-- [ ] P/L ref 10.00, calc 15, prev 10.4: true; prev 10.6: false (5 % edge, LAG-01)
-- [ ] calc within: false even when prev is within (LAG-03)
-- [ ] calc None (missing), prev within: true; prev None: false
-- [ ] Blank non-DY reference: false (out of denominator); blank DY (ref 0) follows the A-4 zero rule
-- [ ] Percent field: 0.5 p.p. edge on both sides
-- [ ] `summarize` output unchanged for the same pairs (LAG-04)
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 6 new tests
+- [x] P/L ref 10.00, calc 15, prev 10.4: true; prev 10.6: false (5 % edge, LAG-01)
+- [x] calc within: false even when prev is within (LAG-03)
+- [x] calc None (missing), prev within: true; prev None: false
+- [x] Blank non-DY reference: false (out of denominator); blank DY (ref 0) follows the A-4 zero rule
+- [x] Percent field: 0.5 p.p. edge on both sides
+- [x] `summarize` output unchanged for the same pairs (LAG-04)
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 6 new tests
 
 **Tests**: unit
 **Gate**: quick
