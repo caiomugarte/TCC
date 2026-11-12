@@ -19,28 +19,26 @@ Feature-local state. Project decisions stay in `.specs/STATE.md` `## Decisions`;
 ## Handoff
 
 - **Feature**: pit-rebuild-stocks-fixes (issue #64) - `.specs/features/pit-rebuild-stocks-fixes/`
-- **Phase / Task**: Execute. Lotes 1 a 4 de 5 concluídos (Phases 1 a 4, T1-T22). Próximo: lote 5 (Phase 5, T23-T24) e o Verifier (autor != verificador).
+- **Phase / Task**: Execute concluída pelo implementador (Phases 1 a 5, T1-T24). Feature implementada, pronta para o Verifier (autor != verificador; o Verifier ainda não rodou). `validate_state.py` falha só por falta de `validation.md`, como esperado.
 - **Completed** (commits locais, um por tarefa, Conventional Commits com `(#64)`):
-  - T1-T13 (lotes 1 e 2): `1764831` ... `afb8111`.
-  - T14-T18 (lote 3): `2339bfe`, `c76d95b`, `8b010fe`, `1240497`, `d0ccd8b`.
-  - T19 `92257d3`: passe do filing anterior (B-9), `si_lag` e o bloco `adjusted_verdict`.
-  - T20 `4b846c6`: causa da MBRF3 (MBR-02): nota em `report.INVESTIGATIONS`.
-  - T21 `768d386`: relatório v3 regenerado offline (`report --offline`, 47 s) a partir do cache copiado com hard links.
-  - T22 `d40cb37`: README da seção PIT com a revisão da #64; gate Build verde (raiz 1047 OK, 2 skipped).
-  - Fora das tarefas: `e434054` (lote 3, fecha respostas de erro do cache); `550c89f` (correção S11 e S13 da SPEC: R é 2026-11-09; "I_d vazio").
+  - T1-T22 (lotes 1 a 4): `1764831` ... `d40cb37`.
+  - T23 `d0eb059`: auditoria de 2026-08-07 e `AuditDocumentTests` (8 testes; mutação verificada em cópia).
+  - T24 `996490d`: 2026-11-05, resumo por data, critério de liberação (AUD-06) e testes (11 testes).
 - **In-progress (file:line)**: none.
-- **Next step**: lote 5: T23 (`docs/validation/pit-rebuild-stocks-audit.md` e `AuditDocumentTests`), depois T24. Depois o Verifier. O README já aponta para `pit-rebuild-stocks-audit.md`: o arquivo tem de existir ao fim da feature.
-- **Blockers**: none.
+- **Next step**: o Verifier (fora deste lote). Pontos para ele: (1) as 121 linhas fora da tolerância sem classe (parte 2); (2) as duas regras além de B-9/B-10 (dado de filing posterior a d; filing de dois passos), declaradas no cabeçalho do documento; (3) a classe `não classificado` para as linhas dentro da tolerância (desvio de AUD-02); (4) a data de coleta do CSV de 2026-08-07. Depois de PASS, `validate_state.py`.
+- **Blockers**: nenhum técnico. O critério de liberação está **não cumprido** na parte 2 (121 linhas fora da tolerância sem explicação: 65 em 2026-08-07, 56 em 2026-11-05); a parte 1 está cumprida (menor marca 72,77 %, P/L, 2026-11-05). Decisão do usuário.
 - **Uncommitted files**: none.
 - **Branch**: `t3/issue-64` (base `develop` at `ebaf1fd`); not pushed, no PR.
-- **Baseline** (fim do lote 4): pit suite 460 OK (`python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"`); suíte raiz 1047 OK, 2 skipped (`/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest discover -s tests -p "test_*.py"`); `compileall` ok; `git diff --exit-code ebaf1fd -- data snapshots baselines py/core api py/config.py py/pit_validation.py` vazio.
-- **Lote 4: escolhas que o lote 5 precisa conhecer** (fora da SPEC; cada uma com teste ou com dado):
-  - O relatório comitado é v3 (`docs/validation/`, em `768d386`). Os números: veredito oficial da classe `não reconstruível` (igual à v2); ajustado `com ressalvas`; critério parte 1 cumprida (menor: P/L em 2026-11-05, 72,77%); `si_lag` 32 e 350 (340 dos 350 de 2026-11-05 têm como filing mais recente o ITR de 2026-09-30, recebido de 3 a 5 de novembro; a conta é da sonda, não do JSON).
-  - A T23 lê `adjusted_verdict.dates[d].fields[f].worst` (com `filing`, `previous_value`, `si_lag`) e `missing`. DY não tem filing; PRECO e LIQUIDEZ têm `filing` nulo e `previous_value` da recomputação.
-  - Exemplos da issue confirmados: TIM (TIMS3, cd 24929) LL TTM 6,10 bi na v2 e 4,33 bi na v3, nas duas datas; Ambipar (AMBP3, cd 24961) `stale_filing` nas duas datas; Vivara (VIVA3, cd 24805) `share_count_suspect` em 2026-11-05, 236.197.769 → 82.118.477, ratio 0,3477.
-  - Mudanças de fator em relação à v2 (todas por evento da B3 em (DT_REFER, d]): 11975 (AZEVEDO) 0,1 → 10 e resíduo 0,53 → 2,66 (a contagem da B3, 111.225.217, não bate com os eventos sob nenhuma potência de dez: caso para a auditoria); 14443 10 → 1 (a contagem cai à metade); 24961 e 25445 sem mudança de valor; 25160 cai a dois terços da v2.
-  - Resíduos já fora de 1 na v2 (19879, 25682, 16993, 23574, 5380, 9393): não são efeito da #64.
-  - MBRF3: não é a busca. O registro de 2025-09-19 (R$ 2,8105) dá DY 17,49 em 2026-08-07, igual à Status Invest; sai da janela em 2026-11-05. A Status Invest mantém 18,41 que nenhuma fonte em cache reproduz.
-  - Oficial: só uma verdade por data muda (LIQ. CORRENTE, 2026-08-07, grupo sem os não classificados, 90,21% → 89,79%, por AMBP3 `stale_filing`).
-- **Pitfalls carried** (de #59 e lotes anteriores, ainda valem): commit com `git commit -F <arquivo>` (o hook reescreve `-m` com a palavra "make"); `check_commit.py` avisa acima de 72 caracteres no título; o calendário de `tests/fixtures/pit_rebuild/cotahist.txt` não tem sessão entre 2026-08-21 e 2026-08-24, nem depois de 2026-11-06; `tests/test_pit_rebuild_cli.py` seta `sys.dont_write_bytecode`, e `py/` não pode conter o literal `baselines/`; `mkstemp` grava com modo 0600; no gate use `git diff --exit-code`, não `--stat`; `unittest` mostra erro de importação como `errors=1`, então confira o traceback antes de contar uma morte; `HTTPError` do urllib é um `_TemporaryFileWrapper`: feche as respostas de erro que descartar.
-- **Pitfalls novos do lote 4**: o `Edit` falha quando a quebra de linha do README não é a da leitura: copie o texto de `grep -n` com `cat -A`; o cache grava por `os.replace` (troca de nome), então o hard link da cópia não altera o cache da #59; o histórico B3 só conta quando há registro com data-ex ≤ d − 365 (senão vai ao Yahoo, `b3_short_history`); `sleep` solto é bloqueado: para esperar um job use `run_in_background` ou um Monitor com `until`.
+- **Baseline** (fim do lote 5): pit suite 471 OK; suíte raiz 1058 OK, 2 skipped; `compileall` ok; `git diff --exit-code ebaf1fd -- data snapshots baselines py/core api py/config.py py/pit_validation.py` vazio.
+- **Lote 5: escolhas e achados que o Verifier e o usuário precisam conhecer** (cada um com evidência no documento):
+  - Classes, 280 linhas (2026-08-07 + 2026-11-05): erro nosso 24 (fator A-18 com contagem mais de 2× a da B3 de R, mais HBRE3 por fonte Yahoo); erro do Status Invest 94; diferença de método 9; não classificado 153 (121 fora da tolerância, 32 dentro).
+  - Desvio de AUD-02: AUD-02 pede uma das três classes. A lista de piores traz linhas com diferença 0 quando o campo tem menos de 10 linhas fora da tolerância; elas ficam como `não classificado` com o motivo `dentro da tolerância`. Cabe à spec decidir (excluir essas linhas da lista ou aceitar a classe).
+  - Regras além de B-9/B-10, declaradas no cabeçalho: (a) dado de filing recebido depois de d (8 linhas de 2026-08-07: ORVR3 ×3, SIMH3 ×2, ONCO3, BRST3, EQPA3); (b) filing de dois passos (CAML3 e EMAE4, 2026-11-05).
+  - **Ressalva de dados (importante)**: o CSV de 2026-08-07 (coleta declarada 2026-08-07) reproduz valores de filings recebidos até 2026-08-14 (ORVR3 ITR 2026-06-30 v1 em 08-13, v2 em 08-14; EQPA3 DFP 2025 v2 em 10-02; ONCO3 e BRST3 com ITR de 08-11/08-14). Ou a coleta foi posterior ao declarado, ou o SI usa dado posterior. Confirmar a data real da coleta antes de usar 2026-08-07 como ponto PIT.
+  - **SI repete valores entre as coletas**: 31 de 56 pares (ticker, campo) presentes nas duas listas têm o mesmo valor do SI nas duas datas, mesmo quando chegou filing novo entre elas (VTRU3, EMAE4, BHIA3, TIMS3). Nenhum filing dos últimos quatro reproduz esses valores.
+  - **Achado no fator A-18**: `share_scale` marca `verified=True` com resíduo 2,5 (VVEO3) e 2,7 (AZEV). O rótulo de verificado não quer dizer que a contagem bate com a B3. Candidato a issue.
+  - **TTM com comparativo zerado (B-5)**: TIMS3 (cd 24929) traz PENÚLTIMO = 0 em todos os flows no ITR de 2026-06-30; o fallback usa o ITR de 2025 e o LL vira 4,33 bi. O SI implica LL ~1,98 bi e PL ~12,4 bi. Não resolvido.
+  - VTRU3 (cd 27057): o 3.11 do ITR de 2026-03-31 é 794,9 M no trimestre (16× o de 2025); o SI mostra prejuízo. Não resolvido.
+  - DY: 13 linhas `erro do Status Invest` (o SI omite ou soma em dobro registros da B3: EQPA3, PFRM3, RIAA3, PASS3, MDNE3, VLID3; COCE5 em branco), 1 `erro nosso` (HBRE3, fonte Yahoo), 1 método (TGMA3, janela pelo último dia com direito, inferência de um caso), 5 não classificados (HBOR3, CLSC4, JSLG3, EQTL3, MBRF3).
+- **Pitfalls novos do lote 5**: (1) `cli._evaluate_day` com `filings_day` posterior a `day` é barrado pelo guarda PIT-02 (`_assert_point_in_time`); testes de hipótese precisam desligá-lo só em scratch. (2) O arquivo de proventos usa o nome de pregão da empresa (`b3_company_<raiz>.json`: `EQTL PARA` -> `b3_cash_EQTL_PARA_p1.json`), não o ticker. (3) O store do CVM guarda só a versão mais recente de cada período, e só as contas de `STATEMENT_ACCOUNTS`. (4) Um comando de commit com linha sobrando travou por 120 s nesta tarefa: conferir cada linha antes de rodar.
+- **Pitfalls carried** (de #59 e lotes anteriores): commit com `git commit -F <arquivo>` (o hook reescreve `-m`); `check_commit.py` avisa acima de 72 caracteres no título; `sleep` solto é bloqueado; no gate use `git diff --exit-code`, não `--stat`; `unittest` mostra erro de importação como `errors=1`.
