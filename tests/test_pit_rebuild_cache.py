@@ -158,6 +158,27 @@ class HeadSizeTests(CacheTestCase):
         self.assertEqual(offline_opener.requests, [])
 
 
+class ErrorResponseTests(CacheTestCase):
+    """An error answer the cache reads and drops is closed: no socket stays open and no ResourceWarning is raised later."""
+
+    def test_a_404_probe_closes_its_error_response(self):
+        body = io.BytesIO(b"")
+        error = urllib.error.HTTPError(ITR_URL, 404, "Not Found", {}, body)
+        cache = Cache(self.root, offline=False, opener=FakeOpener({ITR_URL: error}))
+
+        self.assertFalse(cache.probe(ITR_URL))
+        self.assertTrue(body.closed)
+
+    def test_a_failed_download_closes_its_error_response(self):
+        body = io.BytesIO(b"")
+        error = urllib.error.HTTPError(DFP_URL, 500, "error", {}, body)
+        cache = Cache(self.root, offline=False, opener=FakeOpener({DFP_URL: error}))
+
+        with self.assertRaises(SourceError):
+            cache.get(DFP_URL, "dfp.zip", required=True)
+        self.assertTrue(body.closed)
+
+
 class RetrievedAtTests(CacheTestCase):
     """SHR-08 (B-3): the manifest's retrieved_at of a cached file is the moment R it was read; a name the manifest lacks has none."""
 

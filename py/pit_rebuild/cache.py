@@ -108,6 +108,7 @@ class Cache:
             with self._opener(_request(url, "HEAD"), timeout=TIMEOUT_SECONDS):
                 present = True
         except urllib.error.HTTPError as exc:
+            exc.close()  # the answer is not read; an open error response is a socket and a ResourceWarning
             if exc.code != 404:
                 raise SourceError(url, f"probe failed: HTTP {exc.code}") from exc
             present = False
@@ -127,6 +128,9 @@ class Cache:
         try:
             with self._opener(_request(url), timeout=TIMEOUT_SECONDS) as response:
                 data = response.read()
+        except urllib.error.HTTPError as exc:
+            exc.close()  # the failed answer is dropped here; close it as well
+            raise SourceError(url, f"download failed: {exc}") from exc
         except (OSError, http.client.HTTPException) as exc:
             raise SourceError(url, f"download failed: {exc}") from exc
         if name.lower().endswith(".zip"):
