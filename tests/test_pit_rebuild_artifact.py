@@ -230,6 +230,34 @@ def audit_items(cell):
     return [item.strip() for item in cell.split(";") if item.strip()]
 
 
+SEM_BASE_MOTIVES = ("nenhum dos ", "nenhum subconjunto dos proventos")  # AUD-02: the motive of a `sem base` row, accounting or DY
+
+
+def origin_table(text):
+    """The second table of Resumo, `reproduzido` and `sem base` per date: {date: [reproduzido, sem base]}."""
+    table, in_summary = {}, False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            in_summary = line == "## Resumo"
+            continue
+        if in_summary and re.match(r"^\| \d{4}-\d{2}-\d{2} \|", line):
+            cells = [cell.strip() for cell in line.strip()[1:-1].split("|")]
+            if len(cells) == 3:  # the first table of Resumo has seven cells
+                table[cells[0]] = [int(cells[1]), int(cells[2])]
+    return table
+
+
+def origin_counts(doc):
+    """The same table recounted from the rows: an `erro do Status Invest` row is `sem base` by its motive, else reproduzido."""
+    counts = {}
+    for iso, block in doc.items():
+        counts[iso] = [0, 0]
+        for _, cells in block["rows"]:
+            if cells[6] == "erro do Status Invest":
+                counts[iso][1 if cells[7].startswith(SEM_BASE_MOTIVES) else 0] += 1
+    return counts
+
+
 class AuditDocumentTests(unittest.TestCase):
     """docs/validation/pit-rebuild-stocks-audit.md classifies the worst rows of the adjusted verdict (AUD-01..AUD-05, B-10).
 
@@ -358,6 +386,10 @@ class AuditDocumentTests(unittest.TestCase):
                 per[cells[6]] += 1
             expected = [per["erro nosso"], per["erro do Status Invest"], per["diferença de método"], per["dentro da tolerância"], per["não classificado"], sum(per.values())]
             self.assertEqual(summary[iso], expected, iso)
+
+    def test_the_origin_table_of_erro_do_status_invest_equals_its_rows_by_motive(self):  # AUD-02, AUD-04 (the second table of Resumo)
+        self.assertEqual(sorted(origin_table(self.text)), DATES)
+        self.assertEqual(origin_table(self.text), origin_counts(self.doc))
 
     def test_the_criterion_says_met_only_when_part_one_holds_and_every_row_outside_tolerance_is_explained(self):  # AUD-06, DEC-2
         met = self.adjusted["criterion"]["met"]
