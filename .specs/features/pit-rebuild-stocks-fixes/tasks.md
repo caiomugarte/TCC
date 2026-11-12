@@ -13,8 +13,8 @@ Execution is delegated by the issue-workflow orchestrator in batches of whole ph
 **Spec**: `.specs/features/pit-rebuild-stocks-fixes/spec.md`
 **Design**: `.specs/features/pit-rebuild-stocks-fixes/design.md`
 **Decision record**: AD-033 in `.specs/STATE.md` (proposed with this design); AD-031 and AD-032 still hold.
-**Status**: Draft (2026-11-12) - waiting for spec review.
-**Branch**: `t3/issue-64` (base `develop` at `ebaf1fd`). Gates compare against `origin/develop`.
+**Status**: Draft r2 (2026-11-12) - spec review iw-64-judge-spec-r1 addressed (S1..S10), waiting for re-review.
+**Branch**: `t3/issue-64` (base `develop` at `ebaf1fd`). Gates compare protected paths against the merge base `$(git merge-base HEAD origin/develop)` (`ebaf1fd` today), never against the moving tip of `origin/develop`; the v2 report is read from `ebaf1fd`.
 
 ---
 
@@ -41,7 +41,7 @@ Execution is delegated by the issue-workflow orchestrator in batches of whole ph
 | ---------- | ----------- | ------- |
 | Quick | After a task with unit tests only | `python3 -m unittest discover -s tests -p "test_pit_rebuild_<module>.py" -v` |
 | Full | After a task that changes `cli.py` or a signature used by it, and after the artifact tasks | `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py" -v` |
-| Build | Last task of each phase | Full + `python3 -m compileall -q py/pit_rebuild` + `git diff --exit-code origin/develop -- data snapshots baselines py/core api py/config.py py/pit_validation.py` + `$PY -m unittest discover -s tests -p "test_*.py"` (root suite, about 3 min; 909 OK, 2 skipped at `53fde43`) |
+| Build | Last task of each phase | Full + `python3 -m compileall -q py/pit_rebuild` + `git diff --exit-code $(git merge-base HEAD origin/develop) -- data snapshots baselines py/core api py/config.py py/pit_validation.py` + `$PY -m unittest discover -s tests -p "test_*.py"` (root suite, about 3 min; 909 OK, 2 skipped at `53fde43`) |
 
 ---
 
@@ -53,7 +53,7 @@ Phases run in order; tasks within a phase run in order. A heavy task (real data,
 | ----- | ----- | -------------- | ------------------- | ---- | -------------- |
 | 1. Readers and events | T1-T7 | 7 | none | Medium: T1 changes a signature used by `cli.py`; T2 changes the TTM rule. | high (T2, T7), mid (others) |
 | 2. Pure rules and the adjusted block | T8-T13 | 7 (T12 heavy) | none | Medium: the adjusted block must never reach the official verdict. | high (T12), mid (others) |
-| 3. Report lists and CLI wiring | T14-T18 | 6 (T15 heavy) | none | Medium: fixture companies for events, stale filings and ISIN changes. | high (T15), mid (others) |
+| 3. Report lists and CLI wiring | T14-T18 | 7 (T14, T15 heavy) | none | Medium: fixture companies for events, stale filings and ISIN changes; T14 rewrites the rule texts the report prints. | high (T14, T15), mid (others) |
 | 4. `si_lag`, MBRF3, regeneration, README | T19-T22 | 7 (T19, T20, T21 heavy) | T20 reads the real cache; T21 regenerates from the real cache offline | Medium-high: the regenerated numbers are the result. | high |
 | 5. Audit of the worst cases | T23-T24 | 4 (both heavy) | reads the real cache and the committed JSON | Medium: hand classification of up to 280 rows. | high |
 
@@ -95,13 +95,13 @@ T23 → T24
 
 ### T1: Read the ISIN and the share class at `d`
 
-**What**: `cotahist.isin(q, ticker, d)` and `cotahist.share_class(q, ticker, d)` return the value of the row at `_last_index(q, ticker, d)`, None when there is none; `_price_class` and `class_prices` pass `d`; every call site in `cli.py` (`_class_isin`, `_b3_dividends`) passes the decision date `day` (`_class_isin` gains a `d` parameter).
+**What**: `cotahist.isin(q, ticker, d)` and `cotahist.share_class(q, ticker, d)` return the value of the row at `_last_index(q, ticker, d)`, None when there is none; `_price_class` and `class_prices` pass `d`; every call site in `cli.py` (`_class_isin`, `_b3_dividends`) passes the decision date `day` (`_class_isin` gains a `d` parameter). New `cotahist.isins(q, ticker, after, until)`: the distinct ISINs of the ticker's loaded sessions with `after < session <= until` (`until` None: to the last loaded session), in session order (design `cotahist.py`, B-2, B-3).
 **Where**: `py/pit_rebuild/cotahist.py`
 **Files**: `py/pit_rebuild/cotahist.py`, `py/pit_rebuild/cli.py` (call sites only), `tests/test_pit_rebuild_cotahist.py` (and any existing test calling the old signature)
 **Heavy**: no
 **Depends on**: None
 **Reuses**: `_last_index`; COTAHIST lines built in a temp zip (do not add sessions to `tests/fixtures/pit_rebuild/cotahist.txt`, #59 pitfall)
-**Requirement**: ISN-01, ISN-02
+**Requirement**: ISN-01, ISN-02, SHR-01 and SHR-08 (ISIN sets)
 
 **Tools**:
 
@@ -110,12 +110,13 @@ T23 → T24
 
 **Done when**:
 
+- [ ] `isins`: ISIN A on sessions s1, s2 and B on s3: `isins(q, t, s0, s3)` = (A, B) in session order; `isins(q, t, s2, None)` = (B,) (`after` exclusive, `None` to the last session); `isins(q, t, s0, s2)` = (A,) (`until` inclusive); no session in the window: ()
 - [ ] A ticker whose ISIN and ESPECI change on a session after `d`: `isin(q, t, d)` and `share_class(q, t, d)` give the old values; at the later session they give the new ones (ISN-01)
 - [ ] A ticker with no session on or before `d` gives None for both (ISN-02)
 - [ ] `class_prices` classifies by the ESPECI at `d` (a ticker that becomes PN after `d` is ON at `d`)
 - [ ] `grep -n "isin(\|share_class(" py/pit_rebuild/*.py` shows `d` passed at every call
 - [ ] Gate check passes: Full
-- [ ] Test count: ≥ 325 pit tests pass (≥ 3 new; no test deleted)
+- [ ] Test count: ≥ 326 pit tests pass (≥ 4 new; no test deleted)
 
 **Tests**: unit
 **Gate**: full
@@ -245,13 +246,13 @@ T23 → T24
 
 ### T6: Event ex-dates and the events of a class in a window
 
-**What**: In `dividends.py`: `event_ex_date(event, next_session)` (B-1: first session after `lastDatePrior`, else the calendar day after it) and `class_events(events, isin, after, until, next_session)` (events of `isin` with `after < ex <= until`; `until` None is unbounded; sorted by ex-date). `split_divisor` unchanged.
+**What**: In `dividends.py`: `event_ex_date(event, next_session)` (B-1: first session after `lastDatePrior`, else the calendar day after it) and `class_events(events, isins, after, until, next_session)` (events of any ISIN in the collection `isins` with `after < ex <= until`; `until` None is unbounded; deduplicated on (`label`, `multiplier`, `last_date_prior`); sorted by ex-date). `B3Company` gains `retrieved_on: date | None = None` (`R` of B-3; `parse_b3_company` leaves it None). `split_divisor` unchanged.
 **Where**: `py/pit_rebuild/dividends.py`
 **Files**: `py/pit_rebuild/dividends.py`, `tests/test_pit_rebuild_dividends.py`
 **Heavy**: no
 **Depends on**: T5
 **Reuses**: `StockEvent`; `b3_company_sbsp.json`, `b3_company_espa.json` fixtures
-**Requirement**: SHR-01, SHR-02 (window), B-1
+**Requirement**: SHR-01, SHR-02 (window), SHR-08 (dedup, `R` field), B-1, B-2
 
 **Tools**:
 
@@ -261,12 +262,14 @@ T23 → T24
 **Done when**:
 
 - [ ] Ex-date on `after`: out; on `until`: in; one day after `until`: out (SHR-02)
-- [ ] An event of another ISIN is out
+- [ ] An event of an ISIN not in `isins` is out; events of two ISINs in `isins` are both in
+- [ ] The same (label, multiplier, `lastDatePrior`) listed under two ISINs of `isins` is returned once (B-2)
+- [ ] `parse_b3_company` of the SBSP fixture has `retrieved_on` None
 - [ ] `next_session` None (outside the calendar): ex-date = `lastDatePrior + 1 day`
 - [ ] `until=None` keeps every later event
 - [ ] `split_divisor` results of the existing tests unchanged
 - [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 5 new tests
+- [ ] Test count: ≥ 7 new tests
 
 **Tests**: unit
 **Gate**: quick
@@ -276,13 +279,13 @@ T23 → T24
 
 ### T7: Share count at `d` from the filing, the events and the scale
 
-**What**: New `py/pit_rebuild/shares.py` with `Adjusted` and `adjust(filed, isins, events, b3_total, d, next_session)` (design `shares.py`, B-2, B-3): scale chosen on the count adjusted by every event after the period end; value = filed × factor × events in (`DT_REFER`, `d`]; a class with shares and no ISIN is not adjusted and is in `no_isin`.
+**What**: New `py/pit_rebuild/shares.py` with `Adjusted` and `adjust(filed, isins_d, isins_all, events, b3_total, retrieved_on, d, next_session)` (design `shares.py`, B-2, B-3): scale chosen on the count adjusted by the events of `isins_all` with ex-date in (`DT_REFER`, `retrieved_on`] (SHR-08); value = filed × factor × events of `isins_d` in (`DT_REFER`, `d`]; a class with shares and empty `isins_d` is not adjusted and is in `no_isin`; `applied` holds a class only when `abs(M_d − 1) > 1e-9` (SHR-03).
 **Where**: `py/pit_rebuild/shares.py`
 **Files**: `py/pit_rebuild/shares.py` (new), `tests/test_pit_rebuild_shares.py` (new)
 **Heavy**: no
 **Depends on**: T6
 **Reuses**: `cvm.share_scale`, `dividends.class_events`
-**Requirement**: SHR-01, SHR-02, SHR-04, B-3
+**Requirement**: SHR-01, SHR-02, SHR-03 (epsilon), SHR-04, SHR-08, B-3
 
 **Tools**:
 
@@ -293,12 +296,17 @@ T23 → T24
 
 - [ ] ON 1,000,000 filed at 2026-06-30, 100 % bonus (multiplier 2) ex 2026-07-15, `d` 2026-08-07, B3 total 2,000,000: `n_on` 2,000,000, factor 1, applied `[{class ON, factor 2, ...}]` (SHR-01)
 - [ ] Same with `d` 2026-07-14: `n_on` 1,000,000 and nothing applied (SHR-02)
-- [ ] 1:5 split after `d`, B3 total 5,000,000: factor 1 (not 10), `n_on` 1,000,000 (B-3, the double-count guard)
+- [ ] 1:5 split after `d` and on or before `retrieved_on`, B3 total 5,000,000: factor 1 (not 10), `n_on` 1,000,000 (B-3, the double-count guard)
+- [ ] 1:5 split with ex-date one day after `retrieved_on`, B3 total 1,000,000: the split is out of `M_all`, factor 1; the same split on `retrieved_on`: in (SHR-08, S3)
+- [ ] `retrieved_on` None: every later event enters `M_all`
+- [ ] ISIN changed after `d` (`isins_d` = {A}, `isins_all` = {A, B}), 1:5 split of B after `d`, B3 total 5,000,000: factor 1, `n_on` 1,000,000; with `isins_all` = {A}: factor 10 (SHR-08, S4)
+- [ ] ISIN changed between `DT_REFER` and `d` (`isins_d` = {A, B}): an event of A in the window is applied (B-2)
+- [ ] 1:2 split and 2:1 grouping in the window: `M_d` 1 within 1e-9, class not in `applied` (SHR-03, S10)
 - [ ] Two events in the window multiply; a grouping (multiplier 0.1) divides
 - [ ] PREF with shares and ISIN None: not adjusted, `no_isin == ["PREF"]` (SHR-04)
 - [ ] No B3 total: factor 1, `verified` false, events still applied
 - [ ] Gate check passes: Build (end of Phase 1)
-- [ ] Test count: ≥ 7 tests in `test_pit_rebuild_shares.py`
+- [ ] Test count: ≥ 12 tests in `test_pit_rebuild_shares.py`
 
 **Tests**: unit
 **Gate**: build
@@ -446,8 +454,9 @@ T23 → T24
 
 - [ ] The block lists exactly the 14 `ADJUSTED_FIELDS`; `ROIC` and `PEG RATIO` absent (ADJ-02)
 - [ ] Per field, `overall` is the worse of the two dates; `class` the worst field (ADJ-03)
-- [ ] Worst rows carry `si_lag`, `filing` (or null) and `previous_value` (or null) as given (ADJ-04)
-- [ ] `criterion.met` true at 70.0 % on every field and date; false at 69.99 % on one, with that `{field, date, pct_within}` in `failing` (ADJ-05)
+- [ ] Worst rows carry `si_lag`, `filing` (or null) and `previous_value` (or null) as given; a `DY` worst row has `filing` and `previous_value` null even when details are given for it (ADJ-04)
+- [ ] `criterion` has `part` 1 and `part2` naming the audit document; `met` true at 70.0 % on every field and date; false at 69.99 % on one, with that `{field, date, pct_within}` in `failing` (ADJ-05)
+- [ ] Each field and date keeps the `missing` list of its statistics (read by the audit, AUD-05)
 - [ ] Denominator 0 on a date: the field fails with `pct_within` null (ADJ-06)
 - [ ] `verdicts` byte-identical (via `encode_json`) with and without `adjusted` (ADJ-07)
 - [ ] `si_lag.count` equals `len(tickers)`; within counts unchanged by `si_lag` (LAG-02, LAG-04)
@@ -462,7 +471,7 @@ T23 → T24
 
 ### T13: Adjusted verdict section in the Markdown
 
-**What**: `render_markdown` prints "## Veredito ajustado (#64)" after "## Veredito": scope sentence, the table per field (share within and denominator per date, `si_lag` per date, verdict), the criterion line ("Critério de liberação (#64): cumprido" / "não cumprido" with the failing rows, plus the pointer to `pit-rebuild-stocks-audit.md`), and the worst rows per field and date. Every number is read from the object.
+**What**: `render_markdown` prints "## Veredito ajustado (#64)" after "## Veredito": scope sentence, the table per field (share within and denominator per date, `si_lag` per date, verdict), the part-1 criterion line ("Critério de liberação (#64), parte 1 (≥ 70 % nas duas datas): cumprida" / "não cumprida" with the failing rows), the part-2 line ("Parte 2 (10 piores conferidos e explicados): ver `pit-rebuild-stocks-audit.md`"), and the worst rows per field and date. Every number is read from the object. The whole criterion is never printed as met here (AUD-06 states it in the audit).
 **Where**: `py/pit_rebuild/report.py`
 **Files**: `py/pit_rebuild/report.py`, `tests/test_pit_rebuild_report.py`
 **Heavy**: no
@@ -477,8 +486,8 @@ T23 → T24
 
 **Done when**:
 
-- [ ] "## Veredito" comes before "## Veredito ajustado (#64)", and the official section text is unchanged (ADJ-01)
-- [ ] Both criterion wordings render from `met`; failing rows listed when not met (ADJ-05)
+- [ ] "## Veredito" comes before "## Veredito ajustado (#64)", and the official section's verdict lines are unchanged (ADJ-01; its B-12 line is T14's)
+- [ ] Both part-1 wordings render from `met`; failing rows listed when not met; the part-2 line names the audit; the Markdown has no "Critério de liberação (#64): cumprido" line (ADJ-05, S5)
 - [ ] The `si_lag` count of a field and date appears in its row (LAG-02)
 - [ ] Without the `adjusted_verdict` key, the Markdown has no such section (v2 objects still render)
 - [ ] Gate check passes: Build (end of Phase 2)
@@ -490,15 +499,15 @@ T23 → T24
 
 ---
 
-### T14: Schema v3, investigations and the new mapping lists in the Markdown
+### T14: Schema v3, rule texts, investigations and the new mapping lists (HEAVY, counts as 2)
 
-**What**: `SCHEMA = "pit-rebuild-stocks/v3"`, `AMENDED_BY = [64]` (header "(issue #59, correções da #64)"), `INVESTIGATIONS = ()` stored as `investigations` and rendered under "## Investigações" ("Nenhuma." when empty); the mapping section of each date renders `share_events.adjusted`, `share_events.no_isin`, `share_count_suspect`, `ttm_prior_from_itr`, `stale_filing` ("nenhum" when empty; absent keys render nothing, so v2 objects still render).
+**What**: `SCHEMA = "pit-rebuild-stocks/v3"`, `AMENDED_BY = [64]` (header "(issue #59, correções da #64)"), `PREVIOUS_REPORT = {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"}` stored as `previous_report`, and the B-12 line under "## Veredito" rendered from `amended_by` and `previous_report` ("Regra de veredito da #59, aplicada aos valores com as correções da #64; os números da v2 estão no commit `ebaf1fd`."); `INVESTIGATIONS = ()` stored as `investigations` and rendered under "## Investigações" ("Nenhuma." when empty); the mapping section of each date renders `share_events.adjusted`, `share_events.no_isin`, `share_count_suspect`, `ttm_prior_from_itr`, `stale_filing` ("nenhum" when empty; absent keys render nothing, so v2 objects still render). Rewrite the rule texts for AD-033 (RPT-06, design `report.py` and `indicators.py`): `SHARE_SCALE_RULE` (`report.py:39-48`), the `totalNumberShares` and `stockDividends` rows of `NON_PIT_INPUTS` (`report.py:50-55`, `report.py:91-96`), `FORMULAS["VALOR DE MERCADO"]` (`indicators.py:23`) and the module docstring of `indicators.py` (lines 10-11).
 **Where**: `py/pit_rebuild/report.py`
-**Files**: `py/pit_rebuild/report.py`, `tests/test_pit_rebuild_report.py` (the v2 schema assertion becomes v3)
-**Heavy**: no
+**Files**: `py/pit_rebuild/report.py`, `py/pit_rebuild/indicators.py` (docstring and one `FORMULAS` entry only), `tests/test_pit_rebuild_report.py` (the v2 schema assertion becomes v3), `tests/test_pit_rebuild_indicators.py`
+**Heavy**: yes (three rule texts rewritten against AD-033 plus the v3 render; every new sentence pinned by a test)
 **Depends on**: None (Phase 2 done)
 **Reuses**: `_mapping_section`, `_table`, `_list_or_none`
-**Requirement**: SHR-03, SHR-04, SHR-05 (Markdown), STL-03 (Markdown), TTM-04 (Markdown), MBR-02 (slot), B-12
+**Requirement**: SHR-03, SHR-04, SHR-05 (Markdown), STL-03 (Markdown), TTM-04 (Markdown), MBR-02 (slot), ADJ-01 (B-12 line), RPT-06, B-12
 
 **Tools**:
 
@@ -507,11 +516,16 @@ T23 → T24
 
 **Done when**:
 
-- [ ] `schema == "pit-rebuild-stocks/v3"`, `amended_by == [64]`, header line names both issues
+- [ ] `schema == "pit-rebuild-stocks/v3"`, `amended_by == [64]`, `previous_report == {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"}`, header line names both issues
+- [ ] "## Veredito" carries the B-12 line with `ebaf1fd` when `amended_by` is present, and not for a v2 object (ADJ-01, S9)
 - [ ] Each of the five lists renders one row per entry, in the object's order, and "nenhum" when empty
 - [ ] One `INVESTIGATIONS` entry given through a patched constant renders ticker, date, field, finding, evidence
+- [ ] `parameters.share_scale_rule` contains "(DT_REFER, d]", names the B3 retrieval as the end of the events that pick `f`, says events after `d` only pick the power of ten, still contains "10^-2", "10^3", "√10", "resíduo" and ties √10 to a change with no B3 event; it no longer has the #59 sentence "um desdobramento de 1:5 dá ×10" as an unconditional rule (RPT-06; update `test_the_share_scale_rule_names_the_powers_of_ten_the_sqrt10_limit_and_the_residual`)
+- [ ] The `stockDividends` row of `non_pit_inputs` names share counts and AD-033 and no longer says "só eventos com data-ex ≤ d" alone; still 8 rows with the same roles (RPT-06)
+- [ ] `FORMULAS["VALOR DE MERCADO"]` names "(DT_REFER, d]" and AD-033; the `indicators` docstring names the events (test in `test_pit_rebuild_indicators.py`) (RPT-06)
+- [ ] The Markdown parameter section renders the new texts (they come from the object)
 - [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 5 new tests
+- [ ] Test count: ≥ 9 new or rewritten tests
 
 **Tests**: unit
 **Gate**: quick
@@ -521,13 +535,13 @@ T23 → T24
 
 ### T15: Wire the event-adjusted share count and the suspect flag into the CLI (HEAVY, counts as 2)
 
-**What**: `cli._company` uses `shares.adjust` with the ISINs of the A-17 class tickers at `day` (B-2) and the company's B3 events; `previous_shares` + a second `adjust` feed `shares.suspect`. `_evaluate_day` adds `share_events {adjusted, no_isin}` and `share_count_suspect` to the mapping block (sorted as in SHR-03, SHR-05); `share_scale.scaled`/`unverified` keep their keys, residual on the event-adjusted total.
+**What**: `Cache.retrieved_at(name) -> str | None` (manifest value); `cli._b3_company` sets `B3Company.retrieved_on` to its São Paulo date (UTC−3). `cli._company` uses `shares.adjust` with `I_d` and `I_all` of the A-17 class tickers (B-2, B-3: `cotahist.isin` at `day` plus `cotahist.isins`), the company's B3 events and `retrieved_on`; `previous_shares` + a second `adjust` feed `shares.suspect`. `_evaluate_day` adds `share_events {adjusted, no_isin}` and `share_count_suspect` to the mapping block (sorted as in SHR-03, SHR-05); `share_scale.scaled`/`unverified` keep their keys, residual on the event-adjusted total.
 **Where**: `py/pit_rebuild/cli.py`
-**Files**: `py/pit_rebuild/cli.py`, `tests/test_pit_rebuild_cli.py`, fixture additions under `tests/fixtures/pit_rebuild/` or the temp shape universe (`write_shape_universe`)
+**Files**: `py/pit_rebuild/cli.py`, `py/pit_rebuild/cache.py` (`retrieved_at` only), `tests/test_pit_rebuild_cli.py`, `tests/test_pit_rebuild_cache.py`, fixture additions under `tests/fixtures/pit_rebuild/` or the temp shape universe (`write_shape_universe`)
 **Heavy**: yes (fixture company with a CVM composition, a B3 record with `stockDividends` and COTAHIST ISINs; expectations of `ScaledShareCountTests` may move and each move is hand-computed)
 **Depends on**: T14
 **Reuses**: `write_shape_universe`, `ScaledShareCountTests`, `b3_company_sbsp.json`
-**Requirement**: SHR-01, SHR-02, SHR-03, SHR-04, SHR-05, SHR-06, SHR-07
+**Requirement**: SHR-01, SHR-02, SHR-03, SHR-04, SHR-05, SHR-06, SHR-07, SHR-08
 
 **Tools**:
 
@@ -540,6 +554,8 @@ T23 → T24
 - [ ] The same company at a date before the event: not listed, count as filed (SHR-02)
 - [ ] A fixture company whose count jumps > 20 % between two filings with no event is in `share_count_suspect` and its `VALOR DE MERCADO` uses the jumped count (SHR-05, SHR-06)
 - [ ] A company with a PREF class and no PREF ISIN is in `share_events.no_isin` (SHR-04)
+- [ ] `Cache.retrieved_at` returns the manifest value of a hand-written manifest and None for an unknown name; `retrieved_at` "2026-11-10T00:34:49Z" gives `retrieved_on` 2026-11-09 (UTC−3) (SHR-08)
+- [ ] Through `main`: a fixture company whose split has ex-date after the B3 record's `retrieved_on` gets its factor without the split (SHR-08)
 - [ ] Any changed #59 expectation (SBSP, ESPA, scaled residuals) is recomputed by hand in the test and named in the commit body
 - [ ] Exit code 0 on the fixture run; the exit-code table is unchanged (RPT-05)
 - [ ] Gate check passes: Full
@@ -657,7 +673,7 @@ T23 → T24
 - [ ] Through `main`: the fixture ticker whose SI `P/L` matches the older ITR is outside tolerance and in `adjusted_verdict.dates[d].fields["P/L"].si_lag.tickers` (LAG-01, LAG-02)
 - [ ] A ticker of a company with one usable filing is never `si_lag` (LAG-03)
 - [ ] `adjusted_verdict.excluded` equals each date's `reference_stale`; `ROIC` and `PEG RATIO` are absent; `class` and `criterion` follow the fixture's numbers (ADJ-02, ADJ-05)
-- [ ] A worst row carries the filing kind, `DT_REFER`, `VERSAO`, `DT_RECEB` of the fixture filing and its previous value (ADJ-04)
+- [ ] A worst row carries the filing kind, `DT_REFER`, `VERSAO`, `DT_RECEB` of the fixture filing and its previous value; a `DY` worst row has `filing` and `previous_value` null (ADJ-04)
 - [ ] The official `verdicts` and `dates[d].fields` are identical to a run with the adjusted wiring removed (compare through a patched `_report_object` or a stored expectation) (ADJ-07, LAG-04)
 - [ ] The `--filings-cutoff` block has no `si_lag`
 - [ ] Gate check passes: Full
@@ -707,13 +723,13 @@ T23 → T24
 **Heavy**: yes (about 360 MB of zips parsed; the run takes minutes)
 **Depends on**: T20
 **Reuses**: the #59 cache and run arguments (`.specs/features/pit-rebuild-stocks/tasks.md` T32)
-**Requirement**: RPT-01, RPT-02, RPT-03, RPT-05
+**Requirement**: RPT-01, RPT-02, RPT-03, RPT-05, RPT-06
 
 **Steps** (from the worktree root, clean tree at the commit of T20):
 
 1. Cache: if `.cache/pit-rebuild/manifest.json` is absent, `mkdir -p .cache && cp -al /home/caio/.t3/worktrees/TCC/t3-issue-59-d1f86a5f2296a99f/.cache/pit-rebuild .cache/pit-rebuild` (hard links; `cp -a` if the link fails). `.cache/` is gitignored. Check `python3 -c "import json;print(len(json.load(open('.cache/pit-rebuild/manifest.json'))['files']))"` prints 585 or more.
-2. Inputs: record `sha256sum data/raw/status_invest_fundamentals.csv /home/caio/Documents/projetos/TCC/snapshots/data/selectors-2026-11-06/stocks.csv`; the first must equal `inputs.status_invest[0].sha256` of the committed v2 JSON, the second must start with `87c15cb5`. `git status --porcelain -- data snapshots baselines` must be empty.
-3. Cache check against v2: `git archive origin/develop py/pit_rebuild py/config.py | tar -x -C <scratch>/v2` and run `python3 <scratch>/v2/py/pit_rebuild report --offline <args of step 4> --cache-dir .cache/pit-rebuild --out-dir <scratch>/v2-out`; its JSON must equal the committed v2 JSON except `tool_commit`, the timings in `coverage.effort` and `inputs.raw_files[*].retrieved_at` if any. A difference elsewhere means the cache is not the #59 one: stop and report.
+2. Inputs: record `sha256sum data/raw/status_invest_fundamentals.csv /home/caio/Documents/projetos/TCC/snapshots/data/selectors-2026-11-06/stocks.csv`; the first must equal `inputs.status_invest[0].sha256` of the v2 JSON (`git show ebaf1fd:docs/validation/pit-rebuild-stocks.json`), the second must start with `87c15cb5`. `git status --porcelain -- data snapshots baselines` must be empty.
+3. Cache check against v2: `git archive ebaf1fd py/pit_rebuild py/config.py | tar -x -C <scratch>/v2` (the merge that carries the v2 report; its `py/pit_rebuild` equals the v2 `tool_commit` `0366546`; not the moving `origin/develop`) and run `python3 <scratch>/v2/py/pit_rebuild report --offline <args of step 4> --cache-dir .cache/pit-rebuild --out-dir <scratch>/v2-out`; its JSON must equal `git show ebaf1fd:docs/validation/pit-rebuild-stocks.json` except `tool_commit`, the timings in `coverage.effort` and `inputs.raw_files[*].retrieved_at` if any. A difference elsewhere means the cache is not the #59 one: stop and report.
 4. Run:
 
    ```sh
@@ -735,10 +751,10 @@ T23 → T24
 **Done when**:
 
 - [ ] `report --offline` exits 0; no network request (offline)
-- [ ] `tests/test_pit_rebuild_artifact.py`: schema v3 and `amended_by == [64]`; `adjusted_verdict` has the 14 fields, both dates, `criterion` with `threshold_pct` 70 and `met` equal to the rule recomputed from its own `pct_within` values; each date's mapping has the five new keys; the Markdown equals the render of the JSON byte for byte (RPT-02); the existing #59 artifact tests still pass (exit-code table, SI hash, dates, as-of) (RPT-05)
+- [ ] `tests/test_pit_rebuild_artifact.py`: schema v3, `amended_by == [64]` and `previous_report.commit == "ebaf1fd"`; `adjusted_verdict` has the 14 fields, both dates, `criterion` with `part` 1, `threshold_pct` 70 and `met` equal to the rule recomputed from its own `pct_within` values; the Markdown prints the part-1 line and not a whole-criterion line (ADJ-05); `parameters.share_scale_rule` still contains "√10" and now also "(DT_REFER, d]" (the assertion at `tests/test_pit_rebuild_artifact.py:88` is revised to both), the `stockDividends` row of `non_pit_inputs` names AD-033 and `formulas["VALOR DE MERCADO"]` names "(DT_REFER, d]" (RPT-06); each date's mapping has the five new keys; the Markdown equals the render of the JSON byte for byte (RPT-02); the existing #59 artifact tests still pass (exit-code table, SI hash, dates, as-of) (RPT-05)
 - [ ] `git status --porcelain -- data snapshots baselines` empty; both CSV hashes unchanged
 - [ ] Gate check passes: Full
-- [ ] Test count: ≥ 3 new tests in `test_pit_rebuild_artifact.py`
+- [ ] Test count: ≥ 4 new tests in `test_pit_rebuild_artifact.py`
 
 **Tests**: integration
 **Gate**: full
@@ -748,7 +764,7 @@ T23 → T24
 
 ### T22: README section for the fixes
 
-**What**: Update the "Reconstrução PIT de ações" section of `docs/validation/README.md`: the share-count rule with events (B-1..B-3), the suspect flag, the TTM fallback, `stale_filing`, the ISIN at `d`, the adjusted verdict and the release criterion, `si_lag`, the audit document, and the cache copy precondition of the regeneration. The exit-code table stays 0-5. Every number cited from the report equals the committed JSON (RPT-04).
+**What**: Update the "Reconstrução PIT de ações" section of `docs/validation/README.md`: the share-count rule with events (B-1..B-3), the suspect flag, the TTM fallback, `stale_filing`, the ISIN at `d`, the adjusted verdict and the release criterion (part 1 in the report, the whole criterion in the audit document), `si_lag`, the audit document, that the official verdict is the #59 rule on the corrected values with the v2 numbers at `ebaf1fd`, and the cache copy precondition of the regeneration. The exit-code table stays 0-5. Every number cited from the report equals the committed JSON (RPT-04).
 **Where**: `docs/validation/README.md`
 **Files**: `docs/validation/README.md`
 **Heavy**: no
@@ -776,13 +792,13 @@ T23 → T24
 
 ### T23: Audit the worst cases of 2026-08-07 (HEAVY, counts as 2; reads the real cache)
 
-**What**: Create `docs/validation/pit-rebuild-stocks-audit.md` with its header (purpose, classes, how a row is read), the MBRF3 finding of T20 (MBR-02 repeat), and the section of 2026-08-07: one table per adjusted field with each worst row of `adjusted_verdict.dates["2026-08-07"]` (ticker, SI value, rebuilt value as in the JSON; class; evidence: filing kind, `DT_REFER`, `VERSAO`, `DT_RECEB` and the filed number), and the class counts per field. Add `AuditDocumentTests` to `tests/test_pit_rebuild_artifact.py`: for each date section present, rows equal the JSON worst rows (no missing, extra or different), each class in the set, evidence names a filing, counts equal the rows.
+**What**: Create `docs/validation/pit-rebuild-stocks-audit.md` with its header (purpose, classes, how a row is read, the evidence prefixes of B-10, and what the worst list leaves out: tickers with no rebuilt value and, on relative fields, zero references, the latter not counted in the JSON), the MBRF3 finding of T20 (MBR-02 repeat), and the section of 2026-08-07: one table per adjusted field with each worst row of `adjusted_verdict.dates["2026-08-07"]` (ticker, SI value, rebuilt value as in the JSON; class; evidence per indicator, B-10: `CVM ...` for an accounting field, or `B3 evento ...` / `COTAHIST ...` when the gap comes from the count or the price; `B3 proventos ...` or `Yahoo ...` plus `COTAHIST ...` for `DY`), the class counts per field, and the `missing` summary of that date (count per field and reason, from `adjusted_verdict.dates["2026-08-07"].fields[f].missing`). Add `AuditDocumentTests` to `tests/test_pit_rebuild_artifact.py`: for each date section present, rows equal the JSON worst rows (no missing, extra or different), each class in the set, the evidence of each row satisfies its field's rule (accounting: a `CVM`, `B3 evento` or `COTAHIST` item; `DY`: a `B3 proventos` or `Yahoo` item and a `COTAHIST` item), class counts equal the rows, the `missing` summary equals the JSON counts.
 **Where**: `docs/validation/pit-rebuild-stocks-audit.md`
 **Files**: `docs/validation/pit-rebuild-stocks-audit.md` (new), `tests/test_pit_rebuild_artifact.py`
 **Heavy**: yes (up to 140 rows classified from the filings in the cache)
 **Depends on**: None (Phase 4 done)
-**Reuses**: the worst rows' `filing`, `previous_value` and `si_lag` (ADJ-04); `.cache/pit-rebuild` zips read with `cvm.load_filings` in a scratch script outside the repo
-**Requirement**: AUD-01, AUD-02, AUD-03, AUD-04 (2026-08-07)
+**Reuses**: the worst rows' `filing`, `previous_value` and `si_lag` (ADJ-04); `.cache/pit-rebuild` zips read with `cvm.load_filings`, `b3_cash_*`/`yahoo_*` files read with `dividends`, and COTAHIST closes read with `cotahist.load`, all in a scratch script outside the repo
+**Requirement**: AUD-01, AUD-02, AUD-03, AUD-04, AUD-05 (2026-08-07)
 
 **Tools**:
 
@@ -792,11 +808,12 @@ T23 → T24
 **Done when**:
 
 - [ ] Every worst row of 2026-08-07 in the committed JSON has one audit row, and no other row exists for that date (AUD-01, AUD-03)
-- [ ] Each row has one class of the three and evidence with kind, `DT_REFER`, `VERSAO`, `DT_RECEB` and a number (AUD-02)
+- [ ] Each row has one class of the three and evidence by its indicator: accounting rows a `CVM` item (kind, `DT_REFER`, `VERSAO`, `DT_RECEB`, account, number) or a `B3 evento` / `COTAHIST` item; `DY` rows a dividend item and a `COTAHIST` item, no `CVM` item required (AUD-02, S2)
 - [ ] Counts per field equal the rows (AUD-04)
-- [ ] The test fails when one row is removed, one SI value is changed, or a class is misspelled (checked in a scratch copy, noted in the commit body)
+- [ ] The `missing` summary per field and reason equals the JSON counts, and the header names the tickers the worst list leaves out (AUD-05, S6)
+- [ ] The test fails when one row is removed, one SI value is changed, a class is misspelled, a `DY` row carries only a `CVM` item, or a `missing` count is changed (checked in a scratch copy, noted in the commit body)
 - [ ] Gate check passes: Full
-- [ ] Test count: ≥ 3 new tests
+- [ ] Test count: ≥ 5 new tests
 
 **Tests**: integration
 **Gate**: full
@@ -806,13 +823,13 @@ T23 → T24
 
 ### T24: Audit the worst cases of 2026-11-05 (HEAVY, counts as 2; reads the real cache)
 
-**What**: Add the 2026-11-05 section in the same format, a summary table (class counts per field and date) and the release-criterion line copied from the JSON (`criterion.met`, failing rows). `AuditDocumentTests` now requires both dates and the summary to equal the per-date counts.
+**What**: Add the 2026-11-05 section in the same format (worst rows, class counts, `missing` summary), a summary table (class counts per field and date), and the whole release criterion (AUD-06): part 1 copied from the JSON (`criterion.met`, failing rows), part 2 (every worst row of both dates audited), and "Critério de liberação (#64): cumprido" exactly when both hold, else "não cumprido" with the failing part, with the count of `erro nosso` rows beside it. `AuditDocumentTests` now requires both dates, the summary to equal the per-date counts and the criterion line to follow the rule.
 **Where**: `docs/validation/pit-rebuild-stocks-audit.md`
 **Files**: `docs/validation/pit-rebuild-stocks-audit.md`, `tests/test_pit_rebuild_artifact.py`
 **Heavy**: yes (up to 140 rows)
 **Depends on**: T23
 **Reuses**: T23 format and test
-**Requirement**: AUD-01, AUD-02, AUD-03, AUD-04, ADJ-05 (audit half of DEC-2), RPT-04
+**Requirement**: AUD-01, AUD-02, AUD-03, AUD-04, AUD-05, AUD-06 (whole criterion of DEC-2), RPT-04
 
 **Tools**:
 
@@ -822,9 +839,9 @@ T23 → T24
 **Done when**:
 
 - [ ] Both dates present; every worst row of both dates audited, nothing extra (AUD-01, AUD-03)
-- [ ] Summary counts equal the per-date counts; the criterion line equals the JSON (AUD-04, RPT-04)
+- [ ] Summary counts equal the per-date counts; part 1 equals the JSON; the whole-criterion line is "cumprido" exactly when part 1 is met and every worst row is audited, and the `erro nosso` count equals the rows (AUD-04, AUD-06, RPT-04)
 - [ ] Gate check passes: Build (end of Phase 5)
-- [ ] Test count: ≥ 1 new test (both dates required)
+- [ ] Test count: ≥ 2 new tests (both dates required; the whole-criterion rule)
 
 **Tests**: integration
 **Gate**: build
@@ -865,7 +882,7 @@ Execution is sequential. One batch per phase fits the ~7 budget; Phases 4 and 5 
 | T11 | 1 function | ✅ Granular |
 | T12 | 1 block (`_adjusted`) | ✅ Granular (heavy) |
 | T13 | 1 Markdown section | ✅ Granular |
-| T14 | schema + 1 section + mapping rows | ⚠️ Cohesive in one file (render of new keys) |
+| T14 | schema + rule texts + 1 section + mapping rows | ⚠️ Cohesive (everything the v3 report prints that is not a computed number; heavy) |
 | T15 | `_company` wiring | ✅ Granular (heavy) |
 | T16 | stale wiring | ✅ Granular |
 | T17 | 1 list | ✅ Granular |
@@ -927,13 +944,14 @@ Execution is sequential. One batch per phase fits the ~7 budget; Phases 4 and 5 
 
 | Requirement | Tasks |
 | ----------- | ----- |
-| SHR-01 | T4, T6, T7, T15 |
+| SHR-01 | T1, T4, T6, T7, T15 |
 | SHR-02 | T6, T7, T15 |
-| SHR-03 | T14, T15 |
+| SHR-03 | T7, T14, T15 |
 | SHR-04 | T7, T14, T15 |
 | SHR-05 | T4, T8, T14, T15 |
 | SHR-06 | T8, T15 |
 | SHR-07 | T8, T15 |
+| SHR-08 | T1, T6, T7, T15 |
 | TTM-01 | T2, T17 |
 | TTM-02 | T2 |
 | TTM-03 | T2 |
@@ -947,11 +965,11 @@ Execution is sequential. One batch per phase fits the ~7 budget; Phases 4 and 5 
 | ISN-03 | T18 |
 | MBR-01 | T20 |
 | MBR-02 | T14, T20, T23 |
-| ADJ-01 | T13 |
+| ADJ-01 | T13, T14 |
 | ADJ-02 | T9, T12, T19 |
 | ADJ-03 | T12 |
 | ADJ-04 | T3, T12, T19 |
-| ADJ-05 | T12, T13, T19, T24 |
+| ADJ-05 | T12, T13, T19, T21 |
 | ADJ-06 | T12 |
 | ADJ-07 | T12, T19 |
 | LAG-01 | T5, T11, T19 |
@@ -962,13 +980,16 @@ Execution is sequential. One batch per phase fits the ~7 budget; Phases 4 and 5 
 | AUD-02 | T23, T24 |
 | AUD-03 | T23, T24 |
 | AUD-04 | T23, T24 |
+| AUD-05 | T12, T23, T24 |
+| AUD-06 | T24 |
 | RPT-01 | T21 |
 | RPT-02 | T21 |
 | RPT-03 | every test task (fixtures only, no network) |
 | RPT-04 | T22, T24 |
 | RPT-05 | T15, T21, T22 |
+| RPT-06 | T14, T21 |
 
-40 of 40 requirements mapped.
+44 of 44 requirements mapped.
 
 ## Tasks needing real data or network
 
@@ -984,7 +1005,7 @@ Execution is sequential. One batch per phase fits the ~7 budget; Phases 4 and 5 
 | ----- | ----- | ---------- | ----- | -------------- |
 | 1 | T1-T7 | 7 | none | 7 |
 | 2 | T8-T13 | 6 | T12 | 7 |
-| 3 | T14-T18 | 5 | T15 | 6 |
+| 3 | T14-T18 | 5 | T14, T15 | 7 |
 | 4 | T19-T22 | 4 | T19, T20, T21 | 7 |
 | 5 | T23-T24 | 2 | T23, T24 | 4 |
-| **Total** | T1-T24 | 24 | 7 | 31 |
+| **Total** | T1-T24 | 24 | 8 | 32 |
