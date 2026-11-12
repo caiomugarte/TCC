@@ -101,6 +101,10 @@ FII_MAX_PER_SEGMENT = 2
 # quota quantities; the executor enables it only when a policy declares this.
 WHOLE_UNITS_MODEL_VERSION = "whole-units-v1"
 
+# Eligible universe (#63): tickers with no B3 session in the 30 days before the
+# Status Invest collection are dropped before selection, for both plans.
+UNIVERSE_MODEL_VERSION = "b3-recent-trade-v1"
+
 # Selection method versions persisted in provenance. The Premium FII method
 # changed with the segment cap (#56); Basic keeps the uncapped v1 method and
 # gets no whole-unit buy list.
@@ -109,11 +113,13 @@ PREMIUM_MODEL_VERSIONS = {
     "stocks": "stock-selection-v1",
     "fiis": "fii-selection-v2",
     "whole_units": WHOLE_UNITS_MODEL_VERSION,
+    "universe": UNIVERSE_MODEL_VERSION,
 }
 BASIC_MODEL_VERSIONS = {
     "allocation": "allocation-v1",
     "stocks": "stock-selection-v1",
     "fiis": "fii-selection-v1",
+    "universe": UNIVERSE_MODEL_VERSION,
 }
 
 

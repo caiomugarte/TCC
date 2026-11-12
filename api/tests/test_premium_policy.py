@@ -284,7 +284,8 @@ class PremiumPolicyTests(unittest.TestCase):
 
 
 # Basic to_json() for profile(generic_profile="moderado",
-# restrictions=["limitar_concentracao"]), captured at 76a6d70 (before #46).
+# restrictions=["limitar_concentracao"]), captured at 76a6d70 (before #46); the
+# only change since is the "universe" model version of #63.
 BASIC_GOLDEN_JSON = (
     '{"allocation":{"class_constraints":{"hhi_max":null,"maximum_weights":{},'
     '"minimum_class_weight":0.0,"minimum_weights":{}},"crypto_risk_contribution_cap":0.4,'
@@ -301,7 +302,8 @@ BASIC_GOLDEN_JSON = (
     '"raw_score":0.73,"restrictions":["limitar_concentracao"],"schema_version":1,"score":0.5,'
     '"warnings":["fixture warning"]},'
     '"provenance":{"cutoff_date":null,"model_versions":{"allocation":"allocation-v1",'
-    '"fiis":"fii-selection-v1","stocks":"stock-selection-v1"},"policy_version":"basic-policy-v2",'
+    '"fiis":"fii-selection-v1","stocks":"stock-selection-v1","universe":"b3-recent-trade-v1"},'
+    '"policy_version":"basic-policy-v2",'
     '"random_seed":null,"source_snapshot_hashes":{},"source_snapshot_ids":[]},'
     '"stocks":{"factor_weights":{"div":0.1,"growth":0.2,"liquidez":0.2,"rent":0.25,"value":0.25},'
     '"lambda_hhi":0.25,"liquidity_and_size_filters":{"cap_min":1000000000.0,'
@@ -426,11 +428,13 @@ class SegmentCapPolicyTests(unittest.TestCase):
             "stocks": "stock-selection-v1",
             "fiis": "fii-selection-v2",
             "whole_units": "whole-units-v1",
+            "universe": "b3-recent-trade-v1",
         }
         basic_versions = {
             "allocation": "allocation-v1",
             "stocks": "stock-selection-v1",
             "fiis": "fii-selection-v1",
+            "universe": "b3-recent-trade-v1",
         }
         self.assertEqual(POLICY_VERSION, "premium-policy-v4")
         self.assertEqual(WHOLE_UNITS_MODEL_VERSION, "whole-units-v1")
