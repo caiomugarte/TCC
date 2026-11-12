@@ -54,6 +54,11 @@ class CitationTests(unittest.TestCase):  # B-10 r5: the exact reproducer receive
         d = _reproducer(date(2024, 5, 9), date(2023, 12, 31), 1, 10.0)
         self.assertIs(audit.citation([b, d]), d)  # same receipt and period: the lower version wins
 
+    def test_an_exact_reproducer_received_first_beats_a_closer_one_received_later(self):  # exact is the first key, not a distance
+        older_further = _reproducer(date(2019, 5, 1), date(2018, 12, 31), 1, 10.004)  # equal at two decimals, 0.004 away
+        newer_closer = _reproducer(date(2024, 5, 1), date(2024, 3, 31), 1, 10.0)  # equal, exact, received later
+        self.assertIs(audit.citation([newer_closer, older_further]), older_further)
+
     def test_without_an_exact_reproducer_the_closest_to_the_si_value_is_cited(self):
         far = _reproducer(date(2018, 1, 1), date(2017, 12, 31), 1, 10.4)  # the oldest, 0.4 away
         near = _reproducer(date(2023, 1, 1), date(2022, 12, 31), 1, 10.2)  # 0.2 away
