@@ -723,7 +723,8 @@ Uma falha não escreve nenhum arquivo do relatório e imprime uma linha no stder
 - **ISIN depois da última sessão.** Uma troca de ISIN entre a última sessão de COTAHIST carregada
   e `R` não é vista, e os eventos do ISIN novo ficam fora da escala (AD-033).
 - **Referência zero.** Num indicador relativo, o ticker com referência zero não entra na lista dos
-  piores casos. O documento de auditoria dá a contagem por data, campo e motivo (AUD-05).
+  piores casos e não é contado no JSON: é um limite declarado. O documento de auditoria conta só os
+  tickers sem valor reconstruído (`missing`) por data, campo e motivo (AUD-05).
 - **Defasagem não é erro comprovado.** `si_lag` conta as marcas que somem com o filing anterior.
   Ele não diz quem errou. Em 2026-11-05 a maior parte das marcas tem como filing mais recente um
   ITR de 2026-09-30, recebido entre 2026-11-03 e 2026-11-05.
