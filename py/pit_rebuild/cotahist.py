@@ -23,6 +23,7 @@ LINE_LENGTH = 245
 MAX_QUOTE_AGE_DAYS = 30  # A-7: no session within 30 calendar days before d means no_quote
 LIQUIDITY_SESSIONS = 21  # A-7 (F5): LIQUIDEZ MEDIA DIARIA averages the last 21 sessions
 QUOTE_CODBDI = ("02", "07", "08")  # A-7 (F1): lote padrão, recuperação extrajudicial, recuperação judicial
+FII_CODBDI = ("12",)  # fundos imobiliários (issue #63)
 LOT_CODBDI = "02"  # on the same session a lot line replaces a recovery line, whatever the line order
 
 
@@ -47,8 +48,12 @@ class Quotes:
     dates: dict[str, list[date]] = field(default_factory=dict)
 
 
-def load(zip_paths: Iterable[Path], tickers: set[str]) -> Quotes:
-    """Read the COTAHIST zips, keeping the lot records of the tickers and every session date."""
+def load(zip_paths: Iterable[Path], tickers: set[str], codbdi: Iterable[str] = QUOTE_CODBDI) -> Quotes:
+    """Read the COTAHIST zips, keeping the lot records of the tickers and every session date.
+
+    codbdi names the cash-market CODBDI codes kept; the default is the stock lot and recovery codes (A-7).
+    """
+    kept_codbdi = frozenset(codbdi)
     days: set[date] = set()
     by_ticker: dict[str, dict[date, Session]] = {}
     for path in zip_paths:
@@ -62,7 +67,7 @@ def load(zip_paths: Iterable[Path], tickers: set[str]) -> Quotes:
                             continue
                         record = _parse(text.rstrip("\r\n"), info.filename)
                         days.add(record.day)
-                        if record.tpmerc != "010" or record.codbdi not in QUOTE_CODBDI or record.ticker not in tickers:
+                        if record.tpmerc != "010" or record.codbdi not in kept_codbdi or record.ticker not in tickers:
                             continue
                         close = record.price / record.fatcot if record.fatcot > 1 else record.price
                         session = Session(
