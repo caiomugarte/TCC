@@ -619,5 +619,54 @@ class AdjustedVerdictTests(unittest.TestCase):
             report.build(**run_kwargs(adjusted={"2026-08-07": adjusted_entry()}))
 
 
+class AdjustedMarkdownTests(unittest.TestCase):
+    """ADJ-01, ADJ-05 and LAG-02 in the Markdown: the adjusted section after the official verdict, read from the object only."""
+
+    def test_the_adjusted_section_follows_the_official_verdict_and_keeps_its_line(self):
+        markdown = report.render_markdown(adjusted_run(adjusted_entry(), adjusted_entry(adjusted_stats(default=0.0))))
+        verdict_at = markdown.index("## Veredito\n")
+        adjusted_at = markdown.index("## Veredito ajustado (#64)")
+        parameters_at = markdown.index("## Parâmetros")
+        self.assertTrue(verdict_at < adjusted_at < parameters_at)
+        self.assertIn(
+            "**Veredito da classe:** `não reconstruível`. Sem os tickers não classificados, o veredito seria `reconstruível`.",
+            markdown,
+        )
+
+    def test_the_part_1_line_reads_cumprida_when_met_and_lists_the_failing_rows_when_not(self):
+        met = report.render_markdown(adjusted_run(adjusted_entry(adjusted_stats(default=70.0)), adjusted_entry(adjusted_stats(default=70.0))))
+        self.assertIn("Critério de liberação (#64), parte 1 (≥ 70 % nas duas datas): cumprida.", met)
+        self.assertNotIn("não cumprida", met)
+        second = adjusted_entry(adjusted_stats({"P/L": 69.99}, default=70.0))
+        not_met = report.render_markdown(adjusted_run(adjusted_entry(adjusted_stats(default=70.0)), second))
+        self.assertIn("Critério de liberação (#64), parte 1 (≥ 70 % nas duas datas): não cumprida.", not_met)
+        self.assertIn("Linhas abaixo da meta: `P/L` em 2026-11-06 (69,99%).", not_met)
+        self.assertNotIn("Critério de liberação (#64): cumprido", met + not_met)
+
+    def test_the_part_2_line_names_the_audit_document(self):
+        markdown = report.render_markdown(adjusted_run())
+        self.assertIn("Parte 2 (10 piores conferidos e explicados): ver `pit-rebuild-stocks-audit.md`.", markdown)
+
+    def test_each_field_row_shows_the_share_with_its_denominator_and_the_si_lag_count_of_each_date(self):
+        first = adjusted_entry(adjusted_stats(), si_lag={"P/L": ["AAAA3", "BBBB3"]})
+        second = adjusted_entry(adjusted_stats({"P/L": 75.0}))
+        markdown = report.render_markdown(adjusted_run(first, second))
+        self.assertIn("| `P/L` | 100,00% (10) | 2 | 75,00% (10) | 0 | com ressalvas |", markdown)
+
+    def test_the_worst_rows_render_with_their_si_lag_filing_and_previous_value_and_dy_rows_show_none(self):
+        filing = {"kind": "ITR", "dt_refer": date(2026, 3, 31), "versao": 1, "dt_receb": date(2026, 5, 14)}
+        pl = adjusted_stats()["P/L"]
+        pl.worst = [{"ticker": "AAAA3", "reference": 10.0, "rebuilt": 15.0, "diff": 50.0}]
+        details = {"P/L": {"AAAA3": {"filing": filing, "previous_value": 10.4567, "si_lag": True}}}
+        markdown = report.render_markdown(adjusted_run(adjusted_entry({**adjusted_stats(), "P/L": pl}, worst_details=details)))
+        self.assertIn("| `AAAA3` | 10,00 | 15,00 | 50,00% | sim | ITR 2026-03-31 v1, recebido em 2026-05-14 | 10,46 |", markdown)
+        self.assertIn("<summary>P/L, 2026-08-07</summary>", markdown)
+
+    def test_without_the_adjusted_key_the_markdown_has_no_adjusted_section(self):
+        markdown = report.render_markdown(report.build(**run_kwargs()))
+        self.assertNotIn("## Veredito ajustado (#64)", markdown)
+        self.assertIn("## Veredito\n", markdown)
+
+
 if __name__ == "__main__":
     unittest.main()

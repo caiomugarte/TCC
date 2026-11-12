@@ -446,6 +446,8 @@ def render_markdown(report: Mapping[str, object]) -> str:
     lines: list[str] = ["# Reconstrução PIT dos indicadores de ações", ""]
     lines += _metadata(report)
     lines += _verdict_section(report["verdicts"])
+    if "adjusted_verdict" in report:
+        lines += _adjusted_section(report["adjusted_verdict"])
     if "sensitivities" in report:
         lines += _sensitivity_section(report["sensitivities"])
     lines += _parameters_section(report["parameters"])
@@ -523,6 +525,73 @@ def _sensitivity_section(sensitivities: Mapping[str, object]) -> list[str]:
     lines += _table(["sensibilidade", "veredito da classe", "veredito do grupo financeiro", "o que muda"], rows)
     lines += [f"Nota (D-C): {roic['note']}", ""]
     return lines
+
+
+def _adjusted_section(adjusted: Mapping[str, object]) -> list[str]:
+    """The adjusted verdict below the official one: scope, the share and si_lag per field and date, part 1 and part 2 of the criterion, and the worst rows (ADJ-01, ADJ-05, LAG-02). Every number is read from the object."""
+    dates = list(adjusted["dates"])
+    criterion = adjusted["criterion"]
+    lines = ["## Veredito ajustado (#64)", "", adjusted["scope"], ""]
+    header = ["indicador"]
+    for iso in dates:
+        header += [f"{iso}: % na tolerância (n)", f"{iso}: si_lag"]
+    rows = []
+    for field in adjusted["fields"]:
+        row: list[object] = [_code(field)]
+        for iso in dates:
+            stats = adjusted["dates"][iso]["fields"][field]
+            row += [f"{_pct(stats['pct_within'])} ({stats['denominator']})", stats["si_lag"]["count"]]
+        rows.append(row + [adjusted["verdicts"][field]])
+    lines += _table(header + ["veredito"], rows)
+    word = "cumprida" if criterion["met"] else "não cumprida"
+    lines += [f"Critério de liberação (#64), parte 1 (≥ {criterion['threshold_pct']} % nas duas datas): {word}.", ""]
+    if not criterion["met"] and criterion["failing"]:
+        lines += [f"Linhas abaixo da meta: {_failing_text(criterion['failing'])}.", ""]
+    part2 = criterion["part2"].rsplit("/", 1)[-1]
+    lines += [f"Parte 2 (10 piores conferidos e explicados): ver `{part2}`.", ""]
+    for field in adjusted["fields"]:
+        for iso in dates:
+            lines += _adjusted_worst(field, iso, adjusted["dates"][iso]["fields"][field])
+    return lines
+
+
+def _adjusted_worst(field: str, iso: str, stats: Mapping[str, object]) -> list[str]:
+    if not stats["worst"] and not stats["missing"]:
+        return []
+    lines = ["<details>", f"<summary>{field}, {iso}</summary>", ""]
+    if stats["worst"]:
+        rows = [
+            [
+                _code(item["ticker"]),
+                _num(item["reference"]),
+                _num(item["rebuilt"]),
+                _delta(item["diff"], stats["diff_unit"]),
+                _cell(item["si_lag"]),
+                _filing_text(item["filing"]),
+                _num_or_none(item["previous_value"]),
+            ]
+            for item in stats["worst"]
+        ]
+        lines += _table(["ticker", "referência", "reconstruído", "diferença", "si_lag", "arquivo", "valor anterior"], rows)
+    if stats["missing"]:
+        missing = ", ".join(f"`{item['ticker']}` ({item['reason']})" for item in stats["missing"])
+        lines += [f"Sem valor reconstruído: {missing}.", ""]
+    lines += ["</details>", ""]
+    return lines
+
+
+def _filing_text(filing: Mapping[str, object] | None) -> str:
+    if filing is None:
+        return "-"
+    return f"{filing['kind']} {filing['dt_refer']} v{filing['versao']}, recebido em {filing['dt_receb']}"
+
+
+def _failing_text(rows: Sequence[Mapping[str, object]]) -> str:
+    texts = []
+    for row in rows:
+        share = "sem denominador" if row["pct_within"] is None else _pct(row["pct_within"])
+        texts.append(f"`{row['field']}` em {row['date']} ({share})")
+    return "; ".join(texts)
 
 
 def _excluded_text(excluded: Mapping[str, Sequence[str]]) -> str:

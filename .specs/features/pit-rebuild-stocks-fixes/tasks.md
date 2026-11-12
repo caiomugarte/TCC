@@ -486,12 +486,12 @@ T23 → T24
 
 **Done when**:
 
-- [ ] "## Veredito" comes before "## Veredito ajustado (#64)", and the official section's verdict lines are unchanged (ADJ-01; its B-12 line is T14's)
-- [ ] Both part-1 wordings render from `met`; failing rows listed when not met; the part-2 line names the audit; the Markdown has no "Critério de liberação (#64): cumprido" line (ADJ-05, S5)
-- [ ] The `si_lag` count of a field and date appears in its row (LAG-02)
-- [ ] Without the `adjusted_verdict` key, the Markdown has no such section (v2 objects still render)
-- [ ] Gate check passes: Build (end of Phase 2)
-- [ ] Test count: ≥ 4 new tests
+- [x] "## Veredito" comes before "## Veredito ajustado (#64)", and the official section's verdict lines are unchanged (ADJ-01; its B-12 line is T14's)
+- [x] Both part-1 wordings render from `met`; failing rows listed when not met; the part-2 line names the audit; the Markdown has no "Critério de liberação (#64): cumprido" line (ADJ-05, S5)
+- [x] The `si_lag` count of a field and date appears in its row (LAG-02)
+- [x] Without the `adjusted_verdict` key, the Markdown has no such section (v2 objects still render)
+- [x] Gate check passes: Build (end of Phase 2)
+- [x] Test count: ≥ 4 new tests
 
 **Tests**: unit
 **Gate**: build
