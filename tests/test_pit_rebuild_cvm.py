@@ -361,7 +361,7 @@ class AccessorTests(StoreCase):
         # GAMA: the ITR 2026-03-31 (received 2026-05-14) is newer than the DFP 2025-12-31 (ON 700000000).
         self.assertEqual(
             cvm.shares(self.dfp, self.itr, GAMA, date(2026, 8, 7)),
-            cvm.Shares(on=705260684, pref=547818424, total=1253079108, dt_receb=date(2026, 5, 14)),
+            cvm.Shares(on=705260684, pref=547818424, total=1253079108, dt_refer=date(2026, 3, 31), dt_receb=date(2026, 5, 14)),
         )
 
     def test_shares_are_none_when_the_newest_total_is_zero_even_if_an_older_filing_has_counts(self):
@@ -651,6 +651,92 @@ class NewestFilingTests(unittest.TestCase):
 
     def test_the_stale_filing_limit_is_270_days(self):
         self.assertEqual(cvm.STALE_FILING_DAYS, 270)
+
+
+COMPOSITION_HEADER = "CNPJ_CIA;DT_REFER;VERSAO;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR\n"
+
+
+def inline_composition(kind: str, year: int, index_rows: str, composition_rows: str) -> cvm.FilingStore:
+    """A FilingStore from inline CSV text: the index rows and the capital composition rows (composicao_capital)."""
+    prefix = kind.lower()
+    members = {
+        f"{prefix}_cia_aberta_{year}.csv": INDEX_HEADER + index_rows,
+        f"{prefix}_cia_aberta_composicao_capital_{year}.csv": COMPOSITION_HEADER + composition_rows,
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / f"{prefix}_cia_aberta_{year}.zip"
+        path.write_bytes(make_zip(members))
+        return cvm.load_filings([path], kind)
+
+
+class PreviousSharesTests(unittest.TestCase):
+    """SHR-05 (B-4): the newest usable period older than the newest usable one whose composition total is above zero."""
+
+    CNPJ = "50.505.505/0001-50"
+    D = date(2025, 8, 7)
+
+    def stores(self, filings: list[tuple[str, str, str, tuple[int, int, int] | None]]):
+        """Each filing is (kind, DT_REFER, DT_RECEB, (ON, PREF, TOTAL) or None when it has no composition row)."""
+        index = {"DFP": "", "ITR": ""}
+        composition = {"DFP": "", "ITR": ""}
+        for kind, dt_refer, receipt, counts in filings:
+            index[kind] += f"{self.CNPJ};{dt_refer};1;CASE S.A.;1;{kind};1;{receipt};\n"
+            if counts is not None:
+                composition[kind] += f"{self.CNPJ};{dt_refer};1;{counts[0]};{counts[1]};{counts[2]}\n"
+        return (
+            inline_composition("DFP", 2024, index["DFP"], composition["DFP"]),
+            inline_composition("ITR", 2025, index["ITR"], composition["ITR"]),
+        )
+
+    def test_the_middle_period_without_a_composition_is_skipped(self):
+        dfp, itr = self.stores([
+            ("DFP", "2023-12-31", "2024-03-20 18:00:00", (100, 50, 150)),
+            ("ITR", "2024-06-30", "2024-08-10 18:00:00", None),
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+        ])
+        self.assertEqual(
+            cvm.previous_shares(dfp, itr, self.CNPJ, self.D),
+            cvm.Shares(on=100, pref=50, total=150, dt_refer=date(2023, 12, 31), dt_receb=date(2024, 3, 20)),
+        )
+
+    def test_a_period_whose_composition_total_is_zero_is_skipped(self):
+        dfp, itr = self.stores([
+            ("DFP", "2023-12-31", "2024-03-20 18:00:00", (100, 50, 150)),
+            ("ITR", "2024-06-30", "2024-08-10 18:00:00", (0, 0, 0)),
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+        ])
+        self.assertEqual(cvm.previous_shares(dfp, itr, self.CNPJ, self.D).dt_refer, date(2023, 12, 31))
+
+    def test_none_when_no_older_usable_period_has_a_composition(self):
+        dfp, itr = self.stores([
+            ("DFP", "2023-12-31", "2024-03-20 18:00:00", None),
+            ("ITR", "2024-06-30", "2024-08-10 18:00:00", None),
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+        ])
+        self.assertIsNone(cvm.previous_shares(dfp, itr, self.CNPJ, self.D))
+
+    def test_a_previous_period_received_after_d_is_skipped(self):
+        # ITR 2025-03-31 is received on d + 1, so the previous count is the DFP 2024, not the newer ITR.
+        dfp, itr = self.stores([
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+            ("ITR", "2025-03-31", "2025-08-08 09:00:00", (300, 50, 350)),
+            ("ITR", "2025-06-30", "2025-08-06 18:00:00", (260, 50, 310)),
+        ])
+        self.assertEqual(cvm.shares(dfp, itr, self.CNPJ, self.D).dt_refer, date(2025, 6, 30))
+        self.assertEqual(
+            cvm.previous_shares(dfp, itr, self.CNPJ, self.D),
+            cvm.Shares(on=200, pref=50, total=250, dt_refer=date(2024, 12, 31), dt_receb=date(2025, 3, 20)),
+        )
+
+    def test_shares_carry_the_period_end_of_the_newest_usable_filing(self):
+        dfp, itr = self.stores([
+            ("DFP", "2024-12-31", "2025-03-20 18:00:00", (200, 50, 250)),
+            ("ITR", "2025-06-30", "2025-08-06 18:00:00", (260, 50, 310)),
+        ])
+        self.assertEqual(
+            cvm.shares(dfp, itr, self.CNPJ, self.D),
+            cvm.Shares(on=260, pref=50, total=310, dt_refer=date(2025, 6, 30), dt_receb=date(2025, 8, 6)),
+        )
 
 
 if __name__ == "__main__":

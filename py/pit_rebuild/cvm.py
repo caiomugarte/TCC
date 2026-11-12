@@ -83,11 +83,12 @@ class Dated:
 
 @dataclass(frozen=True)
 class Shares:
-    """Issued shares of the newest usable filing, treasury included (A-17)."""
+    """Issued shares of one filing, treasury included (A-17): its period end (SHR-01) and the DT_RECEB of its latest version."""
 
     on: int
     pref: int
     total: int
+    dt_refer: date
     dt_receb: date
 
 
@@ -270,7 +271,28 @@ def shares(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Shares | N
     on, pref, total = newest.composition
     if total <= 0:
         return None
-    return Shares(on=on, pref=pref, total=total, dt_receb=newest.filing.dt_receb)
+    return Shares(on=on, pref=pref, total=total, dt_refer=newest.filing.dt_refer, dt_receb=newest.filing.dt_receb)
+
+
+def previous_shares(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Shares | None:
+    """The count of the newest usable period older than the newest usable one whose composition total is above zero (B-4).
+
+    None when there is no newest usable period, or when no older usable period has a total above zero.
+    """
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    if newest is None:
+        return None
+    older = [
+        period
+        for store in (dfp, itr)
+        for period in store.periods(cnpj)
+        if period.filing.dt_receb <= d and period.filing.dt_refer < newest.filing.dt_refer
+    ]
+    for period in sorted(older, key=lambda item: item.filing.dt_refer, reverse=True):
+        if period.composition is not None and period.composition[2] > 0:
+            on, pref, total = period.composition
+            return Shares(on=on, pref=pref, total=total, dt_refer=period.filing.dt_refer, dt_receb=period.filing.dt_receb)
+    return None
 
 
 def share_scale(cvm_total: int, b3_total: int | None) -> tuple[float, bool]:

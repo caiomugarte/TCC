@@ -249,11 +249,11 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 
 | Requirement ID | Story | Issue AC | Phase | Status |
 | -------------- | ----- | -------- | ----- | ------ |
-| SHR-01 | P1: Share count at d | AC1 | Tasks | Partial (T1 ISIN sets; T7, T15) |
+| SHR-01 | P1: Share count at d | AC1 | Tasks | Partial (T1 sets, T4 date; T7, T15) |
 | SHR-02 | P1: Share count at d | AC1 | Tasks | Pending |
 | SHR-03 | P1: Share count at d | AC1 | Tasks | Pending |
 | SHR-04 | P1: Share count at d | AC1 | Tasks | Pending |
-| SHR-05 | P1: Share count at d | AC2 | Tasks | Pending |
+| SHR-05 | P1: Share count at d | AC2 | Tasks | Partial (T4 previous count; T8 flag) |
 | SHR-06 | P1: Share count at d | AC2 | Tasks | Pending |
 | SHR-07 | P1: Share count at d | AC2 | Tasks | Pending |
 | SHR-08 | P1: Share count at d | AC1 | Tasks | Partial (T1 ISIN sets; T7, T15) |

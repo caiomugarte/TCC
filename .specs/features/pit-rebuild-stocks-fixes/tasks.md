@@ -202,12 +202,12 @@ T23 → T24
 
 **Done when**:
 
-- [ ] `shares(...).dt_refer` is the newest usable period end
-- [ ] Three usable periods, the middle one without composition: `previous_shares` is the oldest one
-- [ ] Only one usable period with composition: None
-- [ ] A previous period received after `d` is skipped
-- [ ] Gate check passes: Full (`Shares` is built in `cli.py`)
-- [ ] Test count: ≥ 4 new tests
+- [x] `shares(...).dt_refer` is the newest usable period end
+- [x] Three usable periods, the middle one without composition: `previous_shares` is the oldest one
+- [x] Only one usable period with composition: None
+- [x] A previous period received after `d` is skipped
+- [x] Gate check passes: Full (`Shares` is built in `cli.py`)
+- [x] Test count: ≥ 4 new tests
 
 **Tests**: unit
 **Gate**: full
