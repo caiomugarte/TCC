@@ -807,13 +807,13 @@ T23 → T24
 
 **Done when**:
 
-- [ ] Every worst row of 2026-08-07 in the committed JSON has one audit row, and no other row exists for that date (AUD-01, AUD-03)
-- [ ] Each row has one class of the three and evidence by its indicator: accounting rows a `CVM` item (kind, `DT_REFER`, `VERSAO`, `DT_RECEB`, account, number) or a `B3 evento` / `COTAHIST` item; `DY` rows a dividend item and a `COTAHIST` item, no `CVM` item required (AUD-02, S2)
-- [ ] Counts per field equal the rows (AUD-04)
-- [ ] The `missing` summary per field and reason equals the JSON counts, and the header names the tickers the worst list leaves out (AUD-05, S6)
-- [ ] The test fails when one row is removed, one SI value is changed, a class is misspelled, a `DY` row carries only a `CVM` item, or a `missing` count is changed (checked in a scratch copy, noted in the commit body)
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 5 new tests
+- [x] Every worst row of 2026-08-07 in the committed JSON has one audit row, and no other row exists for that date (AUD-01, AUD-03)
+- [x] Each row has one class of the three and evidence by its indicator: accounting rows a `CVM` item (kind, `DT_REFER`, `VERSAO`, `DT_RECEB`, account, number) or a `B3 evento` / `COTAHIST` item; `DY` rows a dividend item and a `COTAHIST` item, no `CVM` item required (AUD-02, S2)
+- [x] Counts per field equal the rows (AUD-04)
+- [x] The `missing` summary per field and reason equals the JSON counts, and the header names the tickers the worst list leaves out (AUD-05, S6)
+- [x] The test fails when one row is removed, one SI value is changed, a class is misspelled, a `DY` row carries only a `CVM` item, or a `missing` count is changed (checked in a scratch copy, noted in the commit body)
+- [x] Gate check passes: Full
+- [x] Test count: ≥ 5 new tests
 
 **Tests**: integration
 **Gate**: full

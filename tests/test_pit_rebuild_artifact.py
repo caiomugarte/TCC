@@ -184,5 +184,144 @@ class V3ArtifactTests(unittest.TestCase):
         self.assertIn(notes[0]["finding"], self.markdown)  # MBR-02: the note is in the Markdown too
 
 
+AUDIT = VALIDATION / "pit-rebuild-stocks-audit.md"
+AUDIT_CLASSES = ("erro nosso", "erro do Status Invest", "diferença de método", "não classificado")  # AUD-02
+AUDIT_PREFIXES = ("CVM ", "B3 evento ", "COTAHIST ", "B3 proventos ", "Yahoo ")  # B-10: the fixed evidence prefixes
+AUDIT_CVM_ITEM = re.compile(r"^CVM (DFP|ITR) \d{4}-\d{2}-\d{2} v\d+ rec \d{4}-\d{2}-\d{2}: .+$")
+AUDIT_WITHIN = "dentro da tolerância"  # a row of the worst list inside the tolerance: no error to explain
+
+
+def parse_audit(text):
+    """The audit document as data, per "## <date>" section: rows [(field, cells)], counts {field: cells}, total cells, missing rows."""
+    dates, current, section, field = {}, None, None, None
+    for line in text.splitlines():
+        match = re.match(r"^## (\d{4}-\d{2}-\d{2})$", line)
+        if match:
+            current = match.group(1)
+            dates[current] = {"rows": [], "counts": {}, "total": None, "missing": []}
+            section = None
+            continue
+        if line.startswith("### "):
+            section = line[4:].split(" (")[0]
+            continue
+        if line.startswith("#### "):
+            field = line[5:].strip()
+            continue
+        if current is None or not line.startswith("|") or line.startswith(("| ---", "| #", "| Indicador")):
+            continue
+        cells = [cell.strip() for cell in line.strip()[1:-1].split("|")]
+        block = dates[current]
+        if section == "Contagem por indicador":
+            if cells[0].startswith("**Total**"):
+                block["total"] = cells
+            else:
+                block["counts"][cells[0]] = cells
+        elif section == "Linhas":
+            block["rows"].append((field, cells))
+        elif section.startswith("Sem valor"):
+            block["missing"].append(cells)
+    return dates
+
+
+def audit_items(cell):
+    return [item.strip() for item in cell.split(";") if item.strip()]
+
+
+class AuditDocumentTests(unittest.TestCase):
+    """docs/validation/pit-rebuild-stocks-audit.md classifies the worst rows of the adjusted verdict (AUD-01..AUD-05, B-10).
+
+    The document is checked against the committed JSON only: no cache, no request. Every row repeats the JSON's
+    reference, rebuilt value and difference, and the class counts and the missing summary are recounted from the rows.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.adjusted = json.loads(JSON_PATH.read_text(encoding="utf-8"))["adjusted_verdict"]
+        cls.text = AUDIT.read_text(encoding="utf-8")
+        cls.doc = parse_audit(cls.text)
+
+    def test_each_audited_date_has_one_row_per_worst_case_of_the_json_and_nothing_else(self):  # AUD-01, AUD-03
+        self.assertIn("2026-08-07", self.doc)
+        for iso, block in self.doc.items():
+            expected = sorted((field, w["ticker"]) for field, st in self.adjusted["dates"][iso]["fields"].items() for w in st["worst"])
+            got = sorted((field, cells[1]) for field, cells in block["rows"])
+            self.assertEqual(got, expected, iso)
+            self.assertEqual(len(got), len(set(got)), iso)
+
+    def test_each_row_repeats_the_json_values_rank_and_si_lag(self):  # AUD-03
+        for iso, block in self.doc.items():
+            for field, st in self.adjusted["dates"][iso]["fields"].items():
+                worst = {w["ticker"]: (rank, w) for rank, w in enumerate(st["worst"], 1)}
+                for row_field, cells in block["rows"]:
+                    if row_field != field:
+                        continue
+                    rank, w = worst[cells[1]]
+                    self.assertEqual(int(cells[0]), rank, (iso, field, cells[1]))
+                    self.assertAlmostEqual(float(cells[2]), w["reference"], places=9, msg=(iso, field, cells[1]))
+                    self.assertAlmostEqual(float(cells[3]), w["rebuilt"], places=9, msg=(iso, field, cells[1]))
+                    self.assertAlmostEqual(float(cells[4]), round(w["diff"], 2), places=9, msg=(iso, field, cells[1]))
+                    self.assertEqual(cells[5], "sim" if w["si_lag"] else "não", (iso, field, cells[1]))
+
+    def test_each_row_has_one_class_of_the_set_and_a_tolerance_row_is_named_as_such(self):  # AUD-02
+        for iso, block in self.doc.items():
+            for field, cells in block["rows"]:
+                self.assertIn(cells[6], AUDIT_CLASSES, (iso, field, cells[1]))
+                if cells[7].startswith(AUDIT_WITHIN):
+                    self.assertEqual(cells[6], "não classificado", (iso, field, cells[1]))
+
+    def test_accounting_rows_carry_a_cvm_item_and_dy_rows_a_dividend_and_a_close_never_only_cvm(self):  # AUD-02, S2
+        for iso, block in self.doc.items():
+            for field, cells in block["rows"]:
+                items = audit_items(cells[8])
+                if field == "DY":
+                    self.assertTrue(any(item.startswith(("B3 proventos ", "Yahoo ")) for item in items), (iso, cells[1]))
+                    self.assertTrue(any(item.startswith("COTAHIST ") for item in items), (iso, cells[1]))
+                    self.assertFalse(all(item.startswith("CVM ") for item in items), (iso, cells[1]))
+                else:
+                    self.assertTrue(any(item.startswith("CVM ") for item in items), (iso, field, cells[1]))
+
+    def test_every_evidence_item_has_a_b10_prefix_and_every_cvm_item_its_fields(self):  # B-10
+        for iso, block in self.doc.items():
+            for field, cells in block["rows"]:
+                for item in audit_items(cells[8]):
+                    self.assertTrue(item.startswith(AUDIT_PREFIXES), (iso, field, cells[1], item))
+                    if item.startswith("CVM "):
+                        self.assertRegex(item, AUDIT_CVM_ITEM, (iso, field, cells[1]))
+
+    def test_the_class_counts_per_field_and_their_total_equal_the_rows(self):  # AUD-04
+        for iso, block in self.doc.items():
+            per = {}
+            for field, cells in block["rows"]:
+                per.setdefault(field, {name: 0 for name in AUDIT_CLASSES})[cells[6]] += 1
+            for field in self.adjusted["fields"]:
+                counts = block["counts"][field]
+                self.assertEqual([int(value) for value in counts[1:5]], [per[field][name] for name in AUDIT_CLASSES], (iso, field))
+                self.assertEqual(int(counts[5]), sum(per[field].values()), (iso, field))
+            total = [int(value.strip("*")) for value in block["total"][1:6]]
+            self.assertEqual(total[:4], [sum(per[field][name] for field in per) for name in AUDIT_CLASSES], iso)
+            self.assertEqual(total[4], sum(sum(per[field].values()) for field in per), iso)
+
+    def test_the_missing_summary_equals_the_json_counts_per_date_field_and_reason(self):  # AUD-05
+        for iso, block in self.doc.items():
+            expected = {}
+            for field in self.adjusted["fields"]:
+                for missing in self.adjusted["dates"][iso]["fields"][field]["missing"]:
+                    key = (field, missing["reason"])
+                    expected[key] = expected.get(key, 0) + 1
+            got = {(cells[0], cells[1]): int(cells[2]) for cells in block["missing"] if cells[1] != "—"}
+            self.assertEqual(got, expected, iso)
+            for cells in block["missing"]:
+                if cells[1] == "—":
+                    self.assertEqual(cells[2], "0", (iso, cells[0]))
+                    self.assertFalse(self.adjusted["dates"][iso]["fields"][cells[0]]["missing"], (iso, cells[0]))
+
+    def test_the_header_names_the_limits_of_the_worst_list_and_the_four_classes(self):  # AUD-05, S6
+        self.assertIn("tickers sem valor reconstruído", self.text)
+        self.assertIn("referência zero", self.text)
+        self.assertIn(AUDIT_WITHIN, self.text)
+        for name in AUDIT_CLASSES:
+            self.assertIn(name, self.text)
+
+
 if __name__ == "__main__":
     unittest.main()
