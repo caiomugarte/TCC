@@ -7,8 +7,14 @@ the run's CSV, and the removal is recorded in the run workspace.
 
 Trading comes from the B3 yearly COTAHIST file: TPMERC 010, CODBDI 02, 07 and
 08 for stocks and CODBDI 12 for FIIs. In January the previous year's file is
-read too. The yearly file is about 40 MB, so it is downloaded at most once per
-day into a cache directory outside the run workspace and reused across runs.
+read too; B3 answers 404 for the new year's file until its first session, so in
+January only a 404 on the current year's file means "not published yet": the run
+continues with the previous year's file and the record lists the absent file
+under "cotahist_absent" (url and HTTP status). Any other error, and any failure
+on the previous year's file, fails the run, and so does a window with no market
+session. The yearly file is about 94 MB (COTAHIST_A2026.ZIP: 93,641,013 bytes),
+so it is downloaded at most once per day into a cache directory outside the run
+workspace and reused across runs; a 404 is never cached.
 """
 
 from __future__ import annotations
@@ -26,6 +32,7 @@ import shutil
 import tempfile
 import threading
 from typing import Callable, Mapping
+import urllib.error
 import urllib.request
 import zipfile
 
@@ -143,7 +150,7 @@ def filter_recent_trades(
 
     tickers = {role: _tickers(path) for role, path in csv_paths.items()}
     try:
-        files = [cache.get(year, collected_on) for year in cotahist_years(collected_on)]
+        files, absent = _cotahist_files(cache, collected_on)
         quotes = cotahist.load(
             [file.path for file in files],
             set().union(*tickers.values()),
@@ -175,6 +182,7 @@ def filter_recent_trades(
         "collected_on": collected_on.isoformat(),
         "window_days": cotahist.MAX_QUOTE_AGE_DAYS,
         "cotahist": [file.record() for file in files],
+        "cotahist_absent": absent,
         "csv_sha256": {role: _sha256(path) for role, path in csv_paths.items()},
         "removed": removed,
     }
@@ -182,6 +190,21 @@ def filter_recent_trades(
     record_path.parent.mkdir(parents=True, exist_ok=True)
     record_path.write_text(json.dumps(record, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return record
+
+
+def _cotahist_files(cache: CotahistCache, collected_on: date) -> tuple[list[CotahistFile], list[dict[str, object]]]:
+    """The yearly files of the window, and the current year's file when it is not published yet (January 404)."""
+    files: list[CotahistFile] = []
+    absent: list[dict[str, object]] = []
+    for year in cotahist_years(collected_on):
+        try:
+            files.append(cache.get(year, collected_on))
+        except urllib.error.HTTPError as exc:
+            if exc.code == 404 and collected_on.month == 1 and year == collected_on.year:
+                absent.append({"url": cotahist_url(year), "status": exc.code})
+                continue
+            raise
+    return files, absent
 
 
 def _last_session(quotes: cotahist.Quotes, ticker: str, codbdi: tuple[str, ...], on: date) -> date | None:

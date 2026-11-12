@@ -11,6 +11,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+import urllib.error
 
 from app.services.b3_trading import (
     COTAHIST_CACHE_ENV,
@@ -53,7 +54,14 @@ class Downloader:
         self.calls.append(url)
         if self.error is not None:
             raise self.error
-        return self.files[url]
+        answer = self.files[url]
+        if isinstance(answer, BaseException):
+            raise answer
+        return answer
+
+
+def _http_error(url, code):
+    return urllib.error.HTTPError(url, code, "error", {}, None)
 
 
 class RecentTradeFilterTests(unittest.TestCase):
@@ -162,6 +170,82 @@ class RecentTradeFilterTests(unittest.TestCase):
         self.assertEqual(sorted(downloader.calls), [cotahist_url(2026), cotahist_url(2027)])
         self.assertEqual(self.tickers(result.stocks.path), ["DEC3"])
         self.assertEqual([item["url"] for item in record["cotahist"]], [cotahist_url(2026), cotahist_url(2027)])
+
+    def test_january_without_the_new_year_file_continues_with_the_previous_year(self):
+        for collected_on in (date(2027, 1, 1), date(2027, 1, 4)):
+            with self.subTest(collected_on=collected_on):
+                previous = cotahist_zip([trade("DEC3", date(2026, 12, 30)), trade("FUND11", date(2026, 12, 30), codbdi="12")])
+                downloader = Downloader({
+                    cotahist_url(2026): previous,
+                    cotahist_url(2027): _http_error(cotahist_url(2027), 404),
+                })
+
+                result, record, _ = self.run_refresh(
+                    ["DEC3", "GONE3"], ["FUND11"], [], collected_on=collected_on, downloader=downloader,
+                    workspace=f"run-{collected_on.isoformat()}",
+                )
+
+                self.assertEqual(self.tickers(result.stocks.path), ["DEC3"])
+                self.assertEqual(self.tickers(result.fiis.path), ["FUND11"])
+                self.assertEqual([item["url"] for item in record["cotahist"]], [cotahist_url(2026)])
+                self.assertEqual(record["cotahist_absent"], [{"url": cotahist_url(2027), "status": 404}])
+                self.assertFalse((self.root / "cache" / collected_on.isoformat() / "COTAHIST_A2027.ZIP").exists())
+
+    def test_the_new_year_404_is_not_cached(self):
+        collected_on = date(2027, 1, 4)
+        downloader = Downloader({
+            cotahist_url(2026): cotahist_zip([trade("DEC3", date(2026, 12, 30)), trade("FUND11", date(2026, 12, 30), codbdi="12")]),
+            cotahist_url(2027): _http_error(cotahist_url(2027), 404),
+        })
+        self.run_refresh(["DEC3"], ["FUND11"], [], collected_on=collected_on, downloader=downloader, workspace="run-a")
+        downloader.files[cotahist_url(2027)] = cotahist_zip([trade("DEC3", collected_on), trade("FUND11", collected_on, codbdi="12")],
+                                                       member="COTAHIST_A2027.TXT")
+
+        _, record, _ = self.run_refresh(["DEC3"], ["FUND11"], [], collected_on=collected_on, downloader=downloader,
+                                        workspace="run-b")
+
+        self.assertEqual(downloader.calls.count(cotahist_url(2027)), 2)
+        self.assertEqual(downloader.calls.count(cotahist_url(2026)), 1)
+        self.assertEqual(record["cotahist_absent"], [])
+        self.assertEqual([item["url"] for item in record["cotahist"]], [cotahist_url(2026), cotahist_url(2027)])
+
+    def test_january_other_failures_on_the_new_year_file_fail_the_refresh(self):
+        collected_on = date(2027, 1, 4)
+        for failure in (_http_error(cotahist_url(2027), 500), OSError("network down"), TimeoutError("timed out")):
+            with self.subTest(failure=repr(failure)):
+                downloader = Downloader({
+                    cotahist_url(2026): cotahist_zip([trade("DEC3", date(2026, 12, 30)), trade("FUND11", date(2026, 12, 30), codbdi="12")]),
+                    cotahist_url(2027): failure,
+                })
+                with self.assertRaises(B3TradingUnavailableError):
+                    self.run_refresh(["DEC3"], ["FUND11"], [], collected_on=collected_on, downloader=downloader)
+
+    def test_january_404_on_the_previous_year_file_fails_the_refresh(self):
+        collected_on = date(2027, 1, 4)
+        downloader = Downloader({
+            cotahist_url(2026): _http_error(cotahist_url(2026), 404),
+            cotahist_url(2027): cotahist_zip([trade("DEC3", collected_on), trade("FUND11", collected_on, codbdi="12")],
+                                                       member="COTAHIST_A2027.TXT"),
+        })
+
+        with self.assertRaises(B3TradingUnavailableError):
+            self.run_refresh(["DEC3"], ["FUND11"], [], collected_on=collected_on, downloader=downloader)
+
+    def test_january_404_with_a_stale_previous_year_still_fails_without_a_session(self):
+        collected_on = date(2027, 1, 20)
+        downloader = Downloader({
+            cotahist_url(2026): cotahist_zip([trade("DEC3", date(2026, 12, 1)), trade("FUND11", date(2026, 12, 1), codbdi="12")]),
+            cotahist_url(2027): _http_error(cotahist_url(2027), 404),
+        })
+
+        with self.assertRaisesRegex(B3TradingUnavailableError, "no session"):
+            self.run_refresh(["DEC3"], ["FUND11"], [], collected_on=collected_on, downloader=downloader)
+
+    def test_a_404_on_the_current_year_outside_january_fails_the_refresh(self):
+        downloader = Downloader({cotahist_url(COLLECTED_ON.year): _http_error(cotahist_url(COLLECTED_ON.year), 404)})
+
+        with self.assertRaises(B3TradingUnavailableError):
+            self.run_refresh(["LIVE3"], ["LIVE11"], [], downloader=downloader)
 
     def test_outside_january_only_the_current_year_is_read(self):
         _, _, downloader = self.run_refresh(
