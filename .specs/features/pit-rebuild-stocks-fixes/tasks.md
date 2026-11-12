@@ -838,10 +838,10 @@ T23 → T24
 
 **Done when**:
 
-- [ ] Both dates present; every worst row of both dates audited, nothing extra (AUD-01, AUD-03)
-- [ ] Summary counts equal the per-date counts; part 1 equals the JSON; the whole-criterion line is "cumprido" exactly when part 1 is met and every worst row is audited, and the `erro nosso` count equals the rows (AUD-04, AUD-06, RPT-04)
-- [ ] Gate check passes: Build (end of Phase 5)
-- [ ] Test count: ≥ 2 new tests (both dates required; the whole-criterion rule)
+- [x] Both dates present; every worst row of both dates audited, nothing extra (AUD-01, AUD-03)
+- [x] Summary counts equal the per-date counts; part 1 equals the JSON; the whole-criterion line is "cumprido" exactly when part 1 is met and every worst row is audited, and the `erro nosso` count equals the rows (AUD-04, AUD-06, RPT-04)
+- [x] Gate check passes: Build (end of Phase 5)
+- [x] Test count: ≥ 2 new tests (both dates required; the whole-criterion rule)
 
 **Tests**: integration
 **Gate**: build

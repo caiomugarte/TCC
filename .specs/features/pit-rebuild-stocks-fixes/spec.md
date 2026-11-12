@@ -281,12 +281,12 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | LAG-02 | P1: SI lag | AC8 | Tasks | Done (T12, T13 unit; T19 CLI) |
 | LAG-03 | P1: SI lag | AC8 | Tasks | Done (T11 unit; T19 CLI) |
 | LAG-04 | P1: SI lag | AC8 | Tasks | Done (T11, T12 unit; T19 CLI) |
-| AUD-01 | P1: Audit | AC9 | Tasks | Partial (T23: 2026-08-07; T24: 2026-11-05) |
-| AUD-02 | P1: Audit | AC9 | Tasks | Partial (T23: 2026-08-07; T24: 2026-11-05) |
-| AUD-03 | P1: Audit | AC9 | Tasks | Partial (T23: 2026-08-07; T24: 2026-11-05) |
-| AUD-04 | P1: Audit | AC9 | Tasks | Partial (T23: 2026-08-07; T24: 2026-11-05) |
-| AUD-05 | P1: Audit | AC9 | Tasks | Partial (T12 missing list; T23 2026-08-07 done; T24 2026-11-05) |
-| AUD-06 | P1: Audit | AC7, AC9 (DEC-2) | Tasks | Pending (T24) |
+| AUD-01 | P1: Audit | AC9 | Tasks | Done (T23 2026-08-07; T24 2026-11-05) |
+| AUD-02 | P1: Audit | AC9 | Tasks | Partial: three classes plus `não classificado` (121 rows outside the tolerance, no class; see the document) |
+| AUD-03 | P1: Audit | AC9 | Tasks | Done (T23 2026-08-07; T24 2026-11-05) |
+| AUD-04 | P1: Audit | AC9 | Tasks | Done (T23 2026-08-07; T24 2026-11-05) |
+| AUD-05 | P1: Audit | AC9 | Tasks | Done (T12; T23 2026-08-07; T24 2026-11-05) |
+| AUD-06 | P1: Audit | AC7, AC9 (DEC-2) | Tasks | Done (T24): the criterion reads "não cumprido" (part 2) |
 | RPT-01 | P1: Regenerated report | AC10 | Tasks | Done (T21 artifact: schema v3, amended_by [64]) |
 | RPT-02 | P1: Regenerated report | AC10 | Tasks | Done (T21 byte-for-byte test) |
 | RPT-03 | P1: Regenerated report | AC10 | Tasks | Done (artifact tests read committed files; CLI tests on fixtures) |

@@ -201,6 +201,9 @@ def parse_audit(text):
             dates[current] = {"rows": [], "counts": {}, "total": None, "missing": []}
             section = None
             continue
+        if line.startswith("## "):  # the summary and the criterion sections are not dates
+            current, section = None, None
+            continue
         if line.startswith("### "):
             section = line[4:].split(" (")[0]
             continue
@@ -241,7 +244,7 @@ class AuditDocumentTests(unittest.TestCase):
         cls.doc = parse_audit(cls.text)
 
     def test_each_audited_date_has_one_row_per_worst_case_of_the_json_and_nothing_else(self):  # AUD-01, AUD-03
-        self.assertIn("2026-08-07", self.doc)
+        self.assertEqual(sorted(self.doc), DATES)  # both dates, each in its own section (AUD-01)
         for iso, block in self.doc.items():
             expected = sorted((field, w["ticker"]) for field, st in self.adjusted["dates"][iso]["fields"].items() for w in st["worst"])
             got = sorted((field, cells[1]) for field, cells in block["rows"])
@@ -314,6 +317,41 @@ class AuditDocumentTests(unittest.TestCase):
                 if cells[1] == "—":
                     self.assertEqual(cells[2], "0", (iso, cells[0]))
                     self.assertFalse(self.adjusted["dates"][iso]["fields"][cells[0]]["missing"], (iso, cells[0]))
+
+    def summary_rows(self):
+        """The Resumo table: {date: [erro nosso, erro do Status Invest, método, não classificado fora, dentro da tolerância, total]}."""
+        rows = {}
+        for line in self.text.splitlines():
+            if re.match(r"^\| \d{4}-\d{2}-\d{2} \|", line):
+                cells = [cell.strip() for cell in line.strip()[1:-1].split("|")]
+                rows[cells[0]] = [int(cell) for cell in cells[1:7]]
+        return rows
+
+    def criterion_line(self):
+        return next(line for line in self.text.splitlines() if line.startswith("**Critério de liberação (#64):"))
+
+    def test_the_summary_table_equals_the_per_date_counts_of_the_rows(self):  # AUD-04, AUD-06
+        summary = self.summary_rows()
+        self.assertEqual(sorted(summary), DATES)
+        for iso, block in self.doc.items():
+            per = {name: 0 for name in AUDIT_CLASSES}
+            within = 0
+            for _, cells in block["rows"]:
+                per[cells[6]] += 1
+                if cells[7].startswith(AUDIT_WITHIN):
+                    within += 1
+            expected = [per["erro nosso"], per["erro do Status Invest"], per["diferença de método"], per["não classificado"] - within, within, sum(per.values())]
+            self.assertEqual(summary[iso], expected, iso)
+
+    def test_the_criterion_says_met_only_when_part_one_holds_and_every_row_outside_tolerance_is_explained(self):  # AUD-06, DEC-2
+        met = self.adjusted["criterion"]["met"]
+        unexplained = sum(1 for block in self.doc.values() for _, cells in block["rows"] if cells[6] == "não classificado" and not cells[7].startswith(AUDIT_WITHIN))
+        expected = "cumprido" if (met and unexplained == 0) else "não cumprido"
+        self.assertIn(f"(#64): {expected}.", self.criterion_line())
+
+    def test_the_erro_nosso_count_beside_the_criterion_is_the_count_of_the_rows(self):  # AUD-06
+        total = sum(1 for block in self.doc.values() for _, cells in block["rows"] if cells[6] == "erro nosso")
+        self.assertIn(f"Erro nosso: {total} linhas", self.criterion_line())
 
     def test_the_header_names_the_limits_of_the_worst_list_and_the_four_classes(self):  # AUD-05, S6
         self.assertIn("tickers sem valor reconstruído", self.text)
