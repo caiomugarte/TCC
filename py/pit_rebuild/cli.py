@@ -43,7 +43,7 @@ from . import compare, coverage, cotahist, cvm, dividends, mapping, report, safe
 from . import shares as share_counts
 from .cache import Cache
 from .errors import ArgumentError, MissingPathError, OutputError, RebuildError, SourceError
-from .fields import ALL_FIELDS
+from .fields import ADJUSTED_FIELDS, ALL_FIELDS
 from .indicators import STALE_FILING_REASON, Input, TickerInputs, Value, compute, mask_accounting
 
 DEFAULT_CACHE_DIR = safety.REPO_ROOT / ".cache" / "pit-rebuild"
@@ -388,6 +388,7 @@ class _Company:
     suspect: dict | None  # share_count_suspect: a jump of the count with no B3 event between two filings (SHR-05)
     period_end: date | None  # DT_REFER of the newest usable filing, read at filings_day (B-6, STL-01)
     ttm_prior: tuple[str, ...]  # the flows whose prior year-to-date is last year's ITR at d (TTM-04)
+    newest: cvm.Filing | None  # the newest usable filing at filings_day: the filing a worst row of the adjusted verdict cites (ADJ-04)
 
 
 def _dated(item) -> Input | None:
@@ -550,6 +551,15 @@ def _is_stale(period_end: date | None, day: date) -> bool:
     return period_end is not None and (day - period_end).days > cvm.STALE_FILING_DAYS
 
 
+def _without_newest(acq: _Acquired, cnpj: str, filings_day: date) -> _Acquired | None:
+    """The reads of acq with the newest usable period of cnpj taken out (B-9), or None when no older usable period is left."""
+    newest = cvm.newest_period_end(acq.dfp, acq.itr, cnpj, filings_day)
+    if newest is None:
+        return None
+    older = replace(acq, dfp=acq.dfp.without(cnpj, newest), itr=acq.itr.without(cnpj, newest))
+    return older if cvm.newest_period_end(older.dfp, older.itr, cnpj, filings_day) is not None else None
+
+
 def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date) -> _Company:
     """Share counts with the A-18 scale and the B3 events of their classes (AD-033), the A-17 class prices (F14) and the class fallback of one company.
 
@@ -576,6 +586,7 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
         share_events=counts.share_events, no_isin=counts.no_isin, suspect=counts.suspect,
         period_end=cvm.newest_period_end(acq.dfp, acq.itr, cnpj, filings_day),
         ttm_prior=_flows_from_itr(acq, cnpj, filings_day),
+        newest=cvm.newest_filing(acq.dfp, acq.itr, cnpj, filings_day),
     )
 
 
@@ -672,10 +683,15 @@ class _DayResult:
     pairs: dict[str, dict[str, list]]
     dividends: dict
     dy_dates: dict[str, dict[str, date | None]]  # per dividend source, each ticker's earliest date (COV-02)
+    previous: dict[str, dict[str, float | None]] = field(default_factory=dict)  # B-9: each ticker's values on its previous filing
+    filings: dict[str, cvm.Filing | None] = field(default_factory=dict)  # each computed ticker's newest usable filing (ADJ-04)
 
 
-def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) -> _DayResult:
-    """One decision date. Every CVM read uses filings_day (A-22 (b)); quotes, dividends and eligibility use day."""
+def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *, previous: bool = False) -> _DayResult:
+    """One decision date. Every CVM read uses filings_day (A-22 (b)); quotes, dividends and eligibility use day.
+
+    previous=True also reads each company on its previous filing (B-9); those values feed the si_lag marks only.
+    """
     fday = filings_day or day
     eligible = acq.eligible[day]
     csv = acq.si[day]
@@ -688,6 +704,12 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
     companies: dict[str, _Company] = {}
     for cnpj, tickers in members.items():
         companies[cnpj] = _company(acq, day, cnpj, mapped[tickers[0]].cd_cvm, tickers, fday)
+    older_companies: dict[str, _Company] = {}
+    if previous:
+        for cnpj, tickers in members.items():
+            older = _without_newest(acq, cnpj, fday)
+            if older is not None:
+                older_companies[cnpj] = _company(older, day, cnpj, companies[cnpj].cd_cvm, tickers, fday)
     candidates_of = {cnpj: _quote_candidates(acq, cnpj, tickers, day) for cnpj, tickers in members.items()}
     out = {
         "mapped": 0, "unmapped": [], "refiled_after_d": [], "mapped_via_b3": [],
@@ -730,6 +752,8 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
 
     values: dict[str, dict[str, Value]] = {}
     group_of: dict[str, str] = {}
+    previous_values: dict[str, dict[str, float | None]] = {}
+    filings: dict[str, cvm.Filing | None] = {}
     counts = {
         "by_source": {name: 0 for name in SOURCES}, "yahoo_reasons": {r: 0 for r in YAHOO_REASONS},
         "b3_empty_yahoo_failed": 0, "split_adjust_no_isin": 0,
@@ -787,6 +811,13 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
                 "ticker": ticker, "cd_cvm": company.cd_cvm, "dt_refer": company.period_end.isoformat(),
                 "age_days": (day - company.period_end).days,
             })
+        filings[ticker] = company.newest
+        older = older_companies.get(item.cnpj)
+        if older is not None:  # B-9: the same ticker read on the previous filing, with the same quotes and dividends
+            before = compute(replace(inputs, n_on=older.n_on, n_pref=older.n_pref, **older.inputs), day)
+            if _is_stale(older.period_end, day):
+                before = mask_accounting(before, STALE_FILING_REASON)
+            previous_values[ticker] = {name: before[name].value for name in ALL_FIELDS}
     out["stale_filing"].sort(key=lambda row: row["ticker"])
     pairs: dict[str, dict[str, list]] = {name: {group: [] for group in GROUP_KEYS} for name in ALL_FIELDS}
     for ticker in eligible:
@@ -806,6 +837,8 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
         pairs=pairs,
         dividends=counts,
         dy_dates=dy_dates,
+        previous=previous_values,
+        filings=filings,
     )
 
 
@@ -886,6 +919,48 @@ def _sensitivities(acq: _Acquired, req: _Request, results: dict[date, _DayResult
     }
 
 
+NO_FILING_FIELDS = ("PRECO", "LIQUIDEZ MEDIA DIARIA", "DY")  # B-9: these fields read no filing, so none of them can be si_lag
+
+
+def _adjusted_input(result: _DayResult, excluded: Sequence[str], stats: dict[str, compare.FieldStats]) -> dict:
+    """One date of the adjusted verdict for report.build (ADJ-02, ADJ-04, LAG-01): the stale-free statistics of the non-financial
+    group, the si_lag tickers over the same rows, and for each worst row its filing, previous value and si_lag mark.
+
+    A si_lag ticker is in the field's denominator (its raw value is a reference and its rebuilt value is outside tolerance).
+    The marks read the previous values of the official evaluation and change no statistic (LAG-04).
+    """
+    left_out = set(excluded)
+    marks: dict[str, dict[str, bool]] = {}
+    for name in ADJUSTED_FIELDS:
+        marks[name] = {}
+        if name in NO_FILING_FIELDS:
+            continue
+        for ticker, raw, calc, _reason in result.pairs[name]["non_financial"]:
+            if ticker not in left_out:
+                marks[name][ticker] = compare.is_si_lag(name, raw, calc, result.previous.get(ticker, {}).get(name))
+    worst_details: dict[str, dict[str, dict]] = {}
+    for name in ADJUSTED_FIELDS:
+        worst_details[name] = {}
+        for item in stats[name].worst:
+            ticker = item["ticker"]
+            filing = result.filings.get(ticker)
+            cited = None if filing is None or name in NO_FILING_FIELDS else {
+                "kind": filing.kind, "dt_refer": filing.dt_refer.isoformat(), "versao": filing.versao,
+                "dt_receb": filing.dt_receb.isoformat(),
+            }
+            worst_details[name][ticker] = {
+                "filing": cited,
+                "previous_value": result.previous.get(ticker, {}).get(name),
+                "si_lag": marks[name].get(ticker, False),
+            }
+    return {
+        "excluded": list(excluded),
+        "fields": stats,
+        "si_lag": {name: sorted(ticker for ticker, mark in marks[name].items() if mark) for name in ADJUSTED_FIELDS},
+        "worst_details": worst_details,
+    }
+
+
 def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[[], float], tool_commit: str | None) -> dict:
     compute_seconds = 0.0
     results: dict[date, _DayResult] = {}
@@ -894,7 +969,7 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
     dy_dates: dict[str, dict[str, date | None]] = defaultdict(dict)
     for day in sorted(req.dates):
         start = clock()
-        result = _evaluate_day(acq, day)
+        result = _evaluate_day(acq, day, previous=True)
         fields_out = {
             name: {group: compare.summarize(name, result.pairs[name][group]) for group in GROUP_KEYS}
             for name in ALL_FIELDS
@@ -934,6 +1009,15 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
     raw = list(cache.used)
     collected = dict(zip(req.dates, req.collected_on))
     sensitivities = _sensitivities(acq, req, results)
+    stale_free = sensitivities["without_reference_stale"]
+    adjusted = {
+        day.isoformat(): _adjusted_input(
+            results[day],
+            stale_free["excluded"][day.isoformat()],
+            {name: stale_free["fields"][day.isoformat()][name]["non_financial"] for name in ADJUSTED_FIELDS},
+        )
+        for day in req.dates
+    }
     return report.build(
         dates=list(req.dates),
         tool_commit=tool_commit,
@@ -953,6 +1037,7 @@ def _report_object(cache: Cache, acq: _Acquired, req: _Request, clock: Callable[
         coverage=coverage_out,
         filings_cutoffs=req.filings_cutoffs,
         sensitivities=sensitivities,
+        adjusted=adjusted,
     )
 
 

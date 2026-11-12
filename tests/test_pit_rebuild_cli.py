@@ -1625,5 +1625,265 @@ class IsinAtDateTests(unittest.TestCase):
         self.assertAlmostEqual(dy[ISO1]["ISNX3"], 100 / 30, places=2)
 
 
+# --- the adjusted verdict and the Status Invest lag (T19): four companies, worked out by hand, no network -------------
+
+LAG_COMPANIES = {  # root: (CNPJ, CD_CVM, name)
+    "LAGX": ("43.000.000/0001-43", "2030", "LAGX S.A."),
+    "ONEF": ("44.000.000/0001-44", "2031", "ONEF S.A."),
+    "STLQ": ("45.000.000/0001-45", "2032", "STLQ S.A."),
+    "OLDQ": ("46.000.000/0001-46", "2033", "OLDQ S.A."),
+}
+LAG_QUOTES = [  # ticker, root, ESPECI, close on every session, ISIN
+    ("LAGX3", "LAGX", "ON", 10.0, "BRLAGX3CNOR1"),
+    ("ONEF3", "ONEF", "ON", 10.0, "BRONEF3CNOR1"),
+    ("STLQ3", "STLQ", "ON", 10.0, "BRSTLQ3CNOR1"),
+    ("OLDQ3", "OLDQ", "ON", 10.0, "BROLDQ3CNOR1"),
+]
+LAG_LAST_SESSION = {"STLQ3": date(2026, 7, 7)}  # 31 days before D1: no session in the 30 days before it (reference stale)
+LAG_PERIOD_END = {"OLDQ": "2025-10-31"}  # its newest DFP ends 280 days before D1 (stale); the DFP before it ends 2024-12-31
+LAG_SESSIONS = [day for day in (date(2026, 5, 1) + timedelta(days=n) for n in range(100)) if day.weekday() < 5 and day <= D1]
+LAG_SI = [  # Status Invest: LAGX3's P/L is the one of the ITR of 2026-03-31; ONEF3 misses by 16.7 %; OLDQ3 is 10.00
+    {"TICKER": "LAGX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 9.52, "DY": 8.0},
+    {"TICKER": "ONEF3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 12.0},
+    {"TICKER": "STLQ3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0},
+    {"TICKER": "OLDQ3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0},
+]
+LAG_COMPOSITION_HEADER = (
+    "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
+    "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
+)
+LAG_FILING_HEADER = "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+
+
+def _lag_statement(cnpj_text: str, name_text: str, cd_text: str, dt_refer: str, ordem: str, ini: str, fim: str, account: str, value: float) -> str:
+    return f"{cnpj_text};{dt_refer};1;{name_text};{cd_text};UNIDADE;{ordem};{ini};{fim};{account};Conta {account};{value:.2f};S\n"
+
+
+def write_lag_universe(root: Path) -> Path:
+    """Four companies for the adjusted verdict and the lag (T19). The shared and the shape universes are not touched.
+
+    LAGX: 100 M ON shares at 10.00. Its LL is 100 M in 2025. The ITR of 2026-03-31 (received 2026-05-14) has 20 M of 2026
+    profit against 15 M a year before; the ITR of 2026-06-30 (received 2026-08-05) has 70 M against 40 M. The TTM profit is
+    105 M on the first and 130 M on the second, so P/L is 9.52 and 7.69. A dividend of 1.00 (June 2026) gives DY 10.00.
+    ONEF: one DFP and no ITR, so P/L 10.00. STLQ: one DFP and no session since 2026-07-07 (reference stale).
+    OLDQ: its newest DFP ends 2025-10-31 (stale) and the DFP before it ends 2024-12-31 (stale too), both with LL 100 M.
+    """
+    si_header = (UNIVERSE / "si_2026-08-07.csv").read_text(encoding="utf-8").splitlines()[0]
+    bpp_header = (UNIVERSE / "dfp" / "2025" / "dfp_cia_aberta_BPP_con_2025.csv").read_text(encoding="latin-1").splitlines()[0]
+    dre_header = (UNIVERSE / "dfp" / "2025" / "dfp_cia_aberta_DRE_con_2025.csv").read_text(encoding="latin-1").splitlines()[0]
+    cnpj = {key: value[0] for key, value in LAG_COMPANIES.items()}
+    cd = {key: value[1] for key, value in LAG_COMPANIES.items()}
+    name = {key: value[2] for key, value in LAG_COMPANIES.items()}
+    end = {key: LAG_PERIOD_END.get(key, "2025-12-31") for key in LAG_COMPANIES}
+    root.mkdir(parents=True, exist_ok=True)
+    _latin1(
+        root / "cad_cia_aberta.csv",
+        "CNPJ_CIA;DENOM_SOCIAL;SIT;CD_CVM;SETOR_ATIV\n" + "".join(f"{cnpj[k]};{name[k]};ATIVO;{cd[k]};Comercio\n" for k in LAG_COMPANIES),
+    )
+    si_columns = si_header.split(",")
+    buffer = io.StringIO()
+    writer = csv.DictWriter(buffer, fieldnames=si_columns)
+    writer.writeheader()
+    writer.writerows([{**{column: "" for column in si_columns}, "SETOR": "Comercio", **row} for row in LAG_SI])
+    _latin1(root / "si_2026-08-07.csv", buffer.getvalue())
+    dfp = root / "dfp" / "2025"
+    _latin1(
+        dfp / "dfp_cia_aberta_2025.csv",
+        LAG_FILING_HEADER + "".join(f"{cnpj[k]};{end[k]};1;{name[k]};{cd[k]};DFP;1;2026-03-01 18:00:00;\n" for k in LAG_COMPANIES),
+    )
+    _latin1(
+        dfp / "dfp_cia_aberta_composicao_capital_2025.csv",
+        LAG_COMPOSITION_HEADER + "".join(f"{cnpj[k]};{end[k]};1;{name[k]};100000000;0;100000000;0;0;0\n" for k in LAG_COMPANIES),
+    )
+    _latin1(dfp / "dfp_cia_aberta_BPP_con_2025.csv", bpp_header + "\n")
+    _latin1(dfp / "dfp_cia_aberta_DRE_ind_2025.csv", dre_header + "\n")
+    _latin1(
+        dfp / "dfp_cia_aberta_DRE_con_2025.csv",
+        dre_header + "\n" + "".join(
+            _lag_statement(cnpj[k], name[k], cd[k], "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", account, 100_000_000.0)
+            for k in LAG_COMPANIES if k != "OLDQ" for account in ("3.11", "3.11.01")
+        ),
+    )
+    before = root / "dfp" / "2024"  # the DFP before OLDQ's newest one: its 2024 profit gives the P/L a stale filing would still show
+    _latin1(
+        before / "dfp_cia_aberta_2024.csv",
+        LAG_FILING_HEADER + f"{cnpj['OLDQ']};2024-12-31;1;{name['OLDQ']};{cd['OLDQ']};DFP;1;2025-03-01 18:00:00;\n",
+    )
+    _latin1(
+        before / "dfp_cia_aberta_composicao_capital_2024.csv",
+        LAG_COMPOSITION_HEADER + f"{cnpj['OLDQ']};2024-12-31;1;{name['OLDQ']};100000000;0;100000000;0;0;0\n",
+    )
+    _latin1(
+        before / "dfp_cia_aberta_DRE_con_2024.csv",
+        dre_header + "\n" + "".join(
+            _lag_statement(cnpj["OLDQ"], name["OLDQ"], cd["OLDQ"], "2024-12-31", "ÚLTIMO", "2024-01-01", "2024-12-31", account, 100_000_000.0)
+            for account in ("3.11", "3.11.01")
+        ),
+    )
+    itr = root / "itr" / "2026"
+    _latin1(
+        itr / "itr_cia_aberta_2026.csv",
+        LAG_FILING_HEADER
+        + f"{cnpj['LAGX']};2026-03-31;1;{name['LAGX']};{cd['LAGX']};ITR;1;2026-05-14 18:00:00;\n"
+        + f"{cnpj['LAGX']};2026-06-30;1;{name['LAGX']};{cd['LAGX']};ITR;1;2026-08-05 18:00:00;\n",
+    )
+    _latin1(
+        itr / "itr_cia_aberta_composicao_capital_2026.csv",
+        LAG_COMPOSITION_HEADER
+        + f"{cnpj['LAGX']};2026-03-31;1;{name['LAGX']};100000000;0;100000000;0;0;0\n"
+        + f"{cnpj['LAGX']};2026-06-30;1;{name['LAGX']};100000000;0;100000000;0;0;0\n",
+    )
+    lagx_periods = [  # DT_REFER, ORDEM_EXERC, DT_INI_EXERC, DT_FIM_EXERC, VL_CONTA
+        ("2026-03-31", "ÚLTIMO", "2026-01-01", "2026-03-31", 20_000_000.0),
+        ("2026-03-31", "PENÚLTIMO", "2025-01-01", "2025-03-31", 15_000_000.0),
+        ("2026-06-30", "ÚLTIMO", "2026-01-01", "2026-06-30", 70_000_000.0),
+        ("2026-06-30", "PENÚLTIMO", "2025-01-01", "2025-06-30", 40_000_000.0),
+    ]
+    _latin1(
+        itr / "itr_cia_aberta_DRE_con_2026.csv",
+        dre_header + "\n" + "".join(
+            _lag_statement(cnpj["LAGX"], name["LAGX"], cd["LAGX"], dt_refer, ordem, ini, fim, account, value)
+            for dt_refer, ordem, ini, fim, value in lagx_periods for account in ("3.11", "3.11.01")
+        ),
+    )
+    _latin1(
+        root / "fca" / "2025" / "fca_cia_aberta_valor_mobiliario_2025.csv",
+        "CNPJ_Companhia;Data_Referencia;Versao;Valor_Mobiliario;Codigo_Negociacao;Composicao_BDR_Unit\n"
+        + "".join(f"{cnpj[root_name]};2025-12-31;1;Ações Ordinárias;{ticker};\n" for ticker, root_name, *_rest in LAG_QUOTES),
+    )
+    _latin1(root / "cotahist" / "2025.txt", _shape_cotahist_2025())
+    sessions = []
+    for day in LAG_SESSIONS:
+        for ticker, _root, especi, close, isin in LAG_QUOTES:
+            if day <= LAG_LAST_SESSION.get(ticker, D1):
+                sessions.append(_cotahist_line(day, ticker, "02", especi, close, 1_000_000.0, isin))
+    _latin1(root / "cotahist" / "2026.txt", "\n".join(sessions) + "\n")
+    _latin1(
+        root / "b3" / "company_LAGX.json",
+        json.dumps([{"tradingName": "LAGX S.A.", "code": "LAGX", "codeCVM": "2030", "totalNumberShares": "100.000.000"}]),
+    )
+    # the B3 history reaches back past d - 365 (2025-08-07), or the source is Yahoo (short history); the 2025 record is out of the window
+    dividend = {"typeStock": "ON", "valueCash": "1,00", "lastDatePriorEx": "10/06/2026", "corporateAction": "DIVIDENDO"}
+    old = {"typeStock": "ON", "valueCash": "0,10", "lastDatePriorEx": "01/05/2025", "corporateAction": "DIVIDENDO"}
+    _latin1(
+        root / "b3" / "cash" / "LAGX_p1.json",
+        json.dumps({"page": {"pageNumber": 1, "pageSize": 120, "totalRecords": 2, "totalPages": 1}, "results": [dividend, old]}),
+    )
+    return root
+
+
+class AdjustedVerdictTests(unittest.TestCase):
+    """The adjusted verdict and the Status Invest lag on the lag universe (T19: LAG-01..LAG-04, ADJ-02, ADJ-04..ADJ-07, B-9)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        base = Path(cls._tmp.name)
+        cls.universe = write_lag_universe(base / "universe")
+        cls.si = cls.universe / "si_2026-08-07.csv"
+        cls.cache = base / "cache"
+        cls.out = base / "out"
+        populate_cache(cls.cache, (D1,), cls.universe)
+        code, err = run(report_args(cls.cache, cls.out, dates=(D1,), si=(cls.si,)))
+        if code != 0:
+            raise RuntimeError(f"the lag report exited {code}: {err}")
+        cls.report = json.loads((cls.out / REPORT).read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def adjusted(self) -> dict:
+        return self.report["adjusted_verdict"]
+
+    def worst_row(self, field: str, ticker: str) -> dict:
+        rows = self.adjusted()["dates"][ISO1]["fields"][field]["worst"]
+        return {row["ticker"]: row for row in rows}[ticker]
+
+    def test_a_ticker_outside_tolerance_that_the_previous_filing_explains_is_si_lag(self):
+        # LAGX3: 7.69 on the ITR of 2026-06-30, 9.52 on the ITR of 2026-03-31, and Status Invest says 9.52 (LAG-01, LAG-02)
+        self.assertEqual(self.adjusted()["dates"][ISO1]["fields"]["P/L"]["si_lag"], {"count": 1, "tickers": ["LAGX3"]})
+        self.assertTrue(self.worst_row("P/L", "LAGX3")["si_lag"])
+
+    def test_a_company_with_one_usable_filing_is_never_si_lag(self):
+        # ONEF3 misses by 16.7 % with its only filing, the DFP of 2025; no older filing can explain it (LAG-03)
+        row = self.worst_row("P/L", "ONEF3")
+        self.assertEqual((row["reference"], row["rebuilt"]), (12.0, 10.0))
+        self.assertFalse(row["si_lag"])
+        self.assertIsNone(row["previous_value"])
+        self.assertNotIn("ONEF3", self.adjusted()["dates"][ISO1]["fields"]["P/L"]["si_lag"]["tickers"])
+
+    def test_a_ticker_whose_newest_filing_is_stale_is_not_si_lag_though_the_older_filing_would_match(self):
+        # OLDQ3: its newest filing ends 2025-10-31, 280 days before D1, so its P/L has no value (STL-01). The filing before it
+        # ends 2024-12-31 and is stale too, so its P/L of 10.00 does not explain the miss (LAG-03, B-9).
+        self.assertIn(
+            {"ticker": "OLDQ3", "cd_cvm": "2033", "dt_refer": "2025-10-31", "age_days": 280},
+            self.report["dates"][ISO1]["mapping"]["stale_filing"],
+        )
+        pl = self.adjusted()["dates"][ISO1]["fields"]["P/L"]
+        self.assertIn({"ticker": "OLDQ3", "reason": "stale_filing"}, pl["missing"])
+        self.assertNotIn("OLDQ3", pl["si_lag"]["tickers"])
+
+    def test_the_si_lag_mark_changes_no_statistic(self):
+        # LAG-04: LAGX3, ONEF3 and OLDQ3 are all outside tolerance, so the share within is 0 % whether or not LAGX3 is si_lag
+        pl = self.adjusted()["dates"][ISO1]["fields"]["P/L"]
+        self.assertEqual((pl["denominator"], pl["within"], pl["pct_within"]), (3, 0, 0.0))
+        self.assertEqual(pl["verdict"], "não reconstruível")
+
+    def test_the_adjusted_scope_leaves_out_the_reference_stale_ticker_and_roic_and_peg(self):
+        adjusted = self.adjusted()
+        self.assertEqual(adjusted["excluded"], {ISO1: ["STLQ3"]})
+        self.assertEqual(self.report["dates"][ISO1]["mapping"]["reference_stale"], ["STLQ3"])
+        self.assertEqual(len(adjusted["fields"]), 14)
+        self.assertNotIn("ROIC", adjusted["fields"])
+        self.assertNotIn("PEG RATIO", adjusted["fields"])
+        self.assertEqual(adjusted["dates"][ISO1]["fields"]["P/L"]["denominator"], 3)  # STLQ3 is out of the scope
+
+    def test_the_criterion_fails_on_the_pl_and_on_a_field_without_reference_and_the_class_follows(self):
+        adjusted = self.adjusted()
+        criterion = adjusted["criterion"]
+        self.assertEqual((criterion["part"], criterion["threshold_pct"], criterion["met"]), (1, 70, False))
+        self.assertIn({"field": "P/L", "date": ISO1, "pct_within": 0.0}, criterion["failing"])
+        self.assertIn({"field": "PSR", "date": ISO1, "pct_within": None}, criterion["failing"])  # no reference: ADJ-06
+        self.assertEqual(criterion["part2"], "docs/validation/pit-rebuild-stocks-audit.md")
+        self.assertEqual(adjusted["verdicts"]["P/L"], "não reconstruível")
+        self.assertEqual(adjusted["class"], "não reconstruível")
+
+    def test_a_worst_row_cites_its_filing_and_previous_value_and_a_dy_row_has_neither(self):
+        row = self.worst_row("P/L", "LAGX3")
+        self.assertEqual(row["filing"], {"kind": "ITR", "dt_refer": "2026-06-30", "versao": 1, "dt_receb": "2026-08-05"})
+        self.assertEqual((row["reference"], row["rebuilt"], row["previous_value"]), (9.52, 7.69, 9.52))
+        self.assertEqual(
+            self.worst_row("P/L", "ONEF3")["filing"], {"kind": "DFP", "dt_refer": "2025-12-31", "versao": 1, "dt_receb": "2026-03-01"}
+        )
+        dy = self.worst_row("DY", "LAGX3")  # DY reads no filing (ADJ-04)
+        self.assertEqual((dy["reference"], dy["rebuilt"]), (8.0, 10.0))
+        self.assertIsNone(dy["filing"])
+        self.assertIsNone(dy["previous_value"])
+        self.assertFalse(dy["si_lag"])
+
+    def test_the_official_verdicts_and_fields_are_the_same_with_the_adjusted_block_removed(self):
+        real_build = cli.report.build
+
+        def without_adjusted(**kwargs):
+            return real_build(**{**kwargs, "adjusted": None})
+
+        plain = self.out.parent / "plain"
+        with mock.patch.object(cli.report, "build", side_effect=without_adjusted):
+            code, err = run(report_args(self.cache, plain, dates=(D1,), si=(self.si,)))
+        self.assertEqual(code, 0, err)
+        without = json.loads((plain / REPORT).read_text(encoding="utf-8"))
+        self.assertNotIn("adjusted_verdict", without)
+        self.assertEqual(without["verdicts"], self.report["verdicts"])  # ADJ-07
+        self.assertEqual(without["dates"], self.report["dates"])  # LAG-04: the statistics and the mapping are unchanged
+
+    def test_the_filings_cutoff_sensitivity_has_no_si_lag(self):
+        out = self.out.parent / "cutoff"
+        code, err = run(report_args(self.cache, out, dates=(D1,), si=(self.si,)) + ["--filings-cutoff", f"{ISO1}:2026-07-31"])
+        self.assertEqual(code, 0, err)
+        block = json.loads((out / REPORT).read_text(encoding="utf-8"))["sensitivities"]["filings_cutoff"][ISO1]
+        self.assertNotIn("si_lag", json.dumps(block))  # B-9: the previous-filing pass is for the official evaluation only
+
+
 if __name__ == "__main__":
     unittest.main()

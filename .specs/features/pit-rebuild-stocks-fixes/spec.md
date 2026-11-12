@@ -271,16 +271,16 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | MBR-01 | P2: MBRF3 | AC6 | Tasks | Pending |
 | MBR-02 | P2: MBRF3 | AC6 | Tasks | Partial (T14 section; T20 fills it) |
 | ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Done (T13 order; T14 B-12 line) |
-| ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Partial (T9 fields; T12 unit; T19 CLI) |
+| ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Done (T9 fields; T12 unit; T19 CLI) |
 | ADJ-03 | P1: Adjusted verdict | AC7 | Tasks | Unit (T12) |
-| ADJ-04 | P1: Adjusted verdict | AC7, AC9 | Tasks | Partial (T3 filing; T12 unit; T19 rows) |
-| ADJ-05 | P1: Adjusted verdict | AC7 (DEC-2) | Tasks | Partial (T12, T13 unit; T19, T21) |
+| ADJ-04 | P1: Adjusted verdict | AC7, AC9 | Tasks | Done (T3 filing; T12 unit; T19 rows) |
+| ADJ-05 | P1: Adjusted verdict | AC7 (DEC-2) | Tasks | Partial (T12, T13 unit; T19 CLI; T21 artifact) |
 | ADJ-06 | P1: Adjusted verdict | AC7 | Tasks | Unit (T12) |
-| ADJ-07 | P1: Adjusted verdict | AC7 | Tasks | Unit (T12); CLI T19 |
-| LAG-01 | P1: SI lag | AC8 | Tasks | Partial (T5 view; T11 unit; T19 CLI) |
-| LAG-02 | P1: SI lag | AC8 | Tasks | Partial (T12, T13 unit; T19) |
-| LAG-03 | P1: SI lag | AC8 | Tasks | Unit (T11); CLI T19 |
-| LAG-04 | P1: SI lag | AC8 | Tasks | Partial (T11, T12 unit; T19) |
+| ADJ-07 | P1: Adjusted verdict | AC7 | Tasks | Done (T12 unit; T19 CLI) |
+| LAG-01 | P1: SI lag | AC8 | Tasks | Done (T5 view; T11 unit; T19 CLI) |
+| LAG-02 | P1: SI lag | AC8 | Tasks | Done (T12, T13 unit; T19 CLI) |
+| LAG-03 | P1: SI lag | AC8 | Tasks | Done (T11 unit; T19 CLI) |
+| LAG-04 | P1: SI lag | AC8 | Tasks | Done (T11, T12 unit; T19 CLI) |
 | AUD-01 | P1: Audit | AC9 | Tasks | Pending |
 | AUD-02 | P1: Audit | AC9 | Tasks | Pending |
 | AUD-03 | P1: Audit | AC9 | Tasks | Pending |

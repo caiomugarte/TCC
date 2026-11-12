@@ -670,14 +670,14 @@ T23 → T24
 
 **Done when**:
 
-- [ ] Through `main`: the fixture ticker whose SI `P/L` matches the older ITR is outside tolerance and in `adjusted_verdict.dates[d].fields["P/L"].si_lag.tickers` (LAG-01, LAG-02)
-- [ ] A ticker of a company with one usable filing is never `si_lag` (LAG-03)
-- [ ] `adjusted_verdict.excluded` equals each date's `reference_stale`; `ROIC` and `PEG RATIO` are absent; `class` and `criterion` follow the fixture's numbers (ADJ-02, ADJ-05)
-- [ ] A worst row carries the filing kind, `DT_REFER`, `VERSAO`, `DT_RECEB` of the fixture filing and its previous value; a `DY` worst row has `filing` and `previous_value` null (ADJ-04)
-- [ ] The official `verdicts` and `dates[d].fields` are identical to a run with the adjusted wiring removed (compare through a patched `_report_object` or a stored expectation) (ADJ-07, LAG-04)
-- [ ] The `--filings-cutoff` block has no `si_lag`
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 5 new CLI tests
+- [x] Through `main`: the fixture ticker whose SI `P/L` matches the older ITR is outside tolerance and in `adjusted_verdict.dates[d].fields["P/L"].si_lag.tickers` (LAG-01, LAG-02)
+- [x] A ticker of a company with one usable filing is never `si_lag` (LAG-03)
+- [x] `adjusted_verdict.excluded` equals each date's `reference_stale`; `ROIC` and `PEG RATIO` are absent; `class` and `criterion` follow the fixture's numbers (ADJ-02, ADJ-05)
+- [x] A worst row carries the filing kind, `DT_REFER`, `VERSAO`, `DT_RECEB` of the fixture filing and its previous value; a `DY` worst row has `filing` and `previous_value` null (ADJ-04)
+- [x] The official `verdicts` and `dates[d].fields` are identical to a run with the adjusted wiring removed (compare through a patched `_report_object` or a stored expectation) (ADJ-07, LAG-04)
+- [x] The `--filings-cutoff` block has no `si_lag`
+- [x] Gate check passes: Full
+- [x] Test count: ≥ 5 new CLI tests
 
 **Tests**: integration
 **Gate**: full
