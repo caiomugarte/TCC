@@ -20,6 +20,7 @@ Each test copies a cache populated once for the class, so tests that damage file
 """
 
 import base64
+from collections import defaultdict
 import contextlib
 import csv
 import hashlib
@@ -45,6 +46,8 @@ sys.path.insert(0, str(PROJECT_ROOT / "py"))
 sys.path.insert(0, str(PROJECT_ROOT / "tests"))
 
 from pit_rebuild import cli, cotahist, cvm, safety, sources  # noqa: E402
+from pit_rebuild.cache import Cache  # noqa: E402
+from pit_rebuild.dividends import B3Company, StockEvent  # noqa: E402
 from pit_rebuild_support import UNIVERSE, FakeOpener, FakeResponse, make_zip, populate_cache, universe_routes  # noqa: E402
 
 D1 = date(2026, 8, 7)
@@ -593,6 +596,9 @@ SHAPE_COMPANIES = {  # root: (CNPJ, CD_CVM, name, ON shares, PN shares)
     "FOOX": ("31.000.000/0001-31", "2011", "FOO S.A.", 100_000_000, 0),
     "OKPX": ("32.000.000/0001-32", "2012", "OKPX S.A.", 1_000_000, 0),
     "STAL": ("33.000.000/0001-33", "2013", "STAL S.A.", 1_000_000, 0),
+    "BONU": ("34.000.000/0001-34", "2014", "BONU S.A.", 100_000_000, 0),
+    "LATE": ("35.000.000/0001-35", "2015", "LATE S.A.", 100_000_000, 0),
+    "JUMP": ("36.000.000/0001-36", "2016", "JUMP S.A.", 150_000_000, 0),  # 100 M in 2024, 150 M in 2025, no B3 event (SHR-05)
 }
 # the stale ticker of the as-of and reference-stale tests: its last session is d - 31 (2026-07-07)
 SHAPE_STALE = ("STAL3", "STAL", "ON", 10.0, "BRSTAL3CNOR1", date(2026, 7, 7))
@@ -610,6 +616,9 @@ SHAPE_QUOTES = [
     ("DUPL3", "DUPL", "ON", 10.0, "BRDUPL3CNOR1"),
     ("FOOX3", "FOOX", "ON", 10.0, "BRFOOX3CNOR1"),
     ("OKP3", "OKPX", "ON", 10.0, "BROKP3CNOR1"),
+    ("BONU3", "BONU", "ON", 10.0, "BRBONU3CNOR1"),
+    ("LATE3", "LATE", "ON", 10.0, "BRLATE3CNOR1"),
+    ("JUMP3", "JUMP", "ON", 10.0, "BRJUMP3CNOR1"),
 ]
 # FCA rows: ticker, root, valor mobiliario, composition (units only)
 SHAPE_FCA = [
@@ -629,6 +638,9 @@ SHAPE_FCA = [
     ("FOOX3", "FOOX", "Ações Ordinárias", ""),
     ("OKP3", "OKPX", "Ações Ordinárias", ""),
     (SHAPE_STALE[0], SHAPE_STALE[1], "Ações Ordinárias", ""),
+    ("BONU3", "BONU", "Ações Ordinárias", ""),
+    ("LATE3", "LATE", "Ações Ordinárias", ""),
+    ("JUMP3", "JUMP", "Ações Ordinárias", ""),
 ]
 # Status Invest rows of the eligible tickers (VM and liquidity make them eligible; the reference values are off on purpose)
 SHAPE_SI = [
@@ -646,6 +658,9 @@ SHAPE_SI = [
     {"TICKER": "FOOX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
     {"TICKER": "OKP3", "VALOR DE MERCADO": 500_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "PRECO": 10.0},
     {"TICKER": SHAPE_STALE[0], "VALOR DE MERCADO": 500_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "PRECO": 9.0},
+    {"TICKER": "BONU3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "LATE3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    {"TICKER": "JUMP3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
 ]
 SHAPE_DFP_STATEMENTS = {  # root: (BPP rows, consolidated DRE rows, individual DRE rows)
     "MINO": ([("2.03", 200_000_000.0), ("2.03.09", 50_000_000.0)], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
@@ -712,11 +727,18 @@ def _shape_b3_pages(root: Path) -> None:
     _latin1(root / "b3" / "cash" / "DUPL_p1.json", page([dividend, dict(dividend), capital, old], 4))
     _latin1(root / "b3" / "cash" / "FOOX_p1.json", page([], 0))
     companies = {
-        "SBSP": {"tradingName": "SBSP S.A.", "code": "SBSP", "codeCVM": "2009", "totalNumberShares": "100.000.000",
+        # SBSP's split (x5, ex-date 2026-07-13) is in the count the B3 holds on the retrieval day: 100 M x 5
+        "SBSP": {"tradingName": "SBSP S.A.", "code": "SBSP", "codeCVM": "2009", "totalNumberShares": "500.000.000",
                  "stockDividends": [{"label": "DESDOBRAMENTO", "factor": "400", "isinCode": "BRSBSP3CNOR5", "lastDatePrior": "10/07/2026"}]},
         "DUPL": {"tradingName": "DUPL S.A.", "code": "DUPL", "codeCVM": "2010", "totalNumberShares": "100.000.000"},
         "FOOX": {"tradingName": "FOO S/A", "code": "FOOX", "codeCVM": "2011", "totalNumberShares": "100.000.000"},
         "ESPA": {"tradingName": "ESPA S.A.", "code": "ESPA", "codeCVM": "2006", "totalNumberShares": "10.000.000"},
+        # BONU: a bonus x2 (ex-date 2026-07-13), B3 count 200 M retrieved after it (pinned in ShapeReportTests)
+        "BONU": {"tradingName": "BONU S.A.", "code": "BONU", "codeCVM": "2014", "totalNumberShares": "200.000.000",
+                 "stockDividends": [{"label": "BONIFICACAO", "factor": "100", "isinCode": "BRBONU3CNOR1", "lastDatePrior": "10/07/2026"}]},
+        # LATE: a split x5 (ex-date 2026-07-13), B3 count 100 M retrieved before it (pinned in ShapeReportTests)
+        "LATE": {"tradingName": "LATE S.A.", "code": "LATE", "codeCVM": "2015", "totalNumberShares": "100.000.000",
+                 "stockDividends": [{"label": "DESDOBRAMENTO", "factor": "400", "isinCode": "BRLATE3CNOR1", "lastDatePrior": "10/07/2026"}]},
     }
     for root_name, body in companies.items():
         _latin1(root / "b3" / f"company_{root_name}.json", json.dumps([body]))
@@ -781,6 +803,19 @@ def write_shape_universe(root: Path) -> Path:
         for key, account, value in statement_rows(2)
     )
     _latin1(dfp / "dfp_cia_aberta_DRE_ind_2025.csv", dre_header + "\n" + dre_ind)
+    # JUMP's count of 2024 is 100 M: the 2025 count of 150 M is a jump of 50 % with no B3 event (SHR-05)
+    dfp_2024 = root / "dfp" / "2024"
+    _latin1(
+        dfp_2024 / "dfp_cia_aberta_2024.csv",
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+        f"{cnpj['JUMP']};2024-12-31;1;JUMP S.A.;2016;DFP;1;2025-03-01 18:00:00;\n",
+    )
+    _latin1(
+        dfp_2024 / "dfp_cia_aberta_composicao_capital_2024.csv",
+        "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
+        "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
+        f"{cnpj['JUMP']};2024-12-31;1;JUMP S.A.;100000000;0;100000000;0;0;0\n",
+    )
     fca_rows = []
     for ticker, company_root, valor, composition in SHAPE_FCA:
         fca_rows.append(f"{cnpj[company_root]};2025-12-31;1;{valor};{ticker};{composition}\n")
@@ -792,6 +827,23 @@ def write_shape_universe(root: Path) -> Path:
     _latin1(root / "cotahist" / "2026.txt", _shape_cotahist_2026())
     _shape_b3_pages(root)  # the B3 company records and the cash pages of SBSP, DUPL, FOOX and ESPA
     return root
+
+
+# B-3 and SHR-08: R of the shape companies with events. BONU and SBSP were retrieved after their events; LATE before its one.
+SHAPE_RETRIEVED = {
+    "b3_company_BONU.json": "2026-11-10T00:34:49Z",
+    "b3_company_SBSP.json": "2026-11-10T00:34:49Z",
+    "b3_company_LATE.json": "2026-07-10T12:00:00Z",
+}
+
+
+def pin_retrieval(cache_dir: Path, retrieved: dict[str, str]) -> None:
+    """Set the manifest's retrieved_at of the named files, so R does not follow the clock of the run."""
+    path = cache_dir / "manifest.json"
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    for name, value in retrieved.items():
+        manifest["files"][name]["retrieved_at"] = value
+    path.write_text(json.dumps(manifest, sort_keys=True, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def worst_value(report_object: dict, field: str, ticker: str, group: str = "non_financial") -> float:
@@ -811,6 +863,7 @@ class ShapeReportTests(unittest.TestCase):
         cls.cache = base / "cache"
         cls.out = base / "out"
         populate_cache(cls.cache, (D1,), cls.universe)
+        pin_retrieval(cls.cache, SHAPE_RETRIEVED)
         code, err = run(
             ["report", "--date", ISO1, "--si", str(cls.universe / "si_2026-08-07.csv"), "--cache-dir", str(cls.cache),
              "--out-dir", str(cls.out), "--offline"]
@@ -896,6 +949,55 @@ class ShapeReportTests(unittest.TestCase):
         missing = self.report["dates"][ISO1]["fields"]["DY"]["non_financial"]["missing"]
         self.assertIn({"ticker": "FOOX3", "reason": "no_dividend_source"}, missing)
         self.assertEqual(dividends_out["b3_empty_yahoo_failed"][ISO1], 0)
+
+    def share_event_rows(self, cd_cvm: str) -> list[dict]:
+        return [row for row in self.report["dates"][ISO1]["mapping"]["share_events"]["adjusted"] if row["cd_cvm"] == cd_cvm]
+
+    def scaled_companies(self) -> list[str]:
+        return [row["cd_cvm"] for row in self.report["dates"][ISO1]["mapping"]["share_scale"]["scaled"]]
+
+    def test_a_bonus_with_ex_date_after_the_filing_doubles_the_count_and_is_listed_with_its_event(self):
+        # BONU: 100 M ON filed, bonus x2 with ex-date 2026-07-13; the B3 count of 200 M already has it, so f is 1 and N_ON = 200 M
+        self.assertNotIn("2014", self.scaled_companies())
+        self.assertEqual(
+            self.share_event_rows("2014"),
+            [
+                {
+                    "cd_cvm": "2014",
+                    "class": "ON",
+                    "isins": ["BRBONU3CNOR1"],
+                    "dt_refer": "2025-12-31",
+                    "factor": 2,
+                    "events": [{"isin": "BRBONU3CNOR1", "label": "BONIFICACAO", "ex_date": "2026-07-13", "multiplier": 2}],
+                }
+            ],
+        )
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "BONU3"), 2_000_000_000.0)  # 200 M x 10.00
+
+    def test_a_split_retrieved_before_its_ex_date_keeps_the_factor_at_one_and_still_multiplies_the_count(self):
+        # LATE: 100 M ON filed and a split x5 with ex-date 2026-07-13, after the B3 retrieval on 2026-07-10 (SHR-08): the
+        # scale window stops at 2026-07-10, so f is 1, and the event still multiplies N_ON: 100 M x 5 = 500 M
+        self.assertNotIn("2015", self.scaled_companies())
+        self.assertEqual([row["factor"] for row in self.share_event_rows("2015")], [5])
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "LATE3"), 5_000_000_000.0)  # 500 M x 10.00
+
+    def test_a_split_the_b3_count_already_has_leaves_the_factor_to_that_count(self):
+        # SBSP: 100 M ON filed, split x5 with ex-date 2026-07-13; the B3 count of 500 M has it, so f is 1 and N_ON = 500 M
+        self.assertNotIn("2009", self.scaled_companies())
+        self.assertEqual([row["factor"] for row in self.share_event_rows("2009")], [5])
+
+    def test_a_jump_of_the_count_between_two_filings_with_no_event_is_listed_as_suspect_and_its_value_uses_the_jump(self):
+        # JUMP: 100 M ON filed for 2024 and 150 M for 2025 with no B3 event: 150 / 100 is a ratio of 1.5 (SHR-05, SHR-06)
+        self.assertEqual(
+            self.report["dates"][ISO1]["mapping"]["share_count_suspect"],
+            [{"cd_cvm": "2016", "dt_refer_prev": "2024-12-31", "total_prev": 100_000_000, "dt_refer": "2025-12-31", "total": 150_000_000, "ratio": 1.5}],
+        )
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "JUMP3"), 1_500_000_000.0)  # 150 M x 10.00
+
+    def test_a_class_with_shares_and_no_isin_at_d_is_listed_in_no_isin_and_gets_no_event(self):
+        # MINO: 50 M PREF shares and no PREF ticker with a session on or before d (SHR-04)
+        self.assertIn({"cd_cvm": "2003", "class": "PREF"}, self.report["dates"][ISO1]["mapping"]["share_events"]["no_isin"])
+        self.assertEqual(self.share_event_rows("2003"), [])
 
 
 class ShapeAsOfTests(unittest.TestCase):
@@ -1150,7 +1252,7 @@ class ScaledShareCountTests(unittest.TestCase):
         acq = SimpleNamespace(
             dfp=dfp,
             itr=cvm.load_filings([], cvm.ITR),
-            b3={"ROUN": SimpleNamespace(total_shares=4_000_001)},
+            b3={"ROUN": SimpleNamespace(total_shares=4_000_001, stock_events=(), retrieved_on=None)},
             fca=SimpleNamespace(tickers_of=lambda cnpj: []),
             si={self.D: SimpleNamespace(rows={})},
             quotes=cotahist.Quotes(),
@@ -1158,6 +1260,148 @@ class ScaledShareCountTests(unittest.TestCase):
         company = cli._company(acq, self.D, self.CNPJ, "9999", ["ROUN3"], self.D)
         self.assertEqual(company.scaled["factor"], 0.1)
         self.assertEqual((company.n_on, company.n_pref), (3_000_001, 1_000_000))
+
+
+CASE_CNPJ = "40.000.000/0001-40"
+DAY = date(2026, 8, 7)
+
+
+def composition_members(kind: str, dt_refer: str, dt_receb: str, on: int, pref: int) -> dict[str, str]:
+    """The index and the composicao_capital of one CVM filing of CASE_CNPJ (kind is cvm.DFP or cvm.ITR), as the loader reads them."""
+    year, prefix = dt_refer[:4], kind.lower()
+    return {
+        f"{prefix}_cia_aberta_{year}.csv": (
+            "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
+            f"{CASE_CNPJ};{dt_refer};1;CASE S.A.;1234;{kind};1;{dt_receb};\n"
+        ),
+        f"{prefix}_cia_aberta_composicao_capital_{year}.csv": (
+            "CNPJ_CIA;DT_REFER;VERSAO;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR\n"
+            f"{CASE_CNPJ};{dt_refer};1;{on};{pref};{on + pref}\n"
+        ),
+    }
+
+
+def filing_store(kind: str, members: dict[str, str]) -> cvm.FilingStore:
+    """The CVM store of one kind, read from a temporary zip of the members."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / f"{kind.lower()}.zip"
+        path.write_bytes(make_zip(members))
+        return cvm.load_filings([path], kind)
+
+
+def quotes_of(lines: list[str], tickers: list[str]) -> cotahist.Quotes:
+    """The quotes of COTAHIST lines, loaded for the tickers from a temporary zip."""
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "cotahist.zip"
+        path.write_bytes(make_zip({"COTAHIST_A2026.TXT": "\n".join(lines) + "\n"}))
+        return cotahist.load([path], set(tickers))
+
+
+def acquisition(dfp: cvm.FilingStore, itr: cvm.FilingStore, b3: dict, quotes: cotahist.Quotes) -> SimpleNamespace:
+    """The inputs cli._company reads, with no FCA ticker and no Status Invest row."""
+    return SimpleNamespace(
+        dfp=dfp,
+        itr=itr,
+        b3=b3,
+        quotes=quotes,
+        fca=SimpleNamespace(tickers_of=lambda cnpj: []),
+        si=defaultdict(lambda: SimpleNamespace(rows={})),
+    )
+
+
+def jump_company(itr_on: int) -> cli._Company:
+    """A company with 100 M ON filed at 2025-12-31 and itr_on ON filed at 2026-06-30, and no B3 event, as _company reads it."""
+    dfp = filing_store(cvm.DFP, composition_members(cvm.DFP, "2025-12-31", "2026-03-20 18:00:00", 100_000_000, 0))
+    itr = filing_store(cvm.ITR, composition_members(cvm.ITR, "2026-06-30", "2026-07-30 18:00:00", itr_on, 0))
+    b3 = {"JUMP": B3Company(trading_name="JUMP S.A.", code_cvm="1234", total_shares=itr_on)}
+    return cli._company(acquisition(dfp, itr, b3, cotahist.Quotes()), DAY, CASE_CNPJ, "1234", ["JUMP3"], DAY)
+
+
+class ShareCountRulesTests(unittest.TestCase):
+    """SHR-01, SHR-02, SHR-05, SHR-06 and SHR-07 through cli._company: an event counts from its ex-date on, and a jump with no event is suspect."""
+
+    def test_a_day_before_the_ex_date_keeps_the_filed_count_and_the_ex_date_brings_the_bonus(self):
+        # BONU: 100 M ON filed at 2025-12-31; bonus x2 with ex-date 2026-07-13. The B3 count of 200 M has the bonus, so f is 1
+        # on both days: only a decision date on or after the ex-date multiplies the count.
+        lines = [_cotahist_line(date(2026, 7, day), "BONU3", "02", "ON", 10.0, 1_000_000.0, "BRBONU3CNOR1") for day in (6, 7, 8, 9, 10, 13)]
+        event = StockEvent(isin="BRBONU3CNOR1", label="BONIFICACAO", multiplier=2.0, last_date_prior=date(2026, 7, 10))
+        b3 = {"BONU": B3Company(trading_name="BONU S.A.", code_cvm="2014", total_shares=200_000_000, stock_events=(event,), retrieved_on=date(2026, 11, 9))}
+        dfp = filing_store(cvm.DFP, composition_members(cvm.DFP, "2025-12-31", "2026-03-20 18:00:00", 100_000_000, 0))
+        acq = acquisition(dfp, filing_store(cvm.ITR, {}), b3, quotes_of(lines, ["BONU3"]))
+
+        before = cli._company(acq, date(2026, 7, 10), CASE_CNPJ, "2014", ["BONU3"], date(2026, 7, 10))
+        after = cli._company(acq, date(2026, 7, 13), CASE_CNPJ, "2014", ["BONU3"], date(2026, 7, 13))
+
+        self.assertEqual((before.n_on, before.share_events, before.suspect), (100_000_000, [], None))
+        self.assertEqual(after.n_on, 200_000_000)
+        self.assertEqual(
+            after.share_events,
+            [
+                {
+                    "cd_cvm": "2014",
+                    "class": "ON",
+                    "isins": ["BRBONU3CNOR1"],
+                    "dt_refer": "2025-12-31",
+                    "factor": 2.0,
+                    "events": [{"isin": "BRBONU3CNOR1", "label": "BONIFICACAO", "ex_date": "2026-07-13", "multiplier": 2.0}],
+                }
+            ],
+        )
+
+    def test_a_count_that_jumps_more_than_20_percent_without_an_event_is_suspect_and_its_jumped_count_is_used(self):
+        company = jump_company(150_000_000)  # 100 M to 150 M: a change of 50 %
+        self.assertEqual(
+            company.suspect,
+            {"cd_cvm": "1234", "dt_refer_prev": "2025-12-31", "total_prev": 100_000_000, "dt_refer": "2026-06-30", "total": 150_000_000, "ratio": 1.5},
+        )
+        self.assertEqual((company.n_on, company.n_pref), (150_000_000, 0))
+
+    def test_a_jump_of_exactly_20_percent_is_not_suspect(self):
+        company = jump_company(120_000_000)  # 100 M to 120 M: exactly 20 %, which is not "more than 20 %"
+        self.assertIsNone(company.suspect)
+        self.assertEqual(company.n_on, 120_000_000)
+
+    def test_the_previous_filing_is_read_at_the_filings_day_like_the_count(self):
+        # filings_day 2026-07-29: the ITR of 2026-06-30 (300 M, received 2026-07-30) is not read yet, so the count is the
+        # 2025 DFP's 150 M and its previous filing the 2024 DFP's 100 M: a ratio of 1.5 (A-22 (b), B-4)
+        members = {**composition_members(cvm.DFP, "2024-12-31", "2025-03-01 18:00:00", 100_000_000, 0),
+                   **composition_members(cvm.DFP, "2025-12-31", "2026-03-20 18:00:00", 150_000_000, 0)}
+        dfp = filing_store(cvm.DFP, members)
+        itr = filing_store(cvm.ITR, composition_members(cvm.ITR, "2026-06-30", "2026-07-30 18:00:00", 300_000_000, 0))
+        company = cli._company(acquisition(dfp, itr, {}, cotahist.Quotes()), DAY, CASE_CNPJ, "1234", ["CASE3"], date(2026, 7, 29))
+        self.assertEqual(company.n_on, 150_000_000)
+        self.assertEqual(
+            company.suspect,
+            {"cd_cvm": "1234", "dt_refer_prev": "2024-12-31", "total_prev": 100_000_000, "dt_refer": "2025-12-31", "total": 150_000_000, "ratio": 1.5},
+        )
+
+
+class RetrievedOnTests(unittest.TestCase):
+    """B-3 and SHR-08: R is the São Paulo day (UTC−3) of the manifest's retrieved_at of the B3 company record."""
+
+    def company_retrieved_at(self, retrieved_at: str) -> B3Company | None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "cache"
+            root.mkdir()
+            name = cli.b3_company_name("SBSP")
+            body = json.dumps([{"tradingName": "SBSP S.A.", "code": "SBSP", "codeCVM": "2009", "totalNumberShares": "100.000.000"}]).encode("latin-1")
+            (root / name).write_bytes(body)
+            entry = {
+                "bytes": len(body),
+                "name": name,
+                "retrieved_at": retrieved_at,
+                "sha256": hashlib.sha256(body).hexdigest(),
+                "url": sources.b3_company_url("SBSP"),
+            }
+            (root / "manifest.json").write_text(json.dumps({"files": {name: entry}, "sizes": {}}), encoding="utf-8")
+            return cli._b3_company(Cache(root, offline=True, opener=no_network), "SBSP")
+
+    def test_retrieved_on_is_the_sao_paulo_day_of_the_manifest_moment(self):
+        self.assertEqual(self.company_retrieved_at("2026-11-10T00:34:49Z").retrieved_on, date(2026, 11, 9))
+
+    def test_the_utc_hours_before_three_in_the_morning_belong_to_the_day_before(self):
+        self.assertEqual(self.company_retrieved_at("2026-11-10T02:59:59Z").retrieved_on, date(2026, 11, 9))
+        self.assertEqual(self.company_retrieved_at("2026-11-10T03:00:00Z").retrieved_on, date(2026, 11, 10))
 
 
 if __name__ == "__main__":

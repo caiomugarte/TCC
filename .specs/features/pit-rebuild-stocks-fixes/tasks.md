@@ -550,16 +550,16 @@ T23 → T24
 
 **Done when**:
 
-- [ ] Through `main(["report", ...])`: a fixture company with an event between period end and the first date has `N` × multiplier in `VALOR DE MERCADO` and is in `share_events.adjusted` with that factor (SHR-01, SHR-03)
-- [ ] The same company at a date before the event: not listed, count as filed (SHR-02)
-- [ ] A fixture company whose count jumps > 20 % between two filings with no event is in `share_count_suspect` and its `VALOR DE MERCADO` uses the jumped count (SHR-05, SHR-06)
-- [ ] A company with a PREF class and no PREF ISIN is in `share_events.no_isin` (SHR-04)
-- [ ] `Cache.retrieved_at` returns the manifest value of a hand-written manifest and None for an unknown name; `retrieved_at` "2026-11-10T00:34:49Z" gives `retrieved_on` 2026-11-09 (UTC−3) (SHR-08)
-- [ ] Through `main`: a fixture company whose split has ex-date after the B3 record's `retrieved_on` gets its factor without the split (SHR-08)
-- [ ] Any changed #59 expectation (SBSP, ESPA, scaled residuals) is recomputed by hand in the test and named in the commit body
-- [ ] Exit code 0 on the fixture run; the exit-code table is unchanged (RPT-05)
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 4 new CLI tests; pit suite passes
+- [x] Through `main(["report", ...])`: a fixture company with an event between period end and the first date has `N` × multiplier in `VALOR DE MERCADO` and is in `share_events.adjusted` with that factor (SHR-01, SHR-03)
+- [x] The same company at a date before the event: not listed, count as filed (SHR-02)
+- [x] A fixture company whose count jumps > 20 % between two filings with no event is in `share_count_suspect` and its `VALOR DE MERCADO` uses the jumped count (SHR-05, SHR-06)
+- [x] A company with a PREF class and no PREF ISIN is in `share_events.no_isin` (SHR-04)
+- [x] `Cache.retrieved_at` returns the manifest value of a hand-written manifest and None for an unknown name; `retrieved_at` "2026-11-10T00:34:49Z" gives `retrieved_on` 2026-11-09 (UTC−3) (SHR-08)
+- [x] Through `main`: a fixture company whose split has ex-date after the B3 record's `retrieved_on` gets its factor without the split (SHR-08)
+- [x] Any changed #59 expectation (SBSP, ESPA, scaled residuals) is recomputed by hand in the test and named in the commit body
+- [x] Exit code 0 on the fixture run; the exit-code table is unchanged (RPT-05)
+- [x] Gate check passes: Full
+- [x] Test count: ≥ 4 new CLI tests; pit suite passes
 
 **Tests**: integration
 **Gate**: full

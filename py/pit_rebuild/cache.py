@@ -63,6 +63,11 @@ class Cache:
             return None
         return self._store(url, name, data)
 
+    def retrieved_at(self, name: str) -> str | None:
+        """The UTC moment the manifest holds for a cached file (R of B-3, SHR-08), or None when the manifest has no such file."""
+        entry = self._manifest["files"].get(name)
+        return None if entry is None else entry.get("retrieved_at")
+
     def verify(self) -> None:
         """Re-hash every cached file the manifest names; raise IntegrityError on a difference."""
         for name, entry in sorted(self._manifest["files"].items()):

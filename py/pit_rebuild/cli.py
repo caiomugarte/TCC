@@ -30,8 +30,8 @@ import argparse
 from bisect import bisect_left
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Sequence
-from dataclasses import dataclass, field
-from datetime import date, timedelta
+from dataclasses import dataclass, field, replace
+from datetime import date, datetime, timedelta, timezone
 import json
 from pathlib import Path
 import re
@@ -40,6 +40,7 @@ import sys
 import time
 
 from . import compare, coverage, cotahist, cvm, dividends, mapping, report, safety, sources, status_invest
+from . import shares as share_counts
 from .cache import Cache
 from .errors import ArgumentError, MissingPathError, OutputError, RebuildError, SourceError
 from .fields import ALL_FIELDS
@@ -267,14 +268,29 @@ def _timed(clock, timings: dict, kind: str, paths: Sequence[Path], load: Callabl
     return value
 
 
+SAO_PAULO = timezone(timedelta(hours=-3))  # B-3: the retrieval day R is read in São Paulo time (UTC−3, no daylight saving)
+
+
+def _retrieved_on(retrieved_at: str | None) -> date | None:
+    """The São Paulo day of a manifest retrieved_at, a UTC moment written "%Y-%m-%dT%H:%M:%SZ" (B-3, SHR-08)."""
+    if retrieved_at is None:
+        return None
+    moment = datetime.strptime(retrieved_at, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    return moment.astimezone(SAO_PAULO).date()
+
+
 def _b3_company(cache: Cache, root: str) -> dividends.B3Company | None:
-    path = cache.get(sources.b3_company_url(root), b3_company_name(root), required=False)
+    name = b3_company_name(root)
+    path = cache.get(sources.b3_company_url(root), name, required=False)
     if path is None:
         return None
     try:
-        return dividends.parse_b3_company(path.read_bytes())
+        company = dividends.parse_b3_company(path.read_bytes())
     except (ValueError, KeyError, TypeError, AttributeError, IndexError):
         return None
+    if company is None:
+        return None
+    return replace(company, retrieved_on=_retrieved_on(cache.retrieved_at(name)))
 
 
 def _b3_history(cache: Cache, name: str, acq: _Acquired, clock) -> dividends.B3History | None:
@@ -367,6 +383,9 @@ class _Company:
     stale: list[dict]  # vm_stale_class_price: a class priced from a session older than 30 days (F14)
     inputs: dict
     dre_desc: str | None
+    share_events: list[dict]  # share_events.adjusted: the classes whose B3 events moved their count (AD-033, SHR-03)
+    no_isin: list[dict]  # share_events.no_isin: the classes with shares and no ISIN at d (SHR-04)
+    suspect: dict | None  # share_count_suspect: a jump of the count with no B3 event between two filings (SHR-05)
 
 
 def _dated(item) -> Input | None:
@@ -422,29 +441,101 @@ def _quote_candidates(acq: _Acquired, cnpj: str, tickers: Sequence[str], day: da
     return set(acq.fca.tickers_of(cnpj)) | set(tickers) | {t for t in acq.si[day].rows if t[:4] in roots}
 
 
-def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date) -> _Company:
-    """Share counts with the A-18 scale, the A-17 class prices (F14) and the class fallback of one company.
+@dataclass(frozen=True)
+class _Counts:
+    """The share counts of one company at the decision date and the rows of the share rules that moved them (AD-033)."""
 
-    The CVM reads use filings_day; the quotes use day (A-22 (b)).
+    n_on: int | None
+    n_pref: int | None
+    scaled: dict | None  # {cd_cvm, factor, residual} for a verified factor other than 1 (A-18)
+    unverified: bool  # no B3 count: the counts are used as filed (A-18)
+    share_events: list[dict]  # share_events.adjusted (SHR-03)
+    no_isin: list[dict]  # share_events.no_isin (SHR-04)
+    suspect: dict | None  # share_count_suspect (SHR-05)
+
+
+def _class_isin_sets(quotes: cotahist.Quotes, ticker: str | None, dt_refer: date, day: date) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """I_d and I_all of a share class from its A-17 ticker (B-2, B-3): its ISINs from dt_refer to day, and those it had after day too."""
+    if ticker is None:
+        return (), ()
+    at_day = cotahist.class_isins(quotes, ticker, dt_refer, day)
+    return at_day, tuple(dict.fromkeys((*at_day, *cotahist.isins(quotes, ticker, day, None))))
+
+
+def _counts(
+    acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date,
+    shares: cvm.Shares | None, prices: dict[str, tuple[str, float, date] | None],
+) -> _Counts:
+    """The filed counts times the A-18 factor and the B3 events of each class up to day (shares.adjust), and the suspect check.
+
+    The B3 total and its retrieval day come from the first company record with a total; the events come from every record
+    of the company's tickers (AD-033). The previous filing is read at filings_day (B-4).
+    """
+    if shares is None or shares.on + shares.pref <= 0:
+        return _Counts(None, None, None, False, [], [], None)
+    b3_total, retrieved_on = None, None
+    for ticker in sorted(tickers):
+        company = acq.b3.get(ticker[:4])
+        if company is not None and company.total_shares:
+            b3_total, retrieved_on = company.total_shares, company.retrieved_on
+            break
+    records = [acq.b3[root] for root in sorted({ticker[:4] for ticker in tickers}) if acq.b3.get(root) is not None]
+    events = tuple(event for company in records for event in company.stock_events)
+
+    def next_session(value: date) -> date | None:
+        return cotahist.next_session(acq.quotes, value)
+
+    isin_sets = {
+        cls: _class_isin_sets(acq.quotes, None if prices[cls] is None else prices[cls][0], shares.dt_refer, day)
+        for cls in ("ON", "PREF")
+    }
+    isins_d = {cls: sets[0] for cls, sets in isin_sets.items()}
+    isins_all = {cls: sets[1] for cls, sets in isin_sets.items()}
+    adjusted = share_counts.adjust(shares, isins_d, isins_all, events, b3_total, retrieved_on, day, next_session)
+    share_events = [
+        {
+            "cd_cvm": cd_cvm,
+            "class": row["class"],
+            "isins": row["isins"],
+            "dt_refer": shares.dt_refer.isoformat(),
+            "factor": row["factor"],
+            "events": [
+                {"isin": event["isin"], "label": event["label"], "ex_date": event["ex_date"].isoformat(), "multiplier": event["multiplier"]}
+                for event in row["events"]
+            ],
+        }
+        for row in adjusted.applied
+    ]
+    no_isin = [{"cd_cvm": cd_cvm, "class": cls} for cls in adjusted.no_isin]
+    suspect = None
+    previous = cvm.previous_shares(acq.dfp, acq.itr, cnpj, filings_day)
+    if previous is not None:
+        previous_factor = share_counts.adjust(previous, isins_d, isins_all, events, b3_total, retrieved_on, day, next_session).factor
+        interval = tuple(dict.fromkeys(
+            isin
+            for cls in ("ON", "PREF") if prices[cls] is not None
+            for isin in cotahist.class_isins(acq.quotes, prices[cls][0], previous.dt_refer, day)
+        ))
+        row = share_counts.suspect(previous, previous_factor, shares, adjusted.factor, events, interval, next_session)
+        if row is not None:
+            suspect = {
+                "cd_cvm": cd_cvm,
+                **row,
+                "dt_refer_prev": row["dt_refer_prev"].isoformat(),
+                "dt_refer": row["dt_refer"].isoformat(),
+            }
+    if not adjusted.verified:
+        return _Counts(adjusted.n_on, adjusted.n_pref, None, True, share_events, no_isin, suspect)
+    scaled = {"cd_cvm": cd_cvm, "factor": adjusted.factor, "residual": adjusted.residual} if adjusted.factor != 1 else None
+    return _Counts(adjusted.n_on, adjusted.n_pref, scaled, False, share_events, no_isin, suspect)
+
+
+def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date) -> _Company:
+    """Share counts with the A-18 scale and the B3 events of their classes (AD-033), the A-17 class prices (F14) and the class fallback of one company.
+
+    The CVM reads use filings_day; the quotes, the events and the B3 record use day (A-22 (b)).
     """
     shares = cvm.shares(acq.dfp, acq.itr, cnpj, filings_day)
-    n_on = n_pref = None
-    scaled = None
-    unverified = False
-    if shares is not None and shares.on + shares.pref > 0:
-        b3_total = None
-        for ticker in sorted(tickers):
-            company = acq.b3.get(ticker[:4])
-            if company is not None and company.total_shares:
-                b3_total = company.total_shares
-                break
-        total = shares.on + shares.pref
-        factor, verified = cvm.share_scale(total, b3_total)
-        n_on, n_pref = round(shares.on * factor), round(shares.pref * factor)
-        if not verified:
-            unverified = True
-        elif factor != 1:
-            scaled = {"cd_cvm": cd_cvm, "factor": factor, "residual": total * factor / b3_total}
     prices = cotahist.class_prices(acq.quotes, _quote_candidates(acq, cnpj, tickers, day), day)
     quoted = {cls: None if item is None else Input(item[1], item[2]) for cls, item in prices.items()}
     stale = [
@@ -452,15 +543,17 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
         for cls, item in sorted(prices.items())
         if item is not None and (day - item[2]).days > cotahist.MAX_QUOTE_AGE_DAYS
     ]
+    counts = _counts(acq, day, cnpj, cd_cvm, tickers, filings_day, shares, prices)
     fallback = None
-    for cls, other, count in (("ON", "PREF", n_on), ("PREF", "ON", n_pref)):
+    for cls, other, count in (("ON", "PREF", counts.n_on), ("PREF", "ON", counts.n_pref)):
         if count and count > 0 and prices[cls] is None and prices[other] is not None:
             fallback = {"cd_cvm": cd_cvm, "class_without_quote": cls, "price_from": prices[other][0]}
             break
     return _Company(
-        cnpj=cnpj, cd_cvm=cd_cvm, n_on=n_on, n_pref=n_pref, scaled=scaled, unverified=unverified,
+        cnpj=cnpj, cd_cvm=cd_cvm, n_on=counts.n_on, n_pref=counts.n_pref, scaled=counts.scaled, unverified=counts.unverified,
         price_on=quoted["ON"], price_pref=quoted["PREF"], fallback=fallback, stale=stale,
         inputs=_company_inputs(acq, cnpj, filings_day), dre_desc=cvm.dre_description(acq.dfp, acq.itr, cnpj, filings_day),
+        share_events=counts.share_events, no_isin=counts.no_isin, suspect=counts.suspect,
     )
 
 
@@ -579,6 +672,8 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
         "vm_price_fallback": {"count": 0, "companies": []},
         "vm_stale_class_price": [],
         "share_scale": {"scaled": [], "unverified": []},
+        "share_events": {"adjusted": [], "no_isin": []},
+        "share_count_suspect": [],
         "reference_stale": sorted(ticker for ticker in eligible if cotahist.reference_stale(acq.quotes, ticker, day)),
         "financial": [], "unclassified": [],
     }
@@ -591,11 +686,18 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
             out["share_scale"]["scaled"].append(company.scaled)
         if company.unverified:
             out["share_scale"]["unverified"].append(company.cd_cvm)
+        out["share_events"]["adjusted"].extend(company.share_events)
+        out["share_events"]["no_isin"].extend(company.no_isin)
+        if company.suspect is not None:
+            out["share_count_suspect"].append(company.suspect)
     out["vm_price_fallback"]["companies"].sort(key=lambda row: row["cd_cvm"])
     out["vm_price_fallback"]["count"] = len(out["vm_price_fallback"]["companies"])
     out["vm_stale_class_price"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
     out["share_scale"]["scaled"].sort(key=lambda row: row["cd_cvm"])
     out["share_scale"]["unverified"].sort()
+    out["share_events"]["adjusted"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
+    out["share_events"]["no_isin"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
+    out["share_count_suspect"].sort(key=lambda row: row["cd_cvm"])
 
     values: dict[str, dict[str, Value]] = {}
     group_of: dict[str, str] = {}

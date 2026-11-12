@@ -249,14 +249,14 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 
 | Requirement ID | Story | Issue AC | Phase | Status |
 | -------------- | ----- | -------- | ----- | ------ |
-| SHR-01 | P1: Share count at d | AC1 | Tasks | Partial (T1, T4, T7 unit; T15 CLI) |
-| SHR-02 | P1: Share count at d | AC1 | Tasks | Partial (T6, T7 unit; T15 CLI) |
-| SHR-03 | P1: Share count at d | AC1 | Tasks | Unit (T7); Markdown (T14); CLI T15 |
-| SHR-04 | P1: Share count at d | AC1 | Tasks | Unit (T7); CLI T15 |
-| SHR-05 | P1: Share count at d | AC2 | Tasks | Partial (T4 previous count; T8 unit flag; Markdown T14; CLI T15) |
-| SHR-06 | P1: Share count at d | AC2 | Tasks | Unit (T8); CLI T15 |
-| SHR-07 | P1: Share count at d | AC2 | Tasks | Unit (T8); CLI T15 |
-| SHR-08 | P1: Share count at d | AC1 | Tasks | Partial (T1, T6, T7 unit; T15 CLI) |
+| SHR-01 | P1: Share count at d | AC1 | Tasks | Done (T1, T4, T7 unit; T15 CLI) |
+| SHR-02 | P1: Share count at d | AC1 | Tasks | Done (T6, T7 unit; T15 CLI) |
+| SHR-03 | P1: Share count at d | AC1 | Tasks | Done (T7 unit; T14 Markdown; T15 CLI) |
+| SHR-04 | P1: Share count at d | AC1 | Tasks | Done (T7 unit; T15 CLI) |
+| SHR-05 | P1: Share count at d | AC2 | Tasks | Done (T4, T8 unit; T14 Markdown; T15 CLI) |
+| SHR-06 | P1: Share count at d | AC2 | Tasks | Done (T8 unit; T15 CLI) |
+| SHR-07 | P1: Share count at d | AC2 | Tasks | Done (T8 unit; T15 CLI) |
+| SHR-08 | P1: Share count at d | AC1 | Tasks | Done (T1, T6, T7 unit; T15 CLI) |
 | TTM-01 | P1: 12-month flows | AC3 | Tasks | Unit (T2); CLI T17 |
 | TTM-02 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
 | TTM-03 | P1: 12-month flows | AC3 | Tasks | Done (T2) |

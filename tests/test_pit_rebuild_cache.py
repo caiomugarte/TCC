@@ -158,5 +158,26 @@ class HeadSizeTests(CacheTestCase):
         self.assertEqual(offline_opener.requests, [])
 
 
+class RetrievedAtTests(CacheTestCase):
+    """SHR-08 (B-3): the manifest's retrieved_at of a cached file is the moment R it was read; a name the manifest lacks has none."""
+
+    def test_retrieved_at_is_the_value_the_manifest_holds_and_none_for_a_name_it_lacks(self):
+        self.root.mkdir(parents=True)
+        body = b"[]"
+        entry = {
+            "bytes": len(body),
+            "name": "b3_company_SBSP.json",
+            "retrieved_at": "2026-11-10T00:34:49Z",
+            "sha256": hashlib.sha256(body).hexdigest(),
+            "url": "https://example.test/b3_company_SBSP",
+        }
+        (self.root / entry["name"]).write_bytes(body)
+        (self.root / "manifest.json").write_text(json.dumps({"files": {entry["name"]: entry}, "sizes": {}}), encoding="utf-8")
+        cache = Cache(self.root, offline=True, opener=FakeOpener())
+
+        self.assertEqual(cache.retrieved_at("b3_company_SBSP.json"), "2026-11-10T00:34:49Z")
+        self.assertIsNone(cache.retrieved_at("b3_company_ALFA.json"))
+
+
 if __name__ == "__main__":
     unittest.main()
