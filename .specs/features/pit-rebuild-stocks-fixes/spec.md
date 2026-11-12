@@ -261,7 +261,7 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | TTM-02 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
 | TTM-03 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
 | TTM-04 | P1: 12-month flows | AC3 | Tasks | Pending |
-| STL-01 | P1: Stale filing | AC4 | Tasks | Pending |
+| STL-01 | P1: Stale filing | AC4 | Tasks | Partial (T3 age; T16 mask) |
 | STL-02 | P1: Stale filing | AC4 | Tasks | Pending |
 | STL-03 | P1: Stale filing | AC4 | Tasks | Pending |
 | STL-04 | P1: Stale filing | AC4 | Tasks | Pending |
@@ -273,7 +273,7 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Pending |
 | ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Pending |
 | ADJ-03 | P1: Adjusted verdict | AC7 | Tasks | Pending |
-| ADJ-04 | P1: Adjusted verdict | AC7, AC9 | Tasks | Pending |
+| ADJ-04 | P1: Adjusted verdict | AC7, AC9 | Tasks | Partial (T3 filing; T19 rows) |
 | ADJ-05 | P1: Adjusted verdict | AC7 (DEC-2) | Tasks | Pending |
 | ADJ-06 | P1: Adjusted verdict | AC7 | Tasks | Pending |
 | ADJ-07 | P1: Adjusted verdict | AC7 | Tasks | Pending |

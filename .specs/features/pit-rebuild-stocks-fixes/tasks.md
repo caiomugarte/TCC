@@ -173,11 +173,11 @@ T23 → T24
 
 **Done when**:
 
-- [ ] DFP 2025-12-31 and ITR 2026-03-31 both usable: period end 2026-03-31 and the ITR's `Filing`; ITR received on `d + 1`: 2025-12-31 and the DFP's
-- [ ] No usable filing: None for both
-- [ ] `STALE_FILING_DAYS == 270`
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 3 new tests
+- [x] DFP 2025-12-31 and ITR 2026-03-31 both usable: period end 2026-03-31 and the ITR's `Filing`; ITR received on `d + 1`: 2025-12-31 and the DFP's
+- [x] No usable filing: None for both
+- [x] `STALE_FILING_DAYS == 270`
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 3 new tests
 
 **Tests**: unit
 **Gate**: quick

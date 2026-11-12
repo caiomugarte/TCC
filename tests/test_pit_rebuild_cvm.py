@@ -612,5 +612,46 @@ class YearEarlierItrTests(unittest.TestCase):
         )
 
 
+class NewestFilingTests(unittest.TestCase):
+    """STL-01 (age input) and ADJ-04 (the filing of a worst row): the newest usable period end and filing at d (B-6)."""
+
+    CNPJ = "40.404.404/0001-40"
+    D = date(2026, 8, 7)
+
+    def stores(self, itr_receipt: str = "2026-05-14 18:00:00") -> tuple[cvm.FilingStore, cvm.FilingStore]:
+        # DFP 2025-12-31 (received 2026-03-20) and ITR 2026-03-31 (received as given).
+        dfp = inline_store(
+            "DFP", 2025,
+            f"{self.CNPJ};2025-12-31;1;CASE S.A.;1;DFP;1;2026-03-20 18:00:00;\n",
+            {"DRE_con": dre_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "2025-12-31", "3.01", "1000.00")},
+        )
+        itr = inline_store(
+            "ITR", 2026,
+            f"{self.CNPJ};2026-03-31;1;CASE S.A.;1;ITR;1;{itr_receipt};\n",
+            {"DRE_con": dre_line(self.CNPJ, "2026-03-31", "ÚLTIMO", "2026-01-01", "2026-03-31", "3.01", "250.00")},
+        )
+        return dfp, itr
+
+    def test_the_usable_itr_is_the_newest_period_and_its_filing_is_returned(self):
+        dfp, itr = self.stores()
+        self.assertEqual(cvm.newest_period_end(dfp, itr, self.CNPJ, self.D), date(2026, 3, 31))
+        self.assertEqual(cvm.newest_filing(dfp, itr, self.CNPJ, self.D), itr.period(self.CNPJ, date(2026, 3, 31)).filing)
+
+    def test_an_itr_received_on_d_plus_one_leaves_the_dfp_as_the_newest(self):
+        dfp, itr = self.stores(itr_receipt="2026-08-08 09:00:00")
+        self.assertEqual(cvm.newest_period_end(dfp, itr, self.CNPJ, self.D), date(2025, 12, 31))
+        self.assertEqual(cvm.newest_filing(dfp, itr, self.CNPJ, self.D), dfp.period(self.CNPJ, date(2025, 12, 31)).filing)
+
+    def test_no_usable_filing_gives_none_for_both(self):
+        dfp, itr = self.stores()
+        before_any_receipt = date(2026, 1, 1)
+        self.assertIsNone(cvm.newest_period_end(dfp, itr, self.CNPJ, before_any_receipt))
+        self.assertIsNone(cvm.newest_filing(dfp, itr, self.CNPJ, before_any_receipt))
+        self.assertIsNone(cvm.newest_period_end(dfp, itr, "00.000.000/0001-00", self.D))
+
+    def test_the_stale_filing_limit_is_270_days(self):
+        self.assertEqual(cvm.STALE_FILING_DAYS, 270)
+
+
 if __name__ == "__main__":
     unittest.main()

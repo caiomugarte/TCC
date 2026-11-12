@@ -37,6 +37,7 @@ NET_INCOME = "LL"  # A-21 (F7): per DRE column, 3.11.01 when non-zero, else 3.11
 STATEMENT_ACCOUNTS = ("3.01", "3.11")  # F18: a consolidated DRE with either one non-zero is consolidated
 NET_INCOME_ACCOUNTS = ("3.01", "3.11", "3.11.01")  # the rows load_filings keeps whatever accounts it is asked for
 SHARE_SCALE_FACTORS = (0.01, 0.1, 1, 10, 100, 1000)  # A-18 (F13): the powers of ten from 10^-2 to 10^3
+STALE_FILING_DAYS = 270  # DEC-3 (B-6): a newest usable filing more than this many days before d gives no accounting indicator
 
 _INDEX = re.compile(r"^(dfp|itr)_cia_aberta_(\d{4})\.csv$", re.IGNORECASE)
 _STATEMENT = re.compile(r"^(dfp|itr)_cia_aberta_(BPA|BPP|DRE)_(con|ind)_(\d{4})\.csv$", re.IGNORECASE)
@@ -243,6 +244,18 @@ def balance(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date, account: str
         return None
     value = newest.bal.get(account)
     return None if value is None else Dated(value, newest.filing.dt_receb)
+
+
+def newest_period_end(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> date | None:
+    """DT_REFER of the newest usable filing at d, DFP or ITR (B-6, STL-01)."""
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    return None if newest is None else newest.filing.dt_refer
+
+
+def newest_filing(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Filing | None:
+    """The newest usable filing at d, DFP or ITR: the filing a worst row of the adjusted verdict cites (ADJ-04)."""
+    newest = _newest_usable(dfp, itr, cnpj, d)
+    return None if newest is None else newest.filing
 
 
 def shares(dfp: FilingStore, itr: FilingStore, cnpj: str, d: date) -> Shares | None:
