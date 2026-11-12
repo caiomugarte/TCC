@@ -87,7 +87,7 @@ def cash_market_codbdi(zip_paths: Iterable[Path], tickers: set[str]) -> dict[str
     return found
 
 
-def _records(zip_paths: Iterable[Path]) -> Iterator[_Line]:
+def _records(zip_paths: Iterable[Path]) -> Iterator["_Line"]:
     """Every TIPREG 01 record of the zips' .TXT members, in file order."""
     for path in zip_paths:
         with zipfile.ZipFile(path) as archive:
