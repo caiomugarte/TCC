@@ -187,5 +187,61 @@ class ClassWithoutIsinTests(unittest.TestCase):
         self.assertEqual(result.scaled_total, 1_000_000)  # the filed total times the factor
 
 
+PREV_REFER = date(2026, 3, 31)  # the period end of the previous filing (a Tuesday)
+
+
+def filed_at(dt_refer: date, on: int, pref: int = 0) -> cvm.Shares:
+    return cvm.Shares(on=on, pref=pref, total=on + pref, dt_refer=dt_refer, dt_receb=dt_refer + timedelta(days=40))
+
+
+def suspect_row(prev_on: int, cur_on: int, events=(), prev_factor: float = 1.0, cur_factor: float = 1.0):
+    """shares.suspect for the fixture company: ON on ON_ISIN, the previous filing at PREV_REFER, the current one at DT_REFER."""
+    return shares.suspect(
+        filed_at(PREV_REFER, prev_on), prev_factor, filed_at(DT_REFER, cur_on), cur_factor, list(events), (ON_ISIN,), next_session
+    )
+
+
+class SuspectCountTests(unittest.TestCase):
+    """SHR-05, SHR-06, SHR-07 and B-4: a scaled count that moves more than 20 % with no B3 event between the two filings is listed, never corrected."""
+
+    def test_a_drop_with_no_event_is_listed_with_its_ratio(self):
+        # The Vivara shape: 236,000,000 at the March filing, 82,000,000 at the June one, no event between them.
+        self.assertEqual(
+            suspect_row(236_000_000, 82_000_000),
+            {"dt_refer_prev": PREV_REFER, "total_prev": 236_000_000, "dt_refer": DT_REFER, "total": 82_000_000, "ratio": 0.3475},
+        )
+
+    def test_a_change_of_exactly_20_percent_either_way_is_not_listed(self):
+        self.assertEqual(shares.SUSPECT_CHANGE, 0.20)
+        self.assertIsNone(suspect_row(100, 120))
+        self.assertIsNone(suspect_row(100, 80))
+
+    def test_a_change_of_20_01_percent_either_way_is_listed(self):
+        self.assertEqual(suspect_row(10_000, 12_001)["ratio"], 1.2001)
+        self.assertEqual(suspect_row(10_000, 7_999)["ratio"], 0.7999)
+
+    def test_an_event_in_the_interval_explains_the_change_and_one_on_the_previous_period_end_does_not(self):
+        inside = StockEvent(ON_ISIN, "BONIFICACAO", 2.0, date(2026, 4, 15))  # ex 2026-04-16, in (PREV_REFER, DT_REFER]
+        on_current = StockEvent(ON_ISIN, "BONIFICACAO", 2.0, date(2026, 6, 29))  # ex 2026-06-30 = DT_REFER, in the interval
+        on_previous = StockEvent(ON_ISIN, "BONIFICACAO", 2.0, date(2026, 3, 30))  # ex 2026-03-31 = PREV_REFER, outside
+        self.assertIsNone(suspect_row(236_000_000, 82_000_000, events=[inside]))
+        self.assertIsNone(suspect_row(236_000_000, 82_000_000, events=[on_current]))
+        self.assertEqual(suspect_row(236_000_000, 82_000_000, events=[on_previous])["ratio"], 0.3475)
+
+    def test_the_totals_are_compared_after_their_own_a18_factors(self):
+        self.assertIsNone(suspect_row(1_000, 1_000_000, prev_factor=1_000.0))  # both totals are 1,000,000
+        self.assertIsNotNone(suspect_row(1_000, 1_000_000))  # without the factor the ratio is 1,000
+
+    def test_a_previous_count_of_zero_has_no_ratio_and_is_not_listed(self):
+        self.assertIsNone(suspect_row(0, 82_000_000))
+
+    def test_a_listed_count_is_used_as_filed_and_suspect_changes_no_adjusted_count(self):
+        before = adjust(on=82_000_000)
+        row = suspect_row(236_000_000, 82_000_000)
+        self.assertEqual(set(row), {"dt_refer_prev", "total_prev", "dt_refer", "total", "ratio"})  # the row holds no count (SHR-06)
+        self.assertEqual(adjust(on=82_000_000), before)
+        self.assertEqual((before.n_on, before.factor), (82_000_000, 1))
+
+
 if __name__ == "__main__":
     unittest.main()

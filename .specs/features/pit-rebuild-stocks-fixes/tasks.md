@@ -331,14 +331,14 @@ T23 → T24
 
 **Done when**:
 
-- [ ] 236,000,000 → 82,000,000 with no event: row with `ratio` 0.3475 (SHR-05, the Vivara shape)
-- [ ] Change exactly 20 % (100 → 120 and 100 → 80): None (SHR-07)
-- [ ] 20.01 %: row
-- [ ] Same change with an event ex-date in (prev `DT_REFER`, current `DT_REFER`]: None; event on prev `DT_REFER`: row (SHR-07)
-- [ ] Totals compared after their own factors: 1,000 (×1000) → 1,000,000 (×1): None
-- [ ] `suspect` never changes `Adjusted` (SHR-06: it takes no count to return)
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 6 new tests
+- [x] 236,000,000 → 82,000,000 with no event: row with `ratio` 0.3475 (SHR-05, the Vivara shape)
+- [x] Change exactly 20 % (100 → 120 and 100 → 80): None (SHR-07)
+- [x] 20.01 %: row
+- [x] Same change with an event ex-date in (prev `DT_REFER`, current `DT_REFER`]: None; event on prev `DT_REFER`: row (SHR-07)
+- [x] Totals compared after their own factors: 1,000 (×1000) → 1,000,000 (×1): None
+- [x] `suspect` never changes `Adjusted` (SHR-06: it takes no count to return)
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 6 new tests
 
 **Tests**: unit
 **Gate**: quick

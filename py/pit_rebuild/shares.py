@@ -15,6 +15,7 @@ from . import cvm
 from .dividends import StockEvent, class_events
 
 EVENT_EPSILON = 1e-9  # SHR-03: a class whose event product is within this distance of 1 is not listed as adjusted
+SUSPECT_CHANGE = 0.20  # B-4, SHR-07: a scaled count that moves by more than this with no B3 event in between is suspect
 
 
 @dataclass(frozen=True)
@@ -86,6 +87,39 @@ def adjust(
         applied=applied,
         no_isin=no_isin,
     )
+
+
+def suspect(
+    prev: cvm.Shares,
+    prev_factor: float,
+    current: cvm.Shares,
+    current_factor: float,
+    events: Sequence[StockEvent],
+    isins: Collection[str],
+    next_session: Callable[[date], date | None],
+) -> dict | None:
+    """The SHR-05 row of a scaled count that moved by more than SUSPECT_CHANGE between two filings with no B3 event, else None.
+
+    Both totals are the filed counts times their own A-18 factors (B-4); the ratio is current over previous. isins are
+    the ISINs of the company's class tickers from the previous period end to d (B-4). The row holds no count: the rebuild
+    keeps the count as filed (SHR-06). The caller adds the company's cd_cvm.
+    """
+    prev_total = (prev.on + prev.pref) * prev_factor
+    current_total = (current.on + current.pref) * current_factor
+    if prev_total <= 0 or current_total <= 0:
+        return None  # no composition to compare (SHR-05)
+    ratio = current_total / prev_total
+    if round(abs(ratio - 1.0), 9) <= SUSPECT_CHANGE:  # the rounding keeps float noise off a change of exactly 20 % (SHR-07)
+        return None
+    if class_events(events, isins, prev.dt_refer, current.dt_refer, next_session):
+        return None  # an event with ex-date in (prev DT_REFER, current DT_REFER] explains the change (SHR-07)
+    return {
+        "dt_refer_prev": prev.dt_refer,
+        "total_prev": round(prev_total),
+        "dt_refer": current.dt_refer,
+        "total": round(current_total),
+        "ratio": round(ratio, 4),
+    }
 
 
 def _product(pairs: Sequence[tuple[StockEvent, date]]) -> float:
