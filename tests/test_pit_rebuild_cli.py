@@ -48,6 +48,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "tests"))
 from pit_rebuild import cli, cotahist, cvm, safety, sources  # noqa: E402
 from pit_rebuild.cache import Cache  # noqa: E402
 from pit_rebuild.dividends import B3Company, StockEvent  # noqa: E402
+from pit_rebuild.fields import ACCOUNTING_FIELDS  # noqa: E402
 from pit_rebuild_support import UNIVERSE, FakeOpener, FakeResponse, make_zip, populate_cache, universe_routes  # noqa: E402
 
 D1 = date(2026, 8, 7)
@@ -152,13 +153,17 @@ class ReportSuccessTests(ReportCase):
         self.assertTrue((self.out / MARKDOWN).is_file())
         report = self.report_json()
         self.assertEqual(report["parameters"]["dates"], [ISO1, ISO2])
-        # P/L, non-financial (the 15 eligible non-financial tickers with a Status Invest P/L): 11 within
-        # 5 %; COBR3 (no share count), NOUS3 (no usable filing), NOQT3 (no quote) and ZZZZ3 (unmapped) are out.
-        for iso in (ISO1, ISO2):
-            pl = report["dates"][iso]["fields"]["P/L"]["non_financial"]
-            self.assertEqual((pl["denominator"], pl["within"]), (15, 11), iso)
-            self.assertEqual(report["dates"][iso]["verdicts"]["P/L"]["non_financial"], "com ressalvas")
-        self.assertEqual(report["dates"][ISO1]["fields"]["P/L"]["non_financial"]["pct_within"], 100 * 11 / 15)
+        # P/L, non-financial (the 15 eligible non-financial tickers with a Status Invest P/L). COBR3 (no share count),
+        # NOUS3 (no usable filing), NOQT3 (no quote) and ZZZZ3 (unmapped) are out. REFL3 uses its 2024 filing on the first
+        # date, 584 days old at 2026-08-07, so STL-01 blanks it: 10 within of 15, 66.7 %, which is "não reconstruível".
+        pl1 = report["dates"][ISO1]["fields"]["P/L"]["non_financial"]
+        self.assertEqual((pl1["denominator"], pl1["within"]), (15, 10), ISO1)
+        self.assertEqual(report["dates"][ISO1]["verdicts"]["P/L"]["non_financial"], "não reconstruível")
+        self.assertEqual(pl1["pct_within"], 100 * 10 / 15)
+        # On the second date every usable filing is the 2025 DFP, 310 days old at 2026-11-06: all 15 P/L values are blanked.
+        pl2 = report["dates"][ISO2]["fields"]["P/L"]["non_financial"]
+        self.assertEqual((pl2["denominator"], pl2["within"]), (15, 0), ISO2)
+        self.assertEqual(report["dates"][ISO2]["verdicts"]["P/L"]["non_financial"], "não reconstruível")
         # PRECO, LIQUIDEZ and DY: 15 in the denominator, 12 within (NOUS3, NOQT3 and ZZZZ3 out).
         for field in ("PRECO", "LIQUIDEZ MEDIA DIARIA", "DY"):
             stats = report["dates"][ISO1]["fields"][field]["non_financial"]
@@ -166,7 +171,9 @@ class ReportSuccessTests(ReportCase):
         # P/VP, PSR, EV/EBIT and PEG RATIO: COBR3 is the only reference and has no share count, so 0 of 1.
         self.assertEqual(report["dates"][ISO1]["verdicts"]["P/VP"]["non_financial"], "não reconstruível")
         self.assertEqual(report["verdicts"]["class"], "não reconstruível")
-        self.assertEqual(report["verdicts"]["financial_group"], "reconstruível")  # BANC3 alone, 100 % within
+        # BANC3 alone: 100 % within on both dates before #64. Its 2025 DFP is 310 days old at 2026-11-06, so its accounting
+        # fields have no value on the second date (STL-01) and the financial group is "não reconstruível" overall.
+        self.assertEqual(report["verdicts"]["financial_group"], "não reconstruível")
         self.assertFalse(report["verdicts"]["class_differs"])
 
     def test_the_report_is_written_from_a_run_that_made_no_request(self):
@@ -204,9 +211,13 @@ class ReportSuccessTests(ReportCase):
         report = self.success()
         for iso in (ISO1, ISO2):
             day = report["dates"][iso]
-            for field in ("VALOR DE MERCADO", "P/L", "P/VP", "PSR", "EV/EBIT", "PEG RATIO"):
+            # VALOR DE MERCADO is a market field: it keeps the reason of the missing count
+            self.assertIn({"ticker": "COBR3", "reason": "no_share_count"}, day["fields"]["VALOR DE MERCADO"]["non_financial"]["missing"], iso)
+            # the accounting fields: the share count is missing on both dates; on the second date its filing is stale (STL-01)
+            reason = "no_share_count" if iso == ISO1 else "stale_filing"
+            for field in ("P/L", "P/VP", "PSR", "EV/EBIT", "PEG RATIO"):
                 missing = day["fields"][field]["non_financial"]["missing"]
-                self.assertIn({"ticker": "COBR3", "reason": "no_share_count"}, missing, (iso, field))
+                self.assertIn({"ticker": "COBR3", "reason": reason}, missing, (iso, field))
             self.assertNotIn("1004", [row["cd_cvm"] for row in day["mapping"]["share_scale"]["scaled"]])
             self.assertNotIn("1004", day["mapping"]["share_scale"]["unverified"])
 
@@ -226,7 +237,14 @@ class ReportSuccessTests(ReportCase):
         # so that date uses its 2024 filing and REFL3 is flagged.
         self.assertEqual(report["dates"][ISO1]["mapping"]["refiled_after_d"], ["REFL3"])
         self.assertEqual(report["dates"][ISO2]["mapping"]["refiled_after_d"], [])
-        self.assertEqual(report["dates"][ISO2]["fields"]["P/L"]["non_financial"]["within"], 11)
+        self.assertEqual(report["dates"][ISO2]["fields"]["P/L"]["non_financial"]["within"], 0)  # every usable filing is stale (STL-01)
+        # STL-03: each stale ticker with its filing and its age in days; the list is sorted by ticker. REFL3's 2024 filing
+        # is 584 days old on the first date (2026-08-07) and BANC3's 2025 filing 310 days old on the second (2026-11-06).
+        first = {row["ticker"]: row for row in report["dates"][ISO1]["mapping"]["stale_filing"]}
+        self.assertEqual((first["REFL3"]["dt_refer"], first["REFL3"]["age_days"]), ("2024-12-31", 584))
+        second = report["dates"][ISO2]["mapping"]["stale_filing"]
+        self.assertEqual([row["ticker"] for row in second], sorted(row["ticker"] for row in second))
+        self.assertEqual({row["ticker"]: row["age_days"] for row in second}["BANC3"], 310)
 
     def test_dividends_are_cut_at_the_decision_date_and_counted_per_source(self):
         report = self.success()
@@ -599,7 +617,11 @@ SHAPE_COMPANIES = {  # root: (CNPJ, CD_CVM, name, ON shares, PN shares)
     "BONU": ("34.000.000/0001-34", "2014", "BONU S.A.", 100_000_000, 0),
     "LATE": ("35.000.000/0001-35", "2015", "LATE S.A.", 100_000_000, 0),
     "JUMP": ("36.000.000/0001-36", "2016", "JUMP S.A.", 150_000_000, 0),  # 100 M in 2024, 150 M in 2025, no B3 event (SHR-05)
+    "OLDF": ("37.000.000/0001-37", "2017", "OLDF S.A.", 100_000_000, 0),  # its only filing ends 2025-10-31 (STL-01)
+    "ANTE": ("38.000.000/0001-38", "2018", "ANTE S.A.", 100_000_000, 0),  # another stale filing, listed after OLDF in the SI rows
 }
+# the period end of the DFP of a company whose fiscal year does not end in December (default 2025-12-31)
+SHAPE_PERIOD_END = {"OLDF": "2025-10-31", "ANTE": "2025-10-31"}
 # the stale ticker of the as-of and reference-stale tests: its last session is d - 31 (2026-07-07)
 SHAPE_STALE = ("STAL3", "STAL", "ON", 10.0, "BRSTAL3CNOR1", date(2026, 7, 7))
 # ticker, company root, ESPECI, close on every session, ISIN (12 columns)
@@ -619,6 +641,8 @@ SHAPE_QUOTES = [
     ("BONU3", "BONU", "ON", 10.0, "BRBONU3CNOR1"),
     ("LATE3", "LATE", "ON", 10.0, "BRLATE3CNOR1"),
     ("JUMP3", "JUMP", "ON", 10.0, "BRJUMP3CNOR1"),
+    ("OLDF3", "OLDF", "ON", 10.0, "BROLDF3CNOR1"),
+    ("ANTE3", "ANTE", "ON", 10.0, "BRANTE3CNOR1"),
 ]
 # FCA rows: ticker, root, valor mobiliario, composition (units only)
 SHAPE_FCA = [
@@ -641,6 +665,8 @@ SHAPE_FCA = [
     ("BONU3", "BONU", "Ações Ordinárias", ""),
     ("LATE3", "LATE", "Ações Ordinárias", ""),
     ("JUMP3", "JUMP", "Ações Ordinárias", ""),
+    ("OLDF3", "OLDF", "Ações Ordinárias", ""),
+    ("ANTE3", "ANTE", "Ações Ordinárias", ""),
 ]
 # Status Invest rows of the eligible tickers (VM and liquidity make them eligible; the reference values are off on purpose)
 SHAPE_SI = [
@@ -661,6 +687,9 @@ SHAPE_SI = [
     {"TICKER": "BONU3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
     {"TICKER": "LATE3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
     {"TICKER": "JUMP3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000},
+    # every accounting field has a Status Invest reference, so the stale ticker is in each field's missing list (STL-03)
+    {"TICKER": "OLDF3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, **{field: 1.0 for field in ACCOUNTING_FIELDS}},
+    {"TICKER": "ANTE3", "VALOR DE MERCADO": 200_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, **{field: 1.0 for field in ACCOUNTING_FIELDS}},
 ]
 SHAPE_DFP_STATEMENTS = {  # root: (BPP rows, consolidated DRE rows, individual DRE rows)
     "MINO": ([("2.03", 200_000_000.0), ("2.03.09", 50_000_000.0)], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
@@ -766,17 +795,18 @@ def write_shape_universe(root: Path) -> Path:
     writer.writerows(si_rows)
     _latin1(root / "si_2026-08-07.csv", buffer.getvalue())
     dfp = root / "dfp" / "2025"
+    end = {key: SHAPE_PERIOD_END.get(key, "2025-12-31") for key in SHAPE_COMPANIES}
     _latin1(
         dfp / "dfp_cia_aberta_2025.csv",
         "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;CD_CVM;CATEG_DOC;ID_DOC;DT_RECEB;LINK_DOC\n"
-        + "".join(f"{cnpj[k]};2025-12-31;1;{name[k]};{cd[k]};DFP;1;2026-03-01 18:00:00;\n" for k in SHAPE_COMPANIES),
+        + "".join(f"{cnpj[k]};{end[k]};1;{name[k]};{cd[k]};DFP;1;2026-03-01 18:00:00;\n" for k in SHAPE_COMPANIES),
     )
     _latin1(
         dfp / "dfp_cia_aberta_composicao_capital_2025.csv",
         "CNPJ_CIA;DT_REFER;VERSAO;DENOM_CIA;QT_ACAO_ORDIN_CAP_INTEGR;QT_ACAO_PREF_CAP_INTEGR;QT_ACAO_TOTAL_CAP_INTEGR;"
         "QT_ACAO_ORDIN_TESOURO;QT_ACAO_PREF_TESOURO;QT_ACAO_TOTAL_TESOURO\n"
         + "".join(
-            f"{cnpj[k]};2025-12-31;1;{name[k]};{value[3]};{value[4]};{value[3] + value[4]};0;0;0\n"
+            f"{cnpj[k]};{end[k]};1;{name[k]};{value[3]};{value[4]};{value[3] + value[4]};0;0;0\n"
             for k, value in SHAPE_COMPANIES.items()
         ),
     )
@@ -999,6 +1029,26 @@ class ShapeReportTests(unittest.TestCase):
         self.assertIn({"cd_cvm": "2003", "class": "PREF"}, self.report["dates"][ISO1]["mapping"]["share_events"]["no_isin"])
         self.assertEqual(self.share_event_rows("2003"), [])
 
+    def test_a_filing_older_than_270_days_gives_no_accounting_value_and_keeps_its_market_value(self):
+        # OLDF: its only filing ends 2025-10-31, 280 days before 2026-08-07 (STL-01): the 15 accounting fields have no value with
+        # stale_filing, the ticker is listed and stays mapped with its market value (STL-02, STL-03)
+        self.assertEqual(
+            self.report["dates"][ISO1]["mapping"]["stale_filing"],
+            [
+                {"ticker": "ANTE3", "cd_cvm": "2018", "dt_refer": "2025-10-31", "age_days": 280},
+                {"ticker": "OLDF3", "cd_cvm": "2017", "dt_refer": "2025-10-31", "age_days": 280},
+            ],
+        )
+        fields = self.report["dates"][ISO1]["fields"]
+        for field in ACCOUNTING_FIELDS:
+            reasons = {row["ticker"]: row["reason"] for row in fields[field]["non_financial"]["missing"]}
+            self.assertEqual(reasons.get("OLDF3"), "stale_filing", field)
+        self.assertNotIn("OLDF3", self.unmapped())
+        self.assertEqual(worst_value(self.report, "VALOR DE MERCADO", "OLDF3"), 1_000_000_000.0)  # 100 M x 10.00
+        for field in ("PRECO", "LIQUIDEZ MEDIA DIARIA", "DY"):  # the market fields keep their own reasons (STL-02)
+            reasons = {row["ticker"]: row["reason"] for row in fields[field]["non_financial"]["missing"]}
+            self.assertNotEqual(reasons.get("OLDF3"), "stale_filing", field)
+
 
 class ShapeAsOfTests(unittest.TestCase):
     """The as-of check (A-11) on the shape universe, whose CODB3 close moves from 20.00 to 30.00 on the last session."""
@@ -1144,13 +1194,16 @@ class CollectedOnAndCutoffTests(ReportCase):
         self.assertEqual(cut["dates"], plain["dates"])
         self.assertEqual(cut["parameters"]["filings_cutoffs"], {ISO2: "2026-09-14"})
         self.assertIs(cut["sensitivities"]["official"], False)
-        # REFL3 (2025 filing received 2026-09-15): P/L 5.00 in the official run, within; with the 2024 filing (10.00) it is out
+        # At 2026-11-06 every usable filing is the 2025 DFP, 310 days old (STL-01), so no P/L is within in either run.
+        # REFL3's filing received 2026-09-15 is not used by the cutoff, and its 2025 version 1 is stale all the same.
         official = cut["dates"][ISO2]["fields"]["P/L"]["non_financial"]
-        self.assertEqual((official["denominator"], official["within"]), (15, 11))
+        self.assertEqual((official["denominator"], official["within"]), (15, 0))
         recomputed = cut["sensitivities"]["filings_cutoff"][ISO2]
         self.assertEqual(recomputed["cutoff"], "2026-09-14")
         self.assertEqual((recomputed["fields"]["P/L"]["non_financial"]["denominator"],
-                          recomputed["fields"]["P/L"]["non_financial"]["within"]), (15, 10))
+                          recomputed["fields"]["P/L"]["non_financial"]["within"]), (15, 0))
+        reasons = {row["ticker"]: row["reason"] for row in recomputed["fields"]["P/L"]["non_financial"]["missing"]}
+        self.assertEqual(reasons["REFL3"], "stale_filing")  # the cutoff applies the same rule (T16)
 
     def test_class_without_roic_peg_is_on_every_exit_0_run(self):
         sensitivities = self.success()["sensitivities"]
@@ -1402,6 +1455,48 @@ class RetrievedOnTests(unittest.TestCase):
     def test_the_utc_hours_before_three_in_the_morning_belong_to_the_day_before(self):
         self.assertEqual(self.company_retrieved_at("2026-11-10T02:59:59Z").retrieved_on, date(2026, 11, 9))
         self.assertEqual(self.company_retrieved_at("2026-11-10T03:00:00Z").retrieved_on, date(2026, 11, 10))
+
+
+class StaleFilingCutoffTests(unittest.TestCase):
+    """STL-01 in the --filings-cutoff sensitivity: the cutoff evaluation applies the same rule, and the decision date does not move (B-6)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls._tmp = tempfile.TemporaryDirectory()
+        base = Path(cls._tmp.name)
+        universe = write_shape_universe(base / "universe")
+        cache = base / "cache"
+        populate_cache(cache, (D1,), universe)
+        pin_retrieval(cache, SHAPE_RETRIEVED)
+        code, err = run(
+            ["report", "--date", ISO1, "--si", str(universe / "si_2026-08-07.csv"), "--cache-dir", str(cache),
+             "--out-dir", str(base / "out"), "--offline", "--filings-cutoff", f"{ISO1}:2026-08-03"]
+        )
+        if code != 0:
+            raise RuntimeError(f"the cutoff report exited {code}: {err}")
+        cls.report = json.loads((base / "out" / REPORT).read_text(encoding="utf-8"))
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_the_cutoff_evaluation_gives_the_stale_ticker_no_accounting_value_as_well(self):
+        block = self.report["sensitivities"]["filings_cutoff"][ISO1]
+        self.assertEqual(block["cutoff"], "2026-08-03")
+        reasons = {row["ticker"]: row["reason"] for row in block["fields"]["P/L"]["non_financial"]["missing"]}
+        self.assertEqual(reasons.get("OLDF3"), "stale_filing")
+
+
+class StaleFilingRuleTests(unittest.TestCase):
+    """STL-04 and B-6: a filing is stale when its age is more than 270 days; exactly 270 days is not stale."""
+
+    def test_exactly_270_days_is_not_stale_and_271_days_is(self):
+        period_end = date(2025, 10, 31)
+        self.assertFalse(cli._is_stale(period_end, date(2026, 7, 28)))  # 270 days
+        self.assertTrue(cli._is_stale(period_end, date(2026, 7, 29)))  # 271 days
+
+    def test_a_company_with_no_usable_filing_has_no_stale_age(self):
+        self.assertFalse(cli._is_stale(None, date(2026, 8, 7)))
 
 
 if __name__ == "__main__":

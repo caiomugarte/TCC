@@ -44,7 +44,7 @@ from . import shares as share_counts
 from .cache import Cache
 from .errors import ArgumentError, MissingPathError, OutputError, RebuildError, SourceError
 from .fields import ALL_FIELDS
-from .indicators import Input, TickerInputs, Value, compute
+from .indicators import STALE_FILING_REASON, Input, TickerInputs, Value, compute, mask_accounting
 
 DEFAULT_CACHE_DIR = safety.REPO_ROOT / ".cache" / "pit-rebuild"
 DEFAULT_OUT_DIR = safety.REPO_ROOT / "docs" / "validation"
@@ -386,6 +386,7 @@ class _Company:
     share_events: list[dict]  # share_events.adjusted: the classes whose B3 events moved their count (AD-033, SHR-03)
     no_isin: list[dict]  # share_events.no_isin: the classes with shares and no ISIN at d (SHR-04)
     suspect: dict | None  # share_count_suspect: a jump of the count with no B3 event between two filings (SHR-05)
+    period_end: date | None  # DT_REFER of the newest usable filing, read at filings_day (B-6, STL-01)
 
 
 def _dated(item) -> Input | None:
@@ -530,6 +531,11 @@ def _counts(
     return _Counts(adjusted.n_on, adjusted.n_pref, scaled, False, share_events, no_isin, suspect)
 
 
+def _is_stale(period_end: date | None, day: date) -> bool:
+    """Whether the newest usable filing ends more than STALE_FILING_DAYS before day, so its accounting fields have no value (STL-01, STL-04, B-6)."""
+    return period_end is not None and (day - period_end).days > cvm.STALE_FILING_DAYS
+
+
 def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[str], filings_day: date) -> _Company:
     """Share counts with the A-18 scale and the B3 events of their classes (AD-033), the A-17 class prices (F14) and the class fallback of one company.
 
@@ -554,6 +560,7 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
         price_on=quoted["ON"], price_pref=quoted["PREF"], fallback=fallback, stale=stale,
         inputs=_company_inputs(acq, cnpj, filings_day), dre_desc=cvm.dre_description(acq.dfp, acq.itr, cnpj, filings_day),
         share_events=counts.share_events, no_isin=counts.no_isin, suspect=counts.suspect,
+        period_end=cvm.newest_period_end(acq.dfp, acq.itr, cnpj, filings_day),
     )
 
 
@@ -674,6 +681,7 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
         "share_scale": {"scaled": [], "unverified": []},
         "share_events": {"adjusted": [], "no_isin": []},
         "share_count_suspect": [],
+        "stale_filing": [],
         "reference_stale": sorted(ticker for ticker in eligible if cotahist.reference_stale(acq.quotes, ticker, day)),
         "financial": [], "unclassified": [],
     }
@@ -752,6 +760,13 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None) ->
             **company.inputs,
         )
         values[ticker] = compute(inputs, day)
+        if _is_stale(company.period_end, day):  # STL-01: a stale filing gives its accounting fields no value
+            values[ticker] = mask_accounting(values[ticker], STALE_FILING_REASON)
+            out["stale_filing"].append({
+                "ticker": ticker, "cd_cvm": company.cd_cvm, "dt_refer": company.period_end.isoformat(),
+                "age_days": (day - company.period_end).days,
+            })
+    out["stale_filing"].sort(key=lambda row: row["ticker"])
     pairs: dict[str, dict[str, list]] = {name: {group: [] for group in GROUP_KEYS} for name in ALL_FIELDS}
     for ticker in eligible:
         group = group_of[ticker]

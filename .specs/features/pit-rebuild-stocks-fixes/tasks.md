@@ -584,12 +584,12 @@ T23 → T24
 
 **Done when**:
 
-- [ ] At 2026-08-07 (age 280): the 15 accounting fields are missing with reason `stale_filing` in the field statistics, and the ticker is in `stale_filing` (STL-01, STL-03)
-- [ ] The ticker stays in `mapped` and in each denominator; `PRECO`, `VALOR DE MERCADO`, `LIQUIDEZ MEDIA DIARIA`, `DY` have values (STL-02)
-- [ ] With the filing ending 270 days before the date: not stale (STL-04)
-- [ ] The `--filings-cutoff` evaluation applies the same rule
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 3 new CLI tests
+- [x] At 2026-08-07 (age 280): the 15 accounting fields are missing with reason `stale_filing` in the field statistics, and the ticker is in `stale_filing` (STL-01, STL-03)
+- [x] The ticker stays in `mapped` and in each denominator; `PRECO`, `VALOR DE MERCADO`, `LIQUIDEZ MEDIA DIARIA`, `DY` have values (STL-02)
+- [x] With the filing ending 270 days before the date: not stale (STL-04)
+- [x] The `--filings-cutoff` evaluation applies the same rule
+- [x] Gate check passes: Full
+- [x] Test count: ≥ 3 new CLI tests
 
 **Tests**: integration
 **Gate**: full
