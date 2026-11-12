@@ -77,25 +77,31 @@ class MeasureWordingTests(unittest.TestCase):  # B-10 r5 (V9): the motive states
         self.assertNotIn("reproduz", motive)
 
 
-class DySubsetTests(unittest.TestCase):
+class DyWindowTests(unittest.TestCase):  # B-10 r5: only contiguous windows of the class's records, in data-ex order
     LINES = [_line(0.5), _line(0.25), _line(0.1), _line(0.7)]
 
-    def test_a_subset_that_reproduces_the_dy_at_two_decimals_is_found(self):  # 0.5 + 0.25 + 0.1 = 0.85 on a price of 100
+    def test_a_contiguous_window_that_reproduces_the_dy_at_two_decimals_is_found(self):  # 0.5 + 0.25 + 0.1 = 0.85 on a price of 100
         found = audit.dy_search(self.LINES, 0.85, [("d", 100.0), ("d − 1", None)])
-        self.assertEqual(found["d"], [0, 1, 2])
+        self.assertEqual(found["d"], (0, 2))  # lines 0 to 2, both ends included
         self.assertIsNone(found["d − 1"])  # no close of d − 1: nothing to test
 
-    def test_the_same_subset_reproduces_on_the_other_close_when_the_price_changes(self):  # 0.85 / 50 = 1.70 %
+    def test_the_same_window_reproduces_on_the_other_close_when_the_price_changes(self):  # 0.85 / 50 = 1.70 %
         found = audit.dy_search(self.LINES, 1.7, [("d", 100.0), ("d − 1", 50.0)])
         self.assertIsNone(found["d"])
-        self.assertEqual(found["d − 1"], [0, 1, 2])
+        self.assertEqual(found["d − 1"], (0, 2))
 
-    def test_no_subset_means_no_witness(self):  # 0.3 is not a sum of these lines (0.1, 0.25, 0.5, 0.7 and their sums)
+    def test_a_subset_that_skips_a_line_is_not_a_window(self):  # 0.5 + 0.1 = 0.6 skips 0.25: no contiguous window gives 0.6
+        self.assertIsNone(audit.dy_search(self.LINES, 0.6, [("d", 100.0)])["d"])
+
+    def test_no_window_means_no_result(self):  # 0.3 is the sum of no window of these lines
         self.assertIsNone(audit.dy_search(self.LINES, 0.3, [("d", 100.0)])["d"])
 
     def test_identical_lines_are_separate_items_as_the_status_invest_sums_them(self):  # two lines of 0.4 make 0.8
-        found = audit.dy_search([_line(0.4), _line(0.4)], 0.8, [("d", 100.0)])
-        self.assertEqual(found["d"], [0, 1])
+        self.assertEqual(audit.dy_search([_line(0.4), _line(0.4)], 0.8, [("d", 100.0)])["d"], (0, 1))
+
+    def test_the_shortest_window_is_cited_and_among_equal_lengths_the_earliest(self):
+        self.assertEqual(audit.dy_search([_line(0.25), _line(0.25), _line(0.5)], 0.5, [("d", 100.0)])["d"], (2, 2))  # one line beats two
+        self.assertEqual(audit.dy_search([_line(0.25)] * 4, 0.5, [("d", 100.0)])["d"], (0, 1))  # three windows of two: the first
 
 
 def _cached(received):

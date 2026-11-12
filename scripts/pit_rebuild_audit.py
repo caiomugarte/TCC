@@ -53,7 +53,7 @@ METODO = "diferença de método"
 WITHIN = "dentro da tolerância"
 NC = "não classificado"
 ORDER = [ERRO_NOSSO, ERRO_SI, METODO, WITHIN, NC]
-SEM_BASE_PREFIXES = ("nenhum dos ", "nenhum subconjunto dos proventos")  # motive prefixes of `sem base`
+SEM_BASE_PREFIXES = ("nenhum dos ", "nenhuma janela contígua dos proventos")  # motive prefixes of `sem base`
 SHARE_FIELDS = ("P/L", "P/VP", "PSR", "EV/EBIT")
 FIELD_ACCOUNTS = {
     "P/L": ["3.11.01", "3.11"],
@@ -74,29 +74,15 @@ ACCOUNTS = ["3.01", "3.05", "3.08", "3.11", "3.11.01", "1", "1.01", "1.01.01", "
 DRE_ACCOUNTS = {"3.01", "3.05", "3.08", "3.11", "3.11.01"}
 METHODS = [(), ("LL_TOTAL",), ("PL_TOTAL",), ("LL_TOTAL", "PL_TOTAL")]
 
-# DY rows with a decision taken from the B3 records (the records are the cache's; the motive is the
-# reading). A row with cls NC has no decision: it goes through `dy_search`. `trading` names the B3 files.
+# DY rows decided by hand (B-10 r5): the search reads a contiguous window of the B3 records, so only these four keep a
+# manual reading. HBRE3 is our error (the B3 short history gave one record only); TGMA3 is a method difference (the SI's
+# window starts after its last-date cut); COCE5 is a blank DY of the SI (treated as 0,00, A-4). `records` are the B3 lines
+# cited, as (lastDatePriorEx, valueCash) of the company's B3 file.
 DY_DECISIONS = {
-    ("2026-08-07", "HBRE3"): dict(cls=ERRO_NOSSO, trading="HBR REALTY", records=[("30/12/2025", "0,87407147387"), ("30/12/2025", "0,29135715796")], yahoo="Yahoo yahoo_HBRE3_2026-11-07.json: 2026-01-02 0.485595", motive="fonte Yahoo (histórico B3 curto, `b3_short_history`) dá um registro de 0,4856; a B3 lista dois registros de 30/12/2025 que somam 1,1654, que é o DY do SI (52,5 %)"),
-    ("2026-08-07", "RIAA3"): dict(cls=ERRO_SI, trading="RIACHUELO", records=[("22/12/2025", "0,82658586042")], motive="o SI deixa de fora o JCP de 0,8266 (lastDatePrior 22/12/2025): soma 2,428 de 3,255"),
-    ("2026-11-05", "RIAA3"): dict(cls=ERRO_SI, trading="RIACHUELO", records=[("22/12/2025", "0,82658586042")], motive="o SI deixa de fora o JCP de 0,8266 (lastDatePrior 22/12/2025): soma 2,488 de 3,315"),
-    ("2026-08-07", "MDNE3"): dict(cls=ERRO_SI, trading="MOURA DUBEUX", records=[("30/12/2025", "0,59183509277")], motive="o SI soma o dividendo de 0,5918 quatro vezes; a B3 lista seis linhas idênticas e a regra A-15 mantém uma"),
-    ("2026-11-05", "MDNE3"): dict(cls=ERRO_SI, trading="MOURA DUBEUX", records=[("30/12/2025", "0,59183509277")], motive="o SI soma o dividendo de 0,5918 quatro vezes; a B3 lista seis linhas idênticas e a regra A-15 mantém uma"),
-    ("2026-08-07", "VLID3"): dict(cls=ERRO_SI, trading="VALID", records=[("28/11/2025", "0,37646831702")], motive="o SI soma o JCP de 0,3765 quatro vezes; a B3 lista quatro linhas idênticas e a regra A-15 mantém uma"),
-    ("2026-11-05", "VLID3"): dict(cls=ERRO_SI, trading="VALID", records=[("28/11/2025", "0,37646831702")], motive="o SI soma o JCP de 0,3765 quatro vezes; a B3 lista quatro linhas idênticas e a regra A-15 mantém uma"),
-    ("2026-08-07", "EQPA3"): dict(cls=ERRO_SI, trading="EQTL PARA", records=[("25/06/2026", "0,31687485244")], motive="o SI deixa de fora o dividendo ON de 0,3169 (lastDatePrior 25/06/2026); o DY do SI (2,53 %) é só o de 30/04/2026"),
-    ("2026-11-05", "EQPA3"): dict(cls=ERRO_SI, trading="EQTL PARA", records=[("25/06/2026", "0,31687485244")], motive="o SI deixa de fora o dividendo ON de 0,3169 (lastDatePrior 25/06/2026); o DY do SI (4,65 %) soma 0,1346 e 0,0958"),
-    ("2026-08-07", "PFRM3"): dict(cls=ERRO_SI, trading="PROFARMA", records=[("30/12/2025", "0,31808023603")], motive="o SI deixa de fora o dividendo ON de 0,3181 (lastDatePrior 30/12/2025); o DY do SI (4,63 %) é 2 × 0,1631"),
-    ("2026-11-05", "PFRM3"): dict(cls=ERRO_SI, trading="PROFARMA", records=[("30/12/2025", "0,31808023603")], motive="o SI deixa de fora o dividendo ON de 0,3181 (lastDatePrior 30/12/2025); o DY do SI (2,42 %) é 0,1631"),
-    ("2026-08-07", "COCE5"): dict(cls=ERRO_SI, trading="COELCE", records=[("29/04/2026", "1,48326563")], motive="o SI traz DY em branco (tratado como 0,00, A-4); a B3 lista o dividendo PNA de 1,4833 (lastDatePrior 29/04/2026)"),
-    ("2026-11-05", "COCE5"): dict(cls=ERRO_SI, trading="COELCE", records=[("29/04/2026", "1,48326563")], motive="o SI traz DY em branco (tratado como 0,00, A-4); a B3 lista o dividendo PNA de 1,4833 (lastDatePrior 29/04/2026)"),
-    ("2026-11-05", "PASS3"): dict(cls=ERRO_SI, trading="COMPASS", records=[("19/12/2025", "0,70009371944")], motive="o SI deixa de fora o dividendo ON de 0,7001 (lastDatePrior 19/12/2025); o DY do SI (2,90 %) é só o de 04/05/2026"),
-    ("2026-08-07", "TGMA3"): dict(cls=METODO, trading="TEGMA", records=[("07/08/2025", "1,21"), ("07/08/2025", "0,14")], motive="o SI deixa de fora 1,21 + 0,14 com lastDatePrior 07/08/2025 (= d − 365, data-ex 08/08/2025); o DY do SI (10,84 %) soma 3,63 com o resto: o SI parece contar pelo último dia com direito e não pela data-ex (inferência de um caso)"),
-    ("2026-08-07", "HBOR3"): dict(cls=NC, trading="HELBOR"),
-    ("2026-08-07", "CLSC4"): dict(cls=NC, trading="CELESC"),
-    ("2026-11-05", "JSLG3"): dict(cls=NC, trading="JSL"),
-    ("2026-11-05", "EQTL3"): dict(cls=NC, trading="EQUATORIAL"),
-    ("2026-11-05", "MBRF3"): dict(cls=NC, trading="MARFRIG"),
+    ("2026-08-07", "HBRE3"): dict(cls=ERRO_NOSSO, records=[("30/12/2025", "0,87407147387"), ("30/12/2025", "0,29135715796")], yahoo="Yahoo yahoo_HBRE3_2026-11-07.json: 2026-01-02 0.485595", motive="a soma dos dois registros da B3 de 30/12/2025 (1,1654) é igual, a duas casas, ao DY do SI (52,5 %) sobre o fechamento de d; o projeto usa o registro do Yahoo (0,4856), que vem do histórico curto da B3 (`b3_short_history`), e dá 21,87 %"),
+    ("2026-08-07", "TGMA3"): dict(cls=METODO, records=[("06/11/2025", "0,18"), ("06/11/2025", "0,79"), ("02/12/2025", "1,52"), ("06/08/2026", "0,29"), ("06/08/2026", "0,85"), ("07/08/2025", "0,14"), ("07/08/2025", "1,21")], motive="o DY do SI (10,84 %) é igual, a duas casas, à soma de cinco registros contíguos da B3 (lastDatePrior 06/11/2025 a 06/08/2026) sobre o fechamento de d; a janela do projeto soma também 0,14 e 1,21 (lastDatePrior 07/08/2025, data-ex 08/08/2025), que dão 4,03 pontos a mais (14,87 %); a diferença é de método: o corte do SI parece ser pelo lastDatePrior, e não pela data-ex (inferência de um caso)"),
+    ("2026-08-07", "COCE5"): dict(cls=ERRO_SI, records=[("29/04/2026", "1,48326563")], motive="nenhuma janela contígua dos proventos da B3 reproduz o valor do SI: a célula está em branco no CSV e entra como 0,00 (A-4); a B3 lista o dividendo PNA de 1,4833 (lastDatePrior 29/04/2026)"),
+    ("2026-11-05", "COCE5"): dict(cls=ERRO_SI, records=[("29/04/2026", "1,48326563")], motive="nenhuma janela contígua dos proventos da B3 reproduz o valor do SI: a célula está em branco no CSV e entra como 0,00 (A-4); a B3 lista o dividendo PNA de 1,4833 (lastDatePrior 29/04/2026)"),
 }
 
 
@@ -586,52 +572,28 @@ def b3_records(trading, cls_type, quotes):
     return recs
 
 
-GRID = 1e-5  # R$ unit of the DY subset search: amounts are rounded to it; every subset found is checked with its exact sum
-
-
 def dy_search(lines, ref, prices):
-    """One reproducing subset of the cache's B3 lines per price: {name: indices (ascending), or None}.
+    """One reproducing window of the class's B3 lines per price: {name: (i, j), j inclusive, or None} (B-10 r5).
 
-    Every line is an item, identical lines included (the SI sums them), with or without an ex-date. Sums are
-    counted in GRID units: `reach[i]` is the bitset of the sums of the subsets of the first i lines, so the
-    subsets are read back from the snapshots without enumerating them. The window is widened by the rounding
-    error, and each candidate sum is confirmed with the exact sum of its lines (two decimals, as the SI)."""
-    units = [round(x["amount"] / GRID) for x in lines]
-    reach = [1]
-    for u in units:
-        reach.append(reach[-1] | (reach[-1] << u))
-    total = reach[-1]
-    margin = len(lines) // 2 + 2
+    A window is a run of consecutive lines of `lines`, which is in data-ex order (lastDatePriorEx, then amount): no
+    subset of the records is tested, only the windows. Identical lines are separate items, as the SI sums them (A-15).
+    A window reproduces when its sum, over the price, equals the SI DY at two decimals. Of the reproducing windows
+    the shortest is taken, then the earliest."""
     out = {}
     for name, price in prices:
         out[name] = None
         if price is None:
             continue
-        lo = (ref - 0.005) * price / 100 / GRID
-        hi = (ref + 0.005) * price / 100 / GRID
-        base = max(0, math.floor(lo) - margin)
-        width = math.ceil(hi) + margin - base + 1
-        window = (total >> base) & ((1 << width) - 1)
-        candidates = [base + k for k in range(width) if (window >> k) & 1]
-        candidates.sort(key=lambda s: abs(s - (lo + hi) / 2))
-        for s in candidates:
-            idx = _witness(reach, units, s)
-            exact = sum(lines[i]["amount"] for i in idx)
-            if idx and round(100 * exact / price, 2) == ref:
-                out[name] = idx
-                break
+        best = None
+        for i in range(len(lines)):
+            total = 0.0
+            for j in range(i, len(lines)):
+                total += lines[j]["amount"]
+                if round(100 * total / price, 2) == ref and (best is None or (j - i, i) < (best[1] - best[0], best[0])):
+                    best = (i, j)
+        out[name] = best
     return out
 
-
-def _witness(reach, units, s):
-    """A subset with grid sum s: line i is taken only when s is not reachable without it (later lines left out first)."""
-    idx = []
-    for i in range(len(units) - 1, -1, -1):
-        if (reach[i] >> s) & 1:
-            continue
-        idx.append(i)
-        s -= units[i]
-    return sorted(idx)
 
 
 # ---------------------------------------------------------------- post-d reads (filings received after d, read at R)
@@ -714,11 +676,12 @@ def dy_item(x):
 def classify_dy(ctx, iso, day, row):
     acq = ctx["acq"]
     t, ref, reb = row["ticker"], row["reference"], row["rebuilt"]
-    decision = DY_DECISIONS[(iso, t)]
     close_day, price = cotahist.quote_at(acq.quotes, t, day)
     price_item = cotahist_item(t, close_day, price)
-    if decision["cls"] != NC:
-        index = b3_file_index(decision["trading"])
+    trading = acq.b3[t[:4]].trading_name  # the company's B3 file, as the rebuild names it (cli._history_of)
+    decision = DY_DECISIONS.get((iso, t))
+    if decision is not None:
+        index = b3_file_index(trading)
         evid = []
         for lastprior, value in decision["records"]:
             key = (lastprior, value)
@@ -730,8 +693,8 @@ def classify_dy(ctx, iso, day, row):
             evid.append(decision["yahoo"])
         return {"class": decision["cls"], "motive": decision["motive"], "evidence": evid + [price_item], "rule": "DY manual", "exact": None}
 
-    cls_type = "PN" if t[-1] in "456" else "ON"
-    lines = sorted(b3_records(decision["trading"], cls_type, acq.quotes), key=lambda x: (x["last"], x["amount"]))
+    cls_type = cotahist.share_class(acq.quotes, t, day)  # the class of the ticker at d, as the rebuild selects its records (cli._b3_dividends)
+    lines = sorted(b3_records(trading, cls_type, acq.quotes), key=lambda x: (x["last"], x["amount"]))
     before = [s for s in acq.quotes.dates.get(t, []) if s < close_day]
     prev_day = before[-1] if before else None
     prev_close = [x.close for x in acq.quotes.rows[t] if x.day == prev_day][0] if before else None
@@ -739,13 +702,14 @@ def classify_dy(ctx, iso, day, row):
     found = dy_search(lines, ref, [(n, names[n][1]) for n in names])
     name = next((n for n in names if found.get(n) is not None), None)
     if name is not None:
-        chosen = [lines[i] for i in found[name]]
+        i, j = found[name]
+        chosen = lines[i:j + 1]
         desc = "; ".join(
             (f"data-ex {x['ex']:%d/%m/%Y}" if x["ex"] else f"lastDatePrior {x['last']:%d/%m/%Y}") + f" {x['amount']:.6f}" for x in chosen)
         later = any(x["ex"] and x["ex"] > day for x in chosen)
-        motive = (f"o DY do SI ({ref:.2f} %) é exato com {len(chosen)} registro(s) da B3 do cache ({desc}; classe {cls_type}, "
-                  f"sobre o fechamento de {name}); o subconjunto é achado pela ordem das datas-ex, sem os registros mais novos quando não são necessários; "
-                  f"a janela do projeto dá {reb:.2f} %" + ("; o subconjunto usa registro com data-ex posterior a d" if later else ""))
+        motive = (f"valor do SI ({ref:.2f} %): igual a duas casas à soma de {len(chosen)} registro(s) contíguo(s) da B3 do cache "
+                  f"({desc}; classe {cls_type}, sobre o fechamento de {name}); a janela mais curta que dá esse valor (a mais antiga, entre as de igual tamanho); "
+                  f"a coincidência não mostra a origem; a janela do projeto dá {reb:.2f} %" + ("; a janela usa registro com data-ex posterior a d" if later else ""))
         evid = [dy_item(x) for x in chosen] + [cotahist_item(t, names[name][0], names[name][1])]
         return {"class": ERRO_SI, "motive": motive, "evidence": evid, "rule": "DY exato", "exact": None}
 
@@ -756,11 +720,13 @@ def classify_dy(ctx, iso, day, row):
         x = max(outside, key=lambda y: y["ex"])
         near = (f"; o provento fora da janela mais recente ({x['amount']:.6f}, data-ex {x['ex']:%d/%m/%Y}, "
                 f"{(day - x['ex']).days} dias antes de d) daria {100 * x['amount'] / price:.2f} % com o fechamento de d")
-    motive = (f"nenhum subconjunto dos proventos da B3 do cache reproduz o DY do SI ({ref:.2f} %) a duas casas, nem com o fechamento de d nem com o de d − 1 "
-              f"({len(lines)} registros testados, cada linha um registro); a janela do projeto dá {reb:.2f} % ({len(window)} provento(s) sem repetição, "
+    motive = (f"nenhuma janela contígua dos proventos da B3 do cache reproduz o DY do SI ({ref:.2f} %) a duas casas, nem com o fechamento de d nem com o de d − 1 "
+              f"({len(lines)} registros da classe {cls_type}, cada linha um registro); a janela do projeto dá {reb:.2f} % ({len(window)} provento(s) sem repetição, "
               f"somando {sum(x['amount'] for x in window):.4f} sobre {price:.2f}); o SI implica {ref / 100 * price:.4f} por ação{near}")
-    evid = [dy_item(x) for x in window] or [f"B3 proventos {cli.b3_cash_name(decision['trading'], 1)}: nenhum registro com d − 365 < data-ex ≤ d"]
+    evid = [dy_item(x) for x in window] or [f"B3 proventos {cli.b3_cash_name(trading, 1)}: nenhum registro com d − 365 < data-ex ≤ d"]
     return {"class": ERRO_SI, "motive": motive, "evidence": evid + [price_item], "rule": "DY sem base", "exact": None}
+
+
 
 
 def reproducer_items(p, f):
@@ -1045,13 +1011,13 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
 
 - **Classe** (uma por linha, AUD-02):
   - `erro nosso`: o nosso valor contradiz a fonte ou a regra A-18 (contagem de ações com fator sem suporte da B3).
-  - `erro do Status Invest`: o SI traz um número que o cache não sustenta. Há duas origens, separadas no resumo: (a) `reproduzido`: uma visão de um demonstrativo do cache, ou um subconjunto dos proventos da B3, fica dentro da tolerância do valor do SI (CMP-01; igual a duas casas, quando é igual) e cita-se pela regra de Citação (defasagem B-9 e demonstrativo recebido depois de d entram aqui); a coincidência mostra que o valor cabe, não a origem; (b) `sem base`: nenhuma visão de nenhum demonstrativo do cache, nem subconjunto de proventos, fica dentro da tolerância do valor do SI. A regra de (b) é a decisão do usuário sobre o AC9 (linha fora da tolerância sem base no cache vira `erro do Status Invest`, como na conferência da #59).
+  - `erro do Status Invest`: o SI traz um número que o cache não sustenta. Há duas origens, separadas no resumo: (a) `reproduzido`: uma visão de um demonstrativo do cache, ou uma janela contígua de proventos da B3, fica dentro da tolerância do valor do SI (CMP-01; igual a duas casas, quando é igual) e cita-se pela regra de Citação (defasagem B-9 e demonstrativo recebido depois de d entram aqui); a coincidência mostra que o valor cabe, não a origem; (b) `sem base`: nenhuma visão de nenhum demonstrativo do cache, nem janela contígua de proventos, fica dentro da tolerância do valor do SI. A regra de (b) é a decisão do usuário sobre o AC9 (linha fora da tolerância sem base no cache vira `erro do Status Invest`, como na conferência da #59).
   - `diferença de método`: o valor do SI fica dentro da tolerância de outra definição (contagem total da B3 de R, LL total 3.11 ou PL total 2.03), e o nosso não; a classe mede a diferença, não prova o que o SI fez.
   - `dentro da tolerância`: a linha entra na lista dos piores porque o campo tem menos de 10 linhas fora da tolerância; não há erro a explicar, e a linha não é um dos três erros.
   - `não classificado`, com o motivo: linha fora da tolerância sem demonstrativo no cache para conferir. Nenhuma linha desta versão fica nessa classe.
 - **Ordem das regras** (a primeira que vale):
   1. dentro da tolerância (CMP-01);
-  2. proventos (DY): decisão manual de 15 linhas (`DY_DECISIONS` no script, com os registros da B3 citados); nas demais, subconjunto que reproduz a duas casas, entre todos os registros da B3 do cache da classe do ticker (PN para 4, 5 e 6, ON para 3), sobre o fechamento de d ou o de d − 1; sem subconjunto, `sem base`;
+  2. proventos (DY): decisão manual de 4 linhas (`DY_DECISIONS` no script, com os registros da B3 citados); nas demais, a janela contígua mais curta de registros da classe do ticker, na ordem das datas-ex, que dá o DY do SI a duas casas sobre o fechamento de d ou o de d − 1 (entre as de igual tamanho, a mais antiga); sem janela, `sem base`;
   3. defasagem do filing anterior (B-9, LAG-01): `erro do Status Invest`;
   4. demonstrativo recebido depois de d que reproduz o valor, lido em R (contagem ou contas): `erro do Status Invest`, citado pela regra de Citação;
   5. fator de contagem sem suporte da B3: a contagem em d passa de duas vezes a contagem B3 de R, sem suspeita (SHR-05): `erro nosso`;
@@ -1063,14 +1029,14 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
   11. o resto: `sem base`.
 - **Reproduzir**: um demonstrativo reproduz o valor do SI quando, tratado como o filing mais novo do ticker, o valor recalculado fica dentro da tolerância do relatório (CMP-01: 5 % para os relativos, 0,5 p.p. para os percentuais; `compare.within`). Para cada versão de cada DFP e ITR do cache são testadas: o demonstrativo inteiro, como arquivado; com a LL 3.11 total; com o PL 2.03 total; com os dois; e só a contagem de ações da versão, com o fator A-18 e os eventos de d. Todas as versões contam, sem limite de idade: um período terminado há mais de 270 dias é lido inteiro (o relatório zera esses valores pela máscara STL-01; a busca não aplica a máscara, porque pergunta de qual demonstrativo o SI tirou o valor). O cache não tem versão recebida depois de R = 2026-11-09 (data de recuperação da B3), então "todas as versões do cache" e "recebidas até R" são o mesmo conjunto. Para um filing recebido depois de d, as leituras da CVM são feitas em R, como no lote 5; a contagem sozinha usa sempre os demais insumos de d. Nessas leituras a guarda de ponto no tempo do relatório (PIT-02, `indicators._assert_point_in_time`) fica desligada; o relatório não a desliga.
 - **Citação**: entre os demonstrativos que reproduzem (exceto F0, o que o relatório usou em d), cita-se o que é igual ao valor do SI a duas casas e foi recebido primeiro (DT_RECEB; empate: DT_REFER, depois VERSAO). Sem nenhum igual a duas casas, cita-se o mais próximo do valor do SI (empate: o mais antigo). A ordem das visões é como arquivado e contagem primeiro; a visão de método (total da LL 3.11 ou do PL 2.03) só é citada quando nenhuma das outras reproduz. Quando o mesmo demonstrativo reproduz por mais de uma dessas visões, vale a primeira na ordem: como arquivado, depois a contagem.
-- **Proventos (DY)**: reprodução exata a duas casas (a precisão do SI), com o fechamento de d ou o de d − 1. Os registros são todas as linhas da B3 do cache da classe do ticker, sem janela de data nem exclusão por falta de cotação; cada linha é um registro, e linhas idênticas contam separadamente (o SI somou linhas repetidas nos casos MDNE3 e VLID3). As somas são feitas em unidades de 0,00001 R$; a janela é alargada pelo erro de arredondamento, e cada subconjunto achado é conferido com a soma exata. Quando existe subconjunto que reproduz, a evidência cita um deles, achado pela ordem das datas-ex (registros mais novos ficam de fora quando não são necessários); o motivo não conta os subconjuntos.
+- **Proventos (DY)**: reprodução exata a duas casas (a precisão do SI), com o fechamento de d ou o de d − 1. Os registros são as linhas da B3 do cache da classe do ticker (a classe é o ESPECI do COTAHIST em d, como na reconstrução), na ordem das datas-ex (lastDatePriorEx; empate: valor). Cada linha é um registro, e linhas idênticas contam separadamente, como o SI as soma (casos MDNE3 e VLID3). A busca testa só janelas contíguas dessa ordem, não subconjuntos: as somas são feitas em ponto flutuante e confrontadas com o DY do SI a duas casas; a janela mais curta que dá o valor (entre as de igual tamanho, a mais antiga) é citada, e o motivo diz que a coincidência não mostra a origem. Sem janela contígua que reproduza, a linha é `sem base`.
 - **Demonstrativos conferidos**: cada empresa com linha `erro do Status Invest` sem base ou reproduzida, ou `diferença de método` pela contagem da B3, tem a lista completa dos demonstrativos conferidos na seção `Demonstrativos conferidos`, com o número arquivado de cada conta do campo e a composição de ações. Uma versão marcada `(só o índice no cache)` tem a linha do índice (DT_RECEB), mas nenhuma linha de BPA, BPP, DRE ou composição no cache: nos zips da CVM do cache, as linhas de demonstrativo de alguns períodos vêm só para a versão mais nova. Essa versão não reproduz nada e não é contada.
 - **Defasagem**: `sim` quando a linha é `si_lag` no JSON (B-9): o filing anterior reproduz o SI dentro da tolerância.
 - **Evidências (B-10)**, separadas por `; `:
   - `CVM <DFP|ITR> <DT_REFER> v<VERSAO> rec <DT_RECEB>: <conta> = <valor>`: o número arquivado, em R$, na coluna ÚLTIMO (em ITR, o acumulado do ano); `QT_ACAO_*` é a composição de ações do mesmo demonstrativo;
   - `B3 evento <ISIN> <label> <lastDatePrior> ×<multiplicador>`: evento de ações (desdobramento, grupamento, bonificação) do registro da empresa na B3;
   - `COTAHIST <ticker> <sessão> <fechamento>`: cotação de fechamento na sessão usada;
-  - `B3 proventos <arquivo>: <data-ex> <valor>` e `Yahoo <arquivo>: <data-ex> <valor>`: registro de provento, com o arquivo do cache em que está (um registro por linha, sem repetição, A-15);
+  - `B3 proventos <arquivo>: <data-ex> <valor>` e `Yahoo <arquivo>: <data-ex> <valor>`: registro de provento, com o arquivo do cache em que está (um registro por linha da B3; a janela do projeto não repete linhas idênticas, A-15);
   - `Conferidos: N demonstrativos (cd_cvm X)`: o total de demonstrativos conferidos para a linha sem base; a lista está na seção `Demonstrativos conferidos`.
 - **Contagem da B3** (`totalNumberShares`) não é um evento. Quando ela explica a diferença, aparece no motivo com o arquivo `b3_company_<raiz>.json` e a data de recuperação R (2026-11-09).
 - **Valores dentro da tolerância**: a lista de piores é o top 10 por diferença. Quando um campo tem menos de 10 linhas fora da tolerância (5 % relativo, 0,5 p.p. nos indicadores percentuais), ela traz linhas com diferença 0,00 ou menor. Essas linhas ficam como `dentro da tolerância` e não contam em `erro nosso` nem em parte 2 do critério.
@@ -1080,9 +1046,9 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
 - A lista de piores deixa de fora os tickers sem valor reconstruído (`missing`, com o motivo do JSON; contagem por data, indicador e motivo na seção "Sem valor reconstruído") e, nos campos relativos, os tickers cuja referência do SI é zero. A auditoria não conta os tickers de referência zero: o JSON também não os conta, e são um limite declarado, não uma contagem.
 - Nos campos de DY, uma célula em branco do SI é tratada como 0,00 (A-4) e fica no denominador; o JSON conta essas células em `reference_blank_as_zero`.
 - O Status Invest é a referência do projeto. Quando uma classe é `erro do Status Invest`, a evidência mostra o que o cache sustenta do número do SI (uma coincidência dentro da tolerância, uma igualdade a duas casas, ou nada); ela não prova o que o SI fez internamente.
-- `sem base` quer dizer: nenhuma visão de nenhum demonstrativo do cache reproduz o valor, e nenhum subconjunto de proventos reproduz o DY. Não quer dizer que o SI usou uma combinação que não está no cache: combinações de dois filings (uma conta de um e a contagem de outro) não são testadas, e um preço que não está no cache não é testado.
+- `sem base` quer dizer: nenhuma visão de nenhum demonstrativo do cache fica dentro da tolerância do valor do SI, e nenhuma janela contígua de proventos reproduz o DY a duas casas. Não quer dizer que o valor do SI não venha de uma combinação que não está no cache: combinações de dois filings (uma conta de um e a contagem de outro) não são testadas, nem subconjuntos de proventos, e um preço que não está no cache não é testado.
 - Reproduzir é comparação dentro da tolerância do relatório, e a busca testa muitas visões. Das {EXACT_N} citações contábeis de reprodução, {EXACT_Y} são iguais ao valor do SI a duas casas; as outras {NEAR_N} estão só dentro da tolerância do relatório (5 % relativos, 0,5 p.p.), e nelas a coincidência não mostra a origem. A contagem de reproduções é um fato do cache, não prova do que o SI fez.
-- A reprodução de DY por subconjunto é exata a duas casas. Quando mais de um subconjunto reproduz, a classe diz só que o valor do SI cabe em algum deles, não qual o SI usou; o citado é um deles. A busca usa a grade de 0,00001 R$ (ver Proventos), com confirmação exata de cada subconjunto achado: uma soma em que a grade e a soma exata divergem só numa borda da janela pode não ser achada.
+- A reprodução de DY por janela contígua é exata a duas casas. Quando mais de uma janela reproduz, cita-se a mais curta (entre as de igual tamanho, a mais antiga); a classe diz só que o valor do SI coincide com uma janela, não qual o SI usou. Subconjuntos não entram: uma soma de registros não contíguos pode dar o DY do SI, mas não é testada, e a janela citada não mostra a origem.
 - Versões sem linhas de demonstrativo no cache (só o índice): {INDEX_ONLY} das {ALL_VERSIONS} versões recebidas até R de {N_COMP} empresas com linhas fora da tolerância nas duas datas (sem DY). Empresas e versões são contadas uma vez cada, mesmo com linhas nas duas datas. Elas não reproduzem valor e não entram na contagem de demonstrativos conferidos.
 - Algumas linhas de `erro do Status Invest` têm o valor do SI dentro da tolerância, ou igual a duas casas, de um filing recebido depois de 2026-08-07, a data de coleta declarada do CSV do Status Invest. Ou o CSV foi coletado depois dessa data, ou o valor do SI vem de dado posterior à coleta. O cache não distingue as duas coisas: a classe diz só que o valor do SI cabe num filing recebido depois de d.
 

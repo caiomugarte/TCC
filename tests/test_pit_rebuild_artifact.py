@@ -230,7 +230,7 @@ def audit_items(cell):
     return [item.strip() for item in cell.split(";") if item.strip()]
 
 
-SEM_BASE_MOTIVES = ("nenhum dos ", "nenhum subconjunto dos proventos")  # AUD-02: the motive of a `sem base` row, accounting or DY
+SEM_BASE_MOTIVES = ("nenhum dos ", "nenhuma janela contígua dos proventos")  # AUD-02: the motive of a `sem base` row, accounting or DY
 
 
 def origin_table(text):
@@ -311,7 +311,7 @@ class AuditDocumentTests(unittest.TestCase):
                 if cells[7].startswith("nenhum dos "):  # no cached demonstrativo reproduces the SI value: a filing and the count of those checked
                     self.assertTrue(any(item.startswith("CVM ") for item in items), (iso, field, cells[1]))
                     self.assertTrue(any(item.startswith("Conferidos: ") for item in items), (iso, field, cells[1]))
-                elif cells[7].startswith("nenhum subconjunto"):  # no subset of the dividend records reproduces the DY: the records and the close
+                elif cells[7].startswith("nenhuma janela contígua"):  # no contiguous window of the dividend records reproduces the DY: the records and the close
                     self.assertTrue(any(item.startswith(("B3 proventos ", "Yahoo ")) for item in items), (iso, cells[1]))
                     self.assertTrue(any(item.startswith("COTAHIST ") for item in items), (iso, cells[1]))
 
