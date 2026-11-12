@@ -13,6 +13,7 @@ import json
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "py"))
@@ -212,8 +213,8 @@ class ProvenanceAndParametersTests(ReportCase):
         for row in rows:
             self.assertTrue(row["use"] and row["full_rebuild_check"])
 
-    def test_the_schema_is_v2_and_the_parameters_hold_the_quote_codes_and_the_filings_cutoffs(self):
-        self.assertEqual(self.report["schema"], "pit-rebuild-stocks/v2")
+    def test_the_schema_is_v3_and_the_parameters_hold_the_quote_codes_and_the_filings_cutoffs(self):
+        self.assertEqual(self.report["schema"], "pit-rebuild-stocks/v3")
         self.assertEqual(self.report["parameters"]["quote_codbdi"], ["02", "07", "08"])
         self.assertEqual(self.report["parameters"]["filings_cutoffs"], {})
         cut = report.build(**run_kwargs(filings_cutoffs={date(2026, 11, 6): date(2026, 11, 2)}))
@@ -225,6 +226,13 @@ class ProvenanceAndParametersTests(ReportCase):
         for text in ("10^-2", "10^3", "√10", "resíduo"):
             self.assertIn(text, rule)
         self.assertNotIn("31,6", rule)
+        # AD-033 (RPT-06): the count takes the events of (DT_REFER, d]; the scale window ends at R; the √10 limit is for no event
+        self.assertIn("(DT_REFER, d]", rule)
+        self.assertIn("(DT_REFER, R]", rule)
+        self.assertIn("depois de d só escolhem a potência de dez", rule)
+        self.assertIn("sem evento da B3", rule)
+        self.assertNotIn("1:5 dá ×10", rule)  # the #59 sentence, as the rule for every change
+        self.assertIn("sem evento da B3, um desdobramento de 1:5 resulta em ×10", rule)  # the same fact, only for no event
 
 
 class MarkdownTests(ReportCase):
@@ -666,6 +674,172 @@ class AdjustedMarkdownTests(unittest.TestCase):
         markdown = report.render_markdown(report.build(**run_kwargs()))
         self.assertNotIn("## Veredito ajustado (#64)", markdown)
         self.assertIn("## Veredito\n", markdown)
+
+
+SHARE_EVENTS = {
+    "adjusted": [
+        {
+            "cd_cvm": "1603",
+            "class": "ON",
+            "isins": ["BRTESTACN001", "BRTESTACN002"],
+            "dt_refer": "2026-06-30",
+            "factor": 2.0,
+            "events": [{"isin": "BRTESTACN001", "label": "Bonificação", "ex_date": "2026-07-14", "multiplier": 2.0}],
+        },
+        {
+            "cd_cvm": "1603",
+            "class": "PREF",
+            "isins": ["BRTESTACNPR1"],
+            "dt_refer": "2026-06-30",
+            "factor": 0.1,
+            "events": [{"isin": "BRTESTACNPR1", "label": "Grupamento", "ex_date": "2026-07-20", "multiplier": 0.1}],
+        },
+    ],
+    "no_isin": [{"cd_cvm": "1607", "class": "PREF"}],
+}
+SHARE_COUNT_SUSPECT = [
+    {"cd_cvm": "1608", "dt_refer_prev": "2025-12-31", "total_prev": 1000, "dt_refer": "2026-03-31", "total": 1300, "ratio": 1.3}
+]
+TTM_PRIOR_FROM_ITR = [{"cd_cvm": "1609", "dt_refer": "2026-06-30", "accounts": ["3.01", "3.11"]}]
+STALE_FILING = [{"ticker": "STAL3", "cd_cvm": "1610", "dt_refer": "2025-10-31", "age_days": 280}]
+LIST_KEYS = ("share_events.adjusted", "share_events.no_isin", "share_count_suspect", "ttm_prior_from_itr", "stale_filing")
+
+
+def mapping_with(**lists) -> dict:
+    """The sample run with extra keys in the mapping of 2026-08-07 (the share and flow lists of the #64 rules)."""
+    entries = {"2026-08-07": {**per_date_entry(3), "mapping": {**MAPPING, **lists}}, "2026-11-06": per_date_entry(5)}
+    return report.build(**run_kwargs(per_date=entries))
+
+
+def mapping_block(markdown: str, iso: str) -> str:
+    """The mapping section of one date: from its heading to the next date's heading."""
+    section = markdown.split("## Cobertura do mapeamento", 1)[1].split("## Resultados por data", 1)[0]
+    return section.split(f"### {iso}", 1)[1].split("### ", 1)[0]
+
+
+def investigations_of(markdown: str) -> str:
+    return markdown.split("## Investigações", 1)[1].split("\n## ", 1)[0]
+
+
+class SchemaV3AndAmendmentTests(ReportCase):
+    """B-12 and ADJ-01: the object names the amendment and the v2 report; the Veredito section says so in one line."""
+
+    def test_the_object_names_the_amendment_by_64_and_the_v2_report_it_replaces(self):
+        self.assertEqual(self.report["amended_by"], [64])
+        self.assertEqual(self.report["previous_report"], {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"})
+        self.assertIn("- Esquema: `pit-rebuild-stocks/v3` (issue #59, correções da #64)", self.markdown)
+
+    def test_the_veredito_section_carries_the_b12_line_before_the_class_verdict(self):
+        line = "Regra de veredito da #59, aplicada aos valores com as correções da #64; os números da v2 estão no commit `ebaf1fd`."
+        self.assertIn(line, self.markdown)
+        self.assertLess(self.markdown.index("## Veredito\n"), self.markdown.index(line))
+        self.assertLess(self.markdown.index(line), self.markdown.index("**Veredito da classe:**"))
+
+    def test_a_report_without_amended_by_keeps_the_v2_header_and_has_no_b12_line(self):
+        legacy = deepcopy(self.report)
+        legacy["schema"] = "pit-rebuild-stocks/v2"
+        for key in ("amended_by", "previous_report", "investigations"):
+            del legacy[key]
+        rendered = report.render_markdown(legacy)
+        self.assertIn("- Esquema: `pit-rebuild-stocks/v2` (issue #59)", rendered)
+        self.assertNotIn("Regra de veredito da #59", rendered)
+        self.assertNotIn("## Investigações", rendered)
+
+
+class InvestigationsTests(unittest.TestCase):
+    """MBR-02: each note of INVESTIGATIONS is stored and rendered; with none the section says Nenhuma."""
+
+    def test_an_investigation_renders_its_ticker_date_field_finding_and_evidence(self):
+        note = {"ticker": "MBRF3", "date": "2026-11-05", "field": "DY", "finding": "achado de teste", "evidence": "evidência de teste"}
+        with patch.object(report, "INVESTIGATIONS", (note,)):
+            out = report.build(**run_kwargs())
+        self.assertEqual(out["investigations"], [note])
+        section = investigations_of(report.render_markdown(out))
+        for text in ("MBRF3", "2026-11-05", "DY", "achado de teste", "evidência de teste"):
+            self.assertIn(text, section)
+        self.assertNotIn("Nenhuma.", section)
+
+    def test_without_investigations_the_section_says_nenhuma_and_a_v2_object_has_no_section(self):
+        out = report.build(**run_kwargs())
+        self.assertEqual(out["investigations"], [])
+        self.assertIn("Nenhuma.", investigations_of(report.render_markdown(out)))
+        legacy = deepcopy(out)
+        del legacy["investigations"]
+        self.assertNotIn("## Investigações", report.render_markdown(legacy))
+
+
+class ShareAndFlowListsTests(unittest.TestCase):
+    """SHR-03, SHR-04, SHR-05, TTM-04 and STL-03 in the Markdown: one row per entry in the object's order, nenhum when empty."""
+
+    def test_each_list_renders_one_row_per_entry_in_the_objects_order(self):
+        markdown = report.render_markdown(
+            mapping_with(
+                share_events=SHARE_EVENTS,
+                share_count_suspect=SHARE_COUNT_SUSPECT,
+                ttm_prior_from_itr=TTM_PRIOR_FROM_ITR,
+                stale_filing=STALE_FILING,
+            )
+        )
+        block = mapping_block(markdown, "2026-08-07")
+        expected = [
+            "| `1603` | ON | `BRTESTACN001`, `BRTESTACN002` | 2026-06-30 | 2 | `BRTESTACN001` Bonificação, data-ex 2026-07-14, ×2 |",
+            "| `1603` | PREF | `BRTESTACNPR1` | 2026-06-30 | 0,1 | `BRTESTACNPR1` Grupamento, data-ex 2026-07-20, ×0,1 |",
+            "| `1607` | PREF |",
+            "| `1608` | 2025-12-31 | 1000 | 2026-03-31 | 1300 | 1,3000 |",
+            "| `1609` | 2026-06-30 | `3.01`, `3.11` |",
+            "| `STAL3` | `1610` | 2025-10-31 | 280 |",
+        ]
+        positions = []
+        for row in expected:
+            self.assertEqual(block.count(row), 1, row)
+            positions.append(block.index(row))
+        self.assertEqual(positions, sorted(positions))
+
+    def test_each_list_says_nenhum_when_it_is_empty(self):
+        markdown = report.render_markdown(
+            mapping_with(share_events={"adjusted": [], "no_isin": []}, share_count_suspect=[], ttm_prior_from_itr=[], stale_filing=[])
+        )
+        block = mapping_block(markdown, "2026-08-07")
+        for key in LIST_KEYS:
+            self.assertIn(f"(`{key}`): nenhum.", block, key)
+
+    def test_a_list_missing_from_the_mapping_renders_nothing_so_a_v2_mapping_renders_as_before(self):
+        full = report.render_markdown(
+            mapping_with(share_events=SHARE_EVENTS, share_count_suspect=SHARE_COUNT_SUSPECT, ttm_prior_from_itr=TTM_PRIOR_FROM_ITR, stale_filing=STALE_FILING)
+        )
+        bare = report.render_markdown(mapping_with())
+        block = mapping_block(bare, "2026-08-07")
+        for key in LIST_KEYS:
+            self.assertNotIn(f"`{key}`", block, key)
+        self.assertNotEqual(full, bare)
+
+
+class ShareRuleTextTests(ReportCase):
+    """RPT-06 (AD-033): the rule texts the report prints state the event-adjusted count, not the #59 sentences."""
+
+    def rule_row(self, name: str) -> dict:
+        return next(row for row in self.report["parameters"]["non_pit_inputs"] if name in row["input"])
+
+    def test_the_stock_dividends_row_adjusts_dividends_and_share_counts_under_ad033(self):
+        use = self.rule_row("stockDividends")["use"]
+        self.assertIn("(A-20)", use)
+        self.assertIn("contagens de ações", use)
+        self.assertIn("(DT_REFER, d]", use)
+        self.assertIn("(AD-033)", use)
+        self.assertNotIn("só eventos com data-ex ≤ d", use)
+
+    def test_the_total_number_shares_row_keeps_never_in_a_value_and_names_the_adjusted_count(self):
+        use = self.rule_row("totalNumberShares")["use"]
+        self.assertIn("nunca entra num valor", use)
+        self.assertIn("ajustada pelos eventos", use)
+        self.assertIn("(AD-033)", use)
+
+    def test_the_markdown_prints_the_rule_the_stock_dividends_row_and_the_market_value_formula(self):
+        markdown = report.render_markdown(self.report)
+        parameters = self.report["parameters"]
+        self.assertIn(parameters["share_scale_rule"], markdown)
+        self.assertIn(self.rule_row("stockDividends")["use"], markdown)
+        self.assertIn(parameters["formulas"]["VALOR DE MERCADO"], markdown)
 
 
 if __name__ == "__main__":

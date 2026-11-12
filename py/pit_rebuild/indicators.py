@@ -8,7 +8,7 @@ zero_divisor, non_positive_base, missing_input: <name>, stale_filing (STL-01).
 
 Per-share fields divide the ticker price by its unit divisor k (1 for a share, the composition
 total for a unit, MAP-03). VALOR DE MERCADO takes its class prices from the company (A-17). Share
-counts arrive already multiplied by the A-18 scale.
+counts arrive already multiplied by the A-18 scale and by the B3 events of the class with ex-date in (DT_REFER, d] (AD-033).
 """
 
 from dataclasses import dataclass, fields
@@ -20,7 +20,7 @@ from .fields import ACCOUNTING_FIELDS, ALL_FIELDS
 
 FORMULAS: dict[str, str] = {
     "PRECO": "p: último pregão em COTAHIST com data <= d",
-    "VALOR DE MERCADO": "N_ON × p_ON + N_PREF × p_PREF (A-17): p_ON do ticker ON; p_PREF do preferencial mais líquido; classe com N > 0 e sem cotação usa a outra (vm_price_fallback); N com escala de A-18",
+    "VALOR DE MERCADO": "N_ON × p_ON + N_PREF × p_PREF (A-17): p_ON do ticker ON; p_PREF do preferencial mais líquido; classe com N > 0 e sem cotação usa a outra (vm_price_fallback); N = arquivado × f (A-18) × eventos B3 da classe com data-ex em (DT_REFER, d] (AD-033)",
     "LIQUIDEZ MEDIA DIARIA": "média de VOLTOT das últimas 21 sessões <= d, CODBDI 02, 07 e 08 (A-7)",
     "P/L": "p_eq / (LL / N_total), p_eq = p / k, N_total = N_ON + N_PREF",
     "P/VP": "p_eq / (PL_ctrl / N_total), PL_ctrl = 2.03 − 2.03.09 (A-21)",

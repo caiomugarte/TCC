@@ -7,7 +7,7 @@ the object only (RPT-04): a number changed in the object changes the document. e
 object as sorted, indented JSON with a final newline.
 """
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import asdict
 from datetime import date
@@ -21,8 +21,10 @@ from .fields import ADJUSTED_FIELDS, ALL_FIELDS, PERCENT_FIELDS, SCORE_FIELDS
 from .indicators import FORMULAS
 from .status_invest import ELIGIBILITY
 
-SCHEMA = "pit-rebuild-stocks/v2"
+SCHEMA = "pit-rebuild-stocks/v3"
 ISSUE = 59
+AMENDED_BY = (64,)  # B-12: the issue whose rules changed the numbers of this report, rendered as "correções da #64"
+PREVIOUS_REPORT = {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"}  # B-12: where the v2 numbers are
 GROUPS = (
     ("non_financial", "não financeiro"),
     ("non_financial_without_unclassified", "não financeiro sem não classificados"),
@@ -37,20 +39,23 @@ CAVEAT = (
 )
 ELIGIBILITY_SOURCE = ["py/core/preprocessing.py:103-106", "api/app/services/premium_policy.py:56"]
 SHARE_SCALE_RULE = (
-    "A CVM não informa escala em `composicao_capital`. Para cada arquivamento, o fator f ∈ {10^-2, 10^-1, 1, 10, 10^2, 10^3} "
-    "é o que deixa `N_total × f` mais perto da `totalNumberShares` da B3, medido pela distância em log10. "
-    "A contagem da B3 só escolhe o fator e nunca entra num valor. Sem registro da B3, ou com contagem zero, `f` é 1 "
-    "e a empresa aparece em `share_scale.unverified`. As contagens escalonadas são arredondadas. Limite (√10): se a "
-    "contagem mudou menos de √10 (3,16 vezes) entre o arquivamento e a consulta à B3, ela fica como arquivada; se mudou "
-    "√10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; "
-    "um desdobramento de 1:5 dá ×10, errado por 2 vezes, e erra em `d` quando a mudança é posterior a `d`. "
-    "O resíduo (`residual`), `N_total × f / totalNumberShares`, de cada empresa mostra cada caso."
+    "A CVM não informa escala em `composicao_capital`. Cada contagem de classe em `d` é N = arquivado × f × eventos da B3 "
+    "da classe com data-ex em (DT_REFER, d], com cada evento entrando pelo seu múltiplo (AD-033). Para cada arquivamento, o "
+    "fator f ∈ {10^-2, 10^-1, 1, 10, 10^2, 10^3} é a potência de dez que deixa o arquivado vezes os eventos com data-ex em "
+    "(DT_REFER, R] mais perto da `totalNumberShares` da B3, medido pela distância em log10; R é a data em que o registro da "
+    "B3 foi obtido. Os eventos com data-ex depois de d só escolhem a potência de dez. A contagem da B3 só escolhe o fator e "
+    "nunca entra num valor. Sem registro da B3, ou com contagem zero, `f` é 1 e a empresa aparece em `share_scale.unverified`. "
+    "As contagens escalonadas são arredondadas. Limite (√10), só para mudança sem evento da B3: se a contagem mudou menos de "
+    "√10 (3,16 vezes) entre o arquivamento e a obtenção do registro e nenhum evento a explica, ela fica como arquivada; se "
+    "mudou √10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; "
+    "sem evento da B3, um desdobramento de 1:5 resulta em ×10, errado por 2 vezes. O resíduo (`residual`), "
+    "arquivado × eventos até R × f / `totalNumberShares`, de cada empresa mostra cada caso."
 )
 NON_PIT_INPUTS: list[dict[str, str]] = [
     {
         "input": "B3 `totalNumberShares`",
         "role": "unit_only",
-        "use": "escolhe a escala das contagens (A-18); nunca entra num valor",
+        "use": "escolhe a escala das contagens (A-18), sobre a contagem ajustada pelos eventos até a obtenção do registro da B3 (AD-033); nunca entra num valor",
         "full_rebuild_check": "escala datada por arquivamento, com a contagem da B3 de cada data",
     },
     {
@@ -92,7 +97,7 @@ NON_PIT_INPUTS: list[dict[str, str]] = [
     {
         "input": "B3 `stockDividends`",
         "role": "dated_event_current_record",
-        "use": "ajusta valores de dividendos por desdobramento, bonificação e grupamento (A-20); só eventos com data-ex ≤ d",
+        "use": "ajusta valores de dividendos por desdobramento, bonificação e grupamento com data-ex depois do dividendo e ≤ d (A-20) e contagens de ações (AD-033): eventos com data-ex em (DT_REFER, d] entram na contagem; eventos com data-ex depois de d e até a obtenção do registro da B3 só escolhem a potência de dez",
         "full_rebuild_check": "eventos societários como eram conhecidos em cada data",
     },
 ]
@@ -117,6 +122,7 @@ ADJUSTED_SCOPE = (
 )
 ADJUSTED_THRESHOLD_PCT = 70  # ADJ-05: the share within tolerance that part 1 of the release criterion asks, per field and date
 ADJUSTED_PART2 = "docs/validation/pit-rebuild-stocks-audit.md"  # ADJ-05, AUD-06: part 2 is the audit document
+INVESTIGATIONS: tuple[dict[str, str], ...] = ()  # MBR-02: fixed notes {ticker, date, field, finding, evidence}, filled by T20
 
 
 def build(
@@ -206,6 +212,8 @@ def build(
     report_object: dict[str, object] = {
         "schema": SCHEMA,
         "issue": ISSUE,
+        "amended_by": list(AMENDED_BY),
+        "previous_report": dict(PREVIOUS_REPORT),
         "tool_commit": tool_commit,
         "parameters": parameters,
         "inputs": {
@@ -216,6 +224,7 @@ def build(
         "verdicts": verdicts,
         "dividends": dividends_out,
         "coverage": dict(coverage),
+        "investigations": [dict(item) for item in INVESTIGATIONS],
     }
     if sensitivities is not None:
         report_object["sensitivities"] = _sensitivities(sensitivities, iso_dates, cutoffs, official, overall)
@@ -442,14 +451,16 @@ def encode_json(report: Mapping[str, object]) -> bytes:
 
 
 def render_markdown(report: Mapping[str, object]) -> str:
-    """The Markdown of the report, written from the object alone (RPT-04)."""
+    """The Markdown of the report, written from the object alone (RPT-04). A section whose key the object lacks is not rendered (a v2 object)."""
     lines: list[str] = ["# Reconstrução PIT dos indicadores de ações", ""]
     lines += _metadata(report)
-    lines += _verdict_section(report["verdicts"])
+    lines += _verdict_section(report)
     if "adjusted_verdict" in report:
         lines += _adjusted_section(report["adjusted_verdict"])
     if "sensitivities" in report:
         lines += _sensitivity_section(report["sensitivities"])
+    if "investigations" in report:
+        lines += _investigations_section(report["investigations"])
     lines += _parameters_section(report["parameters"])
     lines += _mapping_section(report["dates"])
     lines += _results_section(report["dates"])
@@ -462,16 +473,33 @@ def render_markdown(report: Mapping[str, object]) -> str:
 def _metadata(report: Mapping[str, object]) -> list[str]:
     commit = report["tool_commit"] or "-"
     dates = ", ".join(report["parameters"]["dates"])
+    issue = f"issue #{report['issue']}"
+    if "amended_by" in report:
+        issue += ", correções da " + " e ".join(f"#{number}" for number in report["amended_by"])
     return [
-        f"- Esquema: `{report['schema']}` (issue #{report['issue']})",
+        f"- Esquema: `{report['schema']}` ({issue})",
         f"- Commit da ferramenta: `{commit}`",
         f"- Datas de decisão: {dates}",
         "",
     ]
 
 
-def _verdict_section(verdicts: Mapping[str, object]) -> list[str]:
+def _amendment_line(report: Mapping[str, object]) -> str:
+    """B-12 (ADJ-01): the official rule is #59's, applied to the values the amendments give; the v2 numbers are at their commit."""
+    previous = report["previous_report"]
+    amended = " e ".join(f"#{number}" for number in report["amended_by"])
+    schema = str(previous["schema"]).rsplit("/", 1)[-1]
+    return (
+        f"Regra de veredito da #{report['issue']}, aplicada aos valores com as correções da {amended}; "
+        f"os números da {schema} estão no commit `{previous['commit']}`."
+    )
+
+
+def _verdict_section(report: Mapping[str, object]) -> list[str]:
+    verdicts = report["verdicts"]
     lines = ["## Veredito", ""]
+    if "amended_by" in report:
+        lines += [_amendment_line(report), ""]
     class_value = f"`{verdicts['class']}`"
     if verdicts["class_differs"]:
         line = (
@@ -525,6 +553,16 @@ def _sensitivity_section(sensitivities: Mapping[str, object]) -> list[str]:
     lines += _table(["sensibilidade", "veredito da classe", "veredito do grupo financeiro", "o que muda"], rows)
     lines += [f"Nota (D-C): {roic['note']}", ""]
     return lines
+
+
+def _investigations_section(investigations: Sequence[Mapping[str, object]]) -> list[str]:
+    """The fixed notes on causes the cache settles (MBR-02): one bullet per note, or "Nenhuma." when there is none."""
+    lines = ["## Investigações", ""]
+    if not investigations:
+        return lines + ["Nenhuma.", ""]
+    for item in investigations:
+        lines.append(f"- `{item['ticker']}`, `{item['field']}` em {item['date']}: {item['finding']} Evidência: {item['evidence']}")
+    return lines + [""]
 
 
 def _adjusted_section(adjusted: Mapping[str, object]) -> list[str]:
@@ -674,6 +712,7 @@ def _mapping_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:
                 ["cd_cvm", "classe", "ticker", "último pregão"],
                 [[_code(row["cd_cvm"]), row["class"], _code(row["ticker"]), row["session"]] for row in stale_prices],
             )
+        lines += _share_and_flow_lists(mapping)
         lines += ["Tickers não mapeados:", ""]
         lines += _table(["ticker", "motivo"], [[_code(row["ticker"]), _code(row["reason"])] for row in mapping["unmapped"]] or [["-", "-"]])
         lines += ["Grupo financeiro, com a regra que classificou cada ticker:", ""]
@@ -690,6 +729,91 @@ def _mapping_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:
                 [[_code(row["cd_cvm"]), _code(row["class_without_quote"]), _code(row["price_from"])] for row in fallback["companies"]],
             )
     return lines
+
+
+def _share_and_flow_lists(mapping: Mapping[str, object]) -> list[str]:
+    """The lists of the share and flow rules of one date (SHR-03..SHR-05, TTM-04, STL-03). A key the mapping lacks renders nothing."""
+    lines: list[str] = []
+    if "share_events" in mapping:
+        events = mapping["share_events"]
+        lines += _listed(
+            "Eventos da B3 que ajustam a contagem, por classe",
+            "share_events.adjusted",
+            events["adjusted"],
+            ["cd_cvm", "classe", "ISINs", "DT_REFER", "fator de eventos", "eventos"],
+            lambda row: [
+                _code(row["cd_cvm"]),
+                row["class"],
+                _codes(row["isins"]),
+                row["dt_refer"],
+                _factor(row["factor"]),
+                _events_text(row["events"]),
+            ],
+        )
+        lines += _listed(
+            "Classes com ações e sem ISIN em d",
+            "share_events.no_isin",
+            events["no_isin"],
+            ["cd_cvm", "classe"],
+            lambda row: [_code(row["cd_cvm"]), row["class"]],
+        )
+    if "share_count_suspect" in mapping:
+        lines += _listed(
+            "Contagens suspeitas, sem evento da B3 que as explique",
+            "share_count_suspect",
+            mapping["share_count_suspect"],
+            ["cd_cvm", "DT_REFER anterior", "total anterior", "DT_REFER", "total", "razão"],
+            lambda row: [
+                _code(row["cd_cvm"]),
+                row["dt_refer_prev"],
+                row["total_prev"],
+                row["dt_refer"],
+                row["total"],
+                _num(row["ratio"], 4),
+            ],
+        )
+    if "ttm_prior_from_itr" in mapping:
+        lines += _listed(
+            "Fluxos de 12 meses refeitos com o ITR do ano anterior",
+            "ttm_prior_from_itr",
+            mapping["ttm_prior_from_itr"],
+            ["cd_cvm", "DT_REFER", "contas"],
+            lambda row: [_code(row["cd_cvm"]), row["dt_refer"], _codes(row["accounts"])],
+        )
+    if "stale_filing" in mapping:
+        lines += _listed(
+            "Tickers com filing antigo demais para os indicadores contábeis",
+            "stale_filing",
+            mapping["stale_filing"],
+            ["ticker", "cd_cvm", "DT_REFER", "idade (dias)"],
+            lambda row: [_code(row["ticker"]), _code(row["cd_cvm"]), row["dt_refer"], row["age_days"]],
+        )
+    return lines
+
+
+def _listed(
+    label: str,
+    key: str,
+    rows: Sequence[Mapping[str, object]],
+    header: Sequence[str],
+    row_of: Callable[[Mapping[str, object]], Sequence[object]],
+) -> list[str]:
+    """A labelled list of rows: its table, or "nenhum" when it is empty."""
+    if not rows:
+        return [f"{label} (`{key}`): nenhum.", ""]
+    return [f"{label} (`{key}`):", ""] + _table(header, [row_of(row) for row in rows])
+
+
+def _events_text(events: Sequence[Mapping[str, object]]) -> str:
+    text = "; ".join(
+        f"`{event['isin']}` {event['label']}, data-ex {event['ex_date']}, ×{_factor(event['multiplier'])}" for event in events
+    )
+    return text or "-"
+
+
+def _factor(value: float) -> str:
+    """A product of event multipliers with no fixed decimals: 2, 0,1, 1,5 (SHR-03)."""
+    return f"{value:.6g}".replace(".", ",")
 
 
 def _results_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:

@@ -516,16 +516,16 @@ T23 → T24
 
 **Done when**:
 
-- [ ] `schema == "pit-rebuild-stocks/v3"`, `amended_by == [64]`, `previous_report == {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"}`, header line names both issues
-- [ ] "## Veredito" carries the B-12 line with `ebaf1fd` when `amended_by` is present, and not for a v2 object (ADJ-01, S9)
-- [ ] Each of the five lists renders one row per entry, in the object's order, and "nenhum" when empty
-- [ ] One `INVESTIGATIONS` entry given through a patched constant renders ticker, date, field, finding, evidence
-- [ ] `parameters.share_scale_rule` contains "(DT_REFER, d]", names the B3 retrieval as the end of the events that pick `f`, says events after `d` only pick the power of ten, still contains "10^-2", "10^3", "√10", "resíduo" and ties √10 to a change with no B3 event; it no longer has the #59 sentence "um desdobramento de 1:5 dá ×10" as an unconditional rule (RPT-06; update `test_the_share_scale_rule_names_the_powers_of_ten_the_sqrt10_limit_and_the_residual`)
-- [ ] The `stockDividends` row of `non_pit_inputs` names share counts and AD-033 and no longer says "só eventos com data-ex ≤ d" alone; still 8 rows with the same roles (RPT-06)
-- [ ] `FORMULAS["VALOR DE MERCADO"]` names "(DT_REFER, d]" and AD-033; the `indicators` docstring names the events (test in `test_pit_rebuild_indicators.py`) (RPT-06)
-- [ ] The Markdown parameter section renders the new texts (they come from the object)
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 9 new or rewritten tests
+- [x] `schema == "pit-rebuild-stocks/v3"`, `amended_by == [64]`, `previous_report == {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"}`, header line names both issues
+- [x] "## Veredito" carries the B-12 line with `ebaf1fd` when `amended_by` is present, and not for a v2 object (ADJ-01, S9)
+- [x] Each of the five lists renders one row per entry, in the object's order, and "nenhum" when empty
+- [x] One `INVESTIGATIONS` entry given through a patched constant renders ticker, date, field, finding, evidence
+- [x] `parameters.share_scale_rule` contains "(DT_REFER, d]", names the B3 retrieval as the end of the events that pick `f`, says events after `d` only pick the power of ten, still contains "10^-2", "10^3", "√10", "resíduo" and ties √10 to a change with no B3 event; it no longer has the #59 sentence "um desdobramento de 1:5 dá ×10" as an unconditional rule (RPT-06; update `test_the_share_scale_rule_names_the_powers_of_ten_the_sqrt10_limit_and_the_residual`)
+- [x] The `stockDividends` row of `non_pit_inputs` names share counts and AD-033 and no longer says "só eventos com data-ex ≤ d" alone; still 8 rows with the same roles (RPT-06)
+- [x] `FORMULAS["VALOR DE MERCADO"]` names "(DT_REFER, d]" and AD-033; the `indicators` docstring names the events (test in `test_pit_rebuild_indicators.py`) (RPT-06)
+- [x] The Markdown parameter section renders the new texts (they come from the object)
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 9 new or rewritten tests
 
 **Tests**: unit
 **Gate**: quick

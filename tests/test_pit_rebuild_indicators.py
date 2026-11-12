@@ -263,5 +263,18 @@ class StaleFilingMaskTests(unittest.TestCase):
         self.assertAlmostEqual(values["P/L"].value, 10.0)  # the input still holds its P/L value
 
 
+class ShareCountRuleTextTests(unittest.TestCase):
+    """RPT-06 (AD-033): the formula and the module docstring say the share count takes the B3 events with ex-date in (DT_REFER, d]."""
+
+    def test_the_market_value_formula_names_the_b3_events_of_dt_refer_d_and_keeps_the_a18_scale(self):
+        formula = indicators.FORMULAS["VALOR DE MERCADO"]
+        self.assertIn("eventos B3 da classe com data-ex em (DT_REFER, d]", formula)
+        self.assertIn("(AD-033)", formula)
+        self.assertIn("(A-18)", formula)
+
+    def test_the_module_docstring_names_the_b3_events_in_the_share_counts(self):
+        self.assertIn("by the A-18 scale and by the B3 events of the class with ex-date in (DT_REFER, d] (AD-033)", indicators.__doc__)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -251,26 +251,26 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | -------------- | ----- | -------- | ----- | ------ |
 | SHR-01 | P1: Share count at d | AC1 | Tasks | Partial (T1, T4, T7 unit; T15 CLI) |
 | SHR-02 | P1: Share count at d | AC1 | Tasks | Partial (T6, T7 unit; T15 CLI) |
-| SHR-03 | P1: Share count at d | AC1 | Tasks | Unit (T7); CLI T15 |
+| SHR-03 | P1: Share count at d | AC1 | Tasks | Unit (T7); Markdown (T14); CLI T15 |
 | SHR-04 | P1: Share count at d | AC1 | Tasks | Unit (T7); CLI T15 |
-| SHR-05 | P1: Share count at d | AC2 | Tasks | Partial (T4 previous count; T8 unit flag; CLI T15) |
+| SHR-05 | P1: Share count at d | AC2 | Tasks | Partial (T4 previous count; T8 unit flag; Markdown T14; CLI T15) |
 | SHR-06 | P1: Share count at d | AC2 | Tasks | Unit (T8); CLI T15 |
 | SHR-07 | P1: Share count at d | AC2 | Tasks | Unit (T8); CLI T15 |
 | SHR-08 | P1: Share count at d | AC1 | Tasks | Partial (T1, T6, T7 unit; T15 CLI) |
 | TTM-01 | P1: 12-month flows | AC3 | Tasks | Unit (T2); CLI T17 |
 | TTM-02 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
 | TTM-03 | P1: 12-month flows | AC3 | Tasks | Done (T2) |
-| TTM-04 | P1: 12-month flows | AC3 | Tasks | Pending |
+| TTM-04 | P1: 12-month flows | AC3 | Tasks | Partial (Markdown T14; CLI T17) |
 | STL-01 | P1: Stale filing | AC4 | Tasks | Partial (T3 age; T9, T10 unit; T16 CLI) |
 | STL-02 | P1: Stale filing | AC4 | Tasks | Unit (T10); CLI T16 |
-| STL-03 | P1: Stale filing | AC4 | Tasks | Pending |
+| STL-03 | P1: Stale filing | AC4 | Tasks | Partial (Markdown T14; CLI T16) |
 | STL-04 | P1: Stale filing | AC4 | Tasks | Pending |
 | ISN-01 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
 | ISN-02 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
 | ISN-03 | P1: ISIN at d | AC5 | Tasks | Partial (T1 call sites; T18 test) |
 | MBR-01 | P2: MBRF3 | AC6 | Tasks | Pending |
-| MBR-02 | P2: MBRF3 | AC6 | Tasks | Pending |
-| ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Partial (T13 order; T14 B-12 line) |
+| MBR-02 | P2: MBRF3 | AC6 | Tasks | Partial (T14 section; T20 fills it) |
+| ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Done (T13 order; T14 B-12 line) |
 | ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Partial (T9 fields; T12 unit; T19 CLI) |
 | ADJ-03 | P1: Adjusted verdict | AC7 | Tasks | Unit (T12) |
 | ADJ-04 | P1: Adjusted verdict | AC7, AC9 | Tasks | Partial (T3 filing; T12 unit; T19 rows) |
@@ -292,7 +292,7 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | RPT-03 | P1: Regenerated report | AC10 | Tasks | Pending |
 | RPT-04 | P1: Regenerated report | AC10 | Tasks | Pending |
 | RPT-05 | P1: Regenerated report | AC10 (REVIEW.md) | Tasks | Pending |
-| RPT-06 | P1: Regenerated report | AC1, AC10 (REVIEW.md) | Tasks | Pending |
+| RPT-06 | P1: Regenerated report | AC1, AC10 (REVIEW.md) | Tasks | Partial (T14 texts; T21 committed JSON) |
 
 **Coverage:** 44 requirements; every issue AC (AC1..AC10) maps to at least one; all 44 mapped to tasks in `tasks.md` (see its traceability table).
 
