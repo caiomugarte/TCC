@@ -1,157 +1,87 @@
-# Validation: pit-rebuild-stocks-fixes (issue #64) - FAIL
+# Validation: pit-rebuild-stocks-fixes (issue #64) - FAIL (iteration 2)
 
 **Date**: 2026-11-12
-**Spec**: `.specs/features/pit-rebuild-stocks-fixes/spec.md` (r2, 44 requirements)
-**Diff range**: `ebaf1fd..59529dd` (merge base with `origin/develop` .. HEAD of `t3/issue-64`, 41 commits)
-**Verifier**: independent sub-agent (author ≠ verifier), clientRequestId `iw-64-verify-r1`
+**Spec**: `.specs/features/pit-rebuild-stocks-fixes/spec.md` (r3, 44 requirements; AUD-02, B-10 and AUD-06 amended)
+**Diff range**: `ebaf1fd..a29381a` (feature). The fix round is `1def298..a29381a`: `3ee1da1` spec, `b1a0d62` test, `78b433b`, `07795f5`, `a29381a` docs, `86c3197` state. `py/` is unchanged since `1def298`.
+**Verifier**: independent sub-agent (author ≠ verifier), clientRequestId `iw-64-verify-r2`. Iteration 1 report: commit `1def298`.
 
-**Verdict: FAIL.** The code passes the gates, the sensor kills 23 of 24 non-equivalent mutants, the committed report regenerates from the committed code, and every number sampled in `docs/validation/` matches the JSON. Two blocking gaps remain: issue AC9 is not met as written (V1), and two audit rows attribute a Status Invest value to a filing received three months after the collection when the cache shows an earlier one (V2).
-
----
-
-## Task Completion
-
-| Task | Status | Notes |
-| ---- | ------ | ----- |
-| T1-T24 | ✅ Done | All `Done when` boxes in `tasks.md` are checked (0 unchecked). One commit per task, `1764831` .. `996490d`; handoff `59529dd`. |
+**Verdict: FAIL.** V1..V5 are closed: no row is left without a class, SIMH3 cites the right filing, M17 is an equivalent mutant, the README sentence is fixed, and the spec and tests carry the new classes. The gates pass. One new blocking gap (V6): the audit says, on 108 rows, that no cached demonstrativo reproduces the Status Invest value. The classification tested a narrower set than the text states. With the definition the document gives, 30 of those rows have a cached filing that reproduces the value, 3 of the 4 DY `sem base` rows have a reproducing subset, and 5 reproduced rows cite a filing that is not the oldest. No class changes, so the criterion stays "cumprido". The per-row text, the `sem base` counts and the oldest-filing citations are false as written.
 
 ---
 
 ## Gate Check
 
-- **Full (pit) gate**: `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"` → `Ran 471 tests`, `OK`.
-- **Build gate**: `python3 -m compileall -q py/pit_rebuild` ok; `git diff --exit-code ebaf1fd -- data snapshots baselines py/core api py/config.py py/pit_validation.py` empty; `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest discover -s tests -p "test_*.py"` → `Ran 1058 tests in 189.772s`, `OK (skipped=2)`.
-- **Test count before the feature** (pit suite at `ebaf1fd`, run on a `git archive` copy): 322. **After**: 471. **Delta**: +149. No test deleted.
-- **Skipped**: 2 in the root suite, both outside this feature (unchanged from the baseline the handoff records).
-- **Regeneration (RPT-01)**: `python3 py/pit_rebuild report --offline` with the README arguments, written to a scratch directory, gives a JSON that differs from the committed one only in `tool_commit` and the 14 timing keys of `coverage.effort`. `py/` is unchanged between the generating commit `550c89f` and HEAD.
+- **Pit suite**: `python3 -m unittest discover -s tests -p "test_pit_rebuild*.py"` gives `Ran 473 tests`, `OK` (471 + 2 new tests in the fix round).
+- **Build gate**: `/home/caio/Documents/projetos/TCC/.venv/bin/python -m unittest discover -s tests -p "test_*.py"` (foreground, exit 0) gives `Ran 1060 tests in 187.453s`, `OK (skipped=2)`. `python3 -m compileall -q py/pit_rebuild` passes. `git diff --exit-code ebaf1fd -- data snapshots baselines py/core api py/config.py py/pit_validation.py` is empty.
+- **Test count**: 1058 at iteration 1, 1060 now. No test deleted. `AUDIT_CLASSES` grew from 4 to 5 entries, and the summary and criterion tests now read the fifth class (`tests/test_pit_rebuild_artifact.py:188`, `:352`, `:362`).
+- **Skipped**: the same 2 root-suite skips as iteration 1, both outside this feature.
 
 ---
 
-## Issue Acceptance Criteria (AC1..AC10)
+## Re-verification of V1..V5
 
-| Issue AC | Evidence | Status |
-| -------- | -------- | ------ |
-| AC1 count × B3 events in (period end, d], adjusted companies listed with factor | `tests/test_pit_rebuild_shares.py:58` (bonus ×2 → `n_on` 2 000 000, listed with factor 2.0), `:71` (ex-date after d not applied), `:75` (ex-date = DT_REFER not applied), `:101`-`:128` (SHR-08 scale window); `tests/test_pit_rebuild_cli.py:1060` (BONU3 through `main`, `share_events.adjusted` row and VALOR DE MERCADO 2 000 000 000); JSON `dates[d].mapping.share_events.adjusted`: 6 and 3 classes. Mutants M1-M6 killed. | ✅ |
-| AC2 change > 20 % with no B3 event flagged, value not corrected | `tests/test_pit_rebuild_shares.py:207`, `:214` (exactly 20 % not listed), `:219` (20.01 % listed), `:223` (event explains), `:238` (count used as filed); `tests/test_pit_rebuild_cli.py:1090` (JUMP: ratio 1.5 listed, VALOR DE MERCADO uses 150 M). JSON `share_count_suspect`: 5 and 8. Mutants M7, M8 killed. | ✅ |
-| AC3 12-month flows from last year's ITR when PENÚLTIMO is 0/absent | `tests/test_pit_rebuild_cvm.py:548` (`Dated(1100.0, 2026-08-06, prior_from_itr=True)` = 1000 + 300 − 200), `:555` (absent), `:562` (year-earlier ITR received d + 1 → None), `:568`, `:574` (non-zero comparative kept), `:589` (`ttm_year_before`); `tests/test_pit_rebuild_cli.py:1123` (TTMX through `main`, listed in `ttm_prior_from_itr`). Mutants M9, M10, M22 killed. TIMS3: JSON lists cd 24929 in `ttm_prior_from_itr`; the audit records the R$ 4,33 bi LL. | ✅ |
-| AC4 stale filing > 270 days → no accounting value, `stale_filing` | `tests/test_pit_rebuild_cli.py:1103` (OLDF3, age 280, 15 fields `stale_filing`, market fields kept, listed), `:1579` (270 not stale, 271 stale), `:1569` (cutoff evaluation). JSON: AMBP3 age 403 at 2026-08-07; AALR3, AMBP3, BSLI3 at 2026-11-05. Mutants M11, M12, M18 killed. | ✅ |
-| AC5 ISIN and class from the last session ≤ d (N3) | `tests/test_pit_rebuild_cotahist.py:238` (old ISIN/ESPECI until the change session), `tests/test_pit_rebuild_cli.py:1616` (dividend divided by the old ISIN's event at the first date). Mutants M13, M16 killed. | ✅ |
-| AC6 MBRF3 DY cause investigated and written | JSON `investigations[0]` (MBRF3, DY, 2026-11-05); `tests/test_pit_rebuild_artifact.py:180`, `tests/test_pit_rebuild_report.py:752`, `:762`. Verified against the cache: `b3_cash_MARFRIG_p1.json` holds 2,8105011104 with ex-date 2025-09-19 (412 days before 2026-11-05); COTAHIST MBRF3 closes 16,07 on 2026-08-07 and 15,63 on 2026-11-05; 100 × 2,8105 / 16,07 = 17,49 = SI's DY in `data/raw/status_invest_fundamentals.csv`. | ✅ (MBR-02 branch) |
-| AC7 adjusted verdict beside the official one | `tests/test_pit_rebuild_report.py:536`, `:545`, `:576`, `:583`, `:589`, `:616`, `:633`, `:732`; `tests/test_pit_rebuild_cli.py:1833` and the ADJ-07 test after `:1859`; `tests/test_pit_rebuild_artifact.py:131`, `:152`. JSON: `adjusted_verdict.class` `com ressalvas`, `criterion.met` true, `failing` []; official `verdicts.class` `não reconstruível`. Mutants M15, M19, M20, M24, M25 killed. | ✅ |
-| AC8 `si_lag` counted apart | `tests/test_pit_rebuild_compare.py:185`, `:193`, `:197`; `tests/test_pit_rebuild_cli.py:1803`, `:1808`, `:1816`, `:1827`. JSON sums: 32 (2026-08-07), 350 (2026-11-05). Mutant M14 killed; M17 survived (V3). | ✅ (V3 nonblocking) |
-| AC9 the 10 worst per adjusted indicator and date classified as erro nosso / erro do SI / diferença de método, with the filing number | `docs/validation/pit-rebuild-stocks-audit.md` has all 280 rows, numbers equal to the JSON (`tests/test_pit_rebuild_artifact.py:246`, `:254`, independently re-checked: 0 numeric mismatches). **153 rows carry a fourth class, `não classificado`**: 121 outside tolerance with no cause, 32 inside tolerance. The test admits the fourth class (`tests/test_pit_rebuild_artifact.py:187`). | ❌ V1 |
-| AC10 JSON and MD regenerated and committed; small fixtures, no network | Regeneration above (only `tool_commit` and timings differ); `tests/test_pit_rebuild_artifact.py:57` (MD = render of JSON byte for byte), `:125` (schema v3, `amended_by` [64], `previous_report`); CLI tests run on temp-dir fixtures with `opener=no_network` (`tests/test_pit_rebuild_cli.py:149`); no test reads `.cache/`. | ✅ |
+| Gap | Status | Evidence |
+| --- | ------ | -------- |
+| V1 (blocking): AC9/AUD-02, rows outside tolerance with no class | ✅ Closed as a class gap; text defect moved to V6 | 280 rows parsed independently: 0 `não classificado`, 32 `dentro da tolerância`, 213 `erro do Status Invest`, 11 `diferença de método`, 24 `erro nosso`, equal to `docs/validation/pit-rebuild-stocks-audit.md:41-43` and to the per-field tables. The split at `:47-50` matches the rows' motives: 32 reproduced and 60 `sem base` on 2026-08-07 (59 accounting rows, 1 DY), and 69 and 52 on 2026-11-05 (49 accounting rows, 3 DY). Total `sem base`: 112, as stated at `:61`. The "Demonstrativos conferidos" tables (26 companies, 464 version rows, `:586`-EOF) equal the cache **row for row**: DT_RECEB, the 14 account values, the ON/PREF/TOTAL composition and the 80 "(só o índice no cache)" flags. No version received by 2026-11-09 is missing. All 108 `Conferidos: N` items and every "N demonstrativos / M versões só têm o índice" motive equal the cache counts. Criterion line `:56` "cumprido" equals the rows (0 `não classificado`) and `adjusted_verdict.criterion.met` true. The negative claim behind `sem base` does not hold as written (V6). |
+| V2 (blocking): SIMH3 citation | ✅ Closed | `audit.md:220` (P/VP) and `:247` (PSR) cite `CVM ITR 2026-06-30 v1 rec 2026-08-12: QT_ACAO_ORDIN_CAP_INTEGR = 583759291`. Cache: `itr_cia_aberta_2026.zip`, cd 25003, ITR 2026-06-30 v1, DT_RECEB 2026-08-12, composition (583 759 291, 0, 583 759 291). ITR 2026-03-31 v1 had 426 797 757, so 2026-08-12 is the first filing with that count. The "o mais antigo é citado" part fails for these two rows under the document's own definition (V6). |
+| V3 (nonblocking): M17 at `py/pit_rebuild/cli.py:932` | ✅ Closed: equivalent mutant, confirmed from the code | `cotahist.reference_stale` is `quote_at(q, ticker, d) is None` (`py/pit_rebuild/cotahist.py:104-106`). `_unmapped_reason` returns `no_quote` on the same `quote_at` at the same `day` (`py/pit_rebuild/cli.py:350`), or an earlier reason. Either way `_evaluate_day` hits `continue` before `previous_values[ticker]` is set (`cli.py:770-774`; the previous values are set only at `:816-820`). In `_adjusted_input` the call `result.previous.get(ticker, {}).get(name)` then gives `None`, and `compare.is_si_lag` returns False when `calc_prev is None` (`py/pit_rebuild/compare.py:133`). Removing `left_out` cannot change a mark. `tests/test_pit_rebuild_cli.py:1827` pins the invariant (STLQ3 is `reference_stale` and `no_quote`, with no mark). Whether to delete the redundant cut is a user decision, not a gap. |
+| V4 (nonblocking): README zero-reference sentence | ✅ Closed | `docs/validation/README.md:725-727` now says that the audit counts only `missing` and that zero reference is a declared limit. This matches `audit.md:28`. |
+| V5 (nonblocking, spec precision) | ✅ Closed | `spec.md` r3: AUD-02 (class set of five, `sem base` evidence), B-10 (fix-round paragraph) and AUD-06 (`dentro da tolerância` counts as audited). Tests: `tests/test_pit_rebuild_artifact.py:188` (`AUDIT_CLASSES`), `:268` (the class and the "dentro da tolerância" motive agree both ways; a `não classificado` row states a reason), `:277` (a `sem base` row carries a `CVM` item and a `Conferidos:` item; a DY `sem base` row carries a dividend item and a `COTAHIST` item). Sensor below: the mutants on these assertions are killed. |
 
 ---
 
-## Spec Requirements (44)
+## V1 Sample Against the Cache (rule of the user: "sem base" = no cached demonstrativo reproduces the SI value)
 
-| Req | Spec-defined outcome | Evidence (`file:line` + assertion) | Result |
-| --- | -------------------- | ---------------------------------- | ------ |
-| SHR-01 | N = round(filed × f × M_d) | `tests/test_pit_rebuild_shares.py:58` `(n_on, factor) == (2_000_000, 1)`; `tests/test_pit_rebuild_cli.py:1060` VALOR DE MERCADO 2e9; M6 killed | ✅ |
-| SHR-02 | ex-date = DT_REFER or > d left out | `tests/test_pit_rebuild_shares.py:71`, `:75`; M1, M2 killed | ✅ |
-| SHR-03 | listed when abs(M − 1) > 1e-9, row shape, cancel-out not listed | `tests/test_pit_rebuild_shares.py:58` (`applied` row), `:86` (split + grouping unlisted); `tests/test_pit_rebuild_cli.py:1060` (JSON row); M4 killed | ✅ |
-| SHR-04 | class with shares and empty I_d: no event, listed in `no_isin` | `tests/test_pit_rebuild_shares.py:175`; `tests/test_pit_rebuild_cli.py:1098`; M23 killed | ✅ |
-| SHR-05 | > 20 % with no event → `share_count_suspect` row | `tests/test_pit_rebuild_shares.py:207`, `:219`; `tests/test_pit_rebuild_cli.py:1090` (ratio 1.5 row) | ✅ |
-| SHR-06 | suspect count used unchanged | `tests/test_pit_rebuild_shares.py:238`; `tests/test_pit_rebuild_cli.py:1090` (value uses 150 M) | ✅ |
-| SHR-07 | exactly 20 % or an event → not listed | `tests/test_pit_rebuild_shares.py:214`, `:223`; `tests/test_pit_rebuild_cli.py:1498`; M7, M8 killed | ✅ |
-| SHR-08 | f chosen on M_all up to R; event after R out; ISIN after d in | `tests/test_pit_rebuild_shares.py:101`, `:107`, `:113`, `:118`, `:128`; `tests/test_pit_rebuild_cli.py` LATE3 test after `:1060` (factor 1, ×5 applied); M5 killed | ✅ |
-| TTM-01 | FY_prev + YTD − YTD_prior(ITR), dated by latest DT_RECEB | `tests/test_pit_rebuild_cvm.py:548` `Dated(1100.0, date(2026, 8, 6), prior_from_itr=True)`, `:555`; M9 killed | ✅ |
-| TTM-02 | earlier ITR unusable/absent/no row → None | `tests/test_pit_rebuild_cvm.py:562` (`assertIsNone` at d + 1), `:568`; M10 killed | ✅ |
-| TTM-03 | non-zero PENÚLTIMO used | `tests/test_pit_rebuild_cvm.py:574` (1150, `prior_from_itr` false); `tests/test_pit_rebuild_cli.py` TTMZ test after `:1123` | ✅ |
-| TTM-04 | `ttm_prior_from_itr` rows sorted by cd_cvm | `tests/test_pit_rebuild_cli.py:1123` (`[{"cd_cvm": "2019", "dt_refer": "2026-06-30", "accounts": ["3.01", "LL"]}]`); M22 killed | ✅ |
-| STL-01 | age > 270 → 15 fields `stale_filing` | `tests/test_pit_rebuild_cli.py:1103` (loop over ACCOUNTING_FIELDS); M12 killed | ✅ |
-| STL-02 | stays mapped, market fields computed | `tests/test_pit_rebuild_cli.py:1103` (`assertNotIn("OLDF3", unmapped)`, VALOR DE MERCADO 1e9, PRECO/LIQUIDEZ/DY not `stale_filing`) | ✅ |
-| STL-03 | `stale_filing` rows sorted by ticker | `tests/test_pit_rebuild_cli.py:1103` (ANTE3, OLDF3 rows with age 280) | ✅ |
-| STL-04 | exactly 270 not stale | `tests/test_pit_rebuild_cli.py:1579`; M11 killed | ✅ |
-| ISN-01 | value of the session ≤ d | `tests/test_pit_rebuild_cotahist.py:238`; M13 killed | ✅ |
-| ISN-02 | no session ≤ d → None | `tests/test_pit_rebuild_cotahist.py:238` (task T1 box) | ✅ |
-| ISN-03 | d passed at every call; old ISIN at first date through `main` | `tests/test_pit_rebuild_cli.py:1616`; M16 killed | ✅ |
-| MBR-01 | fix the lookup if it is the cause | not taken: the cause is not the lookup (MBR-02 branch, verified on the cache) | ✅ n/a |
-| MBR-02 | cause in `investigations`, Markdown and audit | `tests/test_pit_rebuild_artifact.py:180`; `tests/test_pit_rebuild_report.py:762`; audit row MBRF3 (`docs/validation/pit-rebuild-stocks-audit.md:534`) | ✅ |
-| ADJ-01 | official section kept, before adjusted, with the B-12 line | `tests/test_pit_rebuild_report.py:633`, `:732` | ✅ |
-| ADJ-02 | block with 14 fields, `excluded`, per-date stats | `tests/test_pit_rebuild_report.py:536`; `tests/test_pit_rebuild_cli.py:1833` (STLQ3 excluded, denominator 3) | ✅ |
-| ADJ-03 | per-field worse of two dates; class = worst field | `tests/test_pit_rebuild_report.py:545`; M20, M24 killed | ✅ |
-| ADJ-04 | worst rows with `si_lag`, filing, `previous_value`; null on DY | `tests/test_pit_rebuild_report.py:553`; `tests/test_pit_rebuild_cli.py` worst-row test after `:1833` (`assertIsNone(dy["filing"])`); M25 killed (M21 equivalent) | ✅ |
-| ADJ-05 | criterion object; met iff every field ≥ 70 on both dates; MD prints part 1 only | `tests/test_pit_rebuild_report.py:576` (70 → met), `:583` (69.99 → fails); `tests/test_pit_rebuild_artifact.py:131`, `:152`; M15 killed | ✅ |
-| ADJ-06 | denominator 0 → failing with null | `tests/test_pit_rebuild_report.py:589`; `tests/test_pit_rebuild_cli.py` criterion test (`{"field": "PSR", ..., "pct_within": None}`); M19 killed | ✅ |
-| ADJ-07 | official `verdicts` identical with and without the block | `tests/test_pit_rebuild_report.py:616`; `tests/test_pit_rebuild_cli.py` ADJ-07 test (`without["verdicts"] == report["verdicts"]`) | ✅ |
-| LAG-01 | outside + previous within → `si_lag` | `tests/test_pit_rebuild_compare.py:185`; `tests/test_pit_rebuild_cli.py:1803` | ✅ |
-| LAG-02 | `si_lag = {count, tickers}` over the adjusted scope; MD count | `tests/test_pit_rebuild_report.py:604`, `:658`. The "over the adjusted scope" cut (`py/pit_rebuild/cli.py:932`) has no test: M17 survived | ⚠️ V3 |
-| LAG-03 | no older filing, or within with the newest → not `si_lag` | `tests/test_pit_rebuild_compare.py:193`; `tests/test_pit_rebuild_cli.py:1808`, `:1816`; M14 killed | ✅ |
-| LAG-04 | mark changes no statistic | `tests/test_pit_rebuild_compare.py:217`; `tests/test_pit_rebuild_cli.py:1827` | ✅ |
-| AUD-01 | one row per worst case, every field, both dates | `tests/test_pit_rebuild_artifact.py:246`; re-checked: 28 sections, 280 rows | ✅ |
-| AUD-02 | exactly one class of {erro nosso, erro do SI, diferença de método} + evidence | evidence part: `tests/test_pit_rebuild_artifact.py:275`, `:286` (0 evidence problems in an independent parse). Class part fails: 153 rows `não classificado`; `AUDIT_CLASSES` at `tests/test_pit_rebuild_artifact.py:187` admits it | ❌ V1, ⚠️ V5 |
-| AUD-03 | ticker, SI and rebuilt equal the JSON | `tests/test_pit_rebuild_artifact.py:254`; independent re-check of 280 rows: 0 mismatches (reference, rebuilt, diff, si_lag) | ✅ |
-| AUD-04 | class counts per field/date equal the rows | `tests/test_pit_rebuild_artifact.py:294`, `:333`; re-check: 17/28/6/65/24 and 7/66/3/56/8 | ✅ |
-| AUD-05 | worst-list exclusions named; `missing` per date/field/reason = JSON | `tests/test_pit_rebuild_artifact.py:307`; re-check of both "Sem valor reconstruído" tables against the JSON: equal | ✅ |
-| AUD-06 | whole criterion "cumprido" iff part 1 and part 2; count of erro nosso | `tests/test_pit_rebuild_artifact.py:346`; document says "não cumprido", part 1 cumprida (72,77 %, P/L, 2026-11-05), part 2 não cumprida (121 rows), erro nosso 24 — all equal to the data | ✅ |
-| RPT-01 | report written by `report --offline` from the feature's code, v3, `amended_by` [64] | `tests/test_pit_rebuild_artifact.py:125`; scratch regeneration differs only in `tool_commit` and timings | ✅ |
-| RPT-02 | MD = render(JSON) byte for byte | `tests/test_pit_rebuild_artifact.py:57` | ✅ |
-| RPT-03 | fixtures only, no network, no `.cache/` read | `tests/test_pit_rebuild_cli.py:149` (`opener=no_network`); `grep '\.cache' tests/test_pit_rebuild*.py` finds no cache read | ✅ |
-| RPT-04 | every number in README and audit equals the JSON | 22 README numbers and all audit numbers re-checked (see "Numbers sampled"): equal. README sentence at `docs/validation/README.md:725` is misleading (V4) | ✅ (V4 nonblocking) |
-| RPT-05 | exit codes 0-5; docstring table = README table | `tests/test_pit_rebuild_artifact.py:107` (README codes = docstring codes = 0..5) | ✅ |
-| RPT-06 | rule texts state AD-033, drop the #59 sentences | `tests/test_pit_rebuild_artifact.py:158`; `py/pit_rebuild/report.py:51` keeps "1:5 → ×10" only under "sem evento da B3" | ✅ |
+Method, independent of the implementer's scripts: every DFP and ITR version of the 26 companies was read from `.cache/pit-rebuild/{dfp,itr}_cia_aberta_*.zip`. That is 464 versions, with the statement choice F18, `cvm._value` scaling and the LL rule A-21 reused from `py/pit_rebuild/cvm.py`. Each version was re-read as the newest filing: the same TTM rule as `cvm._ttm_of`, the balance accounts, and the composition × A-18 scale × B3 events from `b3_company_<root>.json` up to d. Each version was tried whole (controller and total LL/PL) and by its count alone, and compared with `compare.within`. **Calibration**: for 139 of 147 rows, the emulation recomputes the rebuild's own value exactly as in the JSON. All 30 findings below are on calibrated rows.
 
-**Status**: ❌ gaps present (AUD-02 / AC9). One spec-precision gap flagged (V5).
+Sample (24 rows: 20 recomputed, plus the 4 DY `sem base` rows checked by subset sum):
+
+| Date | Field | Ticker | Audit says | Cache |
+| ---- | ----- | ------ | ---------- | ----- |
+| 08-07 | LIQ. CORRENTE | VTRU3 (`:91`) | sem base, 13 checked | ✅ none of 13 reproduces 4.48 |
+| 08-07 | LIQ. CORRENTE | BHIA3 (`:94`) | sem base, 15 checked | ❌ ITR 2024-06-30 v1 (`audit.md:601`): 12 733 000 000 / 16 771 000 000 = **0.7592 → 0.76 = SI**. DFP 2019-12-31 v1 (`:594`) gives 0.7915 (4.1 %) |
+| 08-07 | DIV. LIQ. / PATRI. | AALR3 (`:121`) | sem base, 13 checked | ❌ ITR 2025-09-30 v1 rec 2025-11-14 (`audit.md:840`): (236 911 000 + 250 040 000 − 123 751 000) / (1 099 291 000 − 32 363 000) = **0.3404 → 0.34 = SI** |
+| 08-07 | DIVIDA LIQUIDA / EBIT | BHIA3 | sem base | ✅ none |
+| 08-07 | ROE | TIMS3 (`:145`) | sem base | ❌ ITR 2025-09-30 v1 gives 15.98 (SI 15.91, 0.07 p.p.) |
+| 08-07 | MARG. LIQUIDA | TPIS3 | sem base | ✅ none |
+| 08-07 | MARGEM EBIT | ISAE3 | sem base | ✅ none |
+| 08-07 | CAGR RECEITAS 5 ANOS | MLAS3 | sem base | ✅ none |
+| 08-07 | P/L | TIMS3 | sem base | ✅ none |
+| 08-07 | PSR | BRST3 (`:249`) | sem base | ❌ DFP 2024-12-31 v1 gives 0.86 (SI 0.89, 3.4 %) |
+| 11-05 | ROE | EQPA3 | sem base | ✅ none |
+| 11-05 | P/VP | TIMS3 | sem base | ✅ none |
+| 11-05 | EV/EBIT | TFCO4 | sem base | ✅ none |
+| 11-05 | CAGR LUCROS 5 ANOS | CAML3 | sem base | ✅ none |
+| 08-07 | LIQ. CORRENTE | ONCO3 (`:92`) | reproduced, ITR 2026-03-31 v2 rec 2026-08-14, "2 reproduzem" | ✅ v2 gives 0.46. Two versions reproduce (v2 and ITR 2026-06-30 v1, 0.44) |
+| 08-07 | MARGEM EBIT | BRST3 (`:188`) | reproduced, oldest = ITR 2026-06-30 v1 rec 2026-08-11 | ❌ ITR 2024-09-30 v1 (older) gives 14.99 (SI 14.96) |
+| 11-05 | PSR | VIVA3 | reproduced by count, DFP 2020-12-31 v1 | ✅ the count of DFP 2020 v1 gives 1.35 (SI 1.36). It is the oldest |
+| 11-05 | PSR | PMAM3 | reproduced by count, DFP 2020-12-31 v3 | ✅ 1.89 (SI 1.84). It is the oldest |
+| 08-07 | PSR | EGIE3 (`:250`) | diferença de método: "nenhum demonstrativo do cache reproduz o valor do SI (3.08)" | Class ✅: the B3 total of R, 1 416 381 520 (`b3_company_EGIE.json`), gives 29.73 × 1 416 381 520 / 13 680 975 000 = 3.08. The text is ❌: DFP 2023-12-31 v1 (`audit.md:693`), 815 927 740 × 1.4 (BONIFICACAO 40 %, lastDatePrior 26/11/2025) = 1 142 298 836, gives 29.73 × 1 142 298 836 / 10 747 784 000 = **3.16** (2.6 %) |
+| 11-05 | PSR | EGIE3 (`:516`) | same | Class ✅. Text ❌: DFP 2023-12-31 v1 gives 26.64 × 1 142 298 836 / 10 747 784 000 = **2.83** (SI 2.76, 2.5 %) |
+| DY | JSLG3 11-05 (`:553`), EQTL3 11-05 (`:561`), MBRF3 11-05 (`:552`), HBOR3 08-07 (`:291`) | "nenhum subconjunto dos proventos da B3 do cache reproduz o DY do SI" | HBOR3 ✅: no subset of its 16 ON records. JSLG3, EQTL3 and MBRF3 ❌ as written: subsets of all cached ON records give the SI DY exactly to two decimals, with 3 708, 32 and 2 subsets at the close of d. None exists within ex-date (d − 730, d] |
+
+Across all 110 rows whose text says no cached demonstrativo reproduces the value (108 `sem base` accounting rows and the 2 EGIE3 rows), **30 rows** (20 on 2026-08-07, 10 on 2026-11-05) have a cached version that reproduces the SI value under the document's own definition (`audit.md:14`). All 30 still use only the version's own inputs, read at max(d, DT_RECEB). The rows: BHIA3 (LIQ. CORRENTE, DIV. LIQ./PATRI. ×2, ROA ×2, MARG. LIQUIDA ×2, MARGEM EBIT, EV/EBIT ×2, CAGR RECEITAS ×2), BRST3 (DL/EBIT, DIV. LIQ./PATRI. ×2, ROE, ROA, MARG. LIQUIDA, PSR ×2), VTRU3 DL/EBIT, AALR3 DIV. LIQ./PATRI., CAML3 (ROE, P/L ×2), TIMS3 (ROE, ROA ×2) and EGIE3 PSR ×2. Five reproduced rows cite a filing that is not the oldest reproducer: BRST3 MARGEM EBIT 08-07, ORVR3 P/VP 08-07, SIMH3 P/VP and PSR 08-07, and CAML3 DIV. LIQ./PATRI. 11-05.
+
+**Cause**: the implementer's classifier lives outside the repository (session scratchpad `3ec97855-…/scratchpad/`). Its `views.py:205-206` applies `mask_accounting(..., stale_filing)` whenever the version read as newest ends more than 270 days before d. Every version older than that cannot reproduce anything when read whole; only its count is tested. `classify2.py:136` limits DY candidates to ex-date in (d − 730, d]. The document states neither restriction. `audit.md:14` says all versions are tested whole and by count. `:13` and `:31` state the DY and `sem base` rules without a window. Each row says "nenhum dos N demonstrativos ... reproduz ..., testados o demonstrativo inteiro, ... e só a contagem de ações de cada um". Spec B-10 r3 says the same ("every version received up to R, each read as the newest filing").
+
+**Impact**: no class changes. Under the rule order (`audit.md:13`), every one of the 30 rows stays `erro do Status Invest` (EGIE3 stays `diferença de método`). Part 2 and the "cumprido" criterion (AUD-06) hold either way. What is false is the per-row negative claim, the `sem base` counts (`audit.md:47-50`, `:61`: 112 as defined), and the "o mais antigo é citado" claim on 5 rows. REVIEW.md classes false text in `docs/validation/` as Important.
 
 ---
 
-## Discrimination Sensor
+## Discrimination Sensor (fix-round surface)
 
-Scratch: `git archive HEAD` extracted under the session scratchpad; each mutant on a fresh copy; pit suite run there. Real worktree `git status --porcelain` empty before and after (matches the baseline).
+Scratch: `git archive HEAD docs tests py` extracted under the session scratchpad. Each mutant was applied to the copy of `pit-rebuild-stocks-audit.md` and `tests.test_pit_rebuild_artifact` was run there. The copy has 1 baseline error: the hash test needs `data/raw/`, which was not copied. Real worktree `git status --porcelain`: empty before and after.
 
-| # | File (HEAD) | Mutation | Result |
-| - | ----------- | -------- | ------ |
-| M1 | `py/pit_rebuild/dividends.py` `class_events` | `ex <= after` → `ex < after` (event on DT_REFER counts) | ✅ Killed (3) |
-| M2 | same | drop the `ex > until` bound | ✅ Killed (8) |
-| M3 | same | drop the (label, multiplier, lastDatePrior) dedup | ✅ Killed (2) |
-| M4 | `py/pit_rebuild/shares.py` `adjust` | list every class (`abs(M−1) > ε` → `True`) | ✅ Killed (10) |
-| M5 | same | `M_all` window without R | ✅ Killed (3) |
-| M6 | same | `n_on` uses `M_all` instead of `M_d` | ✅ Killed (7) |
-| M7 | `shares.suspect` | `<= 0.20` → `< 0.20` | ✅ Killed (2) |
-| M8 | same | ignore events in the interval | ✅ Killed (1) |
-| M9 | `py/pit_rebuild/cvm.py` `_ttm_of` | zero comparative no longer triggers the fallback | ✅ Killed (7) |
-| M10 | same | year-earlier ITR read without the d cut | ✅ Killed (1) |
-| M11 | `py/pit_rebuild/cli.py:551` | `> 270` → `>= 270` | ✅ Killed (1) |
-| M12 | `py/pit_rebuild/cli.py:809` | no `stale_filing` mask | ✅ Killed (7) |
-| M13 | `py/pit_rebuild/cotahist.py:118` | `isin` reads the last loaded session | ✅ Killed (5) |
-| M14 | `py/pit_rebuild/compare.py:125` | drop "newest within tolerance" guard | ✅ Killed (2) |
-| M15 | `py/pit_rebuild/report.py:425` | `< 70` → `<= 70` | ✅ Killed (3) |
-| M16 | `py/pit_rebuild/cli.py:629` | `isin(q, ticker, date.max)` at the call site | ✅ Killed (1) |
-| M17 | `py/pit_rebuild/cli.py:932` | `left_out = set()`: reference_stale tickers can be `si_lag` | ❌ Survived → V3 |
-| M18 | `py/pit_rebuild/cli.py:819` | previous-filing value not masked when stale | ✅ Killed (2) |
-| M19 | `py/pit_rebuild/report.py:425` | null `pct_within` not failing | ✅ Killed (2) |
-| M20 | `py/pit_rebuild/report.py` `class` | class = one field instead of the worst | ✅ Killed (1) |
-| M21 | `py/pit_rebuild/cli.py` `_adjusted_input` | DY row keeps its filing | ➖ Equivalent: `report._worst_row` nulls DY anyway (`py/pit_rebuild/report.py:446`) |
-| M22 | `py/pit_rebuild/cli.py:544` | `ttm_prior_from_itr` never filled | ✅ Killed (1) |
-| M23 | `shares.adjust` | `no_isin` never filled | ✅ Killed (2) |
-| M24 | `py/pit_rebuild/report.py:420` | per-field overall from one date | ✅ Killed (2) |
-| M25 | `py/pit_rebuild/report.py:446` | DY rows keep filing/previous value | ✅ Killed (2) |
+| # | Mutation (audit copy) | Result |
+| - | --------------------- | ------ |
+| A1 | drop the `Conferidos:` item of VTRU3 LIQ. CORRENTE (`sem base`) | ✅ Killed (`:277`) |
+| A2 | in-tolerance row TIMS3 LIQ. CORRENTE relabelled `erro do Status Invest` | ✅ Killed (3 failures) |
+| A3 | criterion line "cumprido" → "não cumprido" | ✅ Killed (`:362`) |
+| A4 | `sem base` row BHIA3 relabelled `não classificado` | ✅ Killed (3 failures) |
+| A5 | second Resumo table 32/60 → 33/59 (reproduced vs `sem base`) | ❌ Survived: no test reads that table (V8) |
+| M17 (r1) | `cli.py:932` `left_out = set()` | ➖ Equivalent (V3 above) |
 
-**Sensor depth**: lightweight+ (no P0 path; 25 mutants over every new rule). **Result**: 23/24 non-equivalent killed - FAIL ❌ (one survivor). The survivor is off any critical path and its criterion's main behaviour has proof (V3, nonblocking).
-
----
-
-## Numbers Sampled in docs/validation (point 4)
-
-All equal to `docs/validation/pit-rebuild-stocks.json` unless noted.
-
-- README "Resultado da regeneração": official class `não reconstruível`; LIQ. CORRENTE 2026-08-07 group without unclassified 90,21 % (v2 at `ebaf1fd`) → 89,79 % (211/235), verdict `reconstruível` → `com ressalvas`, AMBP3 in `missing` with `stale_filing`; adjusted class `com ressalvas`; part 1 met; minimum 72,77 % (P/L, 2026-11-05); `si_lag` sums 32 and 350; `share_events.adjusted` 6 and 3; `no_isin` 9 and 10; `share_count_suspect` 5 and 8; `ttm_prior_from_itr` 18 and 20; `stale_filing` 1 and 3; cd_cvm 11975 grouping ex-date 2026-06-26 (in `share_events.adjusted`).
-- README "maior parte das marcas ... ITR de 2026-09-30, recebido entre 2026-11-03 e 2026-11-05": re-counted from the cache (FCA ticker → CNPJ, newest filing ≤ 2026-11-05): 315 of the 325 mappable marks (25 marks not mapped by this quick check). Holds.
-- Audit summary 17/28/6/65/24/140, 7/66/3/56/8/140, totals 24/94/9/121/32/280; per-field count tables; both missing tables; 280 rows (reference, rebuilt, diff, si_lag): 0 mismatches. In-tolerance label matches `compare.within` on all 280 rows.
-- Audit evidence spot-checked against the cache: VTRU3 ITR 2026-03-31 1.01 = 1 406 980 MIL and 2.01 = 660 877 MIL; ONCO3 ITR 2026-06-30 1.01 = 2 611 886 MIL, 2.01 = 5 892 598 MIL; HBRE3 0,874071 + 0,291357 = 1,1654 → 100 × 1,1654 / 2,22 = 52,50 (SI) and Yahoo 0,485595 → 21,87; EQPA3 0,316875 / 5,32 = 5,96 p.p. gap; MBRF3 17,49 / 17,98 / 412 days / 15,27.
-- SIMH3 rows: the cited count is right but the cited filing is not the earliest that carries it (V2).
-
----
-
-## Points Raised by the Implementer
-
-1. **AC9 / AUD-02, 153 `não classificado` rows.** The document is honest: "não cumprido" equals the data (part 1 met at 72,77 %; part 2 fails on 121 rows: 65 + 56; erro nosso 24). That makes DEC-2 part 2 a legitimate *measurement* result. AC9, though, is a deliverable criterion: it asks that the 10 worst be classified into the three classes, and 121 rows outside tolerance are not. Under evidence-or-zero AC9 is not met → **V1, blocking**. Forcing a class without evidence would be false text, so the closure is a decision for the user, not more code.
-2. **`share_scale` `verified=True` with residual 2,5 (VVEO, cd 25682) and 2,66 (AZEV, cd 11975).** Specified behaviour, not a defect. `cvm.share_scale` (`py/pit_rebuild/cvm.py:306`) is unchanged from #59: `verified` means "a positive B3 total chose f" (A-18), not "the count matches B3". Both residuals are under √10 after f, the A-18 limit for a change with no B3 event (VVEO: filed 322,8 M vs B3 1 286 M, ratio 3,98; AZEV: 29,6 M after the 20:1 grouping vs 111 M, ratio 3,75). The report never prints `verified`; it only fills `share_scale.unverified`. The audit's `erro nosso` for these rows is consistent; the fix is a new issue (spec Out of Scope).
-3. **2026-08-07 CSV reproducing filings received up to 2026-08-14.** Supported by the cache: ORVR3 (cd 25550) ITR 2026-06-30 v1 rec 2026-08-13 and v2 rec 2026-08-14; ONCO3 ITR 2026-06-30 v1 rec 2026-08-14; BRST3 rec 2026-08-11; EQPA3 rec 2026-08-12; SIMH3's count 583 759 291 first appears in ITR 2026-06-30 v1 rec 2026-08-12 (`itr_cia_aberta_2026.zip`, composição). Two corrections: the audit cites SIMH3's ITR 2026-09-30 rec 2026-11-04 instead (V2), and the handoff's "EQPA3 DFP 2025 v2 em 10-02" has no audit row behind it (the EQPA3 row of 2026-08-07 uses ITR 2026-06-30 rec 2026-08-12); corrected in the feature `STATE.md`. Context for the user, not a gap: the JSON `as_of_check` matches 245 of 269 SI prices to the 2026-08-07 session, while `git log` shows the CSV last changed in `ce2bc1f` (author date 2026-09-01). The audit's own wording ("o cache não distingue as duas coisas") stays correct.
-4. **Numbers in docs/validation vs JSON.** 22 README numbers, every audit number and 6 evidence values checked; all equal. One misleading sentence (V4).
-5. **Gates.** Pit 471 OK; root 1058 OK, 2 skipped (foreground, 3 min 11 s).
+Iteration 1 code mutants (M1..M25) are not re-run: `py/` is unchanged since `1def298`.
 
 ---
 
@@ -159,48 +89,30 @@ All equal to `docs/validation/pit-rebuild-stocks.json` unless noted.
 
 | ID | Severity | Where | Gap | Suggested correction |
 | -- | -------- | ----- | --- | -------------------- |
-| V1 | blocking | `docs/validation/pit-rebuild-stocks-audit.md:28-43`; `tests/test_pit_rebuild_artifact.py:187` | Issue AC9 / AUD-02 not met: 121 rows outside tolerance (65 on 2026-08-07, 56 on 2026-11-05) have no class from the three; the test accepts a fourth class. | User decision, then one of: (a) amend AC9/AUD-02 to accept `não classificado` with a stated reason as a valid audit outcome (part 2 of DEC-2 stays "não cumprido"), record it in the issue/spec and keep the test; or (b) classify the 121 rows with evidence, e.g. a rule for "SI number with no basis in any cached filing", which the #59 conference already treated as an SI error. Do not assign classes without evidence. |
-| V2 | blocking (REVIEW.md: docs/validation text claims more than the proof) | `docs/validation/pit-rebuild-stocks-audit.md:202`, `:229` | SIMH3 (P/VP and PSR rows of 2026-08-07) says SI "usa a composição de 2026-09-30 recebida em 2026-11-04". The same count (583 759 291) is in ITR 2026-06-30 v1 rec 2026-08-12. The text ties a 2026-08-07 collection to a filing received three months later; the cache supports 2026-08-12. | Cite `CVM ITR 2026-06-30 v1 rec 2026-08-12: QT_ACAO_ORDIN_CAP_INTEGR = 583759291, ...` and reword the reason to the 2026-06-30 filing; the class stays `erro do Status Invest`. |
-| V3 | nonblocking | `py/pit_rebuild/cli.py:932`; no test | Mutant M17 survives: removing the reference_stale cut from the `si_lag` marks is undetected. LAG-02 asks the count over the adjusted scope; the code is correct today. | Add a CLI fixture where a `reference_stale` ticker would be `si_lag` and assert it is not in `adjusted_verdict.dates[d].fields[f].si_lag.tickers`. |
-| V4 | nonblocking | `docs/validation/README.md:725-726` | "Referência zero ... O documento de auditoria dá a contagem por data, campo e motivo (AUD-05)" reads as if the audit counts zero-reference tickers; the audit says they are not counted (`pit-rebuild-stocks-audit.md:20`). | "... não entra na lista dos piores casos e não é contado no JSON. O documento de auditoria conta os tickers sem valor (`missing`) por data, campo e motivo (AUD-05)." |
-| V5 | nonblocking (spec-precision) | `spec.md` AUD-02 / B-10 | The spec did not foresee worst lists padded with in-tolerance rows (32 rows with diff ≤ tolerance). `não classificado: dentro da tolerância` is a reasonable reading but not a spec outcome. | Amend AUD-02 together with V1: rows within tolerance carry no class (or are excluded from the audit) and do not count against part 2. |
+| V6 | **blocking** (REVIEW.md: false text in `docs/validation/` is Important) | `docs/validation/pit-rebuild-stocks-audit.md:13`, `:14`, `:31`, `:47-50`, `:61`; the motive of the 108 `sem base` rows (e.g. `:94`, `:121`, `:145`, `:249`) and of `:250`, `:516`; the "o mais antigo é citado" rows `:188`, `:220`, `:247`, and the ORVR3 P/VP 08-07 and CAML3 DIV. LIQ./PATRI. 11-05 rows; `spec.md` B-10 r3 | The document says every cached version was tested whole and by count, and that none reproduces the SI value. The classification blanked every version older than 270 days (STL-01) and limited DY to ex-date in (d − 730, d]. Under the stated definition, 30 of 110 rows have a reproducing version, 3 of 4 DY `sem base` rows have a reproducing subset, and 5 rows do not cite the oldest reproducer. | Pick one and apply it everywhere. (a) **Recommended**: state the two restrictions as part of the rule (`Reproduzir`, `Ordem das regras`, `sem base`, Limites, B-10 r3). Reword the row motive so it gives how many versions were tested whole (period end ≤ 270 days before d) and how many by count only, and the DY window. Then the counts stand as they are. (b) Re-run without the 270-day mask and the DY window, reclassify the 30 rows as reproduced (oldest cited), fix the 5 citations and the split table. Under (a) or (b), add a test that recounts the split table (V8). |
+| V7 | nonblocking | `docs/validation/pit-rebuild-stocks-audit.md` as a whole; `:33` "168 das 1148 versões de 49 empresas" | The classification rules that produce `sem base` and the cited oldest filing exist only in a session scratchpad. B-10 makes the audit hand-written, and RPT-01 covers the generated report, not the audit, so no written rule is broken. But the negative claims cannot be re-run from the repository, and V6 shows the script had rules the text omits. The "168 of 1148 versions of 49 companies" figure covers more companies than the 26 listed and could not be checked from the repo (the 26 listed have 464 versions, 80 index-only, equal to the cache). | Commit the classifier (a research script next to the audit, read-only on `.cache/`), or describe its procedure fully in the audit (the V6 fix covers most of it). Tie the 168/1148/49 figure to the listed companies, or say which set it counts. |
+| V8 | nonblocking | `docs/validation/pit-rebuild-stocks-audit.md:47-50`; `tests/test_pit_rebuild_artifact.py:336` (`summary_rows` skips the 3-cell table) | The table of reproduced vs `sem base` rows has no test. Mutant A5 survived. | Count the rows by motive prefix (`nenhum dos`, `nenhum subconjunto` vs the rest of `erro do Status Invest`) and assert the table. |
 
 ---
 
-## Code Quality
+## Code Quality (fix round)
 
-| Principle | Status |
-| --------- | ------ |
-| Minimum code / no scope creep | ✅ New module `shares.py` holds only the AD-033 rules; no new CLI arguments or exit codes |
-| Surgical changes | ✅ Protected paths unchanged against `ebaf1fd` |
-| Matches patterns | ✅ Same pure-function + CLI wiring style as #59 |
-| Spec-anchored outcome check | ✅ Tests assert the spec's numbers (1100, age 280/270, factor 2, 20 %/20.01 %, 70/69.99) |
-| Every test maps to a requirement | ✅ Test names and comments carry the IDs |
-| Guidelines followed | `REVIEW.md` (numbers in docs/validation equal the artifact; exit-code table) |
-
----
-
-## Requirement Traceability Update
-
-| Requirement | Previous | New |
-| ----------- | -------- | --- |
-| AUD-02 | Partial | ❌ Needs fix (V1, V5) |
-| LAG-02 | Done | ⚠️ Verified, one untested cut (V3) |
-| RPT-04 | Partial | ✅ Verified (numbers equal); V4 wording |
-| ADJ-03, ADJ-06 | Unit | ✅ Verified (mutants killed) |
-| MBR-02, ADJ-05 | Partial | ✅ Verified |
-| All other 36 | Done | ✅ Verified |
+| Check | Status |
+| ----- | ------ |
+| Only touched files required for the gaps | ✅ spec, README, audit, two test files, STATE. No `py/` change |
+| Tests map to the amended ACs | ✅ `:188`, `:268`, `:277`, `:352`, `:362` (AUD-02, AUD-04, AUD-06); `tests/test_pit_rebuild_cli.py:1827` (LAG-02 invariant) |
+| Spec-anchored outcome | ⚠️ The tests check the shape of a `sem base` row (CVM and `Conferidos:` items). They cannot check the claim against the cache (`.cache/` is not read by tests, RPT-03). V6 is a text gap, found only by a cache re-check. |
+| Guidelines | `REVIEW.md` ("documento que afirma mais do que a prova commitada mostra"; numbers in `docs/validation/` equal the artifact) |
 
 ---
 
 ## Summary
 
-**Overall**: ❌ Not ready.
+**Overall**: ❌ Not ready (iteration 2 of 3).
 
-**Spec-anchored check**: 42/44 requirements verified; AUD-02 fails (V1), LAG-02 has an untested cut (V3); 1 spec-precision gap (V5).
-**Sensor**: 25 injected, 23 killed, 1 equivalent, 1 survived (V3).
-**Gate**: pit 471 passed; root 1058 passed, 2 skipped, 0 failed.
+- **Closed**: V1 (as a class gap), V2, V3 (equivalent mutant), V4, V5.
+- **New**: V6 blocking (the `sem base` claim and the oldest-filing claim are false as written; classes and criterion unaffected), V7 and V8 nonblocking.
+- **Gates**: pit suite 473 OK; root suite 1060 OK, 2 skipped.
+- **Sensor**: 5 audit mutants: 4 killed, 1 survived (V8). M17 equivalent.
 
-**What works**: event-adjusted share counts and the scale window up to R, suspect counts, the 12-month fallback, the 270-day rule, the ISIN at d, the adjusted verdict and part 1 of the criterion, the `si_lag` marks, the MBRF3 note, a byte-for-byte regenerable report, and an audit whose numbers equal the JSON.
-
-**Next steps**: user decides V1 (amend AC9/AUD-02 or classify the 121 rows); implementer fixes V2 (two audit rows) and optionally V3, V4; re-verify (iteration 2 of 3).
+**Next step**: implementer fixes V6, by stating the restrictions (recommended) or by re-running without them, plus V8 and optionally V7; then Verifier iteration 3 (the last before escalation).
