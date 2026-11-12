@@ -87,5 +87,29 @@ class ToleranceClassTests(unittest.TestCase):
             fields.tolerance_kind("DYY")
 
 
+class StatementAndAdjustedFieldTests(unittest.TestCase):
+    """B-7 and B-8: the 15 fields that read a CVM statement value, and the 14 fields of the adjusted verdict."""
+
+    def test_the_accounting_fields_are_all_fields_less_the_four_market_fields_and_there_are_15(self):
+        self.assertEqual(
+            set(fields.ALL_FIELDS) - set(fields.ACCOUNTING_FIELDS),
+            {"PRECO", "VALOR DE MERCADO", "LIQUIDEZ MEDIA DIARIA", "DY"},
+        )
+        self.assertEqual(len(fields.ACCOUNTING_FIELDS), 15)
+
+    def test_the_accounting_fields_keep_the_all_fields_order(self):
+        positions = [fields.ALL_FIELDS.index(field) for field in fields.ACCOUNTING_FIELDS]
+        self.assertEqual(positions, sorted(positions))
+
+    def test_the_adjusted_fields_are_the_score_fields_less_roic_and_peg_ratio_and_there_are_14(self):
+        self.assertEqual(set(fields.SCORE_FIELDS) - set(fields.ADJUSTED_FIELDS), {"ROIC", "PEG RATIO"})
+        self.assertLessEqual(set(fields.ADJUSTED_FIELDS), set(fields.SCORE_FIELDS))
+        self.assertEqual(len(fields.ADJUSTED_FIELDS), 14)
+
+    def test_the_adjusted_fields_keep_the_score_fields_order(self):
+        positions = [fields.SCORE_FIELDS.index(field) for field in fields.ADJUSTED_FIELDS]
+        self.assertEqual(positions, sorted(positions))
+
+
 if __name__ == "__main__":
     unittest.main()

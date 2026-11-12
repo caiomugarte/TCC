@@ -271,7 +271,7 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | MBR-01 | P2: MBRF3 | AC6 | Tasks | Pending |
 | MBR-02 | P2: MBRF3 | AC6 | Tasks | Pending |
 | ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Pending |
-| ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Pending |
+| ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Partial (T9 fields; T12, T19) |
 | ADJ-03 | P1: Adjusted verdict | AC7 | Tasks | Pending |
 | ADJ-04 | P1: Adjusted verdict | AC7, AC9 | Tasks | Partial (T3 filing; T19 rows) |
 | ADJ-05 | P1: Adjusted verdict | AC7 (DEC-2) | Tasks | Pending |

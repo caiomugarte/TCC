@@ -363,10 +363,10 @@ T23 → T24
 
 **Done when**:
 
-- [ ] `set(ALL_FIELDS) - set(ACCOUNTING_FIELDS) == {PRECO, VALOR DE MERCADO, LIQUIDEZ MEDIA DIARIA, DY}` and `len == 15`
-- [ ] `ADJUSTED_FIELDS` = `SCORE_FIELDS` without `ROIC` and `PEG RATIO`, `len == 14`
-- [ ] Gate check passes: Quick
-- [ ] Test count: ≥ 2 new tests
+- [x] `set(ALL_FIELDS) - set(ACCOUNTING_FIELDS) == {PRECO, VALOR DE MERCADO, LIQUIDEZ MEDIA DIARIA, DY}` and `len == 15`
+- [x] `ADJUSTED_FIELDS` = `SCORE_FIELDS` without `ROIC` and `PEG RATIO`, `len == 14`
+- [x] Gate check passes: Quick
+- [x] Test count: ≥ 2 new tests
 
 **Tests**: unit
 **Gate**: quick
