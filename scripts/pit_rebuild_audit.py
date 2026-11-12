@@ -861,7 +861,13 @@ def classify_accounting(ctx, iso, day, row):
         return reproduced_motive(pool, best, day, ref), reproducer_items(best, f)
 
     if rule == "defasagem (B-9)":
-        motive = "o filing anterior reproduz o Status Invest (B-9): a defasagem é do SI"
+        if older is None or row["previous_value"] is None:
+            motive = "defasagem (B-9): o valor do SI bate com o filing anterior"
+        else:  # the recomputation with the previous filing (B-9), a measure as the other rows state it
+            obj = (f"{older.kind} {older.dt_refer.isoformat()} v{older.versao}, recebido em {older.dt_receb.isoformat()}, "
+                   f"filing anterior ao mais novo")
+            motive = (f"valor do SI: defasagem (B-9): {match_clause(obj, row['previous_value'], ref)}; "
+                      f"com o filing mais novo o valor ({fmt(reb)}) fica fora da tolerância")
     elif rule == "post-d":
         motive, extra = post
         if best_af is not None:
@@ -1032,7 +1038,7 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
 - **Citação**: entre os demonstrativos que reproduzem (exceto F0, o que o relatório usou em d), cita-se o que é igual ao valor do SI a duas casas e foi recebido primeiro (DT_RECEB; empate: DT_REFER, depois VERSAO). Sem nenhum igual a duas casas, cita-se o mais próximo do valor do SI (empate: o mais antigo). A ordem das visões é como arquivado e contagem primeiro; a visão de método (total da LL 3.11 ou do PL 2.03) só é citada quando nenhuma das outras reproduz. Quando o mesmo demonstrativo reproduz por mais de uma dessas visões, vale a primeira na ordem: como arquivado, depois a contagem.
 - **Proventos (DY)**: reprodução exata a duas casas (a precisão do SI), com o fechamento de d ou o de d − 1. Os registros são as linhas da B3 do cache da classe do ticker (a classe é o ESPECI do COTAHIST em d, como na reconstrução), na ordem das datas-ex (lastDatePriorEx; empate: valor). Cada linha é um registro, e linhas idênticas contam separadamente, como o SI as soma (casos MDNE3 e VLID3). A busca testa só janelas contíguas dessa ordem, não subconjuntos: as somas são feitas em ponto flutuante e confrontadas com o DY do SI a duas casas; a janela mais curta que dá o valor (entre as de igual tamanho, a mais antiga) é citada, e o motivo diz que a coincidência não mostra a origem. Sem janela contígua que reproduza, a linha é `sem base`.
 - **Demonstrativos conferidos**: cada empresa com linha `erro do Status Invest` sem base ou reproduzida, ou `diferença de método` pela contagem da B3, tem a lista completa dos demonstrativos conferidos na seção `Demonstrativos conferidos`, com o número arquivado de cada conta do campo e a composição de ações. Uma versão marcada `(só o índice no cache)` tem a linha do índice (DT_RECEB), mas nenhuma linha de BPA, BPP, DRE ou composição no cache: nos zips da CVM do cache, as linhas de demonstrativo de alguns períodos vêm só para a versão mais nova. Essa versão não reproduz nada e não é contada.
-- **Defasagem**: `sim` quando a linha é `si_lag` no JSON (B-9): o filing anterior reproduz o SI dentro da tolerância.
+- **Defasagem**: `sim` quando a linha é `si_lag` no JSON (B-9): o valor recalculado com o filing anterior fica dentro da tolerância do SI, e o do filing mais novo, não.
 - **Evidências (B-10)**, separadas por `; `:
   - `CVM <DFP|ITR> <DT_REFER> v<VERSAO> rec <DT_RECEB>: <conta> = <valor>`: o número arquivado, em R$, na coluna ÚLTIMO (em ITR, o acumulado do ano); `QT_ACAO_*` é a composição de ações do mesmo demonstrativo;
   - `B3 evento <ISIN> <label> <lastDatePrior> ×<multiplicador>`: evento de ações (desdobramento, grupamento, bonificação) do registro da empresa na B3;

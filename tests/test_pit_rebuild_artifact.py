@@ -373,7 +373,8 @@ class AuditDocumentTests(unittest.TestCase):
                       f"as outras {len(cited) - len(exact)} estão só dentro da tolerância", self.text)
 
     def test_no_motive_says_what_the_status_invest_did_with_a_filing_or_a_subset(self):  # V9, decision 1: a measure, never a cause
-        causes = ("o Status Invest usa", "o Status Invest reproduz", "o SI usa", "o SI reproduz", "o SI soma", "o SI deixa de fora", "reproduz o valor com")
+        causes = ("o Status Invest usa", "o Status Invest reproduz", "reproduz o Status Invest", "o SI usa", "o SI reproduz", "o SI soma",
+                  "o SI deixa de fora", "a defasagem é do SI", "reproduz o valor com")
         for iso, block in self.doc.items():
             for field, cells in block["rows"]:
                 for cause in causes:
