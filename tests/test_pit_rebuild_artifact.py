@@ -185,8 +185,8 @@ class V3ArtifactTests(unittest.TestCase):
 
 
 AUDIT = VALIDATION / "pit-rebuild-stocks-audit.md"
-AUDIT_CLASSES = ("erro nosso", "erro do Status Invest", "diferença de método", "não classificado")  # AUD-02
-AUDIT_PREFIXES = ("CVM ", "B3 evento ", "COTAHIST ", "B3 proventos ", "Yahoo ")  # B-10: the fixed evidence prefixes
+AUDIT_CLASSES = ("erro nosso", "erro do Status Invest", "diferença de método", "dentro da tolerância", "não classificado")  # AUD-02
+AUDIT_PREFIXES = ("CVM ", "B3 evento ", "COTAHIST ", "B3 proventos ", "Yahoo ", "Conferidos: ")  # B-10: the fixed evidence prefixes
 AUDIT_CVM_ITEM = re.compile(r"^CVM (DFP|ITR) \d{4}-\d{2}-\d{2} v\d+ rec \d{4}-\d{2}-\d{2}: .+$")
 AUDIT_WITHIN = "dentro da tolerância"  # a row of the worst list inside the tolerance: no error to explain
 
@@ -265,12 +265,27 @@ class AuditDocumentTests(unittest.TestCase):
                     self.assertAlmostEqual(float(cells[4]), round(w["diff"], 2), places=9, msg=(iso, field, cells[1]))
                     self.assertEqual(cells[5], "sim" if w["si_lag"] else "não", (iso, field, cells[1]))
 
-    def test_each_row_has_one_class_of_the_set_and_a_tolerance_row_is_named_as_such(self):  # AUD-02
+    def test_each_row_has_one_class_of_the_set_and_a_tolerance_row_is_named_as_such(self):  # AUD-02, V5
         for iso, block in self.doc.items():
             for field, cells in block["rows"]:
                 self.assertIn(cells[6], AUDIT_CLASSES, (iso, field, cells[1]))
-                if cells[7].startswith(AUDIT_WITHIN):
-                    self.assertEqual(cells[6], "não classificado", (iso, field, cells[1]))
+                # the explicit mark and the motive agree: a row inside the tolerance is not one of the three errors
+                self.assertEqual(cells[6] == "dentro da tolerância", cells[7].startswith(AUDIT_WITHIN), (iso, field, cells[1]))
+                if cells[6] == "não classificado":  # AUD-02: an unclassified row states its reason
+                    self.assertTrue(cells[7].strip(), (iso, field, cells[1]))
+
+    def test_an_erro_do_status_invest_without_basis_cites_the_demonstrativos_checked(self):  # AUD-02, V1
+        for iso, block in self.doc.items():
+            for field, cells in block["rows"]:
+                if cells[6] != "erro do Status Invest":
+                    continue
+                items = audit_items(cells[8])
+                if cells[7].startswith("nenhum dos "):  # no cached demonstrativo reproduces the SI value: a filing and the count of those checked
+                    self.assertTrue(any(item.startswith("CVM ") for item in items), (iso, field, cells[1]))
+                    self.assertTrue(any(item.startswith("Conferidos: ") for item in items), (iso, field, cells[1]))
+                elif cells[7].startswith("nenhum subconjunto"):  # no subset of the dividend records reproduces the DY: the records and the close
+                    self.assertTrue(any(item.startswith(("B3 proventos ", "Yahoo ")) for item in items), (iso, cells[1]))
+                    self.assertTrue(any(item.startswith("COTAHIST ") for item in items), (iso, cells[1]))
 
     def test_accounting_rows_carry_a_cvm_item_and_dy_rows_a_dividend_and_a_close_never_only_cvm(self):  # AUD-02, S2
         for iso, block in self.doc.items():
@@ -298,11 +313,11 @@ class AuditDocumentTests(unittest.TestCase):
                 per.setdefault(field, {name: 0 for name in AUDIT_CLASSES})[cells[6]] += 1
             for field in self.adjusted["fields"]:
                 counts = block["counts"][field]
-                self.assertEqual([int(value) for value in counts[1:5]], [per[field][name] for name in AUDIT_CLASSES], (iso, field))
-                self.assertEqual(int(counts[5]), sum(per[field].values()), (iso, field))
-            total = [int(value.strip("*")) for value in block["total"][1:6]]
-            self.assertEqual(total[:4], [sum(per[field][name] for field in per) for name in AUDIT_CLASSES], iso)
-            self.assertEqual(total[4], sum(sum(per[field].values()) for field in per), iso)
+                self.assertEqual([int(value) for value in counts[1:6]], [per[field][name] for name in AUDIT_CLASSES], (iso, field))
+                self.assertEqual(int(counts[6]), sum(per[field].values()), (iso, field))
+            total = [int(value.strip("*")) for value in block["total"][1:7]]
+            self.assertEqual(total[:5], [sum(per[field][name] for field in per) for name in AUDIT_CLASSES], iso)
+            self.assertEqual(total[5], sum(sum(per[field].values()) for field in per), iso)
 
     def test_the_missing_summary_equals_the_json_counts_per_date_field_and_reason(self):  # AUD-05
         for iso, block in self.doc.items():
@@ -319,12 +334,16 @@ class AuditDocumentTests(unittest.TestCase):
                     self.assertFalse(self.adjusted["dates"][iso]["fields"][cells[0]]["missing"], (iso, cells[0]))
 
     def summary_rows(self):
-        """The Resumo table: {date: [erro nosso, erro do Status Invest, método, não classificado fora, dentro da tolerância, total]}."""
-        rows = {}
+        """The first table of Resumo: {date: [erro nosso, erro do Status Invest, método, dentro da tolerância, não classificado, total]}."""
+        rows, in_summary = {}, False
         for line in self.text.splitlines():
-            if re.match(r"^\| \d{4}-\d{2}-\d{2} \|", line):
+            if line.startswith("## "):
+                in_summary = line == "## Resumo"
+                continue
+            if in_summary and re.match(r"^\| \d{4}-\d{2}-\d{2} \|", line):
                 cells = [cell.strip() for cell in line.strip()[1:-1].split("|")]
-                rows[cells[0]] = [int(cell) for cell in cells[1:7]]
+                if len(cells) == 7:  # the second table of Resumo has the origin of erro do Status Invest, three cells
+                    rows[cells[0]] = [int(cell) for cell in cells[1:7]]
         return rows
 
     def criterion_line(self):
@@ -335,17 +354,14 @@ class AuditDocumentTests(unittest.TestCase):
         self.assertEqual(sorted(summary), DATES)
         for iso, block in self.doc.items():
             per = {name: 0 for name in AUDIT_CLASSES}
-            within = 0
             for _, cells in block["rows"]:
                 per[cells[6]] += 1
-                if cells[7].startswith(AUDIT_WITHIN):
-                    within += 1
-            expected = [per["erro nosso"], per["erro do Status Invest"], per["diferença de método"], per["não classificado"] - within, within, sum(per.values())]
+            expected = [per["erro nosso"], per["erro do Status Invest"], per["diferença de método"], per["dentro da tolerância"], per["não classificado"], sum(per.values())]
             self.assertEqual(summary[iso], expected, iso)
 
     def test_the_criterion_says_met_only_when_part_one_holds_and_every_row_outside_tolerance_is_explained(self):  # AUD-06, DEC-2
         met = self.adjusted["criterion"]["met"]
-        unexplained = sum(1 for block in self.doc.values() for _, cells in block["rows"] if cells[6] == "não classificado" and not cells[7].startswith(AUDIT_WITHIN))
+        unexplained = sum(1 for block in self.doc.values() for _, cells in block["rows"] if cells[6] == "não classificado")
         expected = "cumprido" if (met and unexplained == 0) else "não cumprido"
         self.assertIn(f"(#64): {expected}.", self.criterion_line())
 
