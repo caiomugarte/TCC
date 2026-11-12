@@ -122,7 +122,27 @@ ADJUSTED_SCOPE = (
 )
 ADJUSTED_THRESHOLD_PCT = 70  # ADJ-05: the share within tolerance that part 1 of the release criterion asks, per field and date
 ADJUSTED_PART2 = "docs/validation/pit-rebuild-stocks-audit.md"  # ADJ-05, AUD-06: part 2 is the audit document
-INVESTIGATIONS: tuple[dict[str, str], ...] = ()  # MBR-02: fixed notes {ticker, date, field, finding, evidence}, filled by T20
+INVESTIGATIONS: tuple[dict[str, str], ...] = (  # MBR-02: fixed notes {ticker, date, field, finding, evidence} (T20)
+    {
+        "ticker": "MBRF3",
+        "date": "2026-11-05",
+        "field": "DY",
+        "finding": (
+            "A busca do histórico não é a causa: em 2026-08-07 o mesmo histórico dá DY 17,49, igual ao da Status Invest. "
+            "O último provento que a B3 publica para a companhia, de R$ 2,8105 com data-ex 2025-09-19, está a 412 dias de "
+            "2026-11-05 e sai da janela (2025-11-05, 2026-11-05]; por isso o DY é 0,00. A Status Invest mantém 18,41 nessa "
+            "data, valor que nenhuma fonte em cache reproduz."
+        ),
+        "evidence": (
+            "b3_company_MBRF.json (tradingName MARFRIG, totalNumberShares 1380439543, retrieved_at 2026-11-10T00:37:01Z, "
+            "dia de São Paulo 2026-11-09) e b3_cash_MARFRIG_p1.json (totalRecords 13, completo; o registro com "
+            "lastDatePriorEx 18/09/2025 e valueCash 2,8105011104 é o único com data-ex depois de 2025-08-07, e nenhum tem "
+            "data-ex em (2025-11-05, 2026-11-05]). Com esse registro: 100 × 2,8105011104 / 16,07 = 17,49 em 2026-08-07 "
+            "(janela (2025-08-07, 2026-08-07]); 100 × 2,8105011104 / 15,63 = 17,98 em 2026-11-05 (CSV de 2026-11-06: "
+            "PRECO 15,63, DY 18,41)."
+        ),
+    },
+)
 
 
 def build(

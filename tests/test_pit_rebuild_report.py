@@ -759,8 +759,24 @@ class InvestigationsTests(unittest.TestCase):
             self.assertIn(text, section)
         self.assertNotIn("Nenhuma.", section)
 
-    def test_without_investigations_the_section_says_nenhuma_and_a_v2_object_has_no_section(self):
+    def test_the_mbrf3_note_is_the_cause_the_cache_settles_and_its_section_renders_it(self):
+        # T20: the DY of 2026-11-05 is 0 because the only B3 dividend of the company left the 12-month window; the note keeps the
+        # numbers the cached files give (the same record gives 17.49 on 2026-08-07, the Status Invest value)
         out = report.build(**run_kwargs())
+        (note,) = out["investigations"]
+        self.assertEqual((note["ticker"], note["date"], note["field"]), ("MBRF3", "2026-11-05", "DY"))
+        for text in ("2025-09-19", "412 dias", "(2025-11-05, 2026-11-05]", "17,49"):
+            self.assertIn(text, note["finding"])
+        for text in ("b3_company_MBRF.json", "b3_cash_MARFRIG_p1.json", "17,49", "17,98", "2,8105011104"):
+            self.assertIn(text, note["evidence"])
+        section = investigations_of(report.render_markdown(out))
+        for text in ("MBRF3", "2026-11-05", "DY", note["finding"], note["evidence"]):
+            self.assertIn(text, section)
+        self.assertNotIn("Nenhuma.", section)
+
+    def test_without_investigations_the_section_says_nenhuma_and_a_v2_object_has_no_section(self):
+        with patch.object(report, "INVESTIGATIONS", ()):
+            out = report.build(**run_kwargs())
         self.assertEqual(out["investigations"], [])
         self.assertIn("Nenhuma.", investigations_of(report.render_markdown(out)))
         legacy = deepcopy(out)

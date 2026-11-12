@@ -704,10 +704,10 @@ T23 → T24
 
 **Done when**:
 
-- [ ] The commit body states the cause with the evidence (file name, record, dates, window `d − 365 < ex ≤ d`)
-- [ ] MBR-01 branch: a fixture test reproduces the miss and passes after the fix; or MBR-02 branch: `INVESTIGATIONS` holds `{ticker: "MBRF3", date: "2026-11-05", field: "DY", finding, evidence}` and a report test pins its render
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 1 new test
+- [x] The commit body states the cause with the evidence (file name, record, dates, window `d − 365 < ex ≤ d`)
+- [x] MBR-01 branch: a fixture test reproduces the miss and passes after the fix; or MBR-02 branch: `INVESTIGATIONS` holds `{ticker: "MBRF3", date: "2026-11-05", field: "DY", finding, evidence}` and a report test pins its render
+- [x] Gate check passes: Full
+- [x] Test count: ≥ 1 new test
 
 **Tests**: unit
 **Gate**: full

@@ -268,8 +268,8 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | ISN-01 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
 | ISN-02 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
 | ISN-03 | P1: ISIN at d | AC5 | Tasks | Done (T1 call sites; T18 test) |
-| MBR-01 | P2: MBRF3 | AC6 | Tasks | Pending |
-| MBR-02 | P2: MBRF3 | AC6 | Tasks | Partial (T14 section; T20 fills it) |
+| MBR-01 | P2: MBRF3 | AC6 | Tasks | Not taken (MBR-02 branch, T20) |
+| MBR-02 | P2: MBRF3 | AC6 | Tasks | Partial (T14 section; T20 note; T21 artifact; T23 audit) |
 | ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Done (T13 order; T14 B-12 line) |
 | ADJ-02 | P1: Adjusted verdict | AC7 | Tasks | Done (T9 fields; T12 unit; T19 CLI) |
 | ADJ-03 | P1: Adjusted verdict | AC7 | Tasks | Unit (T12) |
