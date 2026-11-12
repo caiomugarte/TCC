@@ -115,15 +115,38 @@ def avg_volume(q: Quotes, ticker: str, d: date, sessions: int = LIQUIDITY_SESSIO
     return sum(row.voltot for row in window) / len(window)
 
 
-def isin(q: Quotes, ticker: str) -> str | None:
-    rows = q.rows.get(ticker)
-    return rows[-1].isin if rows else None
+def isin(q: Quotes, ticker: str, d: date) -> str | None:
+    """ISIN of the ticker's last session on or before d; None when it has none (ISN-01, ISN-02)."""
+    index = _last_index(q, ticker, d)
+    return None if index < 0 else q.rows[ticker][index].isin
 
 
-def share_class(q: Quotes, ticker: str) -> str | None:
-    """First token of the ticker's ESPECI, e.g. ON, PN, PNA, PNB or UNT (A-17)."""
-    rows = q.rows.get(ticker)
-    return rows[-1].especi if rows else None
+def share_class(q: Quotes, ticker: str, d: date) -> str | None:
+    """First token of the ESPECI of the ticker's last session on or before d, e.g. ON, PN, PNA, PNB or UNT (A-17, ISN-01)."""
+    index = _last_index(q, ticker, d)
+    return None if index < 0 else q.rows[ticker][index].especi
+
+
+def isins(q: Quotes, ticker: str, after: date, until: date | None) -> tuple[str, ...]:
+    """Distinct ISINs of the ticker's sessions with after < session <= until, in session order (B-2, B-3).
+
+    until None reads to the last loaded session.
+    """
+    dates = q.dates.get(ticker, [])
+    rows = q.rows.get(ticker, [])
+    start = bisect_right(dates, after)
+    end = len(dates) if until is None else bisect_right(dates, until)
+    return tuple(dict.fromkeys(row.isin for row in rows[start:end]))
+
+
+def class_isins(q: Quotes, ticker: str, dt_refer: date, d: date) -> tuple[str, ...]:
+    """I_d of a share class at d (B-2): the ISIN at dt_refer, the ISINs of the sessions in (dt_refer, d], the ISIN at d.
+
+    isins() leaves out the session of dt_refer, so the ISIN at dt_refer is named apart. An event that B3 lists under the
+    ISIN the ticker had at dt_refer, when the ISIN changed after it, would otherwise drop out (S12). None is left out.
+    """
+    found = (isin(q, ticker, dt_refer), *isins(q, ticker, dt_refer, d), isin(q, ticker, d))
+    return tuple(dict.fromkeys(item for item in found if item is not None))
 
 
 def next_session(q: Quotes, day: date) -> date | None:
@@ -137,7 +160,7 @@ def next_session(q: Quotes, day: date) -> date | None:
 def class_prices(q: Quotes, tickers: Iterable[str], d: date) -> dict[str, tuple[str, float, date] | None]:
     """(ticker, close, session day) of each share class of a company: ON from the ON ticker, PREF from a preferred one (A-17).
 
-    Units (UNT) are skipped. A class is priced from the ticker with the highest average volume among those with a
+    Each ticker's class is its ESPECI at d (ISN-01). Units (UNT) are skipped. A class is priced from the ticker with the highest average volume among those with a
     session within MAX_QUOTE_AGE_DAYS before d (ties: the smaller ticker). When none of its tickers has one, the
     ticker with the latest session on or before d prices it at any age (ties: higher average volume, then the
     smaller ticker); the caller reports that such a price is stale (F14).
@@ -145,7 +168,7 @@ def class_prices(q: Quotes, tickers: Iterable[str], d: date) -> dict[str, tuple[
     fresh: dict[str, tuple[tuple, str, float, date]] = {}
     latest: dict[str, tuple[tuple, str, float, date]] = {}
     for ticker in sorted(set(tickers)):
-        cls = _price_class(q, ticker)
+        cls = _price_class(q, ticker, d)
         if cls is None:
             continue
         last = last_trade(q, ticker, d)
@@ -216,8 +239,8 @@ def _first_token(cell: str) -> str:
     return parts[0] if parts else ""
 
 
-def _price_class(q: Quotes, ticker: str) -> str | None:
-    especi = share_class(q, ticker)
+def _price_class(q: Quotes, ticker: str, d: date) -> str | None:
+    especi = share_class(q, ticker, d)
     if especi == "ON":
         return "ON"
     if especi is not None and especi.startswith("PN"):

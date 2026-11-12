@@ -469,11 +469,11 @@ def _known_at(dividend_list: list[dividends.Dividend], day: date) -> list[divide
     return [item for item in dividend_list if item.ex_date is None or item.ex_date <= day]
 
 
-def _class_isin(quotes: cotahist.Quotes, share_class: str, tickers: Iterable[str]) -> str | None:
-    """The ISIN of a share class: that of the smallest ticker of the company in the class which has one (A-20)."""
+def _class_isin(quotes: cotahist.Quotes, share_class: str, tickers: Iterable[str], d: date) -> str | None:
+    """The ISIN of a share class at d: that of the smallest ticker of the company in the class which has one (A-20, ISN-03)."""
     for ticker in sorted(tickers):
-        if cotahist.share_class(quotes, ticker) == share_class:
-            isin = cotahist.isin(quotes, ticker)
+        if cotahist.share_class(quotes, ticker, d) == share_class:
+            isin = cotahist.isin(quotes, ticker, d)
             if isin is not None:
                 return isin
     return None
@@ -496,20 +496,20 @@ def _b3_dividends(
         return cotahist.next_session(q, value)
 
     if item.composition is None:
-        cls = cotahist.share_class(q, ticker)
+        cls = cotahist.share_class(q, ticker, day)
         if cls is None:
             return None, [], 0
         records = dividends.class_records(history.records, cls)
-        isin = cotahist.isin(q, ticker)
+        isin = cotahist.isin(q, ticker, day)
         missing = 1 if records and isin is None else 0
         return dividends.b3_ex_dates(records, next_session, events=events, isin=isin, d=day), records, missing
-    isins: dict[str, str | None] = {"UNT": cotahist.isin(q, ticker)}
+    isins: dict[str, str | None] = {"UNT": cotahist.isin(q, ticker, day)}
     composition: dict[str, int] = {}
     for key, count in item.composition.items():
         if _TICKER.match(key):
-            cls, isin = cotahist.share_class(q, key), cotahist.isin(q, key)
+            cls, isin = cotahist.share_class(q, key, day), cotahist.isin(q, key, day)
         else:
-            cls, isin = key, _class_isin(q, key, candidates)
+            cls, isin = key, _class_isin(q, key, candidates, day)
         if cls is None:
             return None, [], 0
         composition[cls] = composition.get(cls, 0) + count

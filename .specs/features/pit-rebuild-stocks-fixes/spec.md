@@ -249,14 +249,14 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 
 | Requirement ID | Story | Issue AC | Phase | Status |
 | -------------- | ----- | -------- | ----- | ------ |
-| SHR-01 | P1: Share count at d | AC1 | Tasks | Pending |
+| SHR-01 | P1: Share count at d | AC1 | Tasks | Partial (T1 ISIN sets; T7, T15) |
 | SHR-02 | P1: Share count at d | AC1 | Tasks | Pending |
 | SHR-03 | P1: Share count at d | AC1 | Tasks | Pending |
 | SHR-04 | P1: Share count at d | AC1 | Tasks | Pending |
 | SHR-05 | P1: Share count at d | AC2 | Tasks | Pending |
 | SHR-06 | P1: Share count at d | AC2 | Tasks | Pending |
 | SHR-07 | P1: Share count at d | AC2 | Tasks | Pending |
-| SHR-08 | P1: Share count at d | AC1 | Tasks | Pending |
+| SHR-08 | P1: Share count at d | AC1 | Tasks | Partial (T1 ISIN sets; T7, T15) |
 | TTM-01 | P1: 12-month flows | AC3 | Tasks | Pending |
 | TTM-02 | P1: 12-month flows | AC3 | Tasks | Pending |
 | TTM-03 | P1: 12-month flows | AC3 | Tasks | Pending |
@@ -265,9 +265,9 @@ Issue acceptance criteria (AC1..AC10, in the issue's order) → requirements.
 | STL-02 | P1: Stale filing | AC4 | Tasks | Pending |
 | STL-03 | P1: Stale filing | AC4 | Tasks | Pending |
 | STL-04 | P1: Stale filing | AC4 | Tasks | Pending |
-| ISN-01 | P1: ISIN at d | AC5 | Tasks | Pending |
-| ISN-02 | P1: ISIN at d | AC5 | Tasks | Pending |
-| ISN-03 | P1: ISIN at d | AC5 | Tasks | Pending |
+| ISN-01 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
+| ISN-02 | P1: ISIN at d | AC5 | Tasks | Done (T1) |
+| ISN-03 | P1: ISIN at d | AC5 | Tasks | Partial (T1 call sites; T18 test) |
 | MBR-01 | P2: MBRF3 | AC6 | Tasks | Pending |
 | MBR-02 | P2: MBRF3 | AC6 | Tasks | Pending |
 | ADJ-01 | P1: Adjusted verdict | AC7 | Tasks | Pending |

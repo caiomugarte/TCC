@@ -110,13 +110,13 @@ T23 → T24
 
 **Done when**:
 
-- [ ] `isins`: ISIN A on sessions s1, s2 and B on s3: `isins(q, t, s0, s3)` = (A, B) in session order; `isins(q, t, s2, None)` = (B,) (`after` exclusive, `None` to the last session); `isins(q, t, s0, s2)` = (A,) (`until` inclusive); no session in the window: ()
-- [ ] A ticker whose ISIN and ESPECI change on a session after `d`: `isin(q, t, d)` and `share_class(q, t, d)` give the old values; at the later session they give the new ones (ISN-01)
-- [ ] A ticker with no session on or before `d` gives None for both (ISN-02)
-- [ ] `class_prices` classifies by the ESPECI at `d` (a ticker that becomes PN after `d` is ON at `d`)
-- [ ] `grep -n "isin(\|share_class(" py/pit_rebuild/*.py` shows `d` passed at every call
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 326 pit tests pass (≥ 4 new; no test deleted)
+- [x] `isins`: ISIN A on sessions s1, s2 and B on s3: `isins(q, t, s0, s3)` = (A, B) in session order; `isins(q, t, s2, None)` = (B,) (`after` exclusive, `None` to the last session); `isins(q, t, s0, s2)` = (A,) (`until` inclusive); no session in the window: ()
+- [x] A ticker whose ISIN and ESPECI change on a session after `d`: `isin(q, t, d)` and `share_class(q, t, d)` give the old values; at the later session they give the new ones (ISN-01)
+- [x] A ticker with no session on or before `d` gives None for both (ISN-02)
+- [x] `class_prices` classifies by the ESPECI at `d` (a ticker that becomes PN after `d` is ON at `d`)
+- [x] `grep -n "isin(\|share_class(" py/pit_rebuild/*.py` shows `d` passed at every call
+- [x] Gate check passes: Full
+- [x] Test count: ≥ 326 pit tests pass (≥ 4 new; no test deleted)
 
 **Tests**: unit
 **Gate**: full

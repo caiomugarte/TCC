@@ -99,12 +99,14 @@ class QuotesTests(unittest.TestCase):
         self.assertEqual(cotahist.quote_at(self.quotes, "FATX3", date(2026, 8, 21)), (date(2026, 8, 21), 5.0))
 
     def test_share_class_is_the_first_especi_token(self):
-        self.assertEqual(cotahist.share_class(self.quotes, "PETR4"), "PN")
-        self.assertEqual(cotahist.share_class(self.quotes, "TAEE11"), "UNT")
-        self.assertEqual(cotahist.share_class(self.quotes, "BPAC5"), "PNA")
+        # The fixture ends on 2026-11-06, so that day reads each ticker's last session.
+        last = date(2026, 11, 6)
+        self.assertEqual(cotahist.share_class(self.quotes, "PETR4", last), "PN")
+        self.assertEqual(cotahist.share_class(self.quotes, "TAEE11", last), "UNT")
+        self.assertEqual(cotahist.share_class(self.quotes, "BPAC5", last), "PNA")
 
     def test_isin_and_the_2026_11_06_petr4_line_of_the_spec(self):
-        self.assertEqual(cotahist.isin(self.quotes, "PETR4"), "BRPETRACNPR6")
+        self.assertEqual(cotahist.isin(self.quotes, "PETR4", date(2026, 11, 6)), "BRPETRACNPR6")
         self.assertEqual(cotahist.quote_at(self.quotes, "PETR4", date(2026, 11, 6)), (date(2026, 11, 6), 45.36))
 
     def test_next_session_of_a_friday_is_the_following_monday_and_none_at_the_edges(self):
@@ -115,8 +117,8 @@ class QuotesTests(unittest.TestCase):
 
     def test_load_keeps_the_requested_tickers_and_the_calendar_of_all_tickers(self):
         eucatex = cotahist.load([self.zip_path], {"EUCA3", "EUCA4"})
-        self.assertEqual(cotahist.share_class(eucatex, "EUCA3"), "ON")
-        self.assertEqual(cotahist.share_class(eucatex, "EUCA4"), "PN")
+        self.assertEqual(cotahist.share_class(eucatex, "EUCA3", date(2026, 11, 6)), "ON")
+        self.assertEqual(cotahist.share_class(eucatex, "EUCA4", date(2026, 11, 6)), "PN")
         self.assertNotIn("PETR4", eucatex.rows)
         # PETR4 and TAEE11 are not requested, yet their 2026-08-24 lines are market sessions.
         self.assertEqual(cotahist.next_session(eucatex, date(2026, 8, 21)), date(2026, 8, 24))
@@ -179,6 +181,88 @@ class QuotesTests(unittest.TestCase):
                 cotahist.load([path], ALL_TICKERS)
         self.assertEqual(ctx.exception.exit_code, 4)
         self.assertIn("245", ctx.exception.reason)
+
+
+def cotahist_line(day: date, ticker: str, isin_code: str, especi: str, close: float = 10.0, voltot: float = 1000.0) -> str:
+    """One cash-market COTAHIST record (TIPREG 01, TPMERC 010, CODBDI 02) in the 245-column layout of the B3 file."""
+    line = (
+        "01" + day.strftime("%Y%m%d") + "02" + ticker.ljust(12) + "010"
+        + " " * 12 + especi.ljust(10)
+        + " " * 59
+        + f"{round(close * 100):013d}"
+        + " " * 49
+        + f"{round(voltot * 100):018d}"
+        + " " * 22
+        + "0000001"
+        + " " * 13
+        + isin_code.ljust(12)
+        + " " * 3
+    )
+    assert len(line) == cotahist.LINE_LENGTH
+    return line
+
+
+class ClassAtDTests(unittest.TestCase):
+    """ISN-01, ISN-02 and B-2: a ticker's ISIN and class are read at d; I_d keeps the ISIN at DT_REFER (S12)."""
+
+    TICKER = "MUDA3"
+    Z, A, B = "BRMUDAACNOR0", "BRMUDAACNOR1", "BRMUDAACNOR2"
+    DAYS = (date(2026, 6, 30), date(2026, 7, 1), date(2026, 7, 2), date(2026, 7, 3))
+
+    @classmethod
+    def setUpClass(cls):
+        # ISIN Z on 06-30; A on 07-01 and 07-02, class ON; B and class PN from 07-03.
+        lines = [
+            cotahist_line(cls.DAYS[0], cls.TICKER, cls.Z, "ON", close=10.0),
+            cotahist_line(cls.DAYS[1], cls.TICKER, cls.A, "ON", close=11.0),
+            cotahist_line(cls.DAYS[2], cls.TICKER, cls.A, "ON", close=12.0),
+            cotahist_line(cls.DAYS[3], cls.TICKER, cls.B, "PN", close=13.0),
+        ]
+        cls._tmp = tempfile.TemporaryDirectory()
+        path = zip_text("\n".join(lines) + "\n", Path(cls._tmp.name) / "COTAHIST_A2026.zip")
+        cls.quotes = cotahist.load([path], {cls.TICKER})
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._tmp.cleanup()
+
+    def test_isins_lists_the_distinct_isins_of_the_window_in_session_order(self):
+        d0, d1, d2, d3 = self.DAYS
+        q = self.quotes
+        self.assertEqual(cotahist.isins(q, self.TICKER, d0, d3), (self.A, self.B))  # 06-30 is out: after is exclusive
+        self.assertEqual(cotahist.isins(q, self.TICKER, d2, None), (self.B,))  # None reads to the last session
+        self.assertEqual(cotahist.isins(q, self.TICKER, d0, d2), (self.A,))  # until is inclusive
+        self.assertEqual(cotahist.isins(q, self.TICKER, d1, d1), ())  # no session in the window
+        self.assertEqual(cotahist.isins(q, "GHOST3", d0, None), ())
+
+    def test_isin_and_share_class_at_d_are_the_old_values_until_the_change_session(self):
+        d2, d3 = self.DAYS[2], self.DAYS[3]
+        later = d3 + timedelta(days=9)
+        q = self.quotes
+        self.assertEqual((cotahist.isin(q, self.TICKER, d2), cotahist.share_class(q, self.TICKER, d2)), (self.A, "ON"))
+        self.assertEqual((cotahist.isin(q, self.TICKER, d3), cotahist.share_class(q, self.TICKER, d3)), (self.B, "PN"))
+        self.assertEqual((cotahist.isin(q, self.TICKER, later), cotahist.share_class(q, self.TICKER, later)), (self.B, "PN"))
+
+    def test_a_ticker_with_no_session_on_or_before_d_reads_none(self):
+        before = self.DAYS[0] - timedelta(days=1)
+        self.assertEqual(
+            (cotahist.isin(self.quotes, self.TICKER, before), cotahist.share_class(self.quotes, self.TICKER, before)),
+            (None, None),
+        )
+        self.assertIsNone(cotahist.isin(self.quotes, "GHOST3", self.DAYS[3]))
+
+    def test_class_prices_classify_the_ticker_by_its_class_at_d(self):
+        # The ticker is ON until 07-02 and PN from 07-03: each day prices the class it has on that day.
+        d2, d3 = self.DAYS[2], self.DAYS[3]
+        self.assertEqual(cotahist.class_prices(self.quotes, [self.TICKER], d2), {"ON": (self.TICKER, 12.0, d2), "PREF": None})
+        self.assertEqual(cotahist.class_prices(self.quotes, [self.TICKER], d3), {"ON": None, "PREF": (self.TICKER, 13.0, d3)})
+
+    def test_class_isins_keeps_the_isin_of_dt_refer_that_isins_leaves_out(self):
+        # S12: an event listed under Z (the ISIN at DT_REFER 06-30) reaches I_d although isins() leaves 06-30 out.
+        d0, d2, d3 = self.DAYS[0], self.DAYS[2], self.DAYS[3]
+        self.assertNotIn(self.Z, cotahist.isins(self.quotes, self.TICKER, d0, d3))
+        self.assertEqual(cotahist.class_isins(self.quotes, self.TICKER, d0, d2), (self.Z, self.A))
+        self.assertEqual(cotahist.class_isins(self.quotes, self.TICKER, d0, d3), (self.Z, self.A, self.B))
 
 
 if __name__ == "__main__":
