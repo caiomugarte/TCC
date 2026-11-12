@@ -677,7 +677,7 @@ def post_count(acq, day, cnpj, f, ref, cur, adj, det):
     if val is None or not compare.within(f, ref, round(val, 2)):
         return None
     filing = fut_filing(acq, cnpj, fut)
-    obj = f"a composição de ações de {fut.dt_refer.isoformat()} recebida em {fut.dt_receb.isoformat()}, depois de d = {day.isoformat()}"
+    obj = f"composição de ações de {fut.dt_refer.isoformat()} recebida em {fut.dt_receb.isoformat()}, depois de d = {day.isoformat()}"
     motive = (f"valor do SI: {match_clause(obj, val, ref)}; com essa contagem e os demais insumos de d; "
               f"a primeira entrega é posterior à data de coleta do CSV")
     items = [composition_item(acq, filing)] if filing is not None else []
@@ -690,7 +690,7 @@ def post_flow(acq, day, f, fut_entry, ref):
     if filing is None:
         return None
     items = [it for it in (cvm_item(acq, filing, acc) for acc in FIELD_ACCOUNTS[f][:2]) if it]
-    obj = f"o {filing.kind} de {filing.dt_refer.isoformat()} v{filing.versao}, recebido em {filing.dt_receb.isoformat()}, depois de d = {day.isoformat()}"
+    obj = f"{filing.kind} de {filing.dt_refer.isoformat()} v{filing.versao}, recebido em {filing.dt_receb.isoformat()}, depois de d = {day.isoformat()}"
     motive = f"valor do SI: {match_clause(obj, value, ref)}; com os demonstrativos usáveis em d o valor fica fora da tolerância"
     return motive, items
 
@@ -819,7 +819,8 @@ def decide(f):
 
     `f` holds booleans: lag (B-9); post (a filing received after d reproduces); erro_nosso (A-18 without support);
     b3_count (the B3 total count reproduces, the filed count is at most twice it, no suspicion); cited_af (a reproducer
-    as filed or by count, F0 excluded); ll_method and pl_method (the total 3.11 or 2.03 reproduces and differs from
+    as filed or by count, F0 excluded); exact_af (the cited one is equal to the SI at two decimals: the only reproducer
+    that outweighs b3_count, B-10 r5); ll_method and pl_method (the total 3.11 or 2.03 reproduces and differs from
     ours); cited_any (a method view reproduces); price_two (the close of d − 1 reproduces two count fields)."""
     if f["lag"]:
         return ERRO_SI, "defasagem (B-9)"
@@ -827,7 +828,7 @@ def decide(f):
         return ERRO_SI, "post-d"
     if f["erro_nosso"]:
         return ERRO_NOSSO, "erro nosso"
-    if f["b3_count"] and f["cited_af"]:
+    if f["b3_count"] and f["exact_af"]:
         return ERRO_SI, "reproduzido (sobre a contagem da B3)"
     if f["b3_count"]:
         return METODO, "contagem da B3 de R"
@@ -880,6 +881,7 @@ def classify_accounting(ctx, iso, day, row):
         "erro_nosso": f in SHARE_FIELDS and residual is not None and residual > 2.0 and not suspect,
         "b3_count": f in SHARE_FIELDS and "B3_TOTAL" in reproduces and residual is not None and residual <= 2.0 and not suspect,
         "cited_af": best_af is not None,
+        "exact_af": best_af is not None and bool(best_af["exact"]),
         "ll_method": f in ("P/L", "CAGR LUCROS 5 ANOS", "ROE", "ROA", "MARG. LIQUIDA") and "LL_TOTAL" in reproduces and abs(alts["LL_TOTAL"][0] - reb) > 0.01,
         "pl_method": f in ("ROE", "P/VP", "DIV. LIQ. / PATRI.") and "PL_TOTAL" in reproduces and abs(alts["PL_TOTAL"][0] - reb) > 0.01,
         "cited_any": best_any is not None,
@@ -903,9 +905,13 @@ def classify_accounting(ctx, iso, day, row):
     elif rule in ("reproduzido (sobre a contagem da B3)", "reproduzido"):
         (motive, extra), cited = cite(as_filed, best_af), best_af
     elif rule == "contagem da B3 de R":
-        motive = (f"o Status Invest usa a contagem total da B3 de R ({fmt(b3_total)}, `b3_company_{det['b3_root']}.json`), posterior a d; "
+        obj = f"contagem total da B3 de R ({fmt(b3_total)} ações, `b3_company_{det['b3_root']}.json`), posterior a d"
+        motive = (f"valor do SI: {match_clause(obj, alts['B3_TOTAL'][0], ref)}; "
                   f"a contagem arquivada em d com eventos é {residual:.2f} vezes a da B3 (AD-033); "
-                  f"nenhum demonstrativo do cache, além do usado em d, reproduz o valor do SI ({ref})")
+                  f"nenhum demonstrativo do cache, além do usado em d, reproduz o valor do SI a duas casas")
+        if best_af is not None:  # only within the tolerance: rule 6 yields to a demonstrativo on an exact match alone
+            motive += (f"; {len({(p['kind'], p['dt'], p['versao']) for p in as_filed})} demonstrativo(s) dentro da tolerância "
+                       f"não bastam (a regra exige igualdade a duas casas)")
     elif rule == "lucro total 3.11":
         motive = (f"o Status Invest usa o lucro total do DRE (3.11), não o do controlador (3.11.01, A-21/F7): "
                   f"com 3.11 o valor fica em {alts['LL_TOTAL'][0]:.2f} (SI {ref})")
@@ -1040,7 +1046,7 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
 - **Classe** (uma por linha, AUD-02):
   - `erro nosso`: o nosso valor contradiz a fonte ou a regra A-18 (contagem de ações com fator sem suporte da B3).
   - `erro do Status Invest`: o SI traz um número que o cache não sustenta. Há duas origens, separadas no resumo: (a) `reproduzido`: uma visão de um demonstrativo do cache, ou um subconjunto dos proventos da B3, fica dentro da tolerância do valor do SI (CMP-01; igual a duas casas, quando é igual) e cita-se pela regra de Citação (defasagem B-9 e demonstrativo recebido depois de d entram aqui); a coincidência mostra que o valor cabe, não a origem; (b) `sem base`: nenhuma visão de nenhum demonstrativo do cache, nem subconjunto de proventos, fica dentro da tolerância do valor do SI. A regra de (b) é a decisão do usuário sobre o AC9 (linha fora da tolerância sem base no cache vira `erro do Status Invest`, como na conferência da #59).
-  - `diferença de método`: o SI usa outra definição que reproduz o valor dele (contagem total da B3 de R, LL total 3.11, PL total 2.03).
+  - `diferença de método`: o valor do SI fica dentro da tolerância de outra definição (contagem total da B3 de R, LL total 3.11 ou PL total 2.03), e o nosso não; a classe mede a diferença, não prova o que o SI fez.
   - `dentro da tolerância`: a linha entra na lista dos piores porque o campo tem menos de 10 linhas fora da tolerância; não há erro a explicar, e a linha não é um dos três erros.
   - `não classificado`, com o motivo: linha fora da tolerância sem demonstrativo no cache para conferir. Nenhuma linha desta versão fica nessa classe.
 - **Ordem das regras** (a primeira que vale):
@@ -1049,7 +1055,7 @@ python3 scripts/pit_rebuild_audit.py --out docs/validation/pit-rebuild-stocks-au
   3. defasagem do filing anterior (B-9, LAG-01): `erro do Status Invest`;
   4. demonstrativo recebido depois de d que reproduz o valor, lido em R (contagem ou contas): `erro do Status Invest`, citado pela regra de Citação;
   5. fator de contagem sem suporte da B3: a contagem em d passa de duas vezes a contagem B3 de R, sem suspeita (SHR-05): `erro nosso`;
-  6. contagem total da B3 de R reproduz o valor e a contagem arquivada em d com eventos é no máximo duas vezes a da B3 (sem suspeita SHR-05): `diferença de método`, salvo se um demonstrativo do cache, diferente do usado em d, reproduz o valor como arquivado (contagem ou demonstrativo inteiro): então `erro do Status Invest`, citado o mais antigo (caso EGIE3 PSR da #64);
+  6. contagem total da B3 de R reproduz o valor e a contagem arquivada em d com eventos é no máximo duas vezes a da B3 (sem suspeita SHR-05): `diferença de método`, salvo se um demonstrativo do cache, diferente do usado em d, reproduz o valor como arquivado (contagem ou demonstrativo inteiro) com igualdade a duas casas: então `erro do Status Invest`, citado pela regra de Citação; a reprodução só dentro da tolerância não basta (EGIE3 PSR de 2026-08-07 e de 2026-11-05 e OPCT3 EV/EBIT de 2026-11-05 ficam em `diferença de método`);
   7. lucro total 3.11 ou patrimônio total 2.03 reproduz o valor e difere do nosso em mais de 0,01: `diferença de método`;
   8. demonstrativo do cache, diferente do usado em d, que reproduz o valor como arquivado: `erro do Status Invest`, citado pela regra de Citação;
   9. demonstrativo do cache que reproduz o valor só com o total da LL ou do PL: `erro do Status Invest` (visão de método), citado o mais antigo;

@@ -124,8 +124,8 @@ class SearchScopeTests(unittest.TestCase):
 
 
 def _facts(**kw):
-    facts = dict(lag=False, post=False, erro_nosso=False, b3_count=False, cited_af=False, ll_method=False,
-                 pl_method=False, cited_any=False, price_two=False)
+    facts = dict(lag=False, post=False, erro_nosso=False, b3_count=False, cited_af=False, exact_af=False,
+                 ll_method=False, pl_method=False, cited_any=False, price_two=False)
     facts.update(kw)
     return facts
 
@@ -136,7 +136,8 @@ class RuleOrderTests(unittest.TestCase):  # `Ordem das regras` (HEADER): the fir
             (dict(lag=True, post=True, erro_nosso=True, b3_count=True, cited_af=True, ll_method=True), (audit.ERRO_SI, "defasagem (B-9)")),
             (dict(post=True, erro_nosso=True, cited_af=True), (audit.ERRO_SI, "post-d")),
             (dict(erro_nosso=True, cited_af=True, ll_method=True), (audit.ERRO_NOSSO, "erro nosso")),
-            (dict(b3_count=True, cited_af=True, ll_method=True), (audit.ERRO_SI, "reproduzido (sobre a contagem da B3)")),
+            (dict(b3_count=True, cited_af=True, exact_af=True, ll_method=True), (audit.ERRO_SI, "reproduzido (sobre a contagem da B3)")),
+            (dict(b3_count=True, cited_af=True, ll_method=True), (audit.METODO, "contagem da B3 de R")),
             (dict(b3_count=True, ll_method=True, pl_method=True), (audit.METODO, "contagem da B3 de R")),
             (dict(ll_method=True, pl_method=True, cited_af=True), (audit.METODO, "lucro total 3.11")),
             (dict(pl_method=True, cited_af=True), (audit.METODO, "patrimônio total 2.03")),
@@ -148,6 +149,13 @@ class RuleOrderTests(unittest.TestCase):  # `Ordem das regras` (HEADER): the fir
         for facts, expected in cases:
             with self.subTest(facts=facts):
                 self.assertEqual(audit.decide(_facts(**facts)), expected)
+
+    def test_the_b3_total_count_yields_to_a_demonstrativo_only_on_an_exact_match(self):  # B-10 r5, rule 6
+        self.assertEqual(audit.decide(_facts(b3_count=True, cited_af=True, exact_af=True)),
+                         (audit.ERRO_SI, "reproduzido (sobre a contagem da B3)"))
+        self.assertEqual(audit.decide(_facts(b3_count=True, cited_af=True, exact_af=False)),  # within the tolerance only
+                         (audit.METODO, "contagem da B3 de R"))
+        self.assertEqual(audit.decide(_facts(b3_count=True)), (audit.METODO, "contagem da B3 de R"))
 
 
 if __name__ == "__main__":
