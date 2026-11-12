@@ -86,6 +86,7 @@ class ArtifactTests(unittest.TestCase):
         self.assertEqual(self.report["parameters"]["liquidity_sessions"], 21)
         self.assertEqual(self.report["parameters"]["quote_codbdi"], ["02", "07", "08"])
         self.assertIn("√10", self.report["parameters"]["share_scale_rule"])
+        self.assertIn("(DT_REFER, d]", self.report["parameters"]["share_scale_rule"])  # RPT-06: the AD-033 share count
 
     def test_every_source_kind_has_a_raw_file_identified_by_a_sha256_and_its_bytes(self):
         found = {kind: 0 for kind in SOURCE_KINDS}
@@ -111,6 +112,76 @@ class ArtifactTests(unittest.TestCase):
         readme_codes = re.findall(r"^\| (\d) \|", section, re.MULTILINE)
         self.assertEqual(cli_codes, ["0", "1", "2", "3", "4", "5"])
         self.assertEqual(readme_codes, cli_codes)
+
+
+class V3ArtifactTests(unittest.TestCase):
+    """The #64 report (RPT-01, RPT-06, ADJ-05, MBR-02): schema v3, the adjusted verdict and its criterion, the rule texts, the lists, the investigation."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.report = json.loads(JSON_PATH.read_text(encoding="utf-8"))
+        cls.markdown = MD_PATH.read_text(encoding="utf-8")
+
+    def test_the_report_is_schema_v3_amended_by_64_and_names_the_v2_report_it_replaces(self):
+        self.assertEqual(self.report["schema"], "pit-rebuild-stocks/v3")
+        self.assertEqual(self.report["amended_by"], [64])
+        self.assertEqual(self.report["previous_report"], {"schema": "pit-rebuild-stocks/v2", "commit": "ebaf1fd"})
+        self.assertIn("Regra de veredito da #59, aplicada aos valores com as correções da #64; os números da v2 estão no commit `ebaf1fd`.", self.markdown)
+
+    def test_the_adjusted_verdict_has_the_14_fields_on_both_dates_and_its_criterion_follows_its_own_percentages(self):
+        adjusted = self.report["adjusted_verdict"]
+        self.assertEqual(len(adjusted["fields"]), 14)
+        self.assertNotIn("ROIC", adjusted["fields"])
+        self.assertNotIn("PEG RATIO", adjusted["fields"])
+        self.assertEqual(sorted(adjusted["dates"]), DATES)
+        for iso in DATES:
+            self.assertEqual(sorted(adjusted["dates"][iso]["fields"]), sorted(adjusted["fields"]))
+        criterion = adjusted["criterion"]
+        self.assertEqual((criterion["part"], criterion["threshold_pct"]), (1, 70))
+        # ADJ-05 and ADJ-06: a field with no pct_within counts as failing; the order is the report's (field, then date)
+        failing = []
+        for field in adjusted["fields"]:
+            for iso in DATES:
+                pct = adjusted["dates"][iso]["fields"][field]["pct_within"]
+                if pct is None or pct < 70:
+                    failing.append({"field": field, "date": iso, "pct_within": pct})
+        self.assertEqual(criterion["failing"], failing)
+        self.assertEqual(criterion["met"], not failing)
+        self.assertEqual(criterion["part2"], "docs/validation/pit-rebuild-stocks-audit.md")
+
+    def test_the_markdown_prints_part_one_of_the_criterion_and_never_the_whole_criterion_as_met(self):
+        met = self.report["adjusted_verdict"]["criterion"]["met"]
+        self.assertIn(f"Critério de liberação (#64), parte 1 (≥ 70 % nas duas datas): {'cumprida' if met else 'não cumprida'}.", self.markdown)
+        self.assertIn("Parte 2 (10 piores conferidos e explicados): ver `pit-rebuild-stocks-audit.md`.", self.markdown)
+        self.assertNotIn("Critério de liberação (#64): cumprido", self.markdown)  # ADJ-05: the whole criterion is in the audit (AUD-06)
+
+    def test_the_rule_texts_state_the_ad033_share_count_and_drop_the_59_sentences(self):
+        parameters = self.report["parameters"]
+        dividends = next(item for item in parameters["non_pit_inputs"] if item["input"] == "B3 `stockDividends`")
+        formula = parameters["formulas"]["VALOR DE MERCADO"]
+        self.assertIn("(DT_REFER, d]", parameters["share_scale_rule"])
+        self.assertIn("AD-033", dividends["use"])
+        self.assertIn("(DT_REFER, d]", dividends["use"])
+        self.assertIn("(DT_REFER, d]", formula)
+        for text in (parameters["share_scale_rule"], dividends["use"], formula):
+            self.assertNotIn("só eventos com data-ex ≤ d", text)  # RPT-06: the #59 share-count sentence is gone
+            self.assertNotIn("um desdobramento de 1:5 dá ×10", text)  # and so is its unconditional form
+
+    def test_each_date_has_the_five_lists_of_the_share_stale_and_ttm_rules(self):
+        for iso in DATES:
+            mapping = self.report["dates"][iso]["mapping"]
+            self.assertIsInstance(mapping["share_events"]["adjusted"], list)
+            self.assertIsInstance(mapping["share_events"]["no_isin"], list)
+            self.assertIsInstance(mapping["share_count_suspect"], list)
+            self.assertIsInstance(mapping["ttm_prior_from_itr"], list)
+            stale = mapping["stale_filing"]
+            self.assertEqual([row["ticker"] for row in stale], sorted(row["ticker"] for row in stale))  # STL-03: sorted by ticker
+
+    def test_the_mbrf3_investigation_is_in_the_json_and_its_section_renders_it(self):
+        notes = self.report["investigations"]
+        self.assertEqual([(note["ticker"], note["date"], note["field"]) for note in notes], [("MBRF3", "2026-11-05", "DY")])
+        self.assertIn("## Investigações", self.markdown)
+        self.assertIn(notes[0]["finding"], self.markdown)  # MBR-02: the note is in the Markdown too
 
 
 if __name__ == "__main__":

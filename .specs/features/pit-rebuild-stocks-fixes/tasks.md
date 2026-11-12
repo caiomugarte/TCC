@@ -750,11 +750,11 @@ T23 → T24
 
 **Done when**:
 
-- [ ] `report --offline` exits 0; no network request (offline)
-- [ ] `tests/test_pit_rebuild_artifact.py`: schema v3, `amended_by == [64]` and `previous_report.commit == "ebaf1fd"`; `adjusted_verdict` has the 14 fields, both dates, `criterion` with `part` 1, `threshold_pct` 70 and `met` equal to the rule recomputed from its own `pct_within` values; the Markdown prints the part-1 line and not a whole-criterion line (ADJ-05); `parameters.share_scale_rule` still contains "√10" and now also "(DT_REFER, d]" (the assertion at `tests/test_pit_rebuild_artifact.py:88` is revised to both), the `stockDividends` row of `non_pit_inputs` names AD-033 and `formulas["VALOR DE MERCADO"]` names "(DT_REFER, d]" (RPT-06); each date's mapping has the five new keys; the Markdown equals the render of the JSON byte for byte (RPT-02); the existing #59 artifact tests still pass (exit-code table, SI hash, dates, as-of) (RPT-05)
-- [ ] `git status --porcelain -- data snapshots baselines` empty; both CSV hashes unchanged
-- [ ] Gate check passes: Full
-- [ ] Test count: ≥ 4 new tests in `test_pit_rebuild_artifact.py`
+- [x] `report --offline` exits 0; no network request (offline)
+- [x] `tests/test_pit_rebuild_artifact.py`: schema v3, `amended_by == [64]` and `previous_report.commit == "ebaf1fd"`; `adjusted_verdict` has the 14 fields, both dates, `criterion` with `part` 1, `threshold_pct` 70 and `met` equal to the rule recomputed from its own `pct_within` values; the Markdown prints the part-1 line and not a whole-criterion line (ADJ-05); `parameters.share_scale_rule` still contains "√10" and now also "(DT_REFER, d]" (the assertion at `tests/test_pit_rebuild_artifact.py:88` is revised to both), the `stockDividends` row of `non_pit_inputs` names AD-033 and `formulas["VALOR DE MERCADO"]` names "(DT_REFER, d]" (RPT-06); each date's mapping has the five new keys; the Markdown equals the render of the JSON byte for byte (RPT-02); the existing #59 artifact tests still pass (exit-code table, SI hash, dates, as-of) (RPT-05)
+- [x] `git status --porcelain -- data snapshots baselines` empty; both CSV hashes unchanged
+- [x] Gate check passes: Full
+- [x] Test count: ≥ 4 new tests in `test_pit_rebuild_artifact.py`
 
 **Tests**: integration
 **Gate**: full
