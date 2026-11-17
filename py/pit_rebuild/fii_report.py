@@ -43,9 +43,11 @@ LIMITATIONS = [
     "28.757.546/0001-00), versão 1 de 2026-01, ele vale −0,058778, o que não é um rendimento distribuído.",
     "Os arquivos anuais da CVM trazem só a versão mais recente de cada informe. Um informe reapresentado depois de `d` "
     "some em `d`, e o fundo usa o informe anterior.",
-    "A ligação ticker → fundo é o ISIN do último pregão até `d` (COTAHIST) igual ao `Codigo_ISIN` do informe. Quando "
-    "mais de um fundo informa o mesmo ISIN, vale o de número de cotas mais perto do da página da B3, obtida na coleta "
-    "e não em `d`.",
+    "A ligação ticker → fundo é o ISIN do último pregão até `d` (COTAHIST) igual ao `Codigo_ISIN` do informe. Alguns "
+    "fundos informam outro ISIN (por exemplo `BR0EI9CTF007`) e só passam ao ISIN negociado num informe posterior a `d`: "
+    "esse informe só identifica o fundo, e os valores continuam vindo dos informes entregues até `d` "
+    "(`isin_from_later_informe`). Quando mais de um fundo informa o mesmo ISIN, vale o de número de cotas mais perto "
+    "do da página da B3, obtida na coleta e não em `d`.",
     "A tabela de correspondência de setor e gestão foi escrita antes da medição. A CVM classifica muitos fundos como "
     "`Multicategoria` ou `Outros`, categorias que o Status Invest divide em várias.",
     "A classificação dos 10 piores é automática: ela procura uma fonte que dê o valor do Status Invest. O caso sem "
@@ -108,8 +110,8 @@ def render_markdown(obj: dict) -> str:
 
 def _universe(out: list[str], obj: dict, isos: list[str]) -> None:
     out.append("## Universo e ligação com os informes\n")
-    out.append("| data | elegíveis | com informe em d | sem informe (motivo) | informe entregue depois de d | sessão que bate com os preços |")
-    out.append("| --- | --- | --- | --- | --- | --- |")
+    out.append("| data | elegíveis | com informe em d | ISIN só num informe posterior | sem informe (motivo) | com informe entregue depois de d | sessão que bate com os preços |")
+    out.append("| --- | --- | --- | --- | --- | --- | --- |")
     for iso in isos:
         block = obj["dates"][iso]
         mapping = block["mapping"]
@@ -117,7 +119,8 @@ def _universe(out: list[str], obj: dict, isos: list[str]) -> None:
         check = block["as_of_check"]
         best = check["best"] or "-"
         hits = check["sessions"].get(best, 0) if check["best"] else 0
-        out.append(f"| {iso} | {block['eligible']} | {mapping['with_informe']} | {reasons} | {mapping['delivered_after_d']} | {best} ({hits}) |")
+        later = len(mapping["isin_from_later_informe"])
+        out.append(f"| {iso} | {block['eligible']} | {mapping['with_informe']} | {later} | {reasons} | {mapping['delivered_after_d']} | {best} ({hits}) |")
     out.append("")
     for iso in isos:
         check = obj["dates"][iso]["as_of_check"]

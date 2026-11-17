@@ -15,8 +15,11 @@ Formulas, written before the measurement:
 
 The report at d is the newest one delivered on or before d (fii_informes.latest). A report whose
 month ended more than 270 days before d gives no informe value (stale_informe), as the stock rule.
-The ticker reaches its fund by the ISIN of its last session on or before d; an ISIN that more than
-one fund reports goes to the fund whose quota count is nearest the B3 count (ambiguous_isin without B3).
+The ticker reaches its fund by the ISIN of its last session on or before d, looked up in the reports
+delivered on or before d and, when none gives it, in any report (isin_from_later_informe: the later
+report only names the fund; every value still comes from a report delivered by d). An ISIN that more
+than one fund reports goes to the fund whose quota count is nearest the B3 count (ambiguous_isin
+without B3).
 """
 
 import calendar
@@ -58,6 +61,7 @@ class Rebuilt:
     b3_only_dy: float | None = None
     delivered_after: list[date] = field(default_factory=list)
     quote_day: date | None = None
+    mapping: str | None = None  # isin_at_d or isin_from_later_informe when the fund was found
 
 
 def rebuild(
@@ -77,6 +81,11 @@ def rebuild(
 
     result.isin = cotahist.isin(quotes, ticker, d)
     result.cnpj, reason = resolve_fund(informes, result.isin, d, b3_fund)
+    if result.cnpj is None and reason == "no_cvm_match":
+        result.cnpj, reason = resolve_fund(informes, result.isin, None, b3_fund, at=d)
+        result.mapping = "isin_from_later_informe" if result.cnpj else None
+    elif result.cnpj:
+        result.mapping = "isin_at_d"
     report = fii_informes.latest(informes, result.cnpj, d) if result.cnpj else None
     if result.cnpj and report is None:
         reason = "no_informe_by_d"
@@ -91,9 +100,13 @@ def rebuild(
 
 
 def resolve_fund(
-    informes: Informes, isin: str | None, d: date, b3_fund: fii_dividends.B3Fund | None
+    informes: Informes, isin: str | None, d: date | None, b3_fund: fii_dividends.B3Fund | None, at: date | None = None
 ) -> tuple[str | None, str | None]:
-    """(CNPJ, None) of the fund behind the ISIN at d, or (None, reason)."""
+    """(CNPJ, None) of the fund behind the ISIN in the reports delivered by d (every report when d is None), or (None, reason).
+
+    The quota counts that break a tie are those of the reports known at `at` (default d).
+    """
+    at = at or d
     if not isin:
         return None, "no_isin"
     candidates = fii_informes.funds_of_isin(informes, isin, d)
@@ -105,7 +118,7 @@ def resolve_fund(
         return None, "ambiguous_isin"
     distances = []
     for cnpj in candidates:
-        report = fii_informes.latest(informes, cnpj, d)
+        report = fii_informes.latest(informes, cnpj, at)
         if report is not None and report.shares:
             distances.append((abs(math.log(report.shares / b3_fund.quantity)), cnpj))
     if not distances:

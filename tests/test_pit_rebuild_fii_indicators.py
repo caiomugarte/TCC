@@ -104,6 +104,17 @@ class RebuildTest(unittest.TestCase):
         self.assertEqual(result.reasons["PATRIMONIO"], "no_cvm_match")
         self.assertEqual(result.values["PRECO"], 121.0)
 
+    def test_an_isin_first_reported_after_d_still_names_the_fund_and_the_values_stay_point_in_time(self):
+        reports = (
+            informe(A, date(2026, 6, 1), date(2026, 7, 15), nav=133.1, equity=1_331_000_000, shares=10_000_000, isin="BR0EI9CTF007"),
+            informe(A, date(2026, 9, 1), date(2026, 10, 15), nav=140.0, equity=1_400_000_000, shares=10_000_000),
+        )
+        result = self.rebuild(reports=reports)
+        self.assertEqual(result.cnpj, A)
+        self.assertEqual(result.values["PATRIMONIO"], 1_331_000_000)
+        self.assertEqual(result.mapping, "isin_from_later_informe")
+        self.assertEqual(self.rebuild().mapping, "isin_at_d")
+
     def test_a_report_more_than_270_days_old_gives_no_informe_value(self):
         old = (informe(A, date(2025, 10, 1), date(2025, 11, 14), nav=100.0, equity=1e9, shares=1e7),)
         result = self.rebuild(reports=old)

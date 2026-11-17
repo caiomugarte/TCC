@@ -234,6 +234,7 @@ def _mapping_counts(rebuilt: dict) -> dict:
         "with_informe": sum(1 for item in rebuilt.values() if item.informe is not None),
         "without_informe": dict(sorted(reasons.items())),
         "delivered_after_d": sum(1 for item in rebuilt.values() if item.delivered_after),
+        "isin_from_later_informe": sorted(t for t, item in rebuilt.items() if item.mapping == "isin_from_later_informe"),
     }
 
 
@@ -257,6 +258,7 @@ def _ticker(item: fii_indicators.Rebuilt) -> dict:
     return {
         "isin": item.isin,
         "cnpj": item.cnpj,
+        "mapping": item.mapping,
         "informe": item.informe.label() if item.informe else None,
         "informe_36_months_before": item.informe_3y.label() if item.informe_3y else None,
         "delivered_after": [day.isoformat() for day in item.delivered_after],

@@ -775,8 +775,11 @@ ferramenta é a mesma `py/pit_rebuild/`, em módulos próprios (`fii_*.py`), e o
   mais de 270 dias não dá valor (`stale_informe`). Só entram pregões até `d`, e proventos com
   data-ex em `d − 365 dias < data-ex ≤ d`.
 - **Ticker → fundo.** O ISIN do último pregão do ticker até `d` é procurado no `Codigo_ISIN` dos
-  informes entregues até `d`. Se mais de um fundo informa o mesmo ISIN, vale o de número de
-  cotas mais perto do da página da B3 (`ambiguous_isin` sem ela). Sem fundo: `no_cvm_match`.
+  informes entregues até `d` e, se nenhum o traz, em qualquer informe
+  (`isin_from_later_informe`): o informe posterior só identifica o fundo, e os valores continuam
+  vindo dos informes entregues até `d`. Se mais de um fundo informa o mesmo ISIN, vale o de
+  número de cotas mais perto do da página da B3 (`ambiguous_isin` sem ela). Sem fundo:
+  `no_cvm_match`.
 - **Proventos.** Contam os registros `RENDIMENTO` do ISIN da cota, com data-ex no pregão seguinte
   ao `lastDatePrior`. A B3 é a fonte quando o primeiro registro dela chega ao início da janela;
   senão o Yahoo, com a fonte e o motivo no relatório (`b3_failed`, `b3_empty`,

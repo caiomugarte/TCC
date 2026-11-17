@@ -146,9 +146,9 @@ def months_back(informes: Informes, report: Informe, months: int, d: date) -> In
     return next((item for item in known(informes, report.cnpj, d) if item.ref == target), None)
 
 
-def funds_of_isin(informes: Informes, isin: str, d: date) -> list[str]:
-    """Every CNPJ with a report delivered on or before d that gives this ISIN, sorted."""
-    return sorted({cnpj for delivered, cnpj in informes.by_isin.get(isin, []) if delivered <= d})
+def funds_of_isin(informes: Informes, isin: str, d: date | None) -> list[str]:
+    """Every CNPJ with a report delivered on or before d that gives this ISIN, sorted; d None takes every report."""
+    return sorted({cnpj for delivered, cnpj in informes.by_isin.get(isin, []) if d is None or delivered <= d})
 
 
 def first_years(informes: Informes) -> dict[str, int]:
