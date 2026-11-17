@@ -126,6 +126,11 @@ def _universe(out: list[str], obj: dict, isos: list[str]) -> None:
         check = obj["dates"][iso]["as_of_check"]
         if check["best"] and not check["matches_d"]:
             out.append(f"Aviso: em {iso}, a sessão que mais bate com os preços do CSV é {check['best']}, e não {iso}.\n")
+        eligible = obj["dates"][iso]["eligible"]
+        hits = check["sessions"].get(check["best"], 0) if check["best"] else 0
+        if 2 * hits < eligible:
+            out.append(f"Aviso: em {iso}, só {hits} dos {eligible} preços elegíveis são o fechamento de {check['best']} "
+                       "no COTAHIST; nenhuma sessão entre d − 7 e d + 3 bate com a maioria deles.\n")
 
 
 def _dividends(out: list[str], obj: dict, isos: list[str]) -> None:
@@ -152,6 +157,10 @@ def _dividends(out: list[str], obj: dict, isos: list[str]) -> None:
 
 def _categories(out: list[str], obj: dict, isos: list[str]) -> None:
     out.append("## Setor e gestão\n")
+    for name in CATEGORY_FIELDS:
+        if all(obj["dates"][iso]["categories"][name]["denominator"] == 0 for iso in isos):
+            blanks = ", ".join(f"{obj['dates'][iso]['categories'][name]['reference_blank']} em {iso}" for iso in isos)
+            out.append(f"`{name}`: nenhum FII elegível tem valor no Status Invest ({blanks}), e o indicador fica `sem referência`.\n")
     out.append("Tabela de correspondência, escrita antes da medição (CVM → Status Invest):\n")
     out.append("| campo | CVM | Status Invest |")
     out.append("| --- | --- | --- |")
