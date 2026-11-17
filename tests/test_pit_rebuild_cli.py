@@ -13,7 +13,7 @@ numbers, so every expectation below is worked out by hand from the fixture value
 - REFL (DFP 2025: version 1 delivered 2026-03-31, version 2 on 2026-09-15): re-filed across the first date; P/L 10.00 on the first, 5.00 on the second.
 - NOUS (DFP delivered 2026-12-01): no usable filing. NOQT (no quote): no_quote. ZZZZ (not in FCA nor B3): unclassified.
 - SOLO (B3 only, pages 1 and 2): DY 5.00 on the first date (the 2026-10-29 record is not known yet), 15.00 on the second.
-- SHRT (B3 history from 2026-02-10): Yahoo, DY 5.00 and 8.00; the 2026-10-15 Yahoo event is after the first date.
+- SHRT (complete B3 history from 2026-05-25, inside the window): B3, not Yahoo (#77), DY 5.00 and 8.00; the 2026-10-14 record is after the first date.
 - AZUL (B3 history complete and empty, Yahoo answers 404): DY 0 with reason b3_empty_yahoo_failed.
 
 Each test copies a cache populated once for the class, so tests that damage files do not interfere.
@@ -252,11 +252,11 @@ class ReportSuccessTests(ReportCase):
         # SOLO's 2026-10-29 record is ex on 2026-10-30: unknown on the first date, counted on the second.
         self.assertEqual(report["dates"][ISO1]["fields"]["DY"]["non_financial"]["within"], 12)
         self.assertEqual(report["dates"][ISO2]["fields"]["DY"]["non_financial"]["within"], 12)
-        self.assertEqual(div["by_source"][ISO1], {"b3": 12, "yahoo": 1, "none": 0})
-        self.assertEqual(div["yahoo_reasons"][ISO1], {"b3_failed": 0, "b3_empty": 11, "b3_incomplete": 0, "b3_short_history": 1})
+        self.assertEqual(div["by_source"][ISO1], {"b3": 13, "yahoo": 0, "none": 0})  # SHRT3 from B3 since #77
+        self.assertEqual(div["yahoo_reasons"][ISO1], {"b3_failed": 0, "b3_empty": 11, "b3_incomplete": 0})
         # the eleven companies whose complete B3 history is empty and whose Yahoo lookup failed: DY 0, source b3
         self.assertEqual(div["b3_empty_yahoo_failed"][ISO1], 11)
-        self.assertEqual(div["source"], "secondary")
+        self.assertEqual(div["source"], "primary")
 
     def test_coverage_years_and_the_full_rebuild_effort(self):
         report = self.success()
@@ -517,7 +517,7 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(len([url for url in self.gets(fake) if "/SOLO3.SA?" in url]), 1)
         self.assertEqual(run(report_args(self.cache, self.out))[0], 0)
         div = self.report_dividends()
-        self.assertEqual(div["yahoo_reasons"][ISO1], {"b3_failed": 0, "b3_empty": 12, "b3_incomplete": 0, "b3_short_history": 1})
+        self.assertEqual(div["yahoo_reasons"][ISO1], {"b3_failed": 0, "b3_empty": 12, "b3_incomplete": 0})
         self.assertEqual(div["b3_empty_yahoo_failed"][ISO1], 12)  # the eleven of the fixture plus SOLO3
 
     def test_a_missing_second_page_is_incomplete_and_goes_to_yahoo(self):
@@ -531,9 +531,9 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(div["yahoo_reasons"][ISO1]["b3_incomplete"], 1)
         self.assertEqual(div["by_source"][ISO1]["none"], 1)  # Yahoo failed too: no dividend source
 
-    def test_a_complete_history_starting_after_d_minus_365_asks_yahoo(self):
-        _code, _err, fake = self.fetch()
-        self.assertEqual(len([url for url in self.gets(fake) if "/SHRT3.SA?" in url]), 1)
+    def test_a_complete_history_starting_after_d_minus_365_makes_no_yahoo_request(self):
+        _code, _err, fake = self.fetch()  # #77: the complete history covers the window; SHRT3's Yahoo series is served but not asked
+        self.assertEqual([url for url in self.gets(fake) if "/SHRT3.SA?" in url], [])
 
     def test_a_complete_history_reaching_d_minus_365_makes_no_yahoo_request(self):
         _code, _err, fake = self.fetch()
@@ -577,7 +577,7 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(run(report_args(self.cache, self.out))[0], 0)
         div = self.report_dividends()
         self.assertEqual(div["by_source"][ISO1]["none"], 0)
-        self.assertEqual(div["by_source"][ISO1]["b3"], 12)  # AZUL4 among them, with DY 0 from b3
+        self.assertEqual(div["by_source"][ISO1]["b3"], 13)  # AZUL4 among them, with DY 0 from b3 (SHRT3 too since #77)
 
     def test_fetch_exit_codes_for_missing_si_and_forbidden_cache(self):
         code, err, _fake = self.fetch_with(si=(self.work / "absent.csv", SI2))
@@ -622,6 +622,8 @@ SHAPE_COMPANIES = {  # root: (CNPJ, CD_CVM, name, ON shares, PN shares)
     "TTMX": ("39.000.000/0001-39", "2019", "TTMX S.A.", 100_000_000, 0),  # a zero comparative: last year's ITR is read (TTM-01)
     "TTMZ": ("41.000.000/0001-41", "2020", "TTMZ S.A.", 100_000_000, 0),  # a comparative of 30 M: last year's ITR is not read (TTM-03)
     "ISNX": ("42.000.000/0001-42", "2021", "ISNX S.A.", 100_000_000, 0),  # its ISIN changes on 2026-07-27 (ISN-03)
+    "VVEX": ("43.000.000/0001-43", "2022", "VVEX S.A.", 322_820_608, 0),  # x10 is the nearest scale, B3 does not confirm it (#77)
+    "HBRX": ("44.000.000/0001-44", "2023", "HBRX S.A.", 100_000_000, 0),  # a complete B3 history that starts inside the window (#77)
 }
 # ISN-03: the ticker whose ISIN changes, the first session with the new ISIN, and the new ISIN (the old one is in SHAPE_QUOTES)
 SHAPE_ISIN_CHANGE = ("ISNX3", date(2026, 7, 27), "BRISNX3NEW01")
@@ -651,6 +653,8 @@ SHAPE_QUOTES = [
     ("TTMX3", "TTMX", "ON", 10.0, "BRTTMX3CNOR1"),
     ("TTMZ3", "TTMZ", "ON", 10.0, "BRTTMZ3CNOR1"),
     ("ISNX3", "ISNX", "ON", 10.0, "BRISNX3OLD01"),
+    ("VVEX3", "VVEX", "ON", 10.0, "BRVVEX3CNOR1"),
+    ("HBRX3", "HBRX", "ON", 10.0, "BRHBRX3CNOR1"),
 ]
 # FCA rows: ticker, root, valor mobiliario, composition (units only)
 SHAPE_FCA = [
@@ -678,6 +682,8 @@ SHAPE_FCA = [
     ("TTMX3", "TTMX", "Ações Ordinárias", ""),
     ("TTMZ3", "TTMZ", "Ações Ordinárias", ""),
     ("ISNX3", "ISNX", "Ações Ordinárias", ""),
+    ("VVEX3", "VVEX", "Ações Ordinárias", ""),
+    ("HBRX3", "HBRX", "Ações Ordinárias", ""),
 ]
 # Status Invest rows of the eligible tickers (VM and liquidity make them eligible; the reference values are off on purpose)
 SHAPE_SI = [
@@ -705,6 +711,9 @@ SHAPE_SI = [
     {"TICKER": "TTMZ3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 10.0},
     # its value reference is the rebuilt 600 M x 10.00, so it does not rank among the worst VALOR DE MERCADO cases
     {"TICKER": "ISNX3", "VALOR DE MERCADO": 6_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "DY": 5.0},
+    {"TICKER": "VVEX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "P/L": 1.0, "P/VP": 1.0, "PSR": 1.0,
+     "EV/EBIT": 1.0, "PEG RATIO": 1.0},
+    {"TICKER": "HBRX3", "VALOR DE MERCADO": 1_000_000_000, "LIQUIDEZ MEDIA DIARIA": 1_000_000, "DY": 1.0},
 ]
 SHAPE_DFP_STATEMENTS = {  # root: (BPP rows, consolidated DRE rows, individual DRE rows)
     "MINO": ([("2.03", 200_000_000.0), ("2.03.09", 50_000_000.0)], [("3.11", 100_000_000.0), ("3.11.01", 100_000_000.0)], []),
@@ -778,6 +787,17 @@ def _shape_b3_pages(root: Path) -> None:
     _latin1(root / "b3" / "cash" / "ISNX_p1.json", page([isnx, isnx_old], 2))
     _latin1(root / "b3" / "cash" / "DUPL_p1.json", page([dividend, dict(dividend), capital, old], 4))
     _latin1(root / "b3" / "cash" / "FOOX_p1.json", page([], 0))
+    # HBRX (the HBRE3 shape of #77): two records on the same lastDatePriorEx, not duplicates, and nothing before them;
+    # its Yahoo series has one event of another amount
+    hbrx = [
+        {"typeStock": "ON", "valueCash": "0,87407147387", "lastDatePriorEx": "12/05/2026", "corporateAction": "DIVIDENDO"},
+        {"typeStock": "ON", "valueCash": "0,29135715796", "lastDatePriorEx": "12/05/2026", "corporateAction": "JRS CAP PROPRIO"},
+    ]
+    _latin1(root / "b3" / "cash" / "HBRX_p1.json", page(hbrx, 2))
+    epoch = int(datetime(2026, 5, 13, tzinfo=timezone.utc).timestamp())
+    _latin1(root / "yahoo" / "HBRX3.json", json.dumps(
+        {"chart": {"result": [{"events": {"dividends": {str(epoch): {"amount": 0.485595, "date": epoch}}}}], "error": None}}
+    ))
     companies = {
         # SBSP's split (x5, ex-date 2026-07-13) is in the count the B3 holds on the retrieval day: 100 M x 5
         "SBSP": {"tradingName": "SBSP S.A.", "code": "SBSP", "codeCVM": "2009", "totalNumberShares": "500.000.000",
@@ -785,6 +805,9 @@ def _shape_b3_pages(root: Path) -> None:
         "DUPL": {"tradingName": "DUPL S.A.", "code": "DUPL", "codeCVM": "2010", "totalNumberShares": "100.000.000"},
         "FOOX": {"tradingName": "FOO S/A", "code": "FOOX", "codeCVM": "2011", "totalNumberShares": "100.000.000"},
         "ESPA": {"tradingName": "ESPA S.A.", "code": "ESPA", "codeCVM": "2006", "totalNumberShares": "10.000.000"},
+        # VVEX: 322 820 608 filed; x10 gives 3 228 206 080, 2.51 times this count (the VVEO3 shape of #77)
+        "VVEX": {"tradingName": "VVEX S.A.", "code": "VVEX", "codeCVM": "2022", "totalNumberShares": "1.286.324.129"},
+        "HBRX": {"tradingName": "HBRX S.A.", "code": "HBRX", "codeCVM": "2023", "totalNumberShares": "100.000.000"},
         # BONU: a bonus x2 (ex-date 2026-07-13), B3 count 200 M retrieved after it (pinned in ShapeReportTests)
         "BONU": {"tradingName": "BONU S.A.", "code": "BONU", "codeCVM": "2014", "totalNumberShares": "200.000.000",
                  "stockDividends": [{"label": "BONIFICACAO", "factor": "100", "isinCode": "BRBONU3CNOR1", "lastDatePrior": "10/07/2026"}]},
@@ -1028,6 +1051,23 @@ class ShapeReportTests(unittest.TestCase):
         fallback = self.report["dates"][ISO1]["mapping"]["vm_price_fallback"]
         self.assertIn({"cd_cvm": "2008", "class_without_quote": "PREF", "price_from": "NOP3"}, fallback["companies"])
         self.assertEqual(fallback["count"], len(fallback["companies"]))
+
+    def test_a_scale_that_b3_does_not_confirm_leaves_the_count_fields_without_value_and_lists_the_company(self):
+        # #77: VVEX's x10 leaves the count 2.51 times the B3 total, so no count is used: the fields that need it have no
+        # value, with their own reason, and the company is listed apart from the scaled ones.
+        day = self.report["dates"][ISO1]
+        for field in ("VALOR DE MERCADO", "P/L", "P/VP", "PSR", "EV/EBIT", "PEG RATIO"):
+            self.assertIn({"ticker": "VVEX3", "reason": "share_scale_unconfirmed"}, day["fields"][field]["non_financial"]["missing"], field)
+        scale = day["mapping"]["share_scale"]
+        self.assertNotIn("2022", [row["cd_cvm"] for row in scale["scaled"]])
+        (row,) = [row for row in scale["unconfirmed"] if row["cd_cvm"] == "2022"]
+        self.assertEqual(row["factor"], 10)
+        self.assertAlmostEqual(row["residual"], 3_228_206_080 / 1_286_324_129, places=9)
+
+    def test_a_complete_b3_history_starting_inside_the_window_is_used_and_its_same_day_records_add_up(self):
+        # #77, the HBRE3 shape: B3 lists everything HBRX paid, two records on one day; Yahoo is not used.
+        # DY = 100 x (0.87407147387 + 0.29135715796) / 10.00 = 11.65
+        self.assertEqual(worst_value(self.report, "DY", "HBRX3"), 11.65)
 
     def test_a_b3_dividend_before_a_split_is_divided_by_the_split_multiplier(self):
         # SBSP: 5.00 with ex-date 2026-06-02, before the DESDOBRAMENTO 400 (multiplier 5) whose ex-date 2026-07-13 is
@@ -1358,7 +1398,7 @@ class RawDateAndCounterTests(unittest.TestCase):
         dividends_out = self.report["dividends"]
         self.assertEqual(dividends_out["slash_names"], [])
         self.assertEqual(dividends_out["split_adjust_no_isin"], {ISO1: 0, ISO2: 0})
-        self.assertEqual(dividends_out["b3_filters"], {"raw_records": 4, "duplicates": 0, "capital_returns": 0})
+        self.assertEqual(dividends_out["b3_filters"], {"raw_records": 5, "duplicates": 0, "capital_returns": 0})  # SOLO 3, SHRT 2
 
 
 class ScaledShareCountTests(unittest.TestCase):
