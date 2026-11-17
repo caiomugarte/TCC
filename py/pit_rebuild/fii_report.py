@@ -63,6 +63,11 @@ LIMITATIONS = [
 ]
 
 
+def _thousands(number: int) -> str:
+    """An integer with the Brazilian thousands separator: 200.000.000."""
+    return f"{number:,}".replace(",", ".")
+
+
 def render_markdown(obj: dict) -> str:
     isos = obj["decision_dates"]
     out: list[str] = []
@@ -104,10 +109,10 @@ def render_markdown(obj: dict) -> str:
     add("| --- | --- |")
     out.extend(f"| `{name}` | {text} |" for name, text in FORMULAS)
     add("")
+    floor = obj["eligibility"]["floor"]
     add("Universo elegível: " + "; ".join(f"`{item}`" for item in obj["eligibility"]["source"])
         + f". Positivos: {', '.join(obj['eligibility']['core_positive'])}; DY ≥ 0; PATRIMONIO ≥ "
-        f"{obj['eligibility']['floor']['size_min']:,}".replace(",", ".")
-        + f"; LIQUIDEZ MEDIA DIARIA ≥ {obj['eligibility']['floor']['liq_min']:,}".replace(",", ".") + ".\n")
+        f"{_thousands(floor['size_min'])}; LIQUIDEZ MEDIA DIARIA ≥ {_thousands(floor['liq_min'])}.\n")
     _universe(out, obj, isos)
     _dividends(out, obj, isos)
     _categories(out, obj, isos)

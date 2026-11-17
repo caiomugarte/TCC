@@ -129,6 +129,12 @@ class FiiReportTest(unittest.TestCase):
         self.assertEqual(self.report["schema"], fii_cli.SCHEMA)
         self.assertEqual(self.report["dates"][D1.isoformat()]["eligible"], 4)
 
+    def test_the_eligibility_line_separates_the_columns_with_commas_and_the_thousands_with_periods(self):
+        line = next(line for line in self.markdown.splitlines() if line.startswith("Universo elegível"))
+        positive = ", ".join(self.report["eligibility"]["core_positive"])
+        self.assertIn(f"Positivos: {positive}; DY ≥ 0;", line)
+        self.assertIn("PATRIMONIO ≥ 200.000.000", line)
+
     def test_alfa_is_rebuilt_from_the_report_known_at_each_date(self):
         first, second = self.ticker(D1, "ALFA11"), self.ticker(D2, "ALFA11")
         self.assertEqual(first["informe"], "informe 2026-06 v1, entregue em 2026-07-15")
