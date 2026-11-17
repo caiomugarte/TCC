@@ -67,13 +67,14 @@ test("current pending or failed status stays separate from latest completed resu
   assert.match(viewSource, /completed && \(/);
 });
 
-test("both plans render classes, stock and FII sleeves, and Status Invest retrieval time", () => {
+test("both plans render classes, stock and FII sleeves, and the snapshot source of each", () => {
   assert.match(viewSource, /completed\.classes\.map/);
   assert.match(viewSource, /completed\.stocks\.map/);
   assert.match(viewSource, /completed\.fiis\.map/);
   assert.match(viewSource, /selector_sources/);
   assert.match(viewSource, /retrieved_at/);
-  assert.match(viewSource, /statusInvestRetrievedAt\(completed\)/);
+  assert.match(viewSource, /<span>Snapshot de seleção<\/span><strong>\{selectorSnapshotSources\(completed\)\}/);
+  assert.doesNotMatch(viewSource, /Status Invest<\/span>|coleta Status Invest/);
   assert.doesNotMatch(viewSource, /premium && \(stocks\.length/);
 });
 
@@ -159,7 +160,7 @@ test("dropped tickers render the API reasons", async () => {
 test("snapshot price note and legacy fallback", () => {
   assert.match(viewSource, /\[\.\.\.completed\.stocks, \.\.\.completed\.fiis\]\.some\(hasQuantity\)/);
   assert.match(viewSource, /function hasQuantity\(item: RecommendationConstituent\): boolean \{\s*return typeof item\.quantity === "number";/);
-  assert.match(viewSource, /Quantidades calculadas com os preços da coleta Status Invest desta execução \(\{statusInvestRetrievedAt\(completed\)\}\)/);
+  assert.match(viewSource, /Quantidades calculadas com os preços do snapshot registrado desta execução, com a cotação da B3 para ações \(\{selectorSnapshotSources\(completed\)\}\)/);
   assert.match(viewSource, /\{hasQuantity\(item\)\s+\? `\$\{item\.ticker\} · \$\{item\.quantity\}/);
   assert.match(viewSource, /: `\$\{item\.ticker\}: \$\{percentage\.format\(item\.portfolioWeight\)\}`\}/);
 });

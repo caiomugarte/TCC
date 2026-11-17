@@ -536,8 +536,8 @@ def _constituents(
 
 
 WHOLE_UNITS_ASSUMPTION = (
-    "Quantidades calculadas com o preço da coleta Status Invest desta execução; "
-    "a cotação na hora da compra pode ser diferente."
+    "Quantidades calculadas com o preço do snapshot registrado desta execução "
+    "(B3 para ações, Status Invest para FIIs); a cotação na hora da compra pode ser diferente."
 )
 
 
