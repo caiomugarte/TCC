@@ -137,6 +137,29 @@ class FormulaTests(CollectorCase):
         self.assertEqual(rows["ALFA3"]["PEG RATIO"], "")  # no fiscal year 2020: no CAGR
 
 
+class PegUnitTests(unittest.TestCase):
+    """The P/L guard of PEG RATIO: a loss-making company has no PEG even with a positive earnings CAGR (spec #75).
+
+    The fixture universe cannot hold that row (a negative LL gives no positive CAGR LUCROS of the same LL), so the
+    guard is checked on the function the rows use."""
+
+    @staticmethod
+    def peg(p_l, cagr):
+        from pit_rebuild.indicators import Value
+
+        return collector._peg({"P/L": Value(p_l), "CAGR LUCROS 5 ANOS": Value(cagr)})
+
+    def test_a_negative_pl_with_a_positive_cagr_has_no_peg(self):
+        self.assertIsNone(self.peg(-8.0, 25.0))
+
+    def test_a_positive_pl_with_a_positive_cagr_is_pl_over_cagr(self):
+        self.assertAlmostEqual(self.peg(10.0, 25.0), 0.4)
+
+    def test_a_zero_or_negative_cagr_has_no_peg(self):
+        self.assertIsNone(self.peg(10.0, 0.0))
+        self.assertIsNone(self.peg(10.0, -5.0))
+
+
 NOT_APPLICABLE_TO_FINANCIALS = (
     "EV/EBIT", "MARGEM EBIT", "ROIC", "DIVIDA LIQUIDA / EBIT", "DIV. LIQ. / PATRI.", "LIQ. CORRENTE", "PSR",
 )
