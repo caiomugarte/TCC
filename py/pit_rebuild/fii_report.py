@@ -168,8 +168,8 @@ def _categories(out: list[str], obj: dict, isos: list[str]) -> None:
             out.append("| --- | --- | --- | --- |")
             for row in stats["crosstab"]:
                 out.append(f"| {row['cvm']} | {row['status_invest']} | {row['tickers']} | {'sim' if row['same_after_mapping'] else 'não'} |")
-            missing = ", ".join(f"`{item['ticker']}` ({item['reason']})" for item in stats["missing"])
-            out.append(f"\nSem valor da CVM: {missing or 'nenhum'}.\n\n</details>\n")
+            missing = ", ".join(f"`{item['ticker']}` ({item['reason']}: {item['class']})" for item in stats["missing"])
+            out.append(f"\nSem valor da CVM (motivo: classe): {missing or 'nenhum'}.\n\n</details>\n")
 
 
 def _coverage(out: list[str], obj: dict) -> None:
@@ -199,13 +199,14 @@ def _worst(out: list[str], obj: dict, isos: list[str]) -> None:
     out.append("## Os 10 piores de cada indicador\n")
     out.append("Classificação pela evidência das fontes (ver Limitações). `usado` é o informe, o pregão ou a fonte do valor "
                "reconstruído; `evidência` é o que sustenta a classificação.\n")
+    out.append("Contagem por classe dos 10 piores e de todos os FIIs sem valor reconstruído (estes pelo motivo).\n")
     out.append("| data | indicador | erro nosso | erro do Status Invest | diferença de método | sem classificação |")
     out.append("| --- | --- | --- | --- | --- | --- |")
     for iso in isos:
         for name in FIELDS:
             block = "fields" if name in NUMERIC_FIELDS else "categories"
             counts = {}
-            for case in obj["dates"][iso][block][name]["worst"]:
+            for case in obj["dates"][iso][block][name]["worst"] + obj["dates"][iso][block][name]["missing"]:
                 counts[case["class"]] = counts.get(case["class"], 0) + 1
             out.append(f"| {iso} | `{name}` | {counts.get('erro nosso', 0)} | {counts.get('erro do Status Invest', 0)} | "
                        f"{counts.get('diferença de método', 0)} | {counts.get('sem classificação', 0)} |")
@@ -220,14 +221,14 @@ def _worst(out: list[str], obj: dict, isos: list[str]) -> None:
             for case in stats["worst"]:
                 out.append(f"| `{case['ticker']}` | {_num(case['reference'])} | {_num(case['rebuilt'])} | {_num(case['diff'])} | "
                            f"{case['class']} | {case['used']} | {case['evidence']} |")
-            missing = ", ".join(f"`{item['ticker']}` ({item['reason']})" for item in stats["missing"])
-            out.append(f"\nSem valor reconstruído: {missing or 'nenhum'}.\n\n</details>\n")
+            missing = ", ".join(f"`{item['ticker']}` ({item['reason']}: {item['class']})" for item in stats["missing"])
+            out.append(f"\nSem valor reconstruído (motivo: classe): {missing or 'nenhum'}.\n\n</details>\n")
     for name in CATEGORY_FIELDS:
         for iso in isos:
             stats = obj["dates"][iso]["categories"][name]
             if not stats["worst"]:
                 continue
-            out.append(f"<details>\n<summary>{name}, {iso}: os 10 piores (sem valor da CVM primeiro, depois fora da categoria, por ticker)</summary>\n")
+            out.append(f"<details>\n<summary>{name}, {iso}: os 10 primeiros fora da categoria (por ticker)</summary>\n")
             out.append("| ticker | Status Invest | CVM | classe | evidência |")
             out.append("| --- | --- | --- | --- | --- |")
             for case in stats["worst"]:

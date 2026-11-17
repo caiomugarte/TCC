@@ -149,11 +149,10 @@ def _measure_date(src: _Sources, si: fii_status_invest.SIFiiCsv, d: date) -> dic
             name, [(t, si.rows[t][name], rebuilt[t].values[name], rebuilt[t].reasons.get(name)) for t in eligible]
         )
         for case in stats.worst:
-            if case["rebuilt"] is None:
-                case.update(fii_audit.classify_missing(case["reason"]))
-            else:
-                case.update(fii_audit.classify(name, case["reference"], contexts[case["ticker"]]))
+            case.update(fii_audit.classify(name, case["reference"], contexts[case["ticker"]]))
             case["used"] = _used(rebuilt[case["ticker"]], name)
+        for case in stats.missing:
+            case.update(fii_audit.classify_missing(case["reason"]))
         fields[name] = {**_plain(stats), "verdict": verdict(stats.pct_within, stats.denominator)}
     categories = {}
     for name in fii_status_invest.CATEGORY_FIELDS:
@@ -172,7 +171,7 @@ def _measure_date(src: _Sources, si: fii_status_invest.SIFiiCsv, d: date) -> dic
                 for (cvm_value, ref), count in sorted(stats.crosstab.items(), key=lambda item: (-item[1], item[0]))
             ],
             "mismatches": stats.mismatches,
-            "missing": stats.missing,
+            "missing": [{**item, **fii_audit.classify_missing(item["reason"])} for item in sorted(stats.missing, key=lambda item: item["ticker"])],
             "worst": _category_worst(stats, rebuilt),
         }
     return {
@@ -187,12 +186,8 @@ def _measure_date(src: _Sources, si: fii_status_invest.SIFiiCsv, d: date) -> dic
 
 
 def _category_worst(stats: fii_compare.CategoryStats, rebuilt: dict) -> list[dict]:
-    """The 10 worst category cases: the missing CVM values first, then the mismatches, by ticker."""
+    """The 10 worst category cases: the mismatches after the mapping, by ticker (missing values are listed apart)."""
     cases = [
-        {"ticker": item["ticker"], "reference": None, "rebuilt": None, **fii_audit.classify_missing(item["reason"])}
-        for item in sorted(stats.missing, key=lambda item: item["ticker"])
-    ]
-    cases += [
         {**case, "class": fii_audit.METHOD, "evidence": rebuilt[case["ticker"]].informe.label(),
          "note": "a classificação da CVM e a do Status Invest diferem depois do mapeamento"}
         for case in stats.mismatches
@@ -286,11 +281,17 @@ def _report_object(cache: Cache, req: _Request, src: _Sources, results: dict[dat
         pcts = [results[day][block][name]["pct_within"] for day in req.dates]
         if any(pct is None or pct < THRESHOLD_PCT for pct in pcts):
             failing.append(name)
-    cases = [case for day in req.dates for stats in results[day]["fields"].values() for case in stats["worst"]]
-    cases += [case for day in req.dates for stats in results[day]["categories"].values() for case in stats["worst"]]
+    cases = [
+        case
+        for day in req.dates
+        for block in ("fields", "categories")
+        for stats in results[day][block].values()
+        for case in stats["worst"] + stats["missing"]
+    ]
     open_cases = sum(1 for case in cases if case["class"] == fii_audit.OPEN)
     part1 = {"threshold_pct": THRESHOLD_PCT, "met": not failing, "failing": failing}
-    part2 = {"cases": len(cases), "open": open_cases, "met": open_cases == 0,
+    part2 = {"scope": "os 10 piores de cada indicador e data e todos os FIIs sem valor reconstruído",
+             "cases": len(cases), "open": open_cases, "met": open_cases == 0,
              "by_class": dict(Counter(case["class"] for case in cases))}
     return {
         "schema": SCHEMA,

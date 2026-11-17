@@ -65,11 +65,10 @@ class ToleranceTest(unittest.TestCase):
         ])
         self.assertEqual((stats.denominator, stats.within, stats.reference_blank), (3, 1, 1))
         self.assertAlmostEqual(stats.pct_within, 100 / 3)
-        self.assertEqual(stats.missing, [{"ticker": "C", "reason": "no_cvm_match"}])
-        # the worst cases are those outside the tolerance: a missing value first, then the largest difference
-        self.assertEqual([item["ticker"] for item in stats.worst], ["C", "B"])
-        self.assertEqual(stats.worst[0], {"ticker": "C", "reference": 1.0, "rebuilt": None, "diff": None, "reason": "no_cvm_match"})
-        self.assertAlmostEqual(stats.worst[1]["diff"], 20.0)
+        self.assertEqual(stats.missing, [{"ticker": "C", "reason": "no_cvm_match", "reference": 1.0}])
+        # the worst cases are the largest differences outside the tolerance; a missing value is listed apart
+        self.assertEqual([item["ticker"] for item in stats.worst], ["B"])
+        self.assertAlmostEqual(stats.worst[0]["diff"], 20.0)
         self.assertEqual(compare.verdict(stats.pct_within, stats.denominator), compare.NAO_RECONSTRUIVEL)
 
 

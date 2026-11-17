@@ -98,8 +98,8 @@ def difference(field: str, ref: float | None, calc: float | None) -> float | Non
 def summarize(field: str, pairs: Iterable[tuple[str, float | None, float | None, str | None]]) -> FieldStats:
     """pairs hold (ticker, Status Invest value, rebuilt value, reason of a missing rebuilt value).
 
-    worst holds the WORST_CASES cases outside the tolerance: the missing rebuilt values first (by ticker),
-    then the largest differences. A case within the tolerance is never a worst case.
+    worst holds the WORST_CASES largest differences outside the tolerance (a case within it is never a
+    worst case); missing holds every ticker of the denominator without a rebuilt value, by ticker.
     """
     stats = FieldStats(field=field, diff_unit="pp" if is_percent(field) else "relative_pct")
     diffs: list[tuple[float, str, float, float]] = []
@@ -124,11 +124,11 @@ def summarize(field: str, pairs: Iterable[tuple[str, float | None, float | None,
         stats.median_diff = statistics.median(values)
         stats.p90_diff = p90(values)
     outside = sorted((item for item in diffs if not within(field, item[2], item[3])), key=lambda item: (-item[0], item[1]))
-    missing = sorted(stats.missing, key=lambda item: item["ticker"])
+    stats.worst = [{"ticker": t, "reference": ref, "rebuilt": calc, "diff": delta} for delta, t, ref, calc in outside[:WORST_CASES]]
     refs = {ticker: ref for ticker, ref, _, _ in pairs_seen}
-    worst = [{"ticker": item["ticker"], "reference": refs[item["ticker"]], "rebuilt": None, "diff": None, "reason": item["reason"]} for item in missing]
-    worst += [{"ticker": t, "reference": ref, "rebuilt": calc, "diff": delta} for delta, t, ref, calc in outside]
-    stats.worst = worst[:WORST_CASES]
+    for item in stats.missing:
+        item["reference"] = refs[item["ticker"]]
+    stats.missing.sort(key=lambda item: item["ticker"])
     return stats
 
 
