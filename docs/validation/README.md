@@ -803,6 +803,12 @@ ferramenta é a mesma `py/pit_rebuild/`, em módulos próprios (`fii_*.py`), e o
   reapresentado depois de `d` some, e o fundo usa o anterior. Um informe de mês encerrado há
   mais de 270 dias não dá valor (`stale_informe`). Só entram pregões até `d`, e proventos com
   data-ex em `d − 365 dias < data-ex ≤ d`.
+- **Desdobramento de cotas.** O `CAGR VALOR COTA 3 ANOS` compara o valor por cota de hoje com o
+  de 36 meses antes, por cota antiga. O informe mensal não traz o evento, então ele é deduzido
+  de dois informes consecutivos conhecidos em `d`: o número de cotas multiplicado por um inteiro
+  k ≥ 2 (até 2%) e o valor patrimonial por cota dividido por cerca de k (até 15%); o grupamento é
+  o inverso (`fii_informes.split_factor`). Uma emissão muda o número de cotas sem mudar o valor
+  por cota e não é tomada por desdobramento. Um evento fora dessas faixas não é ajustado.
 - **Ticker → fundo.** O ISIN do último pregão do ticker até `d` é procurado no `Codigo_ISIN` dos
   informes entregues até `d` e, se nenhum o traz, em qualquer informe
   (`isin_from_later_informe`): o informe posterior só identifica o fundo, e os valores continuam

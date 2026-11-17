@@ -28,6 +28,12 @@ COVERAGE_COLUMNS = (
     "Tipo_Gestao",
     "Codigo_ISIN",
 )
+# A quota split (desdobramento) or reverse split (grupamento) between two consecutive reports known at d: the quota
+# count moves by an integer factor k >= 2 (within SPLIT_SHARES_TOLERANCE) and the net asset value per quota moves the
+# other way by about k (within SPLIT_NAV_TOLERANCE, as the equity also changes over the month). An offering moves the
+# count but not the value per quota, so it is never taken for a split.
+SPLIT_SHARES_TOLERANCE = 0.02
+SPLIT_NAV_TOLERANCE = 0.15
 
 
 @dataclass(frozen=True)
@@ -144,6 +150,32 @@ def months_back(informes: Informes, report: Informe, months: int, d: date) -> In
     total = report.ref.year * 12 + report.ref.month - 1 - months
     target = date(total // 12, total % 12 + 1, 1)
     return next((item for item in known(informes, report.cnpj, d) if item.ref == target), None)
+
+
+def split_factor(informes: Informes, cnpj: str, start: date, end: date, d: date) -> float:
+    """How many quotas of the report of month `end` one quota of month `start` became, from the reports known at d.
+
+    The product, over consecutive known reports from start to end, of each split k (reverse split 1/k); 1.0 when the
+    quota count only moved by issues or buybacks.
+    """
+    reports = sorted((item for item in known(informes, cnpj, d) if start <= item.ref <= end), key=lambda item: item.ref)
+    factor = 1.0
+    for before, after in zip(reports, reports[1:]):
+        factor *= _split(before, after)
+    return factor
+
+
+def _split(before: Informe, after: Informe) -> float:
+    if not (before.shares and after.shares and before.nav_per_share and after.nav_per_share):
+        return 1.0
+    shares = after.shares / before.shares
+    nav = before.nav_per_share / after.nav_per_share
+    up = shares >= 1
+    ratio, nav_ratio = (shares, nav) if up else (1 / shares, 1 / nav)
+    k = round(ratio)
+    if k < 2 or abs(ratio / k - 1) > SPLIT_SHARES_TOLERANCE or abs(nav_ratio / k - 1) > SPLIT_NAV_TOLERANCE:
+        return 1.0
+    return float(k) if up else 1 / k
 
 
 def funds_of_isin(informes: Informes, isin: str, d: date | None) -> list[str]:

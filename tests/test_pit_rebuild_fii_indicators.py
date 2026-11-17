@@ -130,5 +130,61 @@ class RebuildTest(unittest.TestCase):
         self.assertIsNone(result.values["DY"])
 
 
+class QuotaSplitTest(unittest.TestCase):
+    """CAGR VALOR COTA 3 ANOS per quota of 36 months ago when the fund split its quotas in between (KNSC11 at 2026-08-10
+    gave -54.35 %/yr against 12.09 in Status Invest: (1/10) ** (1/3) - 1 = -53.6 % is a 1:10 split left unadjusted)."""
+
+    def cagr(self, *between, d=D):
+        reports = (
+            informe(A, date(2023, 6, 1), date(2023, 7, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            *between,
+            informe(A, date(2026, 6, 1), date(2026, 7, 15), nav=13.31, equity=1_331_000_000, shares=100_000_000),
+        )
+        return fii_indicators.rebuild("ALFA11", d, quotes(), informes(*reports), B3, YAHOO).values["CAGR VALOR COTA 3 ANOS"]
+
+    def test_a_1_to_10_split_between_two_reports_is_undone(self):
+        # 2024-01 -> 2024-02: 10 M quotas at 100.00 become 100 M at 10.20 (equity 1 020 M), so k = 10 and
+        # 13.31 x 10 / 100 = 1.331 = 1.1 ** 3: 10 % a year.
+        cagr = self.cagr(
+            informe(A, date(2024, 1, 1), date(2024, 2, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2024, 2, 1), date(2024, 3, 14), nav=10.2, equity=1_020_000_000, shares=100_000_000),
+        )
+        self.assertAlmostEqual(cagr, 10.0)
+
+    def test_without_the_report_before_the_split_the_raw_ratio_stays(self):
+        self.assertAlmostEqual(self.cagr(), ((0.1331) ** (1 / 3) - 1) * 100)
+
+    def test_a_split_delivered_after_d_is_not_known_at_d(self):
+        # The 2024-02 report (the first after the split) was only delivered after d, so the known pair around the split
+        # is 2024-01 -> 2026-06, whose value per quota fell to 1/7.5, not about 1/10: no split is taken.
+        cagr = self.cagr(
+            informe(A, date(2024, 1, 1), date(2024, 2, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2024, 2, 1), date(2026, 9, 1), nav=10.2, equity=1_020_000_000, shares=100_000_000),
+        )
+        self.assertAlmostEqual(cagr, ((0.1331) ** (1 / 3) - 1) * 100)
+
+    def test_an_offering_that_doubles_the_quotas_is_not_a_split(self):
+        # 10 M -> 20 M quotas with the value per quota unchanged: an issue, not a 1:2 split.
+        reports = (
+            informe(A, date(2023, 6, 1), date(2023, 7, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2024, 1, 1), date(2024, 2, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2024, 2, 1), date(2024, 3, 14), nav=101.0, equity=2_020_000_000, shares=20_000_000),
+            informe(A, date(2026, 6, 1), date(2026, 7, 15), nav=133.1, equity=2_662_000_000, shares=20_000_000),
+        )
+        result = fii_indicators.rebuild("ALFA11", D, quotes(), informes(*reports), B3, YAHOO)
+        self.assertAlmostEqual(result.values["CAGR VALOR COTA 3 ANOS"], 10.0)
+
+    def test_a_reverse_split_is_undone_too(self):
+        # 100 M quotas at 10.00 grouped 10:1 into 10 M at 100.00; today 10 M at 133.10 against 10.00 per old quota.
+        reports = (
+            informe(A, date(2023, 6, 1), date(2023, 7, 14), nav=10.0, equity=1_000_000_000, shares=100_000_000),
+            informe(A, date(2024, 1, 1), date(2024, 2, 14), nav=10.0, equity=1_000_000_000, shares=100_000_000),
+            informe(A, date(2024, 2, 1), date(2024, 3, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2026, 6, 1), date(2026, 7, 15), nav=133.1, equity=1_331_000_000, shares=10_000_000),
+        )
+        result = fii_indicators.rebuild("ALFA11", D, quotes(), informes(*reports), B3, YAHOO)
+        self.assertAlmostEqual(result.values["CAGR VALOR COTA 3 ANOS"], 10.0)
+
+
 if __name__ == "__main__":
     unittest.main()

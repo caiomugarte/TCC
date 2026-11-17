@@ -30,7 +30,8 @@ FORMULAS = [
     ("N COTAS", "`Cotas_Emitidas` do informe em `d`"),
     ("PERCENTUAL EM CAIXA", "`Total_Necessidades_Liquidez` / `Patrimonio_Liquido` × 100"),
     ("P/VP", "`PRECO` / `Valor_Patrimonial_Cotas` do informe em `d`"),
-    ("CAGR VALOR COTA 3 ANOS", "`Valor_Patrimonial_Cotas` sobre o do informe 36 meses antes (conhecido em `d`), ^(1/3) − 1"),
+    ("CAGR VALOR COTA 3 ANOS", "`Valor_Patrimonial_Cotas` vezes o fator de desdobramento sobre o do informe 36 meses antes "
+     "(conhecido em `d`), ^(1/3) − 1"),
     ("DY", "proventos com data-ex em (d − 365 dias, d] / `PRECO` × 100"),
     ("ULTIMO DIVIDENDO", "o último provento com data-ex até `d`"),
     ("CAGR DIVIDENDOS 3 ANOS", "proventos dos 12 meses até `d` sobre os dos 12 meses até `d` − 3 anos, ^(1/3) − 1"),
@@ -53,6 +54,10 @@ LIMITATIONS = [
     "do da página da B3, obtida na coleta e não em `d`.",
     "A tabela de correspondência de setor e gestão foi escrita antes da medição. A CVM classifica muitos fundos como "
     "`Multicategoria` ou `Outros`, categorias que o Status Invest divide em várias.",
+    "O informe mensal não traz desdobramento nem grupamento de cotas. O `CAGR VALOR COTA 3 ANOS` deduz o evento de dois "
+    "informes consecutivos: o número de cotas multiplicado por um inteiro k ≥ 2 (até 2%) e o valor patrimonial por cota "
+    "dividido por cerca de k (até 15%). Um evento fora dessas faixas, ou que caia num mês sem informe, não é ajustado, e o "
+    "CAGR fica perto de (1/k)^(1/3) − 1 (−53,6% ao ano num desdobramento 1:10).",
     "A classificação dos 10 piores é automática: ela procura uma fonte que dê o valor do Status Invest. O caso sem "
     "fonte fica `sem classificação` e precisa de leitura à mão.",
 ]

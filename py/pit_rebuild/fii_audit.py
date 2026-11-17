@@ -26,7 +26,7 @@ from datetime import date, timedelta
 from . import cotahist, fii_dividends, fii_informes
 from .dividends import Dividend
 from .compare import ROUNDING_DECIMALS
-from .fii_indicators import Rebuilt, VP_CAGR_MONTHS
+from .fii_indicators import Rebuilt, VP_CAGR_MONTHS, nav_cagr
 from .fii_informes import Informe, Informes
 
 OURS = "erro nosso"
@@ -121,10 +121,7 @@ def _value(field: str, report: Informe, price: float | None, informes: Informes,
         return report.liquidity / report.equity * 100 if report.liquidity is not None and report.equity else None
     if field == "P/VP":
         return price / report.nav_per_share if price and report.nav_per_share else None
-    old = fii_informes.months_back(informes, report, VP_CAGR_MONTHS, horizon)
-    if old is None or not old.nav_per_share or not report.nav_per_share:
-        return None
-    return ((report.nav_per_share / old.nav_per_share) ** (1 / 3) - 1) * 100
+    return nav_cagr(informes, report, fii_informes.months_back(informes, report, VP_CAGR_MONTHS, horizon), horizon)
 
 
 def _session_case(field: str, reference: float, ctx: Context) -> dict:

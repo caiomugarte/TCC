@@ -72,6 +72,20 @@ class ClassifyTest(unittest.TestCase):
         self.assertEqual(case["class"], METHOD)
         self.assertEqual(case["evidence"], "informe 2026-05 v1, entregue em 2026-09-01")
 
+    def test_the_cagr_of_another_report_is_split_adjusted_as_the_rebuilt_value(self):
+        # 2023-07 at 100.00 per quota, a 1:10 split in 2024-02, 2026-07 (delivered after d) at 14.00 per new quota:
+        # 14.00 x 10 / 100 = 1.4, so the later report gives (1.4 ** (1/3) - 1) = 11.87 % a year, a method difference.
+        reports = REPORTS[:1] + (
+            informe(A, date(2023, 7, 1), date(2023, 8, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2024, 1, 1), date(2024, 2, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2024, 2, 1), date(2024, 3, 14), nav=10.2, equity=1_020_000_000, shares=100_000_000),
+            informe(A, date(2026, 6, 1), date(2026, 7, 15), nav=13.31, equity=1_331_000_000, shares=100_000_000),
+            informe(A, date(2026, 7, 1), date(2026, 8, 14), nav=14.0, equity=1_400_000_000, shares=100_000_000),
+        )
+        case = fii_audit.classify("CAGR VALOR COTA 3 ANOS", round((1.4 ** (1 / 3) - 1) * 100, 2), self.context(reports))
+        self.assertEqual(case["class"], METHOD)
+        self.assertEqual(case["evidence"], "informe 2026-07 v1, entregue em 2026-08-14")
+
     def test_a_missing_value_is_classified_by_its_reason(self):
         self.assertEqual(fii_audit.classify_missing("no_cvm_match")["class"], OURS)
         self.assertEqual(fii_audit.classify_missing("stale_informe")["class"], METHOD)

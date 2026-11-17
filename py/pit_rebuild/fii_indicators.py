@@ -7,7 +7,9 @@ Formulas, written before the measurement:
 - N COTISTAS, PATRIMONIO, N COTAS: Total_Numero_Cotistas, Patrimonio_Liquido, Cotas_Emitidas of the report at d.
 - PERCENTUAL EM CAIXA: Total_Necessidades_Liquidez / Patrimonio_Liquido x 100 of the report at d.
 - P/VP: PRECO / Valor_Patrimonial_Cotas of the report at d.
-- CAGR VALOR COTA 3 ANOS: (Valor_Patrimonial_Cotas / that of the report 36 months older, known at d) ** (1/3) - 1, in %.
+- CAGR VALOR COTA 3 ANOS: (Valor_Patrimonial_Cotas x split factor / that of the report 36 months older, known at d)
+  ** (1/3) - 1, in %. The split factor (fii_informes.split_factor) turns the value per quota of today into the value
+  per quota of 36 months ago when the fund split or grouped its quotas in between.
 - DY: distributions with d - 365 days < ex-date <= d over PRECO, in %.
 - ULTIMO DIVIDENDO: the newest distribution with ex-date on or before d.
 - CAGR DIVIDENDOS 3 ANOS: fii_dividends.cagr_3y.
@@ -142,12 +144,18 @@ def _informe_values(result: Rebuilt, informes: Informes, report: Informe | None,
         _put(result, "P/VP", price / report.nav_per_share if report.nav_per_share else None, "informe_blank")
     old = fii_informes.months_back(informes, report, VP_CAGR_MONTHS, d)
     result.informe_3y = old
-    if old is None or not old.nav_per_share or not report.nav_per_share or report.nav_per_share / old.nav_per_share <= 0:
-        _put(result, "CAGR VALOR COTA 3 ANOS", None, "no_informe_36_months_before")
-    else:
-        _put(result, "CAGR VALOR COTA 3 ANOS", ((report.nav_per_share / old.nav_per_share) ** (1 / 3) - 1) * 100, None)
+    cagr = nav_cagr(informes, report, old, d)
+    _put(result, "CAGR VALOR COTA 3 ANOS", cagr, None if cagr is not None else "no_informe_36_months_before")
     _put(result, "SETOR", report.segment or None, "informe_blank")
     _put(result, "GESTAO", report.management or None, "informe_blank")
+
+
+def nav_cagr(informes: Informes, report: Informe, old: Informe | None, d: date) -> float | None:
+    """The 3-year CAGR of the value per quota from old to report, in %, adjusted for the quota splits known at d."""
+    if old is None or not old.nav_per_share or not report.nav_per_share:
+        return None
+    growth = report.nav_per_share * fii_informes.split_factor(informes, report.cnpj, old.ref, report.ref, d) / old.nav_per_share
+    return (growth ** (1 / 3) - 1) * 100 if growth > 0 else None
 
 
 def _dividend_values(
