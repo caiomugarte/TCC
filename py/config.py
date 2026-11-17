@@ -185,7 +185,7 @@ FINANCIAL_METRIC_GROUPS: Dict[str, List[str]] = {
 }
 
 # Grupo de comparação: no setor "Financeiro" a winsorização e o z-score usam o
-# subsetor, desde que ele tenha pelo menos este número de papéis elegíveis.
+# subsetor, desde que ele tenha papéis elegíveis de pelo menos este número de empresas.
 MIN_SUBSECTOR_PEERS = 3
 
 # Pesos dos grupos por perfil de investidor

@@ -221,5 +221,17 @@ class PeerGroupTests(unittest.TestCase):
         self.assertEqual({t: with_tiny[t] for t in ("SEG13", "SEG23")}, {t: without[t] for t in ("SEG13", "SEG23")})
 
 
+    def test_the_3_peers_are_3_companies_not_3_share_classes_of_one(self):
+        # SEGU3, SEGU4 and SEGU11 are share classes of one insurer: same company-level ratios, so a peer group of
+        # only them has zero deviation. They count as one company and are compared in the whole financial sector.
+        insurer = _row("SEGU3", "Financeiro", 401, INSURERS)
+        classes = [dict(insurer, TICKER=ticker) for ticker in ("SEGU3", "SEGU4", "SEGU11")]
+
+        fallback = scores(classes + bank_rows(4))
+        same_peers = scores([dict(row, SUBSETOR=BANKS) for row in classes] + bank_rows(4))
+
+        self.assertEqual({t: fallback.get(t) for t in ("SEGU3", "SEGU4", "SEGU11")},
+                         {t: same_peers[t] for t in ("SEGU3", "SEGU4", "SEGU11")})
+
 if __name__ == "__main__":
     unittest.main()

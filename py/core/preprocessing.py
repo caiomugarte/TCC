@@ -173,8 +173,11 @@ def _standardise_by_peer_group(df: pd.DataFrame, metric_cols: List[str]) -> pd.D
     """Normaliza cada papel contra o seu grupo de comparação.
 
     O grupo de comparação é o setor; no setor "Financeiro", o subsetor da B3,
-    desde que ele tenha pelo menos ``MIN_SUBSECTOR_PEERS`` papéis elegíveis.
-    Um subsetor menor fica com o resultado do setor "Financeiro" inteiro.
+    desde que ele tenha papéis elegíveis de pelo menos ``MIN_SUBSECTOR_PEERS``
+    empresas. A empresa é a raiz do ticker (as 4 letras: ``SEGU3``, ``SEGU4`` e
+    ``SEGU11`` são uma empresa), porque as classes de uma empresa têm os mesmos
+    indicadores e, sozinhas, dariam desvio zero e z-score vazio. Um subsetor
+    menor fica com o resultado do setor "Financeiro" inteiro.
     Fora do setor "Financeiro" o resultado é o de ``_standardise`` por setor.
     """
     result = _standardise(df, metric_cols)
@@ -183,11 +186,18 @@ def _standardise_by_peer_group(df: pd.DataFrame, metric_cols: List[str]) -> pd.D
     columns = list(dict.fromkeys(metric_cols + [c for c in INVERT_METRICS if c in df.columns]))
     in_sector = df["SETOR"] == FINANCIAL_SECTOR
     for members in df[in_sector].groupby(SUBSECTOR_COL).groups.values():
-        if len(members) < MIN_SUBSECTOR_PEERS:
+        if _companies(df.loc[members]) < MIN_SUBSECTOR_PEERS:
             continue
         peers = _standardise(df.loc[members], metric_cols)
         result.loc[members, columns] = peers[columns]
     return result
+
+
+def _companies(df: pd.DataFrame) -> int:
+    """Quantas empresas distintas há entre os papéis: a raiz de 4 letras do ticker."""
+    if "TICKER" not in df.columns:
+        return len(df)
+    return df["TICKER"].astype(str).str[:4].nunique()
 
 
 def winsorize_sector(
