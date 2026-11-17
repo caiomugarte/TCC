@@ -6,7 +6,8 @@ single-operator tool: it only touches the local filesystem, never performs
 remote access, never overwrites a published artifact, never deletes files on
 ``retire``, and never substitutes a fallback series.
 
-Exit codes: 0 success; 2 usage/argument error; 3 CLI target missing on disk or
+Exit codes: 0 success; 2 usage/argument error (including ``build`` without
+``--stock-provenance``); 3 CLI target missing on disk or
 refused overwrite (plus ``build`` source inputs missing); 4 the artifact under
 audit does not hold up (contract divergence); 5 invalid lifecycle transition.
 """
@@ -330,7 +331,9 @@ def build_manifest(
 
     ``stock_provenance`` is the ``*.provenance.json`` the CVM/B3 collector
     writes next to its stock CSV (issue #78): the stock source then carries
-    its provider and the hashes of the raw files used. ``fii_provenance`` is
+    its provider and the hashes of the raw files used. The ``build`` command
+    always passes it (spec #75: no stock CSV without its CVM/B3 provenance);
+    ``None`` is left for research fixtures that replay a legacy CSV. ``fii_provenance`` is
     the ``fiis.provenance.json`` of ``scripts/create_selector_snapshot.py``
     (issue #80): the FII source then carries its provider, download time and
     B3 recent-trade filter.
@@ -600,8 +603,8 @@ def _cmd_build(args: argparse.Namespace) -> int:
         )
         return EXIT_TARGET_MISSING
 
-    stock_provenance = Path(args.stock_provenance) if args.stock_provenance else None
-    if stock_provenance is not None and not stock_provenance.is_file():
+    stock_provenance = Path(args.stock_provenance)
+    if not stock_provenance.is_file():
         print(f"--stock-provenance not found on disk: {stock_provenance}", file=sys.stderr)
         return EXIT_TARGET_MISSING
     fii_provenance = Path(args.fii_provenance) if args.fii_provenance else None
@@ -653,7 +656,9 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--fii-universe", required=True, help="FII selector CSV")
     build.add_argument(
         "--stock-provenance",
-        help="provenance JSON of a CVM/B3 stock CSV (py/pit_rebuild collect): provider and raw hashes",
+        required=True,
+        help="provenance JSON of the CVM/B3 stock CSV (py/pit_rebuild collect): provider and raw hashes; "
+        "required, a stock CSV without it is exit 2",
     )
     build.add_argument(
         "--fii-provenance",

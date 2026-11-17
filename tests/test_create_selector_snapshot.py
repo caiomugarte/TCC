@@ -272,6 +272,7 @@ class RegistryTests(CreationCase):
                 "build", "--registry", str(registry), "--manifest-id", "created", "--created-at", CREATED_AT,
                 "--snapshot-dir", str(snapshot_dir), "--stock-universe", str(self.out / "stocks.csv"),
                 "--fii-universe", str(self.out / "fiis.csv"),
+                "--stock-provenance", str(self.out / "stocks.provenance.json"),
                 "--fii-provenance", str(self.out / "fiis.provenance.json"),
             ])
         self.assertEqual(code, 4)

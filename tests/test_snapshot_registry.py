@@ -1,4 +1,5 @@
 import contextlib
+import hashlib
 from datetime import date, timedelta
 import io
 import json
@@ -357,6 +358,12 @@ def write_levels_file(path: Path, columns: list, dates: list) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def stock_provenance_path(stock_universe: Path) -> Path:
+    """The CVM/B3 provenance of a fixture stock CSV, kept out of the registry root so the manifest glob skips it."""
+
+    return stock_universe.parent / "provenance" / "stocks.provenance.json"
+
+
 def build_fetch_inputs(root: Path, **date_overrides) -> tuple:
     """Lay out a fetch-style snapshot (``data/<name>/``) inside a registry."""
 
@@ -383,6 +390,14 @@ def build_fetch_inputs(root: Path, **date_overrides) -> tuple:
     write_levels_file(snapshot_dir / "ptax.csv", ["value"], dates["ptax"])
     stock_universe = root / "stocks.csv"
     stock_universe.write_text("TICKER\nAAA3\n", encoding="utf-8")
+    # build requires the CVM/B3 provenance of the stock CSV (spec #75).
+    stock_provenance_path(stock_universe).parent.mkdir(exist_ok=True)
+    stock_provenance_path(stock_universe).write_text(json.dumps({
+        "provider": "cvm-b3",
+        "as_of": "2020-01-04",
+        "csv_sha256": hashlib.sha256(stock_universe.read_bytes()).hexdigest(),
+        "raw_files": {"dfp_itr": {"dfp_cia_aberta_2019.zip": "0" * 64}},
+    }), encoding="utf-8")
     fii_universe = root / "fiis.csv"
     fii_universe.write_text("TICKER\nAAA11\n", encoding="utf-8")
     return snapshot_dir, stock_universe, fii_universe
@@ -411,6 +426,8 @@ def run_build(root: Path, manifest_id: str = "snap-2020-01", **date_overrides) -
         str(snapshot_dir),
         "--stock-universe",
         str(stock_universe),
+        "--stock-provenance",
+        str(stock_provenance_path(stock_universe)),
         "--fii-universe",
         str(fii_universe),
     )
@@ -505,6 +522,8 @@ class BuildCommandTests(unittest.TestCase):
                 str(snapshot_dir),
                 "--stock-universe",
                 str(stock_universe),
+                "--stock-provenance",
+                str(stock_provenance_path(stock_universe)),
                 "--fii-universe",
                 str(fii_universe),
             ]
@@ -548,6 +567,8 @@ class BuildCommandTests(unittest.TestCase):
                 str(outside / "stocks.csv"),
                 "--fii-universe",
                 str(outside / "stocks.csv"),
+                "--stock-provenance",
+                str(outside / "stocks.provenance.json"),
             )
 
             self.assertEqual(code, 2, err)
@@ -574,6 +595,8 @@ class BuildCommandTests(unittest.TestCase):
                 str(root),
                 "--stock-universe",
                 str(stock_universe),
+                "--stock-provenance",
+                str(stock_provenance_path(stock_universe)),
                 "--fii-universe",
                 str(fii_universe),
             )
@@ -623,6 +646,8 @@ class BuildCommandTests(unittest.TestCase):
                 str(snapshot_dir),
                 "--stock-universe",
                 str(stock_universe),
+                "--stock-provenance",
+                str(stock_provenance_path(stock_universe)),
                 "--fii-universe",
                 str(fii_universe),
             )
@@ -674,11 +699,13 @@ class BuildCommandTests(unittest.TestCase):
                 },
             )
             self.assertEqual(allocation["path"], "data/snapshot-2020")
-            for role in ("stock", "fii"):
-                self.assertEqual(
-                    raw["sources"][role]["provider"], "snapshot-build:selector"
-                )
-                self.assertEqual(raw["sources"][role]["metadata"], {})
+            self.assertEqual(raw["sources"]["stock"]["provider"], "cvm-b3")
+            self.assertEqual(
+                raw["sources"]["stock"]["metadata"],
+                {"as_of": "2020-01-04", "raw_files": {"dfp_itr": {"dfp_cia_aberta_2019.zip": "0" * 64}}},
+            )
+            self.assertEqual(raw["sources"]["fii"]["provider"], "snapshot-build:selector")
+            self.assertEqual(raw["sources"]["fii"]["metadata"], {})
             self.assertNotIn(str(root), text)
             self.assertNotIn("portfolio_path", text)
             self.assertNotIn("portfolio_artifacts", text)
@@ -713,7 +740,7 @@ class BuildProvenanceExitCodeTests(unittest.TestCase):
 
     def build(self, root: Path, **provenance: str) -> tuple:
         snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
-        extra = []
+        extra = [] if "stock" in provenance else ["--stock-provenance", str(stock_provenance_path(root / "stocks.csv"))]
         for role, text in provenance.items():
             path = root / f"{role}.provenance.json"
             if text is not None:
@@ -724,6 +751,19 @@ class BuildProvenanceExitCodeTests(unittest.TestCase):
             "--snapshot-dir", str(snapshot_dir), "--stock-universe", str(stock_universe),
             "--fii-universe", str(fii_universe), *extra,
         )
+
+    def test_a_stock_universe_without_stock_provenance_exits_2(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
+            code, _, err = run_cli(
+                "build", "--registry", str(root), "--manifest-id", "snap-2020-01", "--created-at", CREATED_AT,
+                "--snapshot-dir", str(snapshot_dir), "--stock-universe", str(stock_universe),
+                "--fii-universe", str(fii_universe),
+            )
+            self.assertEqual(code, 2, err)
+            self.assertIn("--stock-provenance", err)
+            self.assertFalse((root / "snap-2020-01.json").exists())
 
     def test_a_missing_provenance_file_exits_3(self):
         for role in ("stock", "fii"):
@@ -1320,6 +1360,8 @@ class ClassSeriesMapTests(unittest.TestCase):
                 str(snapshot_dir),
                 "--stock-universe",
                 str(stock_universe),
+                "--stock-provenance",
+                str(stock_provenance_path(stock_universe)),
                 "--fii-universe",
                 str(fii_universe),
             )
@@ -1444,6 +1486,8 @@ def run_build_from(root: Path, snapshot_dir: Path, manifest_id: str = "snap-2020
         str(root / "stocks.csv"),
         "--fii-universe",
         str(root / "fiis.csv"),
+        "--stock-provenance",
+        str(stock_provenance_path(root / "stocks.csv")),
     )
 
 

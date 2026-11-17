@@ -60,11 +60,13 @@ the optional lifecycle envelope:
   `build`, not by `as_dict()`.
 - Provenance honesty: each source's `provider` is a fixed literal per role
   (`snapshot-build:allocation`, `snapshot-build:selector`) and `metadata` is
-  exactly `{"files": {...}}` (`allocation`) or `{}` (selectors). The fetch
+  exactly `{"files": {...}}` (`allocation`) or `{}` (a FII CSV built without
+  `--fii-provenance`). The fetch
   `metadata.json` content is never copied into a manifest (it carries absolute
   paths that would break byte-reproducibility).
-- The one exception is a stock CSV built from CVM and B3 (issue #78) and passed
-  with `--stock-provenance`: the `stock` source then has `provider: "cvm-b3"`
+- The stock source is the exception, and `build` always writes it this way
+  (spec #75): a stock CSV built from CVM and B3 (issue #78) and passed with the
+  required `--stock-provenance`. The `stock` source has `provider: "cvm-b3"`
   and `metadata` = `{"as_of": <cutoff of the CSV>, "raw_files": {<kind>:
   {<cache file>: <sha256>}}}`, copied from the collector's provenance file.
   The kinds are `dfp_itr`, `cotahist`, `proventos`, `eventos`,
@@ -126,7 +128,7 @@ recomputes and rejects any divergence. Consequences:
 ```
 python3 py/snapshot_registry.py build    --registry DIR --manifest-id ID --created-at ISO
                                          --snapshot-dir DIR --stock-universe CSV --fii-universe CSV
-                                         [--stock-provenance JSON] [--fii-provenance JSON]
+                                         --stock-provenance JSON [--fii-provenance JSON]
 python3 py/snapshot_registry.py validate --registry DIR --manifest-id ID [--check] [--json]
 python3 py/snapshot_registry.py publish  --registry DIR --manifest-id ID
 python3 py/snapshot_registry.py retire   --registry DIR --manifest-id ID [--reason TEXT]
@@ -163,8 +165,11 @@ and no longer `caio_stocks.csv`/`caio_fiis.csv`: a missing one is exit 3, each
 missing file named on stderr, with no series substitution; any `caio_*` file in
 the directory is ignored. An `ibovespa.csv`/`ifix.csv` with more than one
 series column and none named `value` is exit 4.
-`--stock-provenance` names the `<stem>.provenance.json` that
-`python3 py/pit_rebuild collect` writes next to the stock CSV. A missing file is
+`--stock-provenance` is required: it names the `<stem>.provenance.json` that
+`python3 py/pit_rebuild collect` (or `scripts/create_selector_snapshot.py`)
+writes next to the stock CSV, and a stock CSV without it is exit 2 with nothing
+written, so there is no generic `snapshot-build:selector` stock source (spec
+#75: the stock CSV comes only from CVM and B3). A missing file is
 exit 3; a provenance whose `csv_sha256` is not the hash of `--stock-universe`,
 or that lacks `provider`, `as_of`, `csv_sha256` or `raw_files`, is exit 4 with
 nothing written. `--fii-provenance` names the `fiis.provenance.json` of
@@ -249,7 +254,7 @@ that `py/fetch_allocation_snapshot.py` still writes, do not appear:
   "brazilian_stocks": {"path": "data/snapshot-2020/ibovespa.csv", "sha256": "…", "provider": "snapshot-build:allocation", "derived_from": "allocation"},
   "fiis": {"path": "data/snapshot-2020/ifix.csv", "sha256": "…", "provider": "snapshot-build:allocation", "derived_from": "allocation"},
   "ptax": {"path": "data/snapshot-2020/ptax.csv", "sha256": "…", "provider": "snapshot-build:allocation", "derived_from": "allocation"},
-  "stock": {"path": "stocks.csv", "sha256": "…", "provider": "snapshot-build:selector"}
+  "stock": {"path": "stocks.csv", "sha256": "…", "provider": "cvm-b3"}
 }
 ```
 
@@ -425,7 +430,8 @@ Then `build` with `--stock-provenance <out>/stocks.provenance.json
 ```
 python3 py/snapshot_registry.py build    --registry ./snapshots --manifest-id demo-2020 \
     --created-at 2020-01-04T12:00:00+00:00 --snapshot-dir ./snapshots/data/demo \
-    --stock-universe ./snapshots/stocks.csv --fii-universe ./snapshots/fiis.csv
+    --stock-universe ./snapshots/stocks.csv --fii-universe ./snapshots/fiis.csv \
+    --stock-provenance ./snapshots/stocks.provenance.json --fii-provenance ./snapshots/fiis.provenance.json
 python3 py/snapshot_registry.py validate --registry ./snapshots --manifest-id demo-2020
 python3 py/snapshot_registry.py publish  --registry ./snapshots --manifest-id demo-2020
 python3 py/snapshot_registry.py retire   --registry ./snapshots --manifest-id demo-2020 --reason "superseded"
