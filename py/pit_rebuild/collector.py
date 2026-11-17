@@ -14,7 +14,10 @@ come from B3 only; there is no Yahoo fallback here.
 The universe is every cash-market ticker of COTAHIST with a session in the 30 days up to d that maps to
 a CVM company with a usable filing. The CSV has the columns of the Status Invest export, in its scale
 (percent indicators in percent, money in BRL), plus SUBSETOR, so the selector reads it unchanged.
-ROIC and PEG RATIO follow the spec's own formulas and do not try to reproduce Status Invest.
+ROIC and PEG RATIO follow the spec's own formulas and do not try to reproduce Status Invest. A financial
+(subsector "Intermediários Financeiros" or "Previdência e Seguros", #79) has the indicators that do not
+apply to it (EV/EBIT, MARGEM EBIT, ROIC, the two net-debt ratios, LIQ. CORRENTE and PSR) empty and keeps
+PATRIMONIO / ATIVOS, the measure of its solidity.
 
 Next to the CSV, <out stem>.provenance.json records the provider "cvm-b3", d, the CSV sha256, the
 sha256 of every raw file used, by kind, and the tickers left out with their reason.
@@ -47,7 +50,7 @@ import time
 from . import cli, cotahist, cvm, mapping, safety, sectors, sources, status_invest
 from .cache import Cache
 from .errors import ArgumentError, MissingPathError, OutputError, RebuildError
-from .fields import ALL_FIELDS
+from .fields import ALL_FIELDS, config_literal
 from .indicators import TickerInputs, Value
 
 PROVIDER = "cvm-b3"
@@ -61,6 +64,10 @@ COLUMNS = (
     "CAGR RECEITAS 5 ANOS", "CAGR LUCROS 5 ANOS", "LIQUIDEZ MEDIA DIARIA",
     "VPA", "LPA", "PEG RATIO", "VALOR DE MERCADO", "SETOR", "SUBSETOR",
 )
+# Financials (banks and insurers, #79): the B3 subsectors and the indicators that do not apply to them,
+# as py/config.py declares them for the selector.
+FINANCIAL_SUBSECTORS = frozenset(config_literal("FINANCIAL_SUBSECTORS"))
+FINANCIAL_NOT_APPLICABLE = tuple(config_literal("FINANCIAL_NOT_APPLICABLE"))
 GROSS_PROFIT = "3.03"
 TAX_RATE = 0.34  # ROIC = EBIT_12m × (1 − 34%) ÷ (PL_ctrl + dívida bruta − caixa), spec #75
 ACCOUNTS = cli.STATEMENT_ACCOUNTS | {GROSS_PROFIT}
@@ -221,6 +228,8 @@ def _peg(values: dict[str, Value]) -> float | None:
 
 def _row(ticker: str, values: dict[str, Value], extra: dict[str, float | None], classification) -> dict[str, str]:
     numbers = {name: values[name].value for name in ALL_FIELDS} | extra | {"PEG RATIO": _peg(values)}
+    if classification is not None and classification.subsetor in FINANCIAL_SUBSECTORS:
+        numbers |= dict.fromkeys(FINANCIAL_NOT_APPLICABLE)  # an indicator that does not apply stays empty
     row = {"TICKER": ticker}
     for column in COLUMNS[1:-2]:
         row[column] = _cell(numbers[column])

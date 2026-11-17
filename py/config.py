@@ -142,6 +142,52 @@ METRIC_GROUPS: Dict[str, List[str]] = {
     ],
 }
 
+# Financeiros (spec #75, issue #79): bancos e seguradoras, pelos subsetores da
+# classificação setorial da B3 (coluna SUBSETOR do CSV de ações em CVM e B3).
+FINANCIAL_SECTOR = "Financeiro"
+FINANCIAL_SUBSECTORS = ["Intermediários Financeiros", "Previdência e Seguros"]
+
+# Indicadores que não se aplicam a um financeiro: ficam fora da nota e da
+# cobertura do filtro de robustez (não valem zero nem dado ausente).
+FINANCIAL_NOT_APPLICABLE = [
+    "EV/EBIT",
+    "MARGEM EBIT",
+    "ROIC",
+    "DIVIDA LIQUIDA / EBIT",
+    "DIV. LIQ. / PATRI.",
+    "LIQ. CORRENTE",
+    "PSR",
+]
+
+# Os mesmos cinco grupos (e os mesmos pesos de perfil) com o conteúdo dos
+# financeiros; "liquidez" vira solidez, medida por PL/ativos.
+FINANCIAL_METRIC_GROUPS: Dict[str, List[str]] = {
+    "liquidez": [
+        "PATRIMONIO / ATIVOS",
+    ],
+    "rent": [
+        "ROE",
+        "ROA",
+        "MARG. LIQUIDA",
+    ],
+    "value": [
+        "P/L",
+        "P/VP",
+    ],
+    "growth": [
+        "CAGR RECEITAS 5 ANOS",
+        "CAGR LUCROS 5 ANOS",
+        "PEG RATIO",
+    ],
+    "div": [
+        "DY",
+    ],
+}
+
+# Grupo de comparação: no setor "Financeiro" a winsorização e o z-score usam o
+# subsetor, desde que ele tenha pelo menos este número de papéis elegíveis.
+MIN_SUBSECTOR_PEERS = 3
+
 # Pesos dos grupos por perfil de investidor
 PROFILE_WEIGHTS: Dict[str, Dict[str, float]] = {
     "conservador": {

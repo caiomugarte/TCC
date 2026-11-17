@@ -136,6 +136,33 @@ class FormulaTests(CollectorCase):
         self.assertEqual(rows["ALFA3"]["PEG RATIO"], "")  # no fiscal year 2020: no CAGR
 
 
+NOT_APPLICABLE_TO_FINANCIALS = (
+    "EV/EBIT", "MARGEM EBIT", "ROIC", "DIVIDA LIQUIDA / EBIT", "DIV. LIQ. / PATRI.", "LIQ. CORRENTE", "PSR",
+)
+
+
+class FinancialTests(CollectorCase):
+    def test_a_bank_has_no_indicator_that_does_not_apply_and_has_equity_over_assets(self):
+        # BANC (1007) is "Financeiro / Intermediários Financeiros / Bancos"; its DFP 2025 has AT 9 000 M,
+        # PL 1 500 M, EBIT and current assets, so every one of these columns would have a value.
+        _, rows, _ = self.collect(D1)
+
+        banc = rows["BANC3"]
+        self.assertEqual({column: banc[column] for column in NOT_APPLICABLE_TO_FINANCIALS},
+                         dict.fromkeys(NOT_APPLICABLE_TO_FINANCIALS, ""))
+        self.assertAlmostEqual(float(banc["PATRIMONIO / ATIVOS"]), 1_500 / 9_000, places=6)
+        self.assertAlmostEqual(float(banc["P/L"]), 10.00)
+        self.assertNotEqual(banc["ROE"], "")
+        self.assertNotEqual(banc["MARG. LIQUIDA"], "")
+
+    def test_a_common_stock_keeps_every_indicator(self):
+        _, rows, _ = self.collect(D1)
+
+        alfa = rows["ALFA3"]
+        for column in NOT_APPLICABLE_TO_FINANCIALS:
+            self.assertNotEqual(alfa[column], "", column)
+
+
 class ShareCountTests(CollectorCase):
     def test_the_filed_count_moves_with_the_b3_split_between_the_period_end_and_the_cutoff(self):
         _, rows, _ = self.collect(D1)

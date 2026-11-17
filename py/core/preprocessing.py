@@ -28,8 +28,15 @@ from config import (
     INVERT_METRICS,
     PRICE_COLS,
     FILTER_COLS,
-    IBOV_TICKERS
+    IBOV_TICKERS,
+    FINANCIAL_SECTOR,
+    FINANCIAL_SUBSECTORS,
+    FINANCIAL_NOT_APPLICABLE,
+    MIN_SUBSECTOR_PEERS,
 )
+
+# Subsetor da B3, gravado pelo coletor em CVM e B3 (#78). É texto, nunca métrica.
+SUBSECTOR_COL = "SUBSETOR"
 
 
 def load_raw_data(file_path: Path = RAW_DATA_FILE) -> pd.DataFrame:
@@ -146,6 +153,43 @@ def _normalise_filter_config(
     return result
 
 
+def financial_mask(df: pd.DataFrame) -> pd.Series:
+    """Marca os financeiros (bancos e seguradoras): papéis dos subsetores da B3
+    em ``FINANCIAL_SUBSECTORS``. Sem coluna SUBSETOR, nenhum papel é financeiro."""
+    if SUBSECTOR_COL not in df.columns:
+        return pd.Series(False, index=df.index)
+    return df[SUBSECTOR_COL].isin(FINANCIAL_SUBSECTORS)
+
+
+def _standardise(df: pd.DataFrame, metric_cols: List[str]) -> pd.DataFrame:
+    """Winsoriza, inverte e normaliza por setor (passos 5 a 7 do pipeline)."""
+    df = winsorize_sector(df, metric_cols)
+    invert = [c for c in INVERT_METRICS if c in df.columns]
+    df[invert] = df[invert] * -1
+    return zscore_sector(df, metric_cols)
+
+
+def _standardise_by_peer_group(df: pd.DataFrame, metric_cols: List[str]) -> pd.DataFrame:
+    """Normaliza cada papel contra o seu grupo de comparação.
+
+    O grupo de comparação é o setor; no setor "Financeiro", o subsetor da B3,
+    desde que ele tenha pelo menos ``MIN_SUBSECTOR_PEERS`` papéis elegíveis.
+    Um subsetor menor fica com o resultado do setor "Financeiro" inteiro.
+    Fora do setor "Financeiro" o resultado é o de ``_standardise`` por setor.
+    """
+    result = _standardise(df, metric_cols)
+    if SUBSECTOR_COL not in df.columns:
+        return result
+    columns = list(dict.fromkeys(metric_cols + [c for c in INVERT_METRICS if c in df.columns]))
+    in_sector = df["SETOR"] == FINANCIAL_SECTOR
+    for members in df[in_sector].groupby(SUBSECTOR_COL).groups.values():
+        if len(members) < MIN_SUBSECTOR_PEERS:
+            continue
+        peers = _standardise(df.loc[members], metric_cols)
+        result.loc[members, columns] = peers[columns]
+    return result
+
+
 def winsorize_sector(
     df: pd.DataFrame,
     cols: List[str],
@@ -211,10 +255,12 @@ def preprocess_profile(
 
     Steps:
     1. Aplica filtros de elegibilidade
-    2. Converte colunas string para numeric; DY vazio vira 0 e DY negativo, 0
-    3. Winsoriza outliers setoriais
+    2. Converte colunas string para numeric; DY vazio vira 0 e DY negativo, 0;
+       indicador que não se aplica a um financeiro fica vazio
+    3. Winsoriza outliers por grupo de comparação
     4. Inverte métricas (quanto menor, melhor)
-    5. Normaliza via z-score intra-setor
+    5. Normaliza via z-score por grupo de comparação (setor; subsetor no
+       setor "Financeiro" com pelo menos 3 papéis)
     6. Remove colunas proibidas (preço, etc)
 
     Parameters
@@ -263,7 +309,7 @@ def preprocess_profile(
 
     # 2. Identifica colunas candidatas a métricas
     candidates = df.columns.difference(
-        ["TICKER", "SETOR"] + PRICE_COLS + FILTER_COLS
+        ["TICKER", "SETOR", SUBSECTOR_COL] + PRICE_COLS + FILTER_COLS
     )
 
     # 3. Converte colunas string para numeric
@@ -284,21 +330,22 @@ def preprocess_profile(
     if "DY" in df.columns:
         df["DY"] = df["DY"].fillna(0.0).clip(lower=0.0)
 
+    # 3c. Indicador que não se aplica a um financeiro fica fora da nota: vazio
+    # antes da winsorização, para não entrar nem na conta dos pares.
+    financial = financial_mask(df)
+    not_applicable = [c for c in FINANCIAL_NOT_APPLICABLE if c in candidates]
+    if financial.any() and not_applicable:
+        df.loc[financial, not_applicable] = np.nan
+
     # 4. Seleciona apenas colunas numéricas
     metric_cols = [c for c in candidates if df[c].dtype.kind in "fi"]
 
     if not metric_cols:
         raise RuntimeError("Nenhuma métrica numérica encontrada após conversão.")
 
-    # 5. Winsoriza outliers
-    df = winsorize_sector(df, metric_cols)
-
-    # 6. Inverte métricas "quanto menor, melhor"
-    invert = [c for c in INVERT_METRICS if c in df.columns]
-    df[invert] = df[invert] * -1
-
-    # 7. Normaliza via z-score intra-setor
-    df = zscore_sector(df, metric_cols)
+    # 5-7. Winsoriza outliers, inverte métricas "quanto menor, melhor" e
+    # normaliza via z-score, cada papel contra o seu grupo de comparação
+    df = _standardise_by_peer_group(df, metric_cols)
 
     # 8. Remove colunas proibidas
     df = df.drop(columns=PRICE_COLS + FILTER_COLS, errors="ignore")
@@ -402,9 +449,16 @@ def apply_robustness_filter(df: pd.DataFrame, threshold: float = 0.80) -> pd.Dat
     """
     df = df.copy()
 
-    # Filtra ativos com ≥ threshold% das métricas
-    metric_subset = df.drop(columns=["TICKER", "SETOR"], errors="ignore")
-    quality_mask = metric_subset.notna().mean(axis=1) >= threshold
+    # Filtra ativos com ≥ threshold% das métricas; para um financeiro, os
+    # indicadores que não se aplicam ficam fora da conta.
+    metric_subset = df.drop(columns=["TICKER", "SETOR", SUBSECTOR_COL], errors="ignore")
+    filled = metric_subset.notna()
+    coverage = filled.mean(axis=1)
+    financial = financial_mask(df)
+    if financial.any():
+        applicable = filled.drop(columns=list(FINANCIAL_NOT_APPLICABLE), errors="ignore")
+        coverage = coverage.where(~financial, applicable.mean(axis=1))
+    quality_mask = coverage >= threshold
 
     result = df[quality_mask].reset_index(drop=True)
     reasons = {
