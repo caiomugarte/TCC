@@ -1,5 +1,8 @@
 """Markdown of the FII measurement (issue #60). Every number comes from the report object; nothing is recomputed."""
 
+from datetime import date, timedelta
+
+from .dividends import WINDOW_DAYS
 from .fii_compare import PERCENT_FIELDS, SEGMENT_MAP, MANAGEMENT_MAP
 from .fii_status_invest import CATEGORY_FIELDS, FIELDS, NUMERIC_FIELDS
 
@@ -70,8 +73,11 @@ def render_markdown(obj: dict) -> str:
     add("## Veredito\n")
     add(f"**Veredito da classe:** `{obj['class_verdict']}`.\n")
     part1, part2 = obj["criterion"]["part1"], obj["criterion"]["part2"]
+    no_reference = part1.get("no_reference") or []
+    aside = f"; sem referência, fora da conta: {', '.join(f'`{name}`' for name in no_reference)}" if no_reference else ""
     add(f"Critério de liberação, parte 1 (≥ {part1['threshold_pct']}% nas duas datas): "
-        + ("cumprida." if part1["met"] else f"não cumprida ({', '.join(f'`{name}`' for name in part1['failing'])})."))
+        + (f"cumprida{' (' + aside[2:] + ')' if aside else ''}." if part1["met"]
+           else f"não cumprida ({', '.join(f'`{name}`' for name in part1['failing'])}{aside})."))
     add(f"Critério de liberação, parte 2 (piores casos classificados): "
         + ("cumprida." if part2["met"] else f"não cumprida ({part2['open']} de {part2['cases']} casos sem classificação)."))
     add(f"Critério inteiro: {'cumprido' if obj['criterion']['met'] else 'não cumprido'}.\n")
@@ -133,6 +139,36 @@ def _universe(out: list[str], obj: dict, isos: list[str]) -> None:
                        "no COTAHIST; nenhuma sessão entre d − 7 e d + 3 bate com a maioria deles.\n")
 
 
+def _dy_source(out: list[str], obj: dict, isos: list[str]) -> None:
+    """Which source the DY really comes from, and why the B3 page does not reach its window."""
+    counts = []
+    yahoo_wins = True
+    for iso in isos:
+        dy = obj["dividends"][iso]["DY"]
+        sources, reasons = dy["sources"], dy["reasons"]
+        yahoo, b3 = sources.get("yahoo", 0), sources.get("b3", 0)
+        cagr = obj["dividends"][iso]["CAGR DIVIDENDOS 3 ANOS"]["sources"]
+        yahoo_wins = yahoo_wins and yahoo > b3 and cagr.get("yahoo", 0) > cagr.get("b3", 0)
+        counts.append(f"em {iso}, `DY`: {yahoo} de {sum(sources.values())} do Yahoo e {b3} da B3 "
+                      f"({reasons.get('b3_short_history', 0)} por `b3_short_history`)")
+    lead = ("Na prática, a fonte do `DY` e do `CAGR DIVIDENDOS 3 ANOS` dos FIIs é o Yahoo, não a B3"
+            if yahoo_wins else "A fonte do `DY` dos FIIs se divide entre a B3 e o Yahoo")
+    out.append(f"{lead}: {'; '.join(counts)}.")
+    if not any(obj["dividends"][iso]["DY"]["reasons"].get("b3_short_history") for iso in isos):
+        out.append("")
+        return
+    b3 = obj["coverage"]["b3_dividends"]
+    windows = ", ".join(f"{(date.fromisoformat(iso) - timedelta(days=WINDOW_DAYS)).isoformat()} para {iso}" for iso in isos)
+    out.append(f"`b3_short_history` quer dizer que a página de fundos da B3 não alcança o início da janela de 12 meses do "
+               f"`DY` ({windows}): ela só lista os proventos recentes (primeiro registro com mediana {b3['median'] or '-'} "
+               f"entre {b3['funds']} fundos, ver Cobertura histórica). A regra das ações da #77 (um histórico da B3 que "
+               "cobre a janela vence o Yahoo) já é a dos FIIs: o Yahoo só entra, marcado, quando a B3 não cobre a "
+               "janela. O `ULTIMO DIVIDENDO` não depende da janela e vem da B3 em "
+               + "; ".join(f"{obj['dividends'][iso]['ULTIMO DIVIDENDO']['sources'].get('b3', 0)} de "
+                           f"{sum(obj['dividends'][iso]['ULTIMO DIVIDENDO']['sources'].values())} em {iso}" for iso in isos)
+               + ".\n")
+
+
 def _dividends(out: list[str], obj: dict, isos: list[str]) -> None:
     out.append("## Fontes de proventos\n")
     out.append("Contagem de FIIs elegíveis por fonte (`b3`, `yahoo` marcado como reserva, `none` sem fonte) e motivo do uso do Yahoo.\n")
@@ -145,6 +181,7 @@ def _dividends(out: list[str], obj: dict, isos: list[str]) -> None:
             reasons = ", ".join(f"{key}: {value}" for key, value in block[name]["reasons"].items()) or "-"
             out.append(f"| {iso} | `{name}` | {sources} | {reasons} |")
     out.append("")
+    _dy_source(out, obj, isos)
     out.append("`DY só com a B3` (sensibilidade, não entra no veredito): os proventos da B3 com data-ex até `d`, na janela "
                "truncada no primeiro registro dela.\n")
     out.append("| data | % na tolerância (n) |")

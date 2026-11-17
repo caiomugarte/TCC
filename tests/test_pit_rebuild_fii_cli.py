@@ -182,6 +182,43 @@ class FiiReportTest(unittest.TestCase):
         self.assertIn("CAGR DIVIDENDOS 3 ANOS", criterion["part1"]["failing"])
         self.assertFalse(criterion["met"])
 
+    def test_an_indicator_without_reference_is_listed_apart_and_does_not_fail_part_one(self):
+        # The live run of #60: no eligible FII has GESTAO in Status Invest, so it has no denominator.
+        import csv
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            blanked = []
+            for source in (SI1, SI2):
+                with source.open(encoding="utf-8", newline="") as handle:
+                    reader = csv.DictReader(handle)
+                    rows = [{**row, "GESTAO": ""} for row in reader]
+                    columns = reader.fieldnames
+                target = root / source.name
+                with target.open("w", encoding="utf-8", newline="") as handle:
+                    writer = csv.DictWriter(handle, fieldnames=columns)
+                    writer.writeheader()
+                    writer.writerows(rows)
+                blanked.append(target)
+            argv = args(self.cache, root / "out", "--offline")
+            argv[argv.index(str(SI1))], argv[argv.index(str(SI2))] = str(blanked[0]), str(blanked[1])
+            self.assertEqual(fii_cli.main(argv, opener=FakeOpener({})), 0)
+            report = json.loads((root / "out" / fii_cli.REPORT_JSON).read_text(encoding="utf-8"))
+            markdown = (root / "out" / fii_cli.REPORT_MD).read_text(encoding="utf-8")
+
+        part1 = report["criterion"]["part1"]
+        self.assertEqual(report["verdicts"]["GESTAO"]["overall"], "sem referência")
+        self.assertNotIn("GESTAO", part1["failing"])
+        self.assertEqual(part1["no_reference"], ["GESTAO"])
+        self.assertEqual(part1["failing"], ["CAGR DIVIDENDOS 3 ANOS", "SETOR"])
+        self.assertIn("sem referência, fora da conta: `GESTAO`", markdown)
+
+    def test_the_markdown_says_which_source_gives_the_dy_and_why(self):
+        # ALFA11's B3 history starts 2025-11, after the start of the DY window at 2026-08-10 (2025-08-10).
+        self.assertIn("Na prática, a fonte do `DY` e do `CAGR DIVIDENDOS 3 ANOS` dos FIIs é o Yahoo", self.markdown)
+        self.assertIn("em 2026-08-10, `DY`: 2 de 4 do Yahoo e 1 da B3", self.markdown)
+        self.assertIn("A regra das ações da #77", self.markdown)
+
     def test_coverage_gives_the_first_report_year_of_each_indicator(self):
         coverage = self.report["coverage"]["informes"]
         self.assertEqual(coverage["N COTISTAS"]["first_year"], 2023)

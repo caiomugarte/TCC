@@ -275,11 +275,14 @@ def _report_object(cache: Cache, req: _Request, src: _Sources, results: dict[dat
         block = "fields" if name in fii_status_invest.NUMERIC_FIELDS else "categories"
         per_date = {iso: results[day][block][name]["verdict"] for iso, day in zip(isos, req.dates)}
         verdicts[name] = {"dates": per_date, "overall": worst(per_date.values())}
-    failing = []
+    failing, no_reference = [], []
     for name in fii_status_invest.FIELDS:
         block = "fields" if name in fii_status_invest.NUMERIC_FIELDS else "categories"
         pcts = [results[day][block][name]["pct_within"] for day in req.dates]
-        if any(pct is None or pct < THRESHOLD_PCT for pct in pcts):
+        # A date without reference (denominator zero) measures nothing: it is listed apart, never as a failure.
+        if any(pct is None for pct in pcts):
+            no_reference.append(name)
+        if any(pct is not None and pct < THRESHOLD_PCT for pct in pcts):
             failing.append(name)
     cases = [
         case
@@ -289,7 +292,7 @@ def _report_object(cache: Cache, req: _Request, src: _Sources, results: dict[dat
         for case in stats["worst"] + stats["missing"]
     ]
     open_cases = sum(1 for case in cases if case["class"] == fii_audit.OPEN)
-    part1 = {"threshold_pct": THRESHOLD_PCT, "met": not failing, "failing": failing}
+    part1 = {"threshold_pct": THRESHOLD_PCT, "met": not failing, "failing": failing, "no_reference": no_reference}
     part2 = {"scope": "os 10 piores de cada indicador e data e todos os FIIs sem valor reconstruído",
              "cases": len(cases), "open": open_cases, "met": open_cases == 0,
              "by_class": dict(Counter(case["class"] for case in cases))}
