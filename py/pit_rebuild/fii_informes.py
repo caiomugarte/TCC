@@ -82,7 +82,7 @@ def load(zip_paths: Iterable[Path]) -> Informes:
                     continue
                 with archive.open(info) as raw:
                     for row in csv.DictReader(io.TextIOWrapper(raw, encoding="latin-1"), delimiter=";"):
-                        key = (row["CNPJ_Fundo_Classe"].strip(), row["Data_Referencia"].strip(), row["Versao"].strip())
+                        key = (_cnpj(row), row["Data_Referencia"].strip(), row["Versao"].strip())
                         target[key] = row
                         _note_coverage(presence, row)
     by_fund: dict[str, list[Informe]] = {}
@@ -96,7 +96,7 @@ def load(zip_paths: Iterable[Path]) -> Informes:
                 ref=date.fromisoformat(ref),
                 version=int(version),
                 delivered=date.fromisoformat(row["Data_Entrega"].strip()),
-                name=(row.get("Nome_Fundo_Classe") or "").strip(),
+                name=(row.get("Nome_Fundo_Classe") or row.get("Nome_Fundo") or "").strip(),
                 isin=(row.get("Codigo_ISIN") or "").strip(),
                 segment=(row.get("Segmento_Atuacao") or "").strip(),
                 management=(row.get("Tipo_Gestao") or "").strip(),
@@ -163,10 +163,15 @@ def funds_with_value(informes: Informes, column: str, year: int) -> set[str]:
 
 def _note_coverage(presence: dict[str, dict[int, set[str]]], row: dict[str, str]) -> None:
     year = int(row["Data_Referencia"][:4])
-    cnpj = row["CNPJ_Fundo_Classe"].strip()
+    cnpj = _cnpj(row)
     for column in COVERAGE_COLUMNS:
         if (row.get(column) or "").strip():
             presence.setdefault(column, {}).setdefault(year, set()).add(cnpj)
+
+
+def _cnpj(row: dict[str, str]) -> str:
+    """The fund key: CNPJ_Fundo_Classe since CVM Resolution 175, CNPJ_Fundo in the older files."""
+    return (row.get("CNPJ_Fundo_Classe") or row.get("CNPJ_Fundo") or "").strip()
 
 
 def _number(cell: str | None) -> float | None:

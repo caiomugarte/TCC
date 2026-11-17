@@ -96,5 +96,20 @@ class InformesTest(unittest.TestCase):
         self.assertEqual(fii_informes.funds_with_value(self.informes, "Total_Necessidades_Liquidez", 2026), {A})
 
 
+    def test_reports_before_cvm_175_name_the_fund_column_cnpj_fundo(self):
+        z2020 = Path(self.tmp.name) / "inf_mensal_fii_2020.zip"
+        z2020.write_bytes(make_zip({
+            "inf_mensal_fii_geral_2020.csv": "CNPJ_Fundo;Data_Referencia;Versao;Data_Entrega;Nome_Fundo;Codigo_ISIN;Segmento_Atuacao;Tipo_Gestao\n"
+            f"{A};2020-06-01;1;2020-07-14;ALFA FII;BRALFACTF001;Shoppings;Ativa\n",
+            "inf_mensal_fii_complemento_2020.csv": "CNPJ_Fundo;Data_Referencia;Versao;Total_Numero_Cotistas;Valor_Ativo;Patrimonio_Liquido;Cotas_Emitidas;Valor_Patrimonial_Cotas\n"
+            f"{A};2020-06-01;1;30000;1;900000000;10000000;90\n",
+            "inf_mensal_fii_ativo_passivo_2020.csv": "CNPJ_Fundo;Data_Referencia;Versao;Total_Necessidades_Liquidez;Disponibilidades\n"
+            f"{A};2020-06-01;1;1;1\n",
+        }))
+        report = fii_informes.latest(fii_informes.load([z2020]), A, date(2020, 8, 1))
+        self.assertEqual((report.name, report.holders, report.nav_per_share), ("ALFA FII", 30000, 90))
+        self.assertEqual(fii_informes.first_years(fii_informes.load([z2020]))["Total_Numero_Cotistas"], 2020)
+
+
 if __name__ == "__main__":
     unittest.main()
