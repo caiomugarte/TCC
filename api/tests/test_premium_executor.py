@@ -13,7 +13,9 @@ from app.db.models import Account, ProfileRecord
 from app.adapters.premium_optimization import PremiumOptimizationError
 from app.repositories.recommendations import RecommendationRepository, _output_hash
 from app.services.premium_executor import PremiumExecutor
-from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputError, StatusInvestInputs
+from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+
+from snapshot_manifest import SnapshotUnavailableError
 
 
 SHORTAGE_FIELDS = {
@@ -192,7 +194,7 @@ class PremiumExecutorTests(unittest.TestCase):
             path = Path(workspace) / "status-invest" / "stocks.csv"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("TICKER\nAAA3\n", encoding="utf-8")
-            raise StatusInvestInputError("collector failed at /private/statusinvest/session.log")
+            raise SnapshotUnavailableError("source fii not found: /private/statusinvest/fiis.csv")
 
         executor = PremiumExecutor(
             session_factory=self.sessions,
@@ -263,7 +265,7 @@ class PremiumExecutorTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
             selector_inputs_loader=lambda *_args: (_ for _ in ()).throw(
-                StatusInvestInputError("FII collector failed")
+                SnapshotUnavailableError("source fii not found")
             ),
             optimization_runner=lambda *_args, **_kwargs: self.fail("runner must not execute"),
         )

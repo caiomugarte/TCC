@@ -11,10 +11,6 @@ from typing import Any, Callable, Mapping, Sequence
 from snapshot_manifest import SnapshotChangedError, SnapshotUnavailableError
 
 
-class StatusInvestInputError(RuntimeError):
-    code = "status_invest_input_failed"
-
-
 class SelectorSnapshotChangedError(RuntimeError):
     """The selector CSV bytes no longer match the SHA-256 recorded for the run."""
 

@@ -13,7 +13,6 @@ from app.db.session import SessionLocal
 from app.repositories.recommendations import RecommendationRepository, RecommendationStateError
 from app.services.premium_policy import WHOLE_UNITS_MODEL_VERSION
 from app.services.status_invest_inputs import (
-    StatusInvestInputError,
     StatusInvestInputs,
     load_snapshot_inputs,
 )
@@ -271,8 +270,6 @@ class PremiumExecutor:
 
     @staticmethod
     def _failure_code(exc: Exception) -> str:
-        if isinstance(exc, StatusInvestInputError):
-            return "snapshot_unavailable"
         code = getattr(exc, "code", None)
         if isinstance(code, str) and code:
             return code[:64]
