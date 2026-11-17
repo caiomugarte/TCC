@@ -245,6 +245,8 @@ INVERT_METRICS = [
     "P/ATIVOS",
     "PSR",
     "DIVIDA LIQUIDA / EBIT",
+    "EV/EBIT",  # grupo value: múltiplo, quanto menor, melhor
+    "PEG RATIO",  # grupo growth: P/L por crescimento, quanto menor, melhor
 ]
 
 # Colunas removidas no preprocessing

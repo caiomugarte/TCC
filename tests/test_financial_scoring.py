@@ -4,8 +4,10 @@ Every test goes through a CSV in the collector's columns (the Status Invest colu
 read with load_raw_data, as the Premium selector reads the snapshot. No network.
 
 tests/fixtures/financials/common_ranking_before.csv is the ranking of the common universe below
-(no SUBSETOR column, no financial) produced by the scoring of commit aea019f, before #79. It is the
-source of truth of "a common stock scores exactly as before": regenerate it only from that commit.
+(no SUBSETOR column, no financial) produced by the scoring of commit aea019f, before #79, with one change:
+EV/EBIT and PEG RATIO inverted (INVERT_METRICS fix of #75). Against the aea019f file only those two columns
+change sign, which moves AVG_VALUE, AVG_GROWTH and SCORE. It is the source of truth of "a common stock
+scores exactly as before": regenerate it only from aea019f with that INVERT_METRICS.
 """
 
 import math

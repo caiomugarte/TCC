@@ -86,3 +86,8 @@ com o run anterior como incumbente, mas não substituiu nenhum papel: a carteira
 - A referência do Status Invest é o CSV de 2026-11-06, não o de 2026-11-09 que o run anterior usou.
 - A seed muda com o manifesto (`derive_premium_seed`), então parte da diferença no consenso do GA não vem dos dados.
 - O rank sem o GA explica a direção de cada troca, não a escolha final, que também pesa HHI e frequência no consenso.
+- Os ranks, os SCORE e as carteiras desta página foram calculados antes da correção de `INVERT_METRICS`
+  (`py/config.py`), que passou a inverter `EV/EBIT` (grupo value) e `PEG RATIO` (grupo growth). Nos números acima,
+  um `EV/EBIT` ou um `PEG RATIO` maior ainda contava a favor do papel. As provas em
+  [`proofs/cvm-b3-2026-11-17/`](proofs/cvm-b3-2026-11-17/) e `cvm-b3-first-snapshot/score-comparison.json` não foram
+  regeneradas: o run e a comparação dependem de rede e do banco de desenvolvimento.
