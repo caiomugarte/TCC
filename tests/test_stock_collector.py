@@ -296,6 +296,15 @@ class UniverseTests(CollectorCase):
 
         self.assertEqual((rows["COBR3"]["SETOR"], rows["COBR3"]["SUBSETOR"]), ("", ""))
 
+    def test_every_row_without_a_classification_is_listed_in_the_provenance_with_its_reason(self):
+        _, rows, target = self.collect(D1)
+
+        provenance = json.loads(collector.provenance_path(target).read_text(encoding="utf-8"))
+        self.assertEqual(provenance["unclassified"], {"COBR3": "no_classification"})
+        self.assertEqual(
+            sorted(provenance["unclassified"]), sorted(ticker for ticker, row in rows.items() if row["SETOR"] == ""),
+        )
+
 
 RAW_KINDS = {"dfp_itr", "cotahist", "proventos", "eventos", "classificacao_setorial"}
 

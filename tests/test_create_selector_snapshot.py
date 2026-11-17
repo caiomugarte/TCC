@@ -188,6 +188,66 @@ class ExitCodeTests(CreationCase):
                 self.assertFalse(out_dir.exists())
 
 
+class ClassificationTests(CreationCase):
+    """A stock whose GetDetail failed would leave the selection silently (zscore_sector groups by SETOR): exit 7."""
+
+    def cache_without_alfa_detail(self) -> Path:
+        cache = self.root / "cache"
+        shutil.copytree(self.cache, cache)
+        manifest_path = cache / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        del manifest["files"][collector.detail_name("1001")]
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        (cache / collector.detail_name("1001")).unlink()
+        return cache
+
+    def run_creation(self, cache: Path, *, offline: bool, opener) -> tuple[int, str]:
+        err = io.StringIO()
+        with redirect_stderr(err), redirect_stdout(io.StringIO()):
+            code = creation.main(
+                ["--date", D1.isoformat(), "--out-dir", str(self.out), "--cache-dir", str(cache),
+                 *(["--offline"] if offline else [])],
+                opener=opener,
+                fii_collector=fii_writer(["FUND11"]),
+                cotahist_cache=self.fii_cotahist([fii_trade("FUND11", D1, codbdi="12")]),
+            )
+        return code, err.getvalue()
+
+    def test_a_failed_getdetail_download_exits_7_names_the_ticker_and_writes_nothing(self):
+        opener = FakeOpener({})  # every other raw file is cached; the GetDetail of ALFA (1001) answers 404
+        code, err = self.run_creation(self.cache_without_alfa_detail(), offline=False, opener=opener)
+
+        self.assertEqual(code, 7, err)
+        self.assertIn("ALFA3 (detail_download_failed)", err)
+        self.assertEqual(len(err.strip().splitlines()), 1, err)
+        self.assertFalse(self.out.exists())
+
+    def test_a_getdetail_body_that_does_not_parse_exits_7_and_writes_nothing(self):
+        import hashlib
+
+        cache = self.root / "cache"
+        shutil.copytree(self.cache, cache)
+        body = b"<html>B3 maintenance</html>"
+        (cache / collector.detail_name("1001")).write_bytes(body)
+        manifest_path = cache / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["files"][collector.detail_name("1001")]["sha256"] = hashlib.sha256(body).hexdigest()
+        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+        code, err = self.run_creation(cache, offline=True, opener=no_network)
+
+        self.assertEqual(code, 7, err)
+        self.assertIn("ALFA3 (detail_unparseable)", err)
+        self.assertFalse(self.out.exists())
+
+    def test_a_getdetail_record_without_a_classification_is_not_a_failure_and_is_recorded(self):
+        code, err = self.create()
+
+        self.assertEqual(code, 0, err)
+        provenance = json.loads((self.out / "stocks.provenance.json").read_text(encoding="utf-8"))
+        self.assertEqual(provenance["unclassified"], {"COBR3": "no_classification"})
+
+
 class FiiFilterTests(CreationCase):
     def test_a_fii_without_a_session_in_the_30_days_up_to_the_cutoff_is_left_out_and_recorded(self):
         code, err = self.create(

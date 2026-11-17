@@ -9,7 +9,11 @@ Run from the repository root, then build the manifest from the files it writes:
 
 Stocks: the CVM/B3 collector (py/pit_rebuild/collector.py) at d = --date, over the raw cache. Its universe is
 already the B3 recent-trade filter of #63 (a session in the 30 days up to d). Status Invest is never called for
-stocks, and a stock collection failure never falls back to it.
+stocks, and a stock collection failure never falls back to it. A stock whose B3 classification is missing because
+its GetDetail download failed or did not parse (collector "unclassified" reasons detail_download_failed and
+detail_unparseable) fails the creation with exit 7: the selector z-scores by SETOR and would drop that stock silently.
+A GetDetail record that has no classification (reason no_classification) is a fact of B3, not a failure; the stock is
+written with empty SETOR and SUBSETOR and listed under "unclassified" in stocks.provenance.json.
 
 FIIs: the Status Invest export (py/fetch_status_invest_fii.py), downloaded live, then filtered by the B3 recent-trade
 rule of #63 at d (app.services.b3_trading.filter_recent_trades, CODBDI 12), reading the COTAHIST of the raw cache.
@@ -27,6 +31,7 @@ Exit codes:
     4  integrity violation in the stock raw files: cached file hash mismatch, PIT leak
     5  a required stock raw file could not be downloaded, or is absent from the cache in --offline mode
     6  the FII CSV failed: Status Invest download or validation, or the B3 recent-trade filter
+    7  a stock has no B3 classification because its GetDetail download failed or its body did not parse
 """
 
 from __future__ import annotations
@@ -55,10 +60,15 @@ from pit_rebuild.errors import MissingPathError, OutputError, RebuildError  # no
 FII_PROVIDER = "statusinvest"
 FII_TIMEOUT_SECONDS = 30
 EXIT_FII = 6
+EXIT_UNCLASSIFIED = 7
 
 
 class FiiInputError(RuntimeError):
     """The FII CSV could not be had, validated or filtered."""
+
+
+class UnclassifiedStockError(RuntimeError):
+    """A stock lost its B3 classification to a failed or unreadable GetDetail."""
 
 
 def _pit_cotahist(cache: Cache, root: Path) -> CotahistCache:
@@ -104,6 +114,11 @@ def _fii_csv(day, cache: Cache, fii_collector: Callable | None, cotahist_cache: 
 def create(out_dir: Path, day, cache: Cache, *, fii_collector=None, cotahist_cache=None) -> tuple[int, int]:
     """Write the four files; return (stock rows, FII rows)."""
     collected = collector.collect(cache, day)
+    failed = {ticker: reason for ticker, reason in sorted(collected.unclassified.items())
+              if reason in collector.UNCLASSIFIED_FAILURES}
+    if failed:
+        listed = ", ".join(f"{ticker} ({reason})" for ticker, reason in failed.items())
+        raise UnclassifiedStockError(f"{len(failed)} stock(s) without a B3 classification: {listed}")
     stocks, stock_provenance = collector.encode(collected)
     fiis, fii_provenance = _fii_csv(day, cache, fii_collector, cotahist_cache)
     try:
@@ -149,6 +164,9 @@ def main(argv: Sequence[str] | None = None, *, opener=None, fii_collector=None, 
     except FiiInputError as exc:
         print(f"create_selector_snapshot: FII CSV failed: {exc}", file=sys.stderr)
         return EXIT_FII
+    except UnclassifiedStockError as exc:
+        print(f"create_selector_snapshot: stock classification failed: {exc}", file=sys.stderr)
+        return EXIT_UNCLASSIFIED
     print(f"wrote {out_dir}: {stocks} stocks (cvm-b3), {fiis} FIIs (statusinvest)")
     return 0
 

@@ -370,7 +370,11 @@ or a PIT leak, 5 a required raw file is missing.
   classification, or whose GetDetail download fails online, has both empty.
   With `--offline` the GetDetail of every company in the universe must be in
   the cache: a missing one is exit 5, so an offline run never leaves the
-  sectors empty because they were never fetched (#80).
+  sectors empty because they were never fetched (#80). Every row with empty
+  sectors is listed in the provenance file under `unclassified`, ticker →
+  reason (`no_classification`, `detail_download_failed` or
+  `detail_unparseable`); the selector z-scores by `SETOR`, so such a row leaves
+  the selection by metric coverage.
 - **Formulas:** the 19 rebuilt fields follow `py/pit_rebuild/indicators.py`,
   except `ROIC` = 100 × EBIT 12m × (1 − 0.34) ÷ (PL of the controllers + gross
   debt − cash), empty when the denominator is ≤ 0, and `PEG RATIO` = `P/L` ÷
@@ -420,7 +424,14 @@ none of them.
 - Exit codes: 0 written, 1 output not written, 2 bad arguments or a forbidden
   directory, 3 cache directory absent in `--offline`, 4 a cached stock raw file
   differs from its hash or a PIT leak, 5 a required stock raw file is missing,
-  6 the FII CSV failed (Status Invest download or validation, or the B3 filter).
+  6 the FII CSV failed (Status Invest download or validation, or the B3 filter),
+  7 a stock has no B3 classification because its GetDetail download failed or
+  its body did not parse (the selector z-scores by `SETOR` and would drop it
+  silently). A GetDetail record with no classification is not a failure: the
+  stock keeps empty `SETOR`/`SUBSETOR` and is listed with the reason
+  `no_classification` under `unclassified` in `stocks.provenance.json`, next to
+  the failures `detail_download_failed` and `detail_unparseable` that
+  `py/pit_rebuild collect` alone still writes.
 
 Then `build` with `--stock-provenance <out>/stocks.provenance.json
 --fii-provenance <out>/fiis.provenance.json`, `validate` and `publish`.

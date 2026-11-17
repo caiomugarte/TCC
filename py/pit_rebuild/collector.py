@@ -20,7 +20,16 @@ apply to it (EV/EBIT, MARGEM EBIT, ROIC, the two net-debt ratios, LIQ. CORRENTE 
 PATRIMONIO / ATIVOS, the measure of its solidity.
 
 Next to the CSV, <out stem>.provenance.json records the provider "cvm-b3", d, the CSV sha256, the
-sha256 of every raw file used, by kind, and the tickers left out with their reason.
+sha256 of every raw file used, by kind, the tickers left out with their reason, and the tickers whose row has no
+B3 classification (empty SETOR and SUBSETOR) with its reason under "unclassified":
+
+    detail_download_failed  the GetDetail download failed (online only; offline the file is required)
+    detail_unparseable      the GetDetail body is not JSON
+    no_classification       the GetDetail record has no three-level industryClassification
+
+The selector z-scores by SETOR, so a row without one loses every metric and leaves the selection
+(insufficient_metric_coverage). The collector still writes it; scripts/create_selector_snapshot.py refuses the
+first two reasons, which are failures of the collection, not a fact of B3.
 
 Exit codes (the table of the rebuild):
 
@@ -96,6 +105,7 @@ class Collected:
     day: date
     rows: list[dict[str, str]]
     excluded: dict[str, str]  # ticker -> reason it has no row
+    unclassified: dict[str, str]  # ticker -> reason its row has empty SETOR and SUBSETOR
     raw_files: dict[str, dict[str, str]]  # kind -> cache file name -> sha256
 
 
@@ -136,13 +146,17 @@ def collect(cache: Cache, day: date, clock=time.perf_counter) -> Collected:
     result = cli._evaluate_day(acq, day)
     stale = {row["ticker"] for row in result.mapping["stale_filing"]}
     rows = []
+    unclassified: dict[str, str] = {}
     for ticker in kept:
         item = acq.mapped[day][ticker]
+        classification, missing = classes[item.cd_cvm]
+        if missing is not None:
+            unclassified[ticker] = missing
         extra = _extra_fields(result.inputs[ticker], _gross_profit(acq, item.cnpj, day))
         if ticker in stale:  # STL-01: every extra column reads the filing, so a stale filing leaves them empty too
             extra = dict.fromkeys(extra)
-        rows.append(_row(ticker, result.values[ticker], extra, classes[item.cd_cvm]))
-    return Collected(day=day, rows=rows, excluded=excluded, raw_files=_raw_files(cache.used))
+        rows.append(_row(ticker, result.values[ticker], extra, classification))
+    return Collected(day=day, rows=rows, excluded=excluded, unclassified=unclassified, raw_files=_raw_files(cache.used))
 
 
 def _blank_csv(universe: Sequence[str]) -> status_invest.SICsv:
@@ -153,16 +167,20 @@ def _blank_csv(universe: Sequence[str]) -> status_invest.SICsv:
     )
 
 
-def _classification(cache: Cache, cd_cvm: str) -> sectors.Classification | None:
-    """The B3 classification of a company. Online, a failed GetDetail leaves it empty; offline, the GetDetail must be
-    cached, so a cache filled offline never yields empty sectors silently (#80)."""
+UNCLASSIFIED_FAILURES = frozenset({"detail_download_failed", "detail_unparseable"})
+
+
+def _classification(cache: Cache, cd_cvm: str) -> tuple[sectors.Classification | None, str | None]:
+    """The B3 classification of a company, or None with the reason it has none (see "unclassified" above).
+    Online, a failed GetDetail leaves it empty; offline, the GetDetail must be cached (#80)."""
     path = cache.get(sources.b3_detail_url(cd_cvm), detail_name(cd_cvm), required=cache.offline)
     if path is None:
-        return None
+        return None, "detail_download_failed"
     try:
-        return sectors.parse_b3_detail(path.read_bytes())
+        classification = sectors.parse_b3_detail(path.read_bytes())
     except ValueError:
-        return None
+        return None, "detail_unparseable"
+    return classification, None if classification is not None else "no_classification"
 
 
 def _gross_profit(acq, cnpj: str, day: date) -> float | None:
@@ -272,6 +290,7 @@ def encode(collected: Collected) -> tuple[bytes, bytes]:
         "csv_sha256": hashlib.sha256(data).hexdigest(),
         "raw_files": collected.raw_files,
         "excluded": dict(sorted(collected.excluded.items())),
+        "unclassified": dict(sorted(collected.unclassified.items())),
     }
     text = json.dumps(provenance, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
     return data, text.encode("utf-8")
