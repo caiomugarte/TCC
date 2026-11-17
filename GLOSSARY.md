@@ -219,3 +219,17 @@ _Evitar_: liquidez corrente para bancos
 **Grupo de comparação**:
 O conjunto de ações contra o qual um papel é normalizado: o setor da B3 e, no setor "Financeiro", o subsetor, desde que tenha papéis elegíveis de pelo menos 3 empresas (a raiz de 4 letras do ticker: as classes de uma empresa contam como uma).
 _Evitar_: comparar um banco com uma empresa de outro tipo
+
+## Premium
+
+**Ciclo mensal**:
+A rodada que, uma vez por mês, publica um snapshot novo, refaz a carteira Premium a partir dele e mede o teste para frente da carteira anterior.
+_Evitar_: rebalanceamento (que é a restauração de pesos-alvo), reexecução
+
+**Titular**:
+Uma ação ou FII da carteira Premium anterior da conta, que a zona de proteção tenta manter enquanto continuar perto do topo do ranking.
+_Evitar_: posição real, ativo que o usuário tem na corretora
+
+**Teste para frente**:
+A medida do retorno total que as escolhas de uma carteira Premium já entregue tiveram no período seguinte, até o snapshot posterior, comparado com IBOV, IFIX e CDI.
+_Evitar_: validação walk-forward, que testa a alocação entre classes reotimizando em janelas históricas
