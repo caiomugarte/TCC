@@ -8,7 +8,7 @@ from snapshot_manifest import SnapshotChangedError, SnapshotManifest
 
 from tests.test_premium_snapshot_only import build_snapshot
 
-from app.services.status_invest_inputs import (
+from app.services.snapshot_inputs import (
     SelectorPriceError,
     load_snapshot_inputs,
     SourceSnapshot,

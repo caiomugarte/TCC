@@ -12,12 +12,12 @@ PY_ROOT = PROJECT_ROOT / "py"
 if str(PY_ROOT) not in sys.path:
     sys.path.insert(0, str(PY_ROOT))
 
-# Import after the sys.path mutation: status_invest_inputs imports modules
+# Import after the sys.path mutation: snapshot_inputs imports modules
 # that live in py/ (snapshot_manifest), which must already be importable.
-from app.services.status_invest_inputs import (  # noqa: E402
+from app.services.snapshot_inputs import (  # noqa: E402
     SelectorPriceError,
     SourceSnapshot,
-    StatusInvestInputs,
+    SnapshotInputs,
     load_selector_prices,
 )
 from app.services.whole_units import (  # noqa: E402
@@ -634,7 +634,7 @@ def run_premium_optimization(
     workspace: Path,
     investable_capital_brl: float,
     *,
-    selector_inputs: StatusInvestInputs,
+    selector_inputs: SnapshotInputs,
     snapshot_loader: Callable[..., object] = _default_snapshot_loader,
     allocation_engine: Callable[..., Mapping[str, Any]] = _default_allocation_engine,
     stock_engine: Callable[..., Mapping[str, Any]] = _default_stock_engine,
@@ -652,9 +652,9 @@ def run_premium_optimization(
 
     if not math.isfinite(float(investable_capital_brl)) or investable_capital_brl <= 0:
         raise PremiumOptimizationError("investable capital must be positive", "policy_invalid")
-    if not isinstance(selector_inputs, StatusInvestInputs):
+    if not isinstance(selector_inputs, SnapshotInputs):
         raise PremiumOptimizationError(
-            "validated Status Invest selector inputs are required", "snapshot_unavailable"
+            "validated snapshot selector inputs are required", "snapshot_unavailable"
         )
     workspace = Path(workspace)
     workspace.mkdir(parents=True, exist_ok=True)

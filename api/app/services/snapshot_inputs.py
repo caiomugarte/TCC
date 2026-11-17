@@ -31,7 +31,7 @@ class SourceSnapshot:
 
 
 @dataclass(frozen=True)
-class StatusInvestInputs:
+class SnapshotInputs:
     stocks: SourceSnapshot
     fiis: SourceSnapshot
 
@@ -72,7 +72,7 @@ def load_snapshot_inputs(
     manifest: Any,
     workspace: Path,
     recorded_hashes: Mapping[str, str] | None = None,
-) -> StatusInvestInputs:
+) -> SnapshotInputs:
     """Selector inputs read only from the run's snapshot, never collected live.
 
     Each stock/FII CSV named by the manifest is read once; its bytes are checked
@@ -114,7 +114,7 @@ def load_snapshot_inputs(
             retrieved_at=str(source.metadata.get("retrieved_at") or retrieved_at),
             sha256=digest,
         )
-    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
+    return SnapshotInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
 def _price_cents(ticker: str, raw: str | None) -> tuple[Decimal, int]:

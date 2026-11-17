@@ -310,7 +310,7 @@ in non-selectable state(s); publish them to make them selectable`.
 
 The Premium executor (`api/app/services/premium_executor.py`) makes no network
 call. It loads the `stock` and `fii` selector CSVs named by the run's manifest
-(`load_snapshot_inputs` in `api/app/services/status_invest_inputs.py`), checks
+(`load_snapshot_inputs` in `api/app/services/snapshot_inputs.py`), checks
 each SHA-256 against the manifest and against the `source_snapshot_hashes`
 recorded in the run's policy, validates the CSV, and copies the verified bytes
 into the run workspace before any calculation. Live collection (Status Invest,

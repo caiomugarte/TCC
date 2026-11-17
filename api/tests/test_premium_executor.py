@@ -13,7 +13,7 @@ from app.db.models import Account, ProfileRecord
 from app.adapters.premium_optimization import PremiumOptimizationError
 from app.repositories.recommendations import RecommendationRepository, _output_hash
 from app.services.premium_executor import PremiumExecutor
-from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from app.services.snapshot_inputs import SourceSnapshot, SnapshotInputs
 
 from snapshot_manifest import SnapshotUnavailableError
 
@@ -62,7 +62,7 @@ def selector_inputs_for(_manifest, workspace, _recorded_hashes=None):
             retrieved_at="2026-07-21T00:00:00Z",
             sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         )
-    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
+    return SnapshotInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
 class PremiumExecutorTests(unittest.TestCase):
@@ -450,7 +450,7 @@ class PremiumExecutorIncumbentTests(unittest.TestCase):
 
         self.assertEqual(self.execute(run, runner), "completed")
         self.assertEqual(len(calls), 1)
-        self.assertIsInstance(calls[0], StatusInvestInputs)
+        self.assertIsInstance(calls[0], SnapshotInputs)
 
     def test_prior_completed_premium_run_is_passed_normalized(self):
         previous = self.completed_run(
@@ -464,7 +464,7 @@ class PremiumExecutorIncumbentTests(unittest.TestCase):
             calls[0]["incumbents"],
             {"run_id": previous.id, "stocks": ["BBSE3", "ITSA4"], "fiis": ["HGLG11", "KNRI11"]},
         )
-        self.assertIsInstance(calls[0]["selector_inputs"], StatusInvestInputs)
+        self.assertIsInstance(calls[0]["selector_inputs"], SnapshotInputs)
 
     def test_run_that_completed_while_this_one_was_queued_is_the_incumbent(self):
         first = self.zone_run()

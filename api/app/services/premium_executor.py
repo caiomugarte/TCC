@@ -12,8 +12,8 @@ from app.db.models import ProfileRecord
 from app.db.session import SessionLocal
 from app.repositories.recommendations import RecommendationRepository, RecommendationStateError
 from app.services.premium_policy import WHOLE_UNITS_MODEL_VERSION
-from app.services.status_invest_inputs import (
-    StatusInvestInputs,
+from app.services.snapshot_inputs import (
+    SnapshotInputs,
     load_snapshot_inputs,
 )
 
@@ -109,7 +109,7 @@ class PremiumExecutor:
         manifest_loader: Callable[[Mapping[str, Any]], object] | None = None,
         manifest_validator: Callable[[object], object] | None = None,
         selector_inputs_loader: Callable[
-            [object, Path, Mapping[str, str]], StatusInvestInputs
+            [object, Path, Mapping[str, str]], SnapshotInputs
         ] = load_snapshot_inputs,
         workspace_root: Path | None = None,
         max_workers: int = 1,
@@ -182,7 +182,7 @@ class PremiumExecutor:
             selector_inputs = self.selector_inputs_loader(
                 manifest, workspace, _recorded_hashes(policy, provenance)
             )
-            if not isinstance(selector_inputs, StatusInvestInputs):
+            if not isinstance(selector_inputs, SnapshotInputs):
                 raise SnapshotUnavailableError("snapshot selector inputs were not validated")
             runner_kwargs: dict[str, Any] = {"selector_inputs": selector_inputs}
             if incumbents is not None:
