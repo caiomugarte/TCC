@@ -63,6 +63,13 @@ the optional lifecycle envelope:
   exactly `{"files": {...}}` (`allocation`) or `{}` (selectors). The fetch
   `metadata.json` content is never copied into a manifest (it carries absolute
   paths that would break byte-reproducibility).
+- The one exception is a stock CSV built from CVM and B3 (issue #78) and passed
+  with `--stock-provenance`: the `stock` source then has `provider: "cvm-b3"`
+  and `metadata` = `{"as_of": <cutoff of the CSV>, "raw_files": {<kind>:
+  {<cache file>: <sha256>}}}`, copied from the collector's provenance file.
+  The kinds are `dfp_itr`, `cotahist`, `proventos`, `eventos`,
+  `classificacao_setorial` and `cadastro` (FCA and the CVM cadastro). The
+  metadata holds file names and hashes only, no paths.
 
 ## Class series
 
@@ -115,6 +122,7 @@ recomputes and rejects any divergence. Consequences:
 ```
 python3 py/snapshot_registry.py build    --registry DIR --manifest-id ID --created-at ISO
                                          --snapshot-dir DIR --stock-universe CSV --fii-universe CSV
+                                         [--stock-provenance JSON]
 python3 py/snapshot_registry.py validate --registry DIR --manifest-id ID [--check] [--json]
 python3 py/snapshot_registry.py publish  --registry DIR --manifest-id ID
 python3 py/snapshot_registry.py retire   --registry DIR --manifest-id ID [--reason TEXT]
@@ -151,6 +159,11 @@ and no longer `caio_stocks.csv`/`caio_fiis.csv`: a missing one is exit 3, each
 missing file named on stderr, with no series substitution; any `caio_*` file in
 the directory is ignored. An `ibovespa.csv`/`ifix.csv` with more than one
 series column and none named `value` is exit 4.
+`--stock-provenance` names the `<stem>.provenance.json` that
+`python3 py/pit_rebuild collect` writes next to the stock CSV. A missing file is
+exit 3; a provenance whose `csv_sha256` is not the hash of `--stock-universe`,
+or that lacks `provider`, `as_of`, `csv_sha256` or `raw_files`, is exit 4 with
+nothing written.
 
 ### `validate`
 
@@ -299,6 +312,48 @@ replaced, never edited:
 4. `publish` it.
 5. `retire` the old `caio_*` manifest (`validate --check` keeps reporting it
    as exit 4 in any state; retiring removes it from selection).
+
+## Stock CSV from CVM and B3 (issue #78)
+
+`python3 py/pit_rebuild collect --date D --out <registry>/data/<name>/stocks.csv
+[--cache-dir DIR] [--offline]` builds the stock selector CSV of a snapshot from
+CVM and B3, with the point-in-time rebuild of #59/#64/#77 at `d = D`
+(`py/pit_rebuild/collector.py`). Without `--offline` it downloads the raw files
+missing from the cache; with `--offline` it reads only the cache. Exit codes:
+0 written, 1 output not written, 2 bad arguments or a forbidden directory,
+3 cache directory absent in `--offline`, 4 a cached file differs from its hash
+or a PIT leak, 5 a required raw file is missing.
+
+- **Universe:** every COTAHIST cash-market ticker with a session in the 30 days
+  up to `D` that maps to a CVM company with a usable filing. The tickers left
+  out and their reasons are in the provenance file (`excluded`).
+- **Columns:** those of the Status Invest export (`py/fetch_status_invest.py`
+  `OUTPUT_COLUMNS`), in its scale (percent indicators in percent, money in BRL),
+  plus `SUBSETOR`. `SETOR` and `SUBSETOR` are the B3 economic sector and
+  subsector from GetDetail, as B3 writes them (B3 writes commas as periods:
+  `Petróleo. Gás e Biocombustíveis`). A company without a classification has
+  both empty.
+- **Formulas:** the 19 rebuilt fields follow `py/pit_rebuild/indicators.py`,
+  except `ROIC` = 100 × EBIT 12m × (1 − 0.34) ÷ (PL of the controllers + gross
+  debt − cash), empty when the denominator is ≤ 0, and `PEG RATIO` = `P/L` ÷
+  `CAGR LUCROS 5 ANOS`, empty when the CAGR is ≤ 0 or `P/L` is negative. The
+  other Status Invest columns (`VPA`, `LPA`, `P/ATIVOS`, `P/EBIT`,
+  `P/CAP. GIRO`, `P. AT CIR. LIQ.`, `MARGEM BRUTA`, `PATRIMONIO / ATIVOS`,
+  `PASSIVOS / ATIVOS`, `GIRO ATIVOS`) come from the same filing. A filing older
+  than 270 days leaves every accounting column empty.
+- **Dividends:** B3 only. A company whose B3 history fails or is incomplete has
+  `DY` empty, and the selector reads an empty `DY` as 0 (#52).
+- **Financials:** banks and insurers are still computed like any company here;
+  their own indicator set and peer group are issue #79.
+- **`SUBSETOR` in the selector:** the selector does not read it, but its
+  pre-processing treats every non-ID column as a metric candidate. With pandas 3
+  the text column stays text and the robustness filter counts it as filled;
+  with pandas 2 (`object` dtype) it becomes an all-NaN column and counts as
+  missing. #79, which reads `SUBSETOR`, should keep it out of the metrics.
+
+The provenance file `<stem>.provenance.json` goes next to the CSV; pass it to
+`build --stock-provenance` to record the `cvm-b3` provider and the raw hashes in
+the manifest.
 
 ## Walkthrough (manual)
 
