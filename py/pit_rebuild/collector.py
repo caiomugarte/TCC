@@ -23,7 +23,7 @@ Exit codes (the table of the rebuild):
 
     0  CSV and provenance written
     1  the output files could not be written
-    2  invalid arguments, a cache directory inside data/, snapshots/ or baselines/, or an output inside baselines/
+    2  invalid arguments, a cache directory inside the data, snapshots or baselines tree, or an output inside the baselines tree
     3  the cache directory does not exist in --offline mode
     4  integrity violation: cached file hash mismatch, PIT leak
     5  a required download failed, or a required file is absent from the cache in --offline mode
@@ -270,7 +270,7 @@ def _out_path(text: str) -> Path:
     resolved = Path(text).resolve()
     baselines = (safety.REPO_ROOT / "baselines").resolve()
     if resolved == baselines or baselines in resolved.parents:
-        raise ArgumentError("--out", f"{resolved} is inside baselines/, which this tool never writes")
+        raise ArgumentError("--out", f"{resolved} is inside the baselines tree, which this tool never writes")
     return resolved
 
 
