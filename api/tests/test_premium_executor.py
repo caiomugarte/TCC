@@ -47,7 +47,7 @@ def create_run(session, account, profile, status="queued", plan="premium"):
     return run
 
 
-def selector_inputs_for(workspace):
+def selector_inputs_for(_manifest, workspace, _recorded_hashes=None):
     source_root = Path(workspace) / "status-invest"
     source_root.mkdir(parents=True, exist_ok=True)
     snapshots = {}
@@ -113,7 +113,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=session_factory,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=lambda *_args, **_kwargs: self.result(),
             workspace_root=Path(self.directory.name) / "workspaces",
         )
@@ -133,7 +133,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("fixture boom")),
         )
         try:
@@ -164,7 +164,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=runner,
             workspace_root=Path(self.directory.name) / "workspaces",
         )
@@ -188,7 +188,7 @@ class PremiumExecutorTests(unittest.TestCase):
         calls = []
         workspace_root = Path(self.directory.name) / "workspaces"
 
-        def partial_refresh(workspace):
+        def partial_refresh(_manifest, workspace, _recorded_hashes):
             path = Path(workspace) / "status-invest" / "stocks.csv"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("TICKER\nAAA3\n", encoding="utf-8")
@@ -197,7 +197,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=partial_refresh,
+            selector_inputs_loader=partial_refresh,
             optimization_runner=lambda *_args, **_kwargs: calls.append(True),
             workspace_root=workspace_root,
         )
@@ -229,7 +229,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=runner,
             workspace_root=Path(self.directory.name) / "workspaces",
         )
@@ -262,7 +262,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=lambda _workspace: (_ for _ in ()).throw(
+            selector_inputs_loader=lambda *_args: (_ for _ in ()).throw(
                 StatusInvestInputError("FII collector failed")
             ),
             optimization_runner=lambda *_args, **_kwargs: self.fail("runner must not execute"),
@@ -309,7 +309,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(shortage),
         )
         try:
@@ -334,7 +334,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(shortage),
         )
         try:
@@ -420,7 +420,7 @@ class PremiumExecutorIncumbentTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=runner,
             workspace_root=Path(self.directory.name) / "workspaces",
         )

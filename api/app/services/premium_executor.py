@@ -12,7 +12,13 @@ from app.db.models import ProfileRecord
 from app.db.session import SessionLocal
 from app.repositories.recommendations import RecommendationRepository, RecommendationStateError
 from app.services.premium_policy import WHOLE_UNITS_MODEL_VERSION
-from app.services.status_invest_inputs import StatusInvestInputError, StatusInvestInputs, refresh_inputs
+from app.services.status_invest_inputs import (
+    StatusInvestInputError,
+    StatusInvestInputs,
+    load_snapshot_inputs,
+)
+
+from snapshot_manifest import SnapshotManifest, SnapshotUnavailableError, validate_manifest
 
 
 def _open_session(factory: Callable[[], Any]) -> Any:
@@ -79,6 +85,20 @@ def _declares_whole_units(policy: object) -> bool:
     )
 
 
+def _recorded_hashes(policy: object, provenance: Mapping[str, Any]) -> dict[str, str]:
+    """Source hashes recorded when the run was queued; the policy's take precedence."""
+
+    recorded: dict[str, str] = {}
+    sources = [provenance]
+    if isinstance(policy, Mapping) and isinstance(policy.get("provenance"), Mapping):
+        sources.append(policy["provenance"])
+    for source in sources:
+        hashes = source.get("source_snapshot_hashes")
+        if isinstance(hashes, Mapping):
+            recorded.update({str(key): str(value) for key, value in hashes.items()})
+    return recorded
+
+
 class PremiumExecutor:
     """Single-process bounded worker for the private Premium pilot."""
 
@@ -89,7 +109,9 @@ class PremiumExecutor:
         optimization_runner: Callable[..., Mapping[str, Any]] = run_premium_optimization,
         manifest_loader: Callable[[Mapping[str, Any]], object] | None = None,
         manifest_validator: Callable[[object], object] | None = None,
-        status_invest_inputs_loader: Callable[[Path], StatusInvestInputs] = refresh_inputs,
+        selector_inputs_loader: Callable[
+            [object, Path, Mapping[str, str]], StatusInvestInputs
+        ] = load_snapshot_inputs,
         workspace_root: Path | None = None,
         max_workers: int = 1,
         max_pending: int = 2,
@@ -102,7 +124,7 @@ class PremiumExecutor:
         self.optimization_runner = optimization_runner
         self.manifest_loader = manifest_loader
         self.manifest_validator = manifest_validator
-        self.status_invest_inputs_loader = status_invest_inputs_loader
+        self.selector_inputs_loader = selector_inputs_loader
         self.workspace_root = Path(workspace_root or Path(tempfile.gettempdir()) / "prumo-premium")
         self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="premium")
         self.futures: dict[str, Future[None]] = {}
@@ -158,9 +180,11 @@ class PremiumExecutor:
             manifest = self._load_manifest(provenance)
             workspace = self.workspace_root / run_id
             workspace.mkdir(parents=True, exist_ok=True)
-            selector_inputs = self.status_invest_inputs_loader(workspace)
+            selector_inputs = self.selector_inputs_loader(
+                manifest, workspace, _recorded_hashes(policy, provenance)
+            )
             if not isinstance(selector_inputs, StatusInvestInputs):
-                raise StatusInvestInputError("Status Invest inputs were not validated")
+                raise SnapshotUnavailableError("snapshot selector inputs were not validated")
             runner_kwargs: dict[str, Any] = {"selector_inputs": selector_inputs}
             if incumbents is not None:
                 runner_kwargs["incumbents"] = incumbents
@@ -233,21 +257,15 @@ class PremiumExecutor:
             manifest_data = provenance.get("manifest")
             manifest_path = provenance.get("manifest_path")
             if manifest_data is None and manifest_path:
-                from snapshot_manifest import SnapshotManifest
-
                 manifest = SnapshotManifest.load(Path(str(manifest_path)))
             elif isinstance(manifest_data, Mapping):
-                from snapshot_manifest import SnapshotManifest
-
                 base_dir = Path(str(manifest_path)).parent if manifest_path else None
                 manifest = SnapshotManifest.from_dict(manifest_data, base_dir=base_dir)
             else:
-                raise RuntimeError("Premium run has no persisted snapshot manifest")
+                raise SnapshotUnavailableError("Premium run has no persisted snapshot manifest")
         if self.manifest_validator is not None:
             return self.manifest_validator(manifest)
         if hasattr(manifest, "source_for"):
-            from snapshot_manifest import validate_manifest
-
             return validate_manifest(manifest)
         return manifest
 
