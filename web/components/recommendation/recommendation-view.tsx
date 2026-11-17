@@ -47,6 +47,18 @@ const providerLabel: Record<string, string> = {
   statusinvest: "Status Invest",
 };
 
+// Where the stock prices of the snapshot come from, with its article: the cvm-b3 CSV takes the B3 quote.
+const stockQuoteSource: Record<string, string> = {
+  "cvm-b3": "da B3",
+  statusinvest: "do Status Invest",
+};
+
+function stockQuoteNote(recommendation: Recommendation): string {
+  const provider = recommendation.provenance?.selector_sources?.stocks?.provider;
+  if (!provider) return "";
+  return `, com a cotação ${stockQuoteSource[provider] ?? `de ${provider}`} para ações`;
+}
+
 function selectorSnapshotSources(recommendation: Recommendation): string {
   const sources = recommendation.provenance?.selector_sources;
   const values: string[] = [];
@@ -309,7 +321,7 @@ export function RecommendationView() {
 
           {[...completed.stocks, ...completed.fiis].some(hasQuantity) && (
             <div className="notice">
-              Quantidades calculadas com os preços do snapshot registrado desta execução, com a cotação da B3 para ações ({selectorSnapshotSources(completed)}). São referência, não cotação ao vivo.
+              Quantidades calculadas com os preços do snapshot registrado desta execução{stockQuoteNote(completed)} ({selectorSnapshotSources(completed)}). São referência, não cotação ao vivo.
             </div>
           )}
 

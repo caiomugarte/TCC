@@ -160,9 +160,19 @@ test("dropped tickers render the API reasons", async () => {
 test("snapshot price note and legacy fallback", () => {
   assert.match(viewSource, /\[\.\.\.completed\.stocks, \.\.\.completed\.fiis\]\.some\(hasQuantity\)/);
   assert.match(viewSource, /function hasQuantity\(item: RecommendationConstituent\): boolean \{\s*return typeof item\.quantity === "number";/);
-  assert.match(viewSource, /Quantidades calculadas com os preços do snapshot registrado desta execução, com a cotação da B3 para ações \(\{selectorSnapshotSources\(completed\)\}\)/);
+  assert.match(viewSource, /Quantidades calculadas com os preços do snapshot registrado desta execução\{stockQuoteNote\(completed\)\} \(\{selectorSnapshotSources\(completed\)\}\)/);
+  assert.doesNotMatch(viewSource, /com a cotação da B3 para ações/, "the stock quote source comes from the run provenance");
   assert.match(viewSource, /\{hasQuantity\(item\)\s+\? `\$\{item\.ticker\} · \$\{item\.quantity\}/);
   assert.match(viewSource, /: `\$\{item\.ticker\}: \$\{percentage\.format\(item\.portfolioWeight\)\}`\}/);
+});
+
+test("the stock quote source of the price note follows selector_sources.stocks.provider", () => {
+  assert.match(viewSource, /const provider = recommendation\.provenance\?\.selector_sources\?\.stocks\?\.provider;/);
+  assert.match(viewSource, /"cvm-b3": "da B3",/);
+  assert.match(viewSource, /statusinvest: "do Status Invest",/);
+  // A run without a stock provider names no source; an unknown provider is shown as written.
+  assert.match(viewSource, /if \(!provider\) return "";/);
+  assert.match(viewSource, /stockQuoteSource\[provider\] \?\? `de \$\{provider\}`/);
 });
 
 test("whole-unit field names match the API schema aliases (REVIEW.md copied-name rule)", () => {
