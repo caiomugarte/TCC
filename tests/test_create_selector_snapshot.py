@@ -7,13 +7,13 @@ recent-trade rule of #63 at the cutoff date, since Premium runs no longer filter
 """
 
 import csv
-import importlib.util
 import io
 import json
 import shutil
 import sys
 import tempfile
 import unittest
+import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import date, timedelta
 from pathlib import Path
@@ -31,11 +31,26 @@ from pit_rebuild import collector  # noqa: E402
 from pit_rebuild_support import UNIVERSE, FakeOpener  # noqa: E402
 from test_stock_collector import OVERLAY, fixture_routes  # noqa: E402
 
-_spec = importlib.util.spec_from_file_location("cotahist_fixture", PROJECT_ROOT / "api" / "tests" / "cotahist_fixture.py")
-cotahist_fixture = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(cotahist_fixture)
 
 D1 = date(2026, 8, 7)
+
+
+def fii_trade(ticker: str, day: date, *, codbdi: str = "12") -> str:
+    """One COTAHIST cash-market line in the 245-column layout (DATA 3-10, CODBDI 11-12, CODNEG 13-24, TPMERC 25-27)."""
+    line = [" "] * 245
+    for start, text in ((1, "01"), (3, day.strftime("%Y%m%d")), (11, codbdi), (13, ticker.ljust(12)), (25, "010"),
+                        (40, "CI".ljust(10)), (109, "1000".zfill(13)), (171, "100000".zfill(18)), (211, "1".zfill(7)),
+                        (231, "BRXXXXCTF000")):
+        line[start - 1:start - 1 + len(text)] = list(text)
+    return "".join(line)
+
+
+def cotahist_zip(lines: list[str]) -> bytes:
+    text = "\r\n".join(["00COTAHIST.2026BOVESPA 20260807".ljust(245), *lines]) + "\r\n"
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("COTAHIST_A2026.TXT", text.encode("latin-1"))
+    return buffer.getvalue()
 
 
 def no_network(request, timeout=None):
@@ -84,11 +99,11 @@ class CreationCase(unittest.TestCase):
         self.out = self.root / "selectors"
 
     def fii_cotahist(self, lines):
-        data = cotahist_fixture.cotahist_zip(lines)
+        data = cotahist_zip(lines)
         return CotahistCache(self.root / "cotahist", downloader=lambda _url: data)
 
     def create(self, *, fiis=("FUND11",), lines=None, extra=()):
-        lines = lines if lines is not None else [cotahist_fixture.trade("FUND11", D1, codbdi="12")]
+        lines = lines if lines is not None else [fii_trade("FUND11", D1, codbdi="12")]
         err = io.StringIO()
         with redirect_stderr(err), redirect_stdout(io.StringIO()):
             code = creation.main(
@@ -146,9 +161,9 @@ class FiiFilterTests(CreationCase):
         code, err = self.create(
             fiis=("FUND11", "EDGE11", "OLD11", "DEAD11"),
             lines=[
-                cotahist_fixture.trade("FUND11", D1, codbdi="12"),
-                cotahist_fixture.trade("EDGE11", D1 - timedelta(days=30), codbdi="12"),
-                cotahist_fixture.trade("OLD11", D1 - timedelta(days=31), codbdi="12"),
+                fii_trade("FUND11", D1, codbdi="12"),
+                fii_trade("EDGE11", D1 - timedelta(days=30), codbdi="12"),
+                fii_trade("OLD11", D1 - timedelta(days=31), codbdi="12"),
             ],
         )
 
