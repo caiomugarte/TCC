@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 import json
 
-from .dividends import WINDOW_DAYS, Dividend
+from .dividends import WINDOW_DAYS, Dividend, in_window
 
 INCOME_LABEL = "RENDIMENTO"
 CAGR_YEARS = 3
@@ -94,9 +94,8 @@ def window_start(d: date, years_back: int = 0) -> date:
 
 
 def sum_12m(dividends: Iterable[Dividend], d: date) -> float:
-    """Sum of the amounts with d - 365 days < ex-date <= d."""
-    start = d - timedelta(days=WINDOW_DAYS)
-    return sum(item.amount for item in dividends if item.ex_date is not None and start < item.ex_date <= d)
+    """Sum of the amounts inside the window of dividends.in_window (d - 365 days < ex-date <= d)."""
+    return sum(item.amount for item in dividends if in_window(item.ex_date, d))
 
 
 def last_dividend(dividends: Iterable[Dividend], d: date) -> float | None:
