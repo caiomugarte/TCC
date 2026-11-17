@@ -293,6 +293,27 @@ the per-state counts and instructs the operator to publish, e.g.
 `no compatible snapshot manifest found; registry has 2 validated manifest(s)
 in non-selectable state(s); publish them to make them selectable`.
 
+## Premium runs read only the snapshot
+
+The Premium executor (`api/app/services/premium_executor.py`) makes no network
+call. It loads the `stock` and `fii` selector CSVs named by the run's manifest
+(`load_snapshot_inputs` in `api/app/services/status_invest_inputs.py`), checks
+each SHA-256 against the manifest and against the `source_snapshot_hashes`
+recorded in the run's policy, validates the CSV, and copies the verified bytes
+into the run workspace before any calculation. Live collection (Status Invest,
+COTAHIST) belongs to snapshot creation only, so a selector CSV must already be
+filtered when it is registered. Failure codes:
+
+| Cause | Code |
+|---|---|
+| hash divergence (manifest or recorded hash), invalid `manifest_sha256`, malformed selector CSV | `snapshot_changed` |
+| manifest or source file missing | `snapshot_unavailable` |
+
+The result's `provenance.selector_sources` keeps its shape (`provider`,
+`retrieved_at`, `sha256`): `provider` is the manifest source's provider,
+`retrieved_at` is the source's `metadata.retrieved_at` or else the manifest's
+`created_at`, and `sha256` is the hash verified at read time.
+
 ## Replacing a `caio_*` manifest
 
 A manifest built before the IBOV/IFIX series names `caio_stocks.csv`/
