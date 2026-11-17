@@ -197,3 +197,25 @@ _Evitar_: tratar o Ibovespa como uma sexta classe
 **Varredura de diversificação**:
 A execução da alocação sob diferentes intensidades de penalização do HHI de classes para revelar a fronteira retorno-diversificação.
 _Evitar_: escolher uma penalização única sem mostrar seu efeito
+
+## Seleção de ações
+
+**Fonte do indicador**:
+A origem única de cada campo de uma ação: os demonstrativos entregues à CVM para os dados contábeis e a B3 para preço, liquidez, proventos, eventos societários, número de ações e setor.
+_Evitar_: combinar duas fontes no mesmo campo, usar uma fonte de reserva
+
+**Financeiro**:
+Uma ação de banco ou seguradora, isto é, dos subsetores "Intermediários Financeiros" ou "Previdência e Seguros" da classificação setorial da B3.
+_Evitar_: tratar como financeiro todo o setor "Financeiro e Outros" do Status Invest, que inclui bolsa, shoppings e imóveis
+
+**Indicador que não se aplica**:
+Um indicador que não tem sentido para o tipo de empresa: para um financeiro, EV/EBIT, margem EBIT, ROIC, dívida líquida/EBIT, dívida líquida/patrimônio, liquidez corrente e PSR. Ele fica fora da nota, e não vale zero nem dado ausente.
+_Evitar_: dado faltante, indicador zerado
+
+**Solidez**:
+O grupo que ocupa o lugar da liquidez na nota de um financeiro, medido pela proporção do patrimônio líquido sobre os ativos.
+_Evitar_: liquidez corrente para bancos
+
+**Grupo de comparação**:
+O conjunto de ações contra o qual um papel é normalizado: o setor da B3 e, no setor "Financeiro", o subsetor, desde que tenha pelo menos 3 papéis elegíveis.
+_Evitar_: comparar um banco com uma empresa de outro tipo
