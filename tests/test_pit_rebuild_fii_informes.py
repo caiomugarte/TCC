@@ -80,6 +80,27 @@ class InformesTest(unittest.TestCase):
         self.assertEqual(old.ref, date(2023, 6, 1))
         self.assertEqual(old.nav_per_share, 100)
 
+    def test_the_report_three_years_back_is_not_used_when_its_newest_version_was_delivered_after_d(self):
+        # Fund C: its 2026-06 report is known at 2026-08-10, but the only version of its 2023-06 report in the file
+        # (v2) was delivered on 2026-09-01, after d, so the 36-month-old report is not known at d.
+        c = "33.333.333/0001-33"
+        z = Path(self.tmp.name) / "inf_mensal_fii_late.zip"
+        z.write_bytes(make_zip({
+            "inf_mensal_fii_geral_2026.csv": GERAL
+            + f"Classe;{c};2023-06-01;2;2026-09-01;GAMA FII;BRGAMACTF003;Shoppings;Ativa\n"
+            + f"Classe;{c};2026-06-01;1;2026-07-15;GAMA FII;BRGAMACTF003;Shoppings;Ativa\n",
+            "inf_mensal_fii_complemento_2026.csv": COMPLEMENTO
+            + f"{c};2023-06-01;2;1;1;1000000000;10000000;100\n"
+            + f"{c};2026-06-01;1;1;1;1331000000;10000000;133,1\n",
+            "inf_mensal_fii_ativo_passivo_2026.csv": ATIVO,
+        }))
+        store = fii_informes.load([z])
+        d = date(2026, 8, 10)
+        report = fii_informes.latest(store, c, d)
+        self.assertEqual(report.ref, date(2026, 6, 1))
+        self.assertIsNone(fii_informes.months_back(store, report, 36, d))
+        self.assertEqual(fii_informes.months_back(store, report, 36, date(2026, 9, 1)).ref, date(2023, 6, 1))
+
     def test_an_isin_names_every_fund_that_reported_it_up_to_d(self):
         self.assertEqual(fii_informes.funds_of_isin(self.informes, "BRALFACTF001", date(2026, 8, 10)), [A, B])
         self.assertEqual(fii_informes.funds_of_isin(self.informes, "BRALFACTF001", date(2026, 6, 1)), [A])

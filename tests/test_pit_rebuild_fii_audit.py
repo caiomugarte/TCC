@@ -64,6 +64,14 @@ class ClassifyTest(unittest.TestCase):
         case = fii_audit.classify("N COTISTAS", 51000, self.context(reports))  # 2026-07 (after d) has 51000 too
         self.assertEqual(case["class"], SI_ERROR)
 
+    def test_an_older_month_whose_version_was_delivered_after_d_is_a_method_difference_not_a_status_invest_lag(self):
+        # The 2026-05 report is older than the 2026-06 one used at d, but its only version in the file was delivered
+        # on 2026-09-01, after d: Status Invest showing it is point in time (method), not a lag behind d.
+        reports = REPORTS + (informe(A, date(2026, 5, 1), date(2026, 9, 1), nav=130.0, equity=1_300_000_000, shares=10_000_000, holders=47000),)
+        case = fii_audit.classify("N COTISTAS", 47000, self.context(reports))
+        self.assertEqual(case["class"], METHOD)
+        self.assertEqual(case["evidence"], "informe 2026-05 v1, entregue em 2026-09-01")
+
     def test_a_missing_value_is_classified_by_its_reason(self):
         self.assertEqual(fii_audit.classify_missing("no_cvm_match")["class"], OURS)
         self.assertEqual(fii_audit.classify_missing("stale_informe")["class"], METHOD)
