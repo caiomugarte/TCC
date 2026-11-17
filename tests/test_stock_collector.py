@@ -26,7 +26,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import date
 from pathlib import Path
 
@@ -160,6 +160,30 @@ class StaleFilingTests(CollectorCase):
         self.assertAlmostEqual(float(shrt["VALOR DE MERCADO"]), 300_000_000)
         self.assertAlmostEqual(float(shrt["DY"]), 8.00)
         self.assertEqual(shrt["SETOR"], "Consumo Cíclico")
+
+
+class SelectorTests(CollectorCase):
+    def test_the_stock_selector_ranks_the_generated_csv_without_code_changes(self):
+        from config import PROFILE_WEIGHTS
+        from pipelines.single_run import run_stock_selection
+
+        _, rows, target = self.collect(D1)
+        config = {
+            "selection_preset": "fixture",
+            "factor_weights": dict(PROFILE_WEIGHTS["caio_new"]),
+            "liquidity_and_size_filters": {"cap_min": 200_000_000, "liq_min": 50_000},
+            "system_ga_config": {"n_assets": 2, "lambda": 0.0, "generations": 3, "pop_size": 4},
+        }
+        with redirect_stdout(io.StringIO()):
+            result = run_stock_selection(input_path=target, config=config, seed=7)
+
+        # Only SHRT and NOBX have the 5-year history of the growth group (the DFP 2020 overlay); the other
+        # tickers leave by the selector's own rules (#52), so the ranking is exactly these two.
+        ranked = result["ranked"]
+        self.assertEqual(sorted(ranked["TICKER"]), ["NOBX3", "SHRT3"])
+        self.assertFalse(ranked["SCORE"].isna().any())
+        self.assertEqual(result["selected_tickers"], ["NOBX3", "SHRT3"])
+        self.assertTrue(set(result["exclusion_reasons"]) <= set(rows))
 
 
 if __name__ == "__main__":
