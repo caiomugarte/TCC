@@ -691,6 +691,8 @@ class _DayResult:
     dy_dates: dict[str, dict[str, date | None]]  # per dividend source, each ticker's earliest date (COV-02)
     previous: dict[str, dict[str, float | None]] = field(default_factory=dict)  # B-9: each ticker's values on its previous filing
     filings: dict[str, cvm.Filing | None] = field(default_factory=dict)  # each computed ticker's newest usable filing (ADJ-04)
+    values: dict[str, dict[str, Value]] = field(default_factory=dict)  # every eligible ticker's fields, masks applied (#78)
+    inputs: dict[str, TickerInputs] = field(default_factory=dict)  # each computed ticker's inputs (#78)
 
 
 def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *, previous: bool = False) -> _DayResult:
@@ -763,6 +765,7 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
     group_of: dict[str, str] = {}
     previous_values: dict[str, dict[str, float | None]] = {}
     filings: dict[str, cvm.Filing | None] = {}
+    inputs_of: dict[str, TickerInputs] = {}
     counts = {
         "by_source": {name: 0 for name in SOURCES}, "yahoo_reasons": {r: 0 for r in YAHOO_REASONS},
         "b3_empty_yahoo_failed": 0, "split_adjust_no_isin": 0,
@@ -813,6 +816,7 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
             dividends=found.amounts,
             **company.inputs,
         )
+        inputs_of[ticker] = inputs
         values[ticker] = compute(inputs, day)
         if company.unconfirmed is not None:  # #77: the count fields have no value because B3 does not confirm the scale
             values[ticker] = mask_share_count(values[ticker], SCALE_UNCONFIRMED_REASON)
@@ -850,6 +854,8 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
         dy_dates=dy_dates,
         previous=previous_values,
         filings=filings,
+        values=values,
+        inputs=inputs_of,
     )
 
 
