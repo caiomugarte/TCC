@@ -11,7 +11,6 @@ from tests.test_premium_snapshot_only import build_snapshot
 from app.services.status_invest_inputs import (
     SelectorPriceError,
     load_snapshot_inputs,
-    SelectorSnapshotChangedError,
     SourceSnapshot,
     load_selector_prices,
 )
@@ -92,7 +91,7 @@ class SelectorPriceTests(unittest.TestCase):
                 snapshot = _write_price_csv(self.path, original)
                 _write_price_csv(self.path, [("KNRI11", changed_price, "1.0"), original[1]])
 
-                with self.assertRaises(SelectorSnapshotChangedError):
+                with self.assertRaises(SnapshotChangedError):
                     load_selector_prices(snapshot, ["KNRI11", "KNCR11"])
 
     def test_each_bad_price_raises_naming_the_ticker(self):

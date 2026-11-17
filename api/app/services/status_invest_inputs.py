@@ -11,10 +11,6 @@ from typing import Any, Callable, Mapping, Sequence
 from snapshot_manifest import SnapshotChangedError, SnapshotUnavailableError
 
 
-class SelectorSnapshotChangedError(RuntimeError):
-    """The selector CSV bytes no longer match the SHA-256 recorded for the run."""
-
-
 class SelectorPriceError(ValueError):
     """A selected ticker has no usable PRECO in the run's selector CSV."""
 
@@ -146,7 +142,7 @@ def load_selector_prices(snapshot: SourceSnapshot, tickers: Sequence[str]) -> di
     except OSError as exc:
         raise SelectorPriceError(f"selector CSV {snapshot.path} could not be read") from exc
     if hashlib.sha256(data).hexdigest() != snapshot.sha256:
-        raise SelectorSnapshotChangedError(f"selector CSV {snapshot.path} changed after the run recorded it")
+        raise SnapshotChangedError(f"selector CSV {snapshot.path} changed after the run recorded it")
     wanted = [str(ticker).strip().upper() for ticker in tickers]
     reader = csv.DictReader(io.StringIO(data.decode("utf-8-sig"), newline=""))
     has_price_column = "PRECO" in (reader.fieldnames or [])

@@ -16,7 +16,6 @@ if str(PY_ROOT) not in sys.path:
 # that live in py/ (snapshot_manifest), which must already be importable.
 from app.services.status_invest_inputs import (  # noqa: E402
     SelectorPriceError,
-    SelectorSnapshotChangedError,
     SourceSnapshot,
     StatusInvestInputs,
     load_selector_prices,
@@ -30,6 +29,7 @@ from app.services.whole_units import (  # noqa: E402
 
 from allocation_config import ASSET_CLASSES  # noqa: E402
 from fii_selection import FiiUniverseInfeasibleError  # noqa: E402
+from snapshot_manifest import SnapshotChangedError  # noqa: E402
 
 
 def _default_snapshot_loader(manifest: object) -> object:
@@ -613,7 +613,7 @@ def _buy_list(
         return [], []
     try:
         prices = price_loader(snapshot, [row["ticker"] for row in rows])
-    except SelectorSnapshotChangedError as exc:
+    except SnapshotChangedError as exc:
         raise PremiumOptimizationError(str(exc), "snapshot_changed") from exc
     except SelectorPriceError as exc:
         raise PremiumOptimizationError(str(exc), "engine_error") from exc
