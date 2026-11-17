@@ -2,10 +2,11 @@
 
 The universe is tests/fixtures/pit_rebuild/universe with the overlay tests/fixtures/stock_collector on top:
 
-- b3/detail: the B3 sector classification of each company (GetDetail), except COBR (1004), which has none.
+- b3/detail: the B3 sector classification of each company (GetDetail); the record of COBR (1004) has no classification.
 - b3/company_AZUL.json: AZUL4 split 1:2 (DESDOBRAMENTO 100 %) with ex-date in June 2026; the B3 total is 40 M.
   The DFP 2025 files 20 M PN shares, LL 30 M and PL 400 M, so at 2026-08-07 the count is 40 M:
   LPA 0.75, VPA 10.00, P/L 15.00 / 0.75 = 20.00 and VALOR DE MERCADO 40 M x 15.00 = 600 M.
+- dfp/2025: the DRE and BPP of the universe with BANC (1007) in the bank layout (net income 3.09, equity 2.08, #80).
 - dfp/2020: the fiscal-year 2020 net income of SHRT (937 500) and NOBX (80 M), for CAGR LUCROS 5 ANOS.
   SHRT: LL 30 M / 937 500 = 32 = 2^5, so the CAGR is 100 % and PEG = P/L 10.00 / 100 = 0.10.
   NOBX: LL 40 M < 80 M, so the CAGR is negative and PEG is empty.
@@ -155,6 +156,20 @@ class FinancialTests(CollectorCase):
         self.assertNotEqual(banc["ROE"], "")
         self.assertNotEqual(banc["MARG. LIQUIDA"], "")
 
+    def test_a_bank_filing_in_the_bank_layout_is_read_from_its_own_accounts(self):
+        # The overlay files BANC's DFP 2025 in the bank layout of ITUB and SANB (#80): net income in 3.09 (controllers
+        # 3.09.01 = 100 M of 120 M), equity in 2.08 (1 500 M, 100 M of minority in 2.08.09), and 2.03 holding the
+        # amortised-cost liabilities (5 000 M). Price 10.00 x 100 M shares = 1 000 M of market value.
+        _, rows, _ = self.collect(D1)
+
+        banc = rows["BANC3"]
+        self.assertAlmostEqual(float(banc["P/L"]), 10.00)  # 1 000 M / 100 M
+        self.assertAlmostEqual(float(banc["ROE"]), 100 * 100 / 1_400, places=5)  # LL / PL of the controllers
+        self.assertAlmostEqual(float(banc["ROA"]), 100 * 100 / 9_000, places=5)
+        self.assertAlmostEqual(float(banc["MARG. LIQUIDA"]), 100 * 100 / 900, places=5)
+        self.assertAlmostEqual(float(banc["P/VP"]), 1_000 / 1_400, places=5)
+        self.assertAlmostEqual(float(banc["PATRIMONIO / ATIVOS"]), 1_500 / 9_000, places=6)
+
     def test_a_common_stock_keeps_every_indicator(self):
         _, rows, _ = self.collect(D1)
 
@@ -247,6 +262,37 @@ class CommandLineTests(CollectorCase):
                     self.assertEqual(code, expected, err)
                     self.assertEqual(len(err.strip().splitlines()), 1, err)
             self.assertFalse((root / "stocks.csv").exists())
+
+    def test_offline_without_the_b3_classification_of_a_company_exits_5_and_writes_nothing(self):
+        # #80: an offline run must not leave SETOR and SUBSETOR empty because the classification was never fetched.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            cache = root / "cache"
+            shutil.copytree(self.cache, cache)
+            (cache / collector.detail_name("1001")).unlink()
+
+            code, err = run(["--date", D1.isoformat(), "--out", str(root / "stocks.csv"), "--cache-dir", str(cache), "--offline"])
+
+            self.assertEqual(code, 5, err)
+            self.assertIn("GetDetail", err)
+            self.assertFalse((root / "stocks.csv").exists())
+
+
+class UniverseTests(CollectorCase):
+    def test_a_ticker_without_a_session_in_the_30_days_up_to_the_cutoff_is_not_in_the_csv(self):
+        # The B3 recent-trade filter of #63 holds by construction: SEMP4's last session is 2026-05-29, 70 days
+        # before D1, while SEMP3 traded on 2026-11-06. Premium runs no longer filter (#17), so the CSV must not carry it.
+        _, rows, target = self.collect(D1)
+
+        self.assertIn("SEMP3", rows)
+        self.assertNotIn("SEMP4", rows)
+        provenance = json.loads(collector.provenance_path(target).read_text(encoding="utf-8"))
+        self.assertNotIn("SEMP4", provenance["excluded"])
+
+    def test_a_company_that_b3_does_not_classify_has_setor_and_subsetor_empty(self):
+        _, rows, _ = self.collect(D1)
+
+        self.assertEqual((rows["COBR3"]["SETOR"], rows["COBR3"]["SUBSETOR"]), ("", ""))
 
 
 RAW_KINDS = {"dfp_itr", "cotahist", "proventos", "eventos", "classificacao_setorial"}

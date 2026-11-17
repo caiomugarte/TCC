@@ -352,8 +352,11 @@ or a PIT leak, 5 a required raw file is missing.
   `OUTPUT_COLUMNS`), in its scale (percent indicators in percent, money in BRL),
   plus `SUBSETOR`. `SETOR` and `SUBSETOR` are the B3 economic sector and
   subsector from GetDetail, as B3 writes them (B3 writes commas as periods:
-  `Petróleo. Gás e Biocombustíveis`). A company without a classification has
-  both empty.
+  `Petróleo. Gás e Biocombustíveis`). A company whose GetDetail record has no
+  classification, or whose GetDetail download fails online, has both empty.
+  With `--offline` the GetDetail of every company in the universe must be in
+  the cache: a missing one is exit 5, so an offline run never leaves the
+  sectors empty because they were never fetched (#80).
 - **Formulas:** the 19 rebuilt fields follow `py/pit_rebuild/indicators.py`,
   except `ROIC` = 100 × EBIT 12m × (1 − 0.34) ÷ (PL of the controllers + gross
   debt − cash), empty when the denominator is ≤ 0, and `PEG RATIO` = `P/L` ÷
@@ -364,8 +367,15 @@ or a PIT leak, 5 a required raw file is missing.
   than 270 days leaves every accounting column empty.
 - **Dividends:** B3 only. A company whose B3 history fails or is incomplete has
   `DY` empty, and the selector reads an empty `DY` as 0 (#52).
-- **Financials:** banks and insurers are still computed like any company here;
-  their own indicator set and peer group are issue #79.
+- **Financials:** banks and insurers file other statement layouts, so the net
+  income and the equity are found by name, not by a fixed account (#80). The
+  net income is the level-2 DRE account named "Lucro/Prejuízo ... do Período"
+  (3.11 in the common layout, 3.09 for banks, 3.13 for insurers, where 3.11 is
+  the continuing operations), and its `.01` child when non-zero. The equity is
+  the level-2 BPP account named "Patrimônio Líquido ..." (2.03, or 2.07/2.08 for
+  banks) and the minority its child named "... Não Controladores". Without
+  those names the accounts are 3.11 and 2.03 as before. The indicators that do
+  not apply to a financial (#79) are left empty.
 - **`SUBSETOR` in the selector:** the selector does not read it, but its
   pre-processing treats every non-ID column as a metric candidate. With pandas 3
   the text column stays text and the robustness filter counts it as filled;
