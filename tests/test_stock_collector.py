@@ -23,6 +23,7 @@ import csv
 import io
 import json
 import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -184,6 +185,95 @@ class SelectorTests(CollectorCase):
         self.assertFalse(ranked["SCORE"].isna().any())
         self.assertEqual(result["selected_tickers"], ["NOBX3", "SHRT3"])
         self.assertTrue(set(result["exclusion_reasons"]) <= set(rows))
+
+
+class CommandLineTests(CollectorCase):
+    def test_the_package_entry_point_collects_offline(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory) / "stocks.csv"
+            done = subprocess.run(
+                [sys.executable, str(PROJECT_ROOT / "py" / "pit_rebuild"), "collect", "--date", D1.isoformat(),
+                 "--out", str(target), "--cache-dir", str(self.cache), "--offline"],
+                capture_output=True, text=True, timeout=120, check=False,
+            )
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(read_csv(target)[0], [*OUTPUT_COLUMNS, "SUBSETOR"])
+            self.assertTrue((Path(directory) / "stocks.provenance.json").is_file())
+
+    def test_exit_codes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            out = str(root / "stocks.csv")
+            tampered = root / "tampered"
+            shutil.copytree(self.cache, tampered)
+            (tampered / "cad_cia_aberta.csv").write_bytes(b"changed")
+            (root / "empty").mkdir()
+            cases = {
+                2: ["--date", "2026-02-30", "--out", out, "--cache-dir", str(self.cache), "--offline"],
+                3: ["--date", D1.isoformat(), "--out", out, "--cache-dir", str(root / "absent"), "--offline"],
+                4: ["--date", D1.isoformat(), "--out", out, "--cache-dir", str(tampered), "--offline"],
+                5: ["--date", D1.isoformat(), "--out", out, "--cache-dir", str(root / "empty"), "--offline"],
+            }
+            for expected, argv in cases.items():
+                with self.subTest(code=expected):
+                    code, err = run(argv)
+                    self.assertEqual(code, expected, err)
+                    self.assertEqual(len(err.strip().splitlines()), 1, err)
+            self.assertFalse((root / "stocks.csv").exists())
+
+
+RAW_KINDS = {"dfp_itr", "cotahist", "proventos", "eventos", "classificacao_setorial"}
+
+
+class ManifestTests(CollectorCase):
+    def build(self, registry: Path, *extra: str) -> tuple[int, dict | None, str]:
+        import snapshot_registry
+        from test_snapshot_registry import CREATED_AT, build_fetch_inputs
+
+        snapshot_dir, _, fii_universe = build_fetch_inputs(registry)
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            code = snapshot_registry.main([
+                "build", "--registry", str(registry), "--manifest-id", "cvm-b3", "--created-at", CREATED_AT,
+                "--snapshot-dir", str(snapshot_dir), "--stock-universe", str(registry / "selectors" / "stocks.csv"),
+                "--fii-universe", str(fii_universe), *extra,
+            ])
+        target = registry / "cvm-b3.json"
+        return code, json.loads(target.read_text(encoding="utf-8")) if target.is_file() else None, err.getvalue()
+
+    def test_the_manifest_records_the_cvm_b3_provider_and_the_hash_of_every_raw_file_used(self):
+        from snapshot_manifest import SnapshotManifest, validate_manifest
+
+        with tempfile.TemporaryDirectory() as directory:
+            registry = Path(directory)
+            code, err = run(["--date", D1.isoformat(), "--out", str(registry / "selectors" / "stocks.csv"), "--cache-dir", str(self.cache), "--offline"])
+            self.assertEqual(code, 0, err)
+            code, manifest, err = self.build(registry, "--stock-provenance", str(registry / "selectors" / "stocks.provenance.json"))
+            self.assertEqual(code, 0, err)
+            stock = manifest["sources"]["stock"]
+            self.assertEqual(stock["provider"], "cvm-b3")
+            self.assertEqual(stock["metadata"]["as_of"], D1.isoformat())
+            raw = stock["metadata"]["raw_files"]
+            self.assertTrue(RAW_KINDS <= set(raw), raw.keys())
+            cached = json.loads((self.cache / "manifest.json").read_text(encoding="utf-8"))["files"]
+            for kind in RAW_KINDS:
+                for name, sha256 in raw[kind].items():
+                    self.assertEqual(sha256, cached[name]["sha256"], name)
+            self.assertIn("b3_detail_1001.json", raw["classificacao_setorial"])
+            self.assertIn("b3_company_AZUL.json", raw["eventos"])
+            validate_manifest(SnapshotManifest.load(registry / "cvm-b3.json"))
+
+    def test_build_refuses_a_provenance_written_for_another_csv(self):
+        with tempfile.TemporaryDirectory() as directory:
+            registry = Path(directory)
+            code, err = run(["--date", D1.isoformat(), "--out", str(registry / "selectors" / "stocks.csv"), "--cache-dir", str(self.cache), "--offline"])
+            self.assertEqual(code, 0, err)
+            with (registry / "selectors" / "stocks.csv").open("a", encoding="utf-8") as handle:
+                handle.write("XXXX3" + "," * 31 + "\n")
+            code, manifest, err = self.build(registry, "--stock-provenance", str(registry / "selectors" / "stocks.provenance.json"))
+            self.assertEqual(code, 4)
+            self.assertIsNone(manifest)
+            self.assertIn("provenance", err)
 
 
 if __name__ == "__main__":
