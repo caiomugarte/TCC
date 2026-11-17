@@ -2,18 +2,35 @@
 
 ## O snapshot
 
+O registry `snapshots/` não é versionado. As cópias byte a byte do manifesto, dos dois CSVs de seleção e das duas
+proveniências estão em [`proofs/cvm-b3-2026-11-17/`](proofs/cvm-b3-2026-11-17/), e todos os números desta seção saem
+delas:
+
+| Arquivo | SHA-256 do arquivo |
+|---|---|
+| `cvm-b3-2026-11-17.json` (manifesto) | `57aec798759837b0dd073b5c6c80cfef58ae6c561de274ae9a1856329b952dd6` |
+| `stocks.csv` | `7d12d6347660954758f0d853b9e3328e2ce4825985102542753faa8a3affcd0c` |
+| `stocks.provenance.json` | `e090db0e731b165a56c13e5c24a5245b5989695a65be8254d0a12ca96cfc0cae` |
+| `fiis.csv` | `99889381df013ca6b73c2ba08c63999a72531e0969b04f1f60a0be18a99eba43` |
+| `fiis.provenance.json` | `c6ce8e368b7a46a8128de7677f472f708121c415e8ae3124a83e2a33c0a7e3de` |
+
 - Manifesto `cvm-b3-2026-11-17` (registry `snapshots/`, estado `published`), `cutoff_date` 2026-11-16,
-  `manifest_sha256` `aa1da3f43ad5a7d38cb2b6a157fd7512e7d6685ca7c1df58da6530327e57735e`.
+  `manifest_sha256` `aa1da3f43ad5a7d38cb2b6a157fd7512e7d6685ca7c1df58da6530327e57735e`. Esse é o hash canônico do
+  conteúdo (`manifest_canonical_sha256` em `py/snapshot_manifest.py`, sem `state` nem `state_changed_at`), não o hash
+  do arquivo; ele recalcula igual a partir da cópia commitada.
 - Ações: `data/selectors-2026-11-17/stocks.csv`, provedor `cvm-b3`, `as_of` 2026-11-16, SHA-256
   `7d12d6347660954758f0d853b9e3328e2ce4825985102542753faa8a3affcd0c`. O manifesto guarda os hashes dos brutos por
-  tipo: 11 arquivos DFP/ITR, 2 COTAHIST, 374 de proventos, 300 de eventos, 299 de classificação setorial e 18 de
-  cadastro.
+  tipo (`stock_source.metadata.raw_files`): 11 arquivos DFP/ITR, 2 COTAHIST, 374 de proventos, 300 de eventos, 299 de
+  classificação setorial e 18 de cadastro.
 - FIIs: `data/selectors-2026-11-17/fiis.csv`, provedor `statusinvest`, baixado em 2026-11-17T14:53:41Z, SHA-256
   `99889381df013ca6b73c2ba08c63999a72531e0969b04f1f60a0be18a99eba43`. Dos 593 FIIs do Status Invest, 275 saíram pelo
-  filtro de negociação recente da B3 em 2026-11-16 e ficaram 318.
-- Universo de ações: 384 papéis, com 1 deixado de fora (`IBOV11`, sem código CVM). Entre os 384, 38 são financeiros
-  (subsetores "Intermediários Financeiros" e "Previdência e Seguros"). Com a política do run abaixo, 19 deles passam
-  pelos filtros de elegibilidade e todos os 19 recebem SCORE, entre eles ITUB4, SANB11, BBDC4 e BBAS3.
+  filtro de negociação recente da B3 em 2026-11-16 (`recent_trade_filter.removed.fiis` em `fiis.provenance.json`) e
+  ficaram 318 (as linhas de `fiis.csv`).
+- Universo de ações: 384 papéis (as linhas de `stocks.csv`), com 1 deixado de fora (`IBOV11`, sem código CVM, em
+  `excluded` de `stocks.provenance.json`). Entre os 384, 38 são financeiros (coluna `SUBSETOR` "Intermediários
+  Financeiros" ou "Previdência e Seguros"). Com a política do run abaixo (`cvm-b3-first-snapshot/policy.json`), 19
+  deles passam pelos filtros de elegibilidade do pré-processamento e todos os 19 recebem SCORE, entre eles ITUB4,
+  SANB11, BBDC4 e BBAS3.
 - BPAC11 continua sem indicadores contábeis por causa do dado. O ITR de 2026-09-30 do BTG está no índice da CVM
   (versão 2, recebida em 2026-11-13), mas o arquivo aberto da CVM ainda não traz as demonstrações dele. Como o ITR
   mais novo utilizável não tem linhas, os campos contábeis ficam vazios.

@@ -1,0 +1,1674 @@
+{
+  "csv_sha256": "99889381df013ca6b73c2ba08c63999a72531e0969b04f1f60a0be18a99eba43",
+  "provider": "statusinvest",
+  "recent_trade_filter": {
+    "collected_on": "2026-11-16",
+    "cotahist": [
+      {
+        "downloaded_on": "2026-11-16",
+        "sha256": "5127126d28fa67e35e266ed4d513196e4d21b471bdb4a7afd23e293c4cd9d6c0",
+        "url": "https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2026.ZIP"
+      }
+    ],
+    "cotahist_absent": [],
+    "removed": {
+      "fiis": [
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ALZM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ANCR11B"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "AQLL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ARFI11B"
+        },
+        {
+          "last_trade": "2026-09-04",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ASRF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ATCR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ATWN11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "AZPE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BARI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BBFI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BBIM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BCFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BETW11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BICR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BINR11"
+        },
+        {
+          "last_trade": "2026-03-20",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BIPD11"
+        },
+        {
+          "last_trade": "2026-07-29",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BIPE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BLCP11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BLMC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BLMR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BLUR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BMII11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BPFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BPLC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BPRP11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BREV11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BRHT11B"
+        },
+        {
+          "last_trade": "2026-05-28",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BRIM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BROL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BRSE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BTCR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BTHI12"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BTHR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BTML11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BTSG11"
+        },
+        {
+          "last_trade": "2026-10-09",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BTSI11"
+        },
+        {
+          "last_trade": "2026-10-05",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BTYU11"
+        },
+        {
+          "last_trade": "2026-07-17",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BVAR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BZEL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "BZLI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CCLB11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CCRF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CCVA11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CENU11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CFHI11"
+        },
+        {
+          "last_trade": "2026-09-02",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CFII11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CIXM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CIXR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CJFI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "COPP11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CPFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CPFO11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CPHH11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CSMC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": {
+            "codbdi": "14",
+            "date": "2026-10-30"
+          },
+          "reason": "no_recent_trade",
+          "ticker": "CTEM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CTNP11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CVPR11"
+        },
+        {
+          "last_trade": "2026-09-17",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "CYLD11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "DAMT11B"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "DLMT11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "DMAC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "DOMC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "DOVL11B"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "DRIT11"
+        },
+        {
+          "last_trade": "2026-10-01",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "DVLP11"
+        },
+        {
+          "last_trade": "2026-05-26",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "DVLT11"
+        },
+        {
+          "last_trade": "2026-01-14",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "EGYR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ELDO11"
+        },
+        {
+          "last_trade": "2026-06-16",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ERCR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ESTQ11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FAGL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FAOE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FARU11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FCAS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FGPM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FIIC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FINF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FISD11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FLFL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FLNR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FOFT11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FRHY11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FTCE11B"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "FVBI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GCFF11"
+        },
+        {
+          "last_trade": "2026-09-09",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GCOI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GESE11B"
+        },
+        {
+          "last_trade": "2026-06-15",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GLOG11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GLPL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GRLV11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GTLG11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GURB11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "GVBI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HBTT11"
+        },
+        {
+          "last_trade": "2026-07-15",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HCHG11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HCPR11"
+        },
+        {
+          "last_trade": "2026-10-13",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HDOF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HERM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HGFF11"
+        },
+        {
+          "last_trade": "2026-05-25",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HGPO11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HGRS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HILG11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HLMB11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HMOC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HPDR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HRES11"
+        },
+        {
+          "last_trade": "2026-08-31",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "HUSI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "IBFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "IDFI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "IDGR11"
+        },
+        {
+          "last_trade": "2026-09-02",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "IDUA11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "IMOV11"
+        },
+        {
+          "last_trade": "2026-08-27",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "INRD11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "IRDM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ISCJ11"
+        },
+        {
+          "last_trade": "2026-08-27",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ITIP11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "IVCI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "JBFO11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "JCDA11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "JCDB11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "JCIN11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "JPPC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "JRDM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "JTPR11"
+        },
+        {
+          "last_trade": "2026-07-31",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "KEVE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "KFEN11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "KINP11"
+        },
+        {
+          "last_trade": "2026-10-13",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "KISU11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "KLOG11"
+        },
+        {
+          "last_trade": "2026-09-18",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "KNPR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "KOPI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "KRES11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LATR11B"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LAVF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LFTT11"
+        },
+        {
+          "last_trade": "2026-06-24",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LKDV11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LLAO11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LOFT11B"
+        },
+        {
+          "last_trade": "2026-05-21",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LRED11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LSPA11"
+        },
+        {
+          "last_trade": "2026-04-01",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "LTMT11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MADS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MATV11"
+        },
+        {
+          "last_trade": "2026-06-18",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MCEM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MCHF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MFAI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MFCR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MGCR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MGFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MGIM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MGLC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MGRI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MINT11"
+        },
+        {
+          "last_trade": "2026-07-10",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MMPD11"
+        },
+        {
+          "last_trade": "2026-10-13",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MMVE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MOFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MORC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MORE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MOSO11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MTOF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MTRS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "MVFI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "N4V1"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "N4V111"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "NVIF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "OBAL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "OGHY11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ONEF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "OPTM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ORPD11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "OUFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "OURE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PATB11"
+        },
+        {
+          "last_trade": "2026-05-11",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PATL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PBLV11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PCAS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PLCR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PNCR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PNLN11"
+        },
+        {
+          "last_trade": "2026-06-15",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PNRC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PRSN11B"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PRTS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PRZS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "PULV11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "QAMI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "QIRI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "QNTS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RBBV11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RBCB11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RBED11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RBGS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RBRF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RBRM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RBRU11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RBVO11"
+        },
+        {
+          "last_trade": "2026-09-04",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RCFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RCKF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RCRI11B"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RDCI11"
+        },
+        {
+          "last_trade": "2026-10-05",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RDLI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RDLS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RECH11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RECX11"
+        },
+        {
+          "last_trade": "2026-09-04",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "REIT11"
+        },
+        {
+          "last_trade": "2026-08-12",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RELG11"
+        },
+        {
+          "last_trade": "2026-10-08",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "REME11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RFOF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RNDP11"
+        },
+        {
+          "last_trade": "2026-09-17",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ROOF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RTEL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RZDM11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "RZZV11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SACL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SADI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SAIC11B"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SALI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SARE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SBCL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SFND11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SFRO11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SHDP11B"
+        },
+        {
+          "last_trade": "2026-06-26",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SHOP11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SHSO11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SIGR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SLDZ11"
+        },
+        {
+          "last_trade": "2026-10-13",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SNFF11"
+        },
+        {
+          "last_trade": "2026-02-03",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SNLG11"
+        },
+        {
+          "last_trade": "2026-06-12",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SOFF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SOLR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SPAF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SPDE11"
+        },
+        {
+          "last_trade": "2026-04-15",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SPGM11"
+        },
+        {
+          "last_trade": "2026-10-13",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SPMO11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SPVJ11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SPXC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SPXG11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SPXL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SRVD11"
+        },
+        {
+          "last_trade": "2026-03-11",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "STRX11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "SURE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TBOF11"
+        },
+        {
+          "last_trade": "2026-02-23",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TCIN11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TCPF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TELD11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TELF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TFOF11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "THRA11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TORM13"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TOUR11"
+        },
+        {
+          "last_trade": "2026-05-18",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TSER11"
+        },
+        {
+          "last_trade": "2026-06-15",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TSNC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "TSNM11"
+        },
+        {
+          "last_trade": "2026-07-23",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VCTH11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VDSV11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VERE11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VIDS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VIFI11"
+        },
+        {
+          "last_trade": "2026-10-07",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VJFD11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VLIQ11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VLJS11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VLOL11"
+        },
+        {
+          "last_trade": "2026-08-18",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VPSI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VSEC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VTLT11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VTPA11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VTPL11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VTRT11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VTVI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VTXI11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "VVPR11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "WSEC11"
+        },
+        {
+          "last_trade": "nenhum",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "XBXO11"
+        },
+        {
+          "last_trade": "2026-07-06",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "XPIN11"
+        },
+        {
+          "last_trade": "2026-03-20",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "YUFI11"
+        },
+        {
+          "last_trade": "2026-08-07",
+          "other_codbdi_last_trade": null,
+          "reason": "no_recent_trade",
+          "ticker": "ZIFI11"
+        }
+      ]
+    },
+    "window_days": 30
+  },
+  "retrieved_at": "2026-11-17T14:53:41.968301Z"
+}

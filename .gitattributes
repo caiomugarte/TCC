@@ -1,3 +1,6 @@
 # The PIT audit (py/pit_validation.py) and its tests hash these files byte for byte;
 # git must store and check them out exactly as written, with no line-ending conversion.
 data/allocation*/** -text
+
+# Proof copies of published snapshots: docs cite their SHA-256, so keep the bytes exact.
+docs/validation/proofs/** -text
