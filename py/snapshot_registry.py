@@ -281,6 +281,33 @@ def _stock_source(path: str, sha256: str, provenance_path: Optional[Path]) -> di
     }
 
 
+def _fii_source(path: str, sha256: str, provenance_path: Optional[Path]) -> dict:
+    """The FII selector source: the fixed literal, or the provider, download time and recent-trade filter of a
+    scripts/create_selector_snapshot.py provenance (issue #80)."""
+
+    if provenance_path is None:
+        return {"path": path, "sha256": sha256, "provider": PROVIDER_SELECTOR, "metadata": {}}
+    try:
+        provenance = json.loads(Path(provenance_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SnapshotError(f"FII provenance cannot be read: {exc}") from exc
+    keys = ("provider", "retrieved_at", "csv_sha256", "recent_trade_filter")
+    if not isinstance(provenance, dict) or not all(key in provenance for key in keys):
+        raise SnapshotError("FII provenance needs provider, retrieved_at, csv_sha256 and recent_trade_filter")
+    if provenance["csv_sha256"] != sha256:
+        raise SnapshotError("FII provenance was written for another CSV: its csv_sha256 differs from --fii-universe")
+    record = provenance["recent_trade_filter"]
+    return {
+        "path": path,
+        "sha256": sha256,
+        "provider": str(provenance["provider"]),
+        "metadata": {
+            "retrieved_at": provenance["retrieved_at"],
+            "recent_trade_filter": {key: record.get(key) for key in ("collected_on", "window_days", "cotahist")},
+        },
+    }
+
+
 def build_manifest(
     *,
     registry_root: Path,
@@ -290,6 +317,7 @@ def build_manifest(
     stock_universe: Path,
     fii_universe: Path,
     stock_provenance: Optional[Path] = None,
+    fii_provenance: Optional[Path] = None,
 ) -> dict:
     """Compose the ``draft`` manifest payload for one local snapshot.
 
@@ -302,7 +330,10 @@ def build_manifest(
 
     ``stock_provenance`` is the ``*.provenance.json`` the CVM/B3 collector
     writes next to its stock CSV (issue #78): the stock source then carries
-    its provider and the hashes of the raw files used.
+    its provider and the hashes of the raw files used. ``fii_provenance`` is
+    the ``fiis.provenance.json`` of ``scripts/create_selector_snapshot.py``
+    (issue #80): the FII source then carries its provider, download time and
+    B3 recent-trade filter.
     """
 
     registry_root = registry_root.resolve()
@@ -330,12 +361,7 @@ def build_manifest(
                 "metadata": {"files": files},
             },
             "stock": _stock_source(rel(stock_universe), file_sha256(stock_universe), stock_provenance),
-            "fii": {
-                "path": rel(fii_universe),
-                "sha256": file_sha256(fii_universe),
-                "provider": PROVIDER_SELECTOR,
-                "metadata": {},
-            },
+            "fii": _fii_source(rel(fii_universe), file_sha256(fii_universe), fii_provenance),
         },
     }
     manifest = SnapshotManifest.from_dict(payload, base_dir=registry_root)
@@ -578,6 +604,10 @@ def _cmd_build(args: argparse.Namespace) -> int:
     if stock_provenance is not None and not stock_provenance.is_file():
         print(f"--stock-provenance not found on disk: {stock_provenance}", file=sys.stderr)
         return EXIT_TARGET_MISSING
+    fii_provenance = Path(args.fii_provenance) if args.fii_provenance else None
+    if fii_provenance is not None and not fii_provenance.is_file():
+        print(f"--fii-provenance not found on disk: {fii_provenance}", file=sys.stderr)
+        return EXIT_TARGET_MISSING
 
     if target.exists():
         print(f"manifest already exists: {target}", file=sys.stderr)
@@ -592,6 +622,7 @@ def _cmd_build(args: argparse.Namespace) -> int:
             stock_universe=stock_universe,
             fii_universe=fii_universe,
             stock_provenance=stock_provenance,
+            fii_provenance=fii_provenance,
         )
     except (SnapshotError, SnapshotManifestError) as exc:
         print(f"build failed: {exc}", file=sys.stderr)
@@ -623,6 +654,10 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument(
         "--stock-provenance",
         help="provenance JSON of a CVM/B3 stock CSV (py/pit_rebuild collect): provider and raw hashes",
+    )
+    build.add_argument(
+        "--fii-provenance",
+        help="provenance JSON of a FII CSV (scripts/create_selector_snapshot.py): provider, download time, B3 filter",
     )
     build.set_defaults(handler=_cmd_build)
 

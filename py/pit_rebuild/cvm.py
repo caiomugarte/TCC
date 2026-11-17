@@ -33,9 +33,19 @@ INDIVIDUAL = "individual"
 ULTIMO = "ÚLTIMO"
 PENULTIMO = "PENÚLTIMO"
 SCALE = {"MIL": 1000, "UNIDADE": 1}
-NET_INCOME = "LL"  # A-21 (F7): per DRE column, 3.11.01 when non-zero, else 3.11
+NET_INCOME = "LL"  # A-21 (F7): per DRE column, the controllers' share (.01) when non-zero, else the period result
+# The period result is the level-2 DRE account named "Lucro/Prejuízo ... do Período": 3.11 in the common layout,
+# 3.09 for banks and 3.13 for insurers, where 3.11 is the continuing operations. Without that name, 3.11 (#80).
+_NET_INCOME_NAME = re.compile(r"^Lucro(/| ou )Preju[ií]zo( L[ií]quido)?( Consolidado)? do Per[ií]odo$", re.IGNORECASE)
+_LEVEL_TWO_DRE = re.compile(r"^3\.\d\d(\.01)?$")  # the net income candidates, kept whatever accounts are asked for
+# The equity is the level-2 BPP account named "Patrimônio Líquido ...": 2.03 in the common layout, 2.07 or 2.08 for
+# banks. Its child named "... Não Controladores" is the non-controlling interest (2.03.09, 2.07.02, 2.08.09) (#80).
+EQUITY = "PL"
+MINORITY = "PL_MIN"
+_EQUITY_NAME = re.compile(r"^Patrim[oô]nio L[ií]quido", re.IGNORECASE)
+_MINORITY_NAME = re.compile(r"n[aã]o controlador", re.IGNORECASE)
 STATEMENT_ACCOUNTS = ("3.01", "3.11")  # F18: a consolidated DRE with either one non-zero is consolidated
-NET_INCOME_ACCOUNTS = ("3.01", "3.11", "3.11.01")  # the rows load_filings keeps whatever accounts it is asked for
+NET_INCOME_ACCOUNTS = ("3.01", "3.11", "3.11.01")  # with _LEVEL_TWO_DRE, the rows load_filings keeps whatever accounts it is asked for
 SHARE_SCALE_FACTORS = (0.01, 0.1, 1, 10, 100, 1000)  # A-18 (F13): the powers of ten from 10^-2 to 10^3
 STALE_FILING_DAYS = 270  # DEC-3 (B-6): a newest usable filing more than this many days before d gives no accounting indicator
 
@@ -165,6 +175,7 @@ def load_filings(zip_paths: Iterable[Path], kind: str, accounts: Iterable[str] |
                 value = _value(row, member)
                 if value is not None:
                     period.bal[row["CD_CONTA"].strip()] = value
+        _add_equity(period, [row for _, row in by_scope.get((scope, "BPP"), []) if row["ORDEM_EXERC"].strip() == ULTIMO])
         for member, row in by_scope.get((scope, "DRE"), []):
             value = _value(row, member)
             if value is None:
@@ -436,7 +447,8 @@ def _collect_statements(
                             continue
                         # The statement exists even when the account filter keeps none of its rows (F18).
                         bucket = statements.setdefault(key, {}).setdefault((scope, stmt), [])
-                        if accounts is not None and row["CD_CONTA"].strip() not in accounts:
+                        account = row["CD_CONTA"].strip()
+                        if accounts is not None and account not in accounts and not _equity_or_net_income(stmt, account, row):
                             continue
                         bucket.append((member, row))
                     continue
@@ -448,6 +460,17 @@ def _collect_statements(
                             continue
                         compositions[key] = (member, row)
     return statements, compositions
+
+
+def _equity_or_net_income(stmt: str, account: str, row: dict[str, str]) -> bool:
+    """True for a row that the net income or the equity may come from, whatever accounts load_filings is asked for."""
+    if stmt == "DRE":
+        return bool(_LEVEL_TWO_DRE.match(account))
+    if stmt != "BPP":
+        return False
+    name = (row.get("DS_CONTA") or "").strip()
+    depth = account.count(".")
+    return (depth == 1 and bool(_EQUITY_NAME.match(name))) or (depth == 2 and bool(_MINORITY_NAME.search(name)))
 
 
 def _statement(by_scope: dict[tuple[str, str], list]) -> tuple[str, str]:
@@ -464,12 +487,34 @@ def _statement(by_scope: dict[tuple[str, str], list]) -> tuple[str, str]:
 
 
 def _add_net_income(period: _Period) -> None:
-    """Add the LL rows (F7, A-21): per ORDEM_EXERC holding 3.11, the 3.11.01 row when its value is non-zero, else 3.11."""
+    """Add the LL rows (F7, A-21, #80): per ORDEM_EXERC, the .01 row of the period result when non-zero, else the result.
+
+    The period result is the level-2 account named "Lucro/Prejuízo ... do Período" (3.09, 3.11 or 3.13 by layout),
+    or 3.11 when no single account carries that name.
+    """
+    named = {account for (account, _), row in period.dre.items() if account.count(".") == 1 and _NET_INCOME_NAME.match(row.desc)}
+    total = named.pop() if len(named) == 1 else "3.11"
     for (account, ordem), row in list(period.dre.items()):
-        if account != "3.11":
+        if account != total:
             continue
-        detail = period.dre.get(("3.11.01", ordem))
+        detail = period.dre.get((f"{total}.01", ordem))
         period.dre[(NET_INCOME, ordem)] = detail if detail is not None and detail.value != 0 else row
+
+
+def _add_equity(period: _Period, bpp: list[dict[str, str]]) -> None:
+    """Add the EQUITY and MINORITY balances (#80): the level-2 BPP account named "Patrimônio Líquido ..." and its child
+    named "... Não Controladores"; 2.03 and 2.03.09 when no single account carries the name."""
+    names = {row["CD_CONTA"].strip(): row.get("DS_CONTA", "").strip() for row in bpp}
+    named = {account for account, name in names.items() if account.count(".") == 1 and _EQUITY_NAME.match(name)}
+    total = named.pop() if len(named) == 1 else "2.03"
+    children = {
+        account for account, name in names.items()
+        if account.startswith(f"{total}.") and account.count(".") == 2 and _MINORITY_NAME.search(name)
+    }
+    minority = children.pop() if len(children) == 1 else f"{total}.09"
+    for alias, account in ((EQUITY, total), (MINORITY, minority)):
+        if account in period.bal:
+            period.bal[alias] = period.bal[account]
 
 
 def _composition(member: str, row: dict[str, str]) -> tuple[int, int, int] | None:

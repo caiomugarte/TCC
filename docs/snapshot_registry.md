@@ -70,6 +70,10 @@ the optional lifecycle envelope:
   The kinds are `dfp_itr`, `cotahist`, `proventos`, `eventos`,
   `classificacao_setorial` and `cadastro` (FCA and the CVM cadastro). The
   metadata holds file names and hashes only, no paths.
+- Likewise a FII CSV made by `scripts/create_selector_snapshot.py` (issue #80)
+  and passed with `--fii-provenance`: the `fii` source has `provider:
+  "statusinvest"` and `metadata` = `{"retrieved_at": <download time>,
+  "recent_trade_filter": {"collected_on", "window_days", "cotahist"}}`.
 
 ## Class series
 
@@ -122,7 +126,7 @@ recomputes and rejects any divergence. Consequences:
 ```
 python3 py/snapshot_registry.py build    --registry DIR --manifest-id ID --created-at ISO
                                          --snapshot-dir DIR --stock-universe CSV --fii-universe CSV
-                                         [--stock-provenance JSON]
+                                         [--stock-provenance JSON] [--fii-provenance JSON]
 python3 py/snapshot_registry.py validate --registry DIR --manifest-id ID [--check] [--json]
 python3 py/snapshot_registry.py publish  --registry DIR --manifest-id ID
 python3 py/snapshot_registry.py retire   --registry DIR --manifest-id ID [--reason TEXT]
@@ -163,7 +167,11 @@ series column and none named `value` is exit 4.
 `python3 py/pit_rebuild collect` writes next to the stock CSV. A missing file is
 exit 3; a provenance whose `csv_sha256` is not the hash of `--stock-universe`,
 or that lacks `provider`, `as_of`, `csv_sha256` or `raw_files`, is exit 4 with
-nothing written.
+nothing written. `--fii-provenance` names the `fiis.provenance.json` of
+`scripts/create_selector_snapshot.py`, with the same rules: missing is exit 3;
+a `csv_sha256` that is not the hash of `--fii-universe`, or a provenance
+without `provider`, `retrieved_at`, `csv_sha256` or `recent_trade_filter`, is
+exit 4 with nothing written.
 
 ### `validate`
 
@@ -302,7 +310,8 @@ each SHA-256 against the manifest and against the `source_snapshot_hashes`
 recorded in the run's policy, validates the CSV, and copies the verified bytes
 into the run workspace before any calculation. Live collection (Status Invest,
 COTAHIST) belongs to snapshot creation only, so a selector CSV must already be
-filtered when it is registered. Failure codes:
+filtered when it is registered (`scripts/create_selector_snapshot.py`, below).
+Failure codes:
 
 | Cause | Code |
 |---|---|
@@ -352,8 +361,11 @@ or a PIT leak, 5 a required raw file is missing.
   `OUTPUT_COLUMNS`), in its scale (percent indicators in percent, money in BRL),
   plus `SUBSETOR`. `SETOR` and `SUBSETOR` are the B3 economic sector and
   subsector from GetDetail, as B3 writes them (B3 writes commas as periods:
-  `Petróleo. Gás e Biocombustíveis`). A company without a classification has
-  both empty.
+  `Petróleo. Gás e Biocombustíveis`). A company whose GetDetail record has no
+  classification, or whose GetDetail download fails online, has both empty.
+  With `--offline` the GetDetail of every company in the universe must be in
+  the cache: a missing one is exit 5, so an offline run never leaves the
+  sectors empty because they were never fetched (#80).
 - **Formulas:** the 19 rebuilt fields follow `py/pit_rebuild/indicators.py`,
   except `ROIC` = 100 × EBIT 12m × (1 − 0.34) ÷ (PL of the controllers + gross
   debt − cash), empty when the denominator is ≤ 0, and `PEG RATIO` = `P/L` ÷
@@ -364,8 +376,15 @@ or a PIT leak, 5 a required raw file is missing.
   than 270 days leaves every accounting column empty.
 - **Dividends:** B3 only. A company whose B3 history fails or is incomplete has
   `DY` empty, and the selector reads an empty `DY` as 0 (#52).
-- **Financials:** banks and insurers are still computed like any company here;
-  their own indicator set and peer group are issue #79.
+- **Financials:** banks and insurers file other statement layouts, so the net
+  income and the equity are found by name, not by a fixed account (#80). The
+  net income is the level-2 DRE account named "Lucro/Prejuízo ... do Período"
+  (3.11 in the common layout, 3.09 for banks, 3.13 for insurers, where 3.11 is
+  the continuing operations), and its `.01` child when non-zero. The equity is
+  the level-2 BPP account named "Patrimônio Líquido ..." (2.03, or 2.07/2.08 for
+  banks) and the minority its child named "... Não Controladores". Without
+  those names the accounts are 3.11 and 2.03 as before. The indicators that do
+  not apply to a financial (#79) are left empty.
 - **`SUBSETOR` in the selector:** the selector does not read it, but its
   pre-processing treats every non-ID column as a metric candidate. With pandas 3
   the text column stays text and the robustness filter counts it as filled;
@@ -375,6 +394,31 @@ or a PIT leak, 5 a required raw file is missing.
 The provenance file `<stem>.provenance.json` goes next to the CSV; pass it to
 `build --stock-provenance` to record the `cvm-b3` provider and the raw hashes in
 the manifest.
+
+## Creating the selector CSVs (issue #80)
+
+`python3 scripts/create_selector_snapshot.py --date D --out-dir
+<registry>/data/selectors-<name> [--cache-dir DIR] [--offline]` is the snapshot
+creation of the selector CSVs. It writes `stocks.csv`,
+`stocks.provenance.json`, `fiis.csv` and `fiis.provenance.json` together, or
+none of them.
+
+- **Stocks:** the CVM/B3 collector above at `d = D`. Its universe already is
+  the B3 recent-trade filter of #63. Status Invest is never called for stocks,
+  and a failed stock collection never falls back to it (`py/fetch_status_invest.py`
+  stays only as the reference of the measurement tool).
+- **FIIs:** still Status Invest (`py/fetch_status_invest_fii.py`), downloaded
+  live, then filtered by the B3 recent-trade rule of #63 at `D` (CODBDI 12,
+  `filter_recent_trades`), reading the COTAHIST of the raw cache. The filter
+  record goes into `fiis.provenance.json`.
+- `--offline` applies to the stock raw files; the FII CSV is always downloaded.
+- Exit codes: 0 written, 1 output not written, 2 bad arguments or a forbidden
+  directory, 3 cache directory absent in `--offline`, 4 a cached stock raw file
+  differs from its hash or a PIT leak, 5 a required stock raw file is missing,
+  6 the FII CSV failed (Status Invest download or validation, or the B3 filter).
+
+Then `build` with `--stock-provenance <out>/stocks.provenance.json
+--fii-provenance <out>/fiis.provenance.json`, `validate` and `publish`.
 
 ## Walkthrough (manual)
 

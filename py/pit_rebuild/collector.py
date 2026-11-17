@@ -154,7 +154,9 @@ def _blank_csv(universe: Sequence[str]) -> status_invest.SICsv:
 
 
 def _classification(cache: Cache, cd_cvm: str) -> sectors.Classification | None:
-    path = cache.get(sources.b3_detail_url(cd_cvm), detail_name(cd_cvm), required=False)
+    """The B3 classification of a company. Online, a failed GetDetail leaves it empty; offline, the GetDetail must be
+    cached, so a cache filled offline never yields empty sectors silently (#80)."""
+    path = cache.get(sources.b3_detail_url(cd_cvm), detail_name(cd_cvm), required=cache.offline)
     if path is None:
         return None
     try:
