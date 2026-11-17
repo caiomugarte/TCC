@@ -728,3 +728,75 @@ Uma falha não escreve nenhum arquivo do relatório e imprime uma linha no stder
 - **Defasagem não é erro comprovado.** `si_lag` conta as marcas que somem com o filing anterior.
   Ele não diz quem errou. Em 2026-11-05 a maior parte das marcas tem como filing mais recente um
   ITR de 2026-09-30, recebido entre 2026-11-03 e 2026-11-05.
+
+# Reconstrução PIT de FIIs (issue #60)
+
+Pergunta: dá para reconstruir, na data `d`, os 13 indicadores do seletor de FIIs a partir
+dos informes mensais de FII da CVM, do COTAHIST e dos proventos da B3, de modo que batam com
+o Status Invest daquela data? O veredito decide a troca da fonte dos FIIs (spec #75). A
+ferramenta é a mesma `py/pit_rebuild/`, em módulos próprios (`fii_*.py`), e o comando é
+`fii-report`. Os resultados ficam no relatório gerado (`pit-rebuild-fiis.json` e
+`pit-rebuild-fiis.md`), não aqui.
+
+## Fontes
+
+| Fonte | Usada para | Endereço |
+| --- | --- | --- |
+| CVM, informe mensal estruturado de FII (zips anuais) | cotistas, patrimônio, cotas, valor patrimonial da cota, liquidez, segmento, gestão, ISIN e data de entrega | `dados.cvm.gov.br/dados/FII/DOC/INF_MENSAL/DADOS/` |
+| B3, COTAHIST anual (CODBDI 12) | preço, liquidez, ISIN do ticker em `d` e calendário de pregões | `bvmf.bmfbovespa.com.br/InstDados/SerHist/` |
+| B3, página do fundo (API não documentada) | proventos em dinheiro e número de cotas | `sistemaswebb3-listados.b3.com.br/fundsProxy/fundsCall/GetListedSupplementFunds/` |
+| Yahoo Finance | proventos, só como reserva marcada | `query1.finance.yahoo.com/v8/finance/chart/` |
+| Status Invest | valor de referência de cada data, lido em modo somente leitura | o CSV passado em `--si` |
+
+## Regras
+
+- **Universo.** O que o seletor de FIIs considera elegível no CSV daquela data: `PRECO`,
+  `P/VP`, `LIQUIDEZ MEDIA DIARIA`, `PATRIMONIO`, `N COTISTAS` e `N COTAS` positivos e `DY` ≥ 0
+  (`py/fii_selection.py`, `apply_fii_eligibility`), com o piso mais largo do Premium, o do
+  perfil arrojado: `PATRIMONIO` ≥ 200.000.000 e `LIQUIDEZ MEDIA DIARIA` ≥ 50.000
+  (`api/app/services/premium_policy.py`, `FII_RULES`). Um teste confere a regra contra
+  `apply_fii_eligibility`.
+- **Comparação e veredito.** As do relatório de ações: 5% de diferença relativa, ou 0,5 ponto
+  percentual em `DY`, `PERCENTUAL EM CAIXA`, `CAGR DIVIDENDOS 3 ANOS` e `CAGR VALOR COTA 3 ANOS`;
+  90% e 70% para `reconstruível` e `com ressalvas`; o pior das duas datas. O veredito da
+  classe é o pior dos 13 indicadores.
+- **Setor e gestão.** São categorias. O valor da CVM passa por uma tabela de correspondência
+  fixa (`SEGMENT_MAP` e `MANAGEMENT_MAP` em `py/pit_rebuild/fii_compare.py`), escrita antes da
+  medição, e o FII fica dentro quando a tradução contém o valor do Status Invest. O relatório
+  mostra a tabela e o cruzamento CVM × Status Invest de cada data.
+- **Critério de liberação (#64).** Parte 1: todo indicador com pelo menos 70% na tolerância nas
+  duas datas. Parte 2: os 10 piores de cada indicador e data classificados como erro nosso, erro
+  do Status Invest ou diferença de método, com o informe, o pregão ou a fonte que sustenta a
+  classificação. A classificação é automática (`py/pit_rebuild/fii_audit.py`): ela procura a
+  fonte que dá o valor do Status Invest, e o caso sem fonte fica `sem classificação`.
+- **Ponto no tempo.** Um informe vale em `d` quando a versão que o arquivo da CVM traz foi
+  entregue (`Data_Entrega`) até `d`. O arquivo só traz a versão mais recente, então um informe
+  reapresentado depois de `d` some, e o fundo usa o anterior. Um informe de mês encerrado há
+  mais de 270 dias não dá valor (`stale_informe`). Só entram pregões até `d`, e proventos com
+  data-ex em `d − 365 dias < data-ex ≤ d`.
+- **Ticker → fundo.** O ISIN do último pregão do ticker até `d` é procurado no `Codigo_ISIN` dos
+  informes entregues até `d`. Se mais de um fundo informa o mesmo ISIN, vale o de número de
+  cotas mais perto do da página da B3 (`ambiguous_isin` sem ela). Sem fundo: `no_cvm_match`.
+- **Proventos.** Contam os registros `RENDIMENTO` do ISIN da cota, com data-ex no pregão seguinte
+  ao `lastDatePrior`. A B3 é a fonte quando o primeiro registro dela chega ao início da janela;
+  senão o Yahoo, com a fonte e o motivo no relatório (`b3_failed`, `b3_empty`,
+  `b3_short_history`). O relatório também traz o `DY` só com a B3, como sensibilidade.
+- **Cobertura.** Para cada indicador dos informes, o primeiro ano em que a coluna tem valor e,
+  por ano, o % dos fundos ligados na última data que têm a coluna preenchida.
+
+## Como rodar
+
+```sh
+python3 py/pit_rebuild fii-report \
+  --date 2026-08-10 --si data/raw/status_invest_fii.csv --collected-on 2026-08-10 \
+  --date 2026-11-05 --si <checkout-principal>/snapshots/data/selectors-2026-11-06/fiis.csv \
+  --collected-on 2026-11-06 --out-dir docs/validation
+```
+
+O CSV "de 11-06" foi coletado às 9h de 2026-11-06 e traz os fechamentos de 2026-11-05, por isso
+`--date 2026-11-05`. O `as_of_check` do relatório diz, para cada CSV, qual sessão bate com os
+preços. Sem `--offline`, o comando baixa o que falta para `--cache-dir` (padrão
+`.cache/pit-rebuild`, o mesmo das ações). Com `--offline`, não faz nenhuma requisição. Os
+códigos de saída são os da tabela de ações, com uma diferença: a pasta do cache inexistente dá
+código 3 só com `--offline`. Os testes rodam sem rede:
+`python3 -m unittest discover -s tests -p "test_pit_rebuild_fii*.py"`.
