@@ -34,7 +34,7 @@ def informes(*reports):
     for item in sorted(reports, key=lambda r: (r.delivered, r.ref)):
         by_fund.setdefault(item.cnpj, []).append(item)
         by_isin.setdefault(item.isin, []).append((item.delivered, item.cnpj))
-    return Informes(by_fund=by_fund, first_year={}, by_isin=by_isin)
+    return Informes(by_fund=by_fund, presence={}, by_isin=by_isin)
 
 
 def quotes(ticker="ALFA11", closes=None):

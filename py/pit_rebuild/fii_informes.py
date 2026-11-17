@@ -58,7 +58,7 @@ class Informe:
 @dataclass
 class Informes:
     by_fund: dict[str, list[Informe]] = field(default_factory=dict)  # sorted by delivery date, then reference month
-    first_year: dict[str, int] = field(default_factory=dict)
+    presence: dict[str, dict[int, set[str]]] = field(default_factory=dict)  # column -> year -> CNPJs with a value
     by_isin: dict[str, list[tuple[date, str]]] = field(default_factory=dict)  # ISIN -> (delivery date, CNPJ)
 
 
@@ -67,7 +67,7 @@ def load(zip_paths: Iterable[Path]) -> Informes:
     geral: dict[tuple[str, str, str], dict[str, str]] = {}
     complemento: dict[tuple[str, str, str], dict[str, str]] = {}
     ativo: dict[tuple[str, str, str], dict[str, str]] = {}
-    first_year: dict[str, int] = {}
+    presence: dict[str, dict[int, set[str]]] = {}
     for path in zip_paths:
         with zipfile.ZipFile(path) as archive:
             for info in archive.infolist():
@@ -84,7 +84,7 @@ def load(zip_paths: Iterable[Path]) -> Informes:
                     for row in csv.DictReader(io.TextIOWrapper(raw, encoding="latin-1"), delimiter=";"):
                         key = (row["CNPJ_Fundo_Classe"].strip(), row["Data_Referencia"].strip(), row["Versao"].strip())
                         target[key] = row
-                        _note_coverage(first_year, row)
+                        _note_coverage(presence, row)
     by_fund: dict[str, list[Informe]] = {}
     for key, row in geral.items():
         cnpj, ref, version = key
@@ -117,7 +117,7 @@ def load(zip_paths: Iterable[Path]) -> Informes:
         for item in reports:
             if item.isin:
                 by_isin.setdefault(item.isin, []).append((item.delivered, item.cnpj))
-    return Informes(by_fund=by_fund, first_year=first_year, by_isin=by_isin)
+    return Informes(by_fund=by_fund, presence=presence, by_isin=by_isin)
 
 
 def known(informes: Informes, cnpj: str, d: date) -> list[Informe]:
@@ -153,14 +153,20 @@ def funds_of_isin(informes: Informes, isin: str, d: date) -> list[str]:
 
 def first_years(informes: Informes) -> dict[str, int]:
     """The first report year in which each COVERAGE_COLUMNS column has a value for some fund."""
-    return dict(informes.first_year)
+    return {column: min(years) for column, years in informes.presence.items() if years}
 
 
-def _note_coverage(first_year: dict[str, int], row: dict[str, str]) -> None:
+def funds_with_value(informes: Informes, column: str, year: int) -> set[str]:
+    """The CNPJs with a value in the column in some report of that year."""
+    return set(informes.presence.get(column, {}).get(year, set()))
+
+
+def _note_coverage(presence: dict[str, dict[int, set[str]]], row: dict[str, str]) -> None:
     year = int(row["Data_Referencia"][:4])
+    cnpj = row["CNPJ_Fundo_Classe"].strip()
     for column in COVERAGE_COLUMNS:
-        if (row.get(column) or "").strip() and year < first_year.get(column, 10_000):
-            first_year[column] = year
+        if (row.get(column) or "").strip():
+            presence.setdefault(column, {}).setdefault(year, set()).add(cnpj)
 
 
 def _number(cell: str | None) -> float | None:

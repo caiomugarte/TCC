@@ -90,6 +90,11 @@ class InformesTest(unittest.TestCase):
         self.assertEqual(years["Total_Numero_Cotistas"], 2023)
         self.assertEqual(years["Segmento_Atuacao"], 2023)
 
+    def test_coverage_counts_the_funds_with_a_value_in_each_year(self):
+        self.assertEqual(fii_informes.funds_with_value(self.informes, "Total_Numero_Cotistas", 2023), {A})
+        self.assertEqual(fii_informes.funds_with_value(self.informes, "Total_Numero_Cotistas", 2026), {A, B})
+        self.assertEqual(fii_informes.funds_with_value(self.informes, "Total_Necessidades_Liquidez", 2026), {A})
+
 
 if __name__ == "__main__":
     unittest.main()
