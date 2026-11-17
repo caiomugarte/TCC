@@ -4,8 +4,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from snapshot_manifest import SnapshotChangedError, SnapshotManifest
+
+from tests.test_premium_snapshot_only import build_snapshot
+
 from app.services.status_invest_inputs import (
     SelectorPriceError,
+    load_snapshot_inputs,
     SelectorSnapshotChangedError,
     SourceSnapshot,
     load_selector_prices,
@@ -148,3 +153,20 @@ class SelectorPriceTests(unittest.TestCase):
             prices = load_selector_prices(snapshot, ["KNRI11"])
 
         self.assertEqual(prices, {"KNRI11": 14789})
+
+
+class SnapshotInputHashTests(unittest.TestCase):
+    def test_selector_bytes_changed_after_the_manifest_loaded_raise_snapshot_changed(self):
+        for name in ("stocks.csv", "fiis.csv"):
+            with self.subTest(source=name), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                manifest = SnapshotManifest.load(build_snapshot(root / "registry"))
+                path = root / "registry" / name
+                # Still a valid selector CSV, so only the hash check can refuse it.
+                path.write_bytes(path.read_bytes().replace(b"10.00", b"11.00"))
+                workspace = root / "workspace"
+
+                with self.assertRaisesRegex(SnapshotChangedError, "SHA-256 mismatch"):
+                    load_snapshot_inputs(manifest, workspace)
+
+                self.assertFalse((workspace / "snapshot" / name).exists())
