@@ -45,6 +45,7 @@ DEFAULT_OUT_DIR = safety.REPO_ROOT / "docs" / "validation"
 REPORT_JSON = "pit-rebuild-fiis.json"
 REPORT_MD = "pit-rebuild-fiis.md"
 THRESHOLD_PCT = 70
+WORST = 10
 SESSION_CHECK_DAYS = (-7, 3)
 COVERAGE = {
     "N COTISTAS": "Total_Numero_Cotistas",
@@ -148,7 +149,10 @@ def _measure_date(src: _Sources, si: fii_status_invest.SIFiiCsv, d: date) -> dic
             name, [(t, si.rows[t][name], rebuilt[t].values[name], rebuilt[t].reasons.get(name)) for t in eligible]
         )
         for case in stats.worst:
-            case.update(fii_audit.classify(name, case["reference"], contexts[case["ticker"]]))
+            if case["rebuilt"] is None:
+                case.update(fii_audit.classify_missing(case["reason"]))
+            else:
+                case.update(fii_audit.classify(name, case["reference"], contexts[case["ticker"]]))
             case["used"] = _used(rebuilt[case["ticker"]], name)
         fields[name] = {**_plain(stats), "verdict": verdict(stats.pct_within, stats.denominator)}
     categories = {}
@@ -167,12 +171,9 @@ def _measure_date(src: _Sources, si: fii_status_invest.SIFiiCsv, d: date) -> dic
                  "same_after_mapping": ref in fii_compare.mapped(name, cvm_value)}
                 for (cvm_value, ref), count in sorted(stats.crosstab.items(), key=lambda item: (-item[1], item[0]))
             ],
-            "mismatches": [
-                {**case, "class": fii_audit.METHOD, "evidence": rebuilt[case["ticker"]].informe.label(),
-                 "note": "a classificação da CVM e a do Status Invest diferem depois do mapeamento"}
-                for case in stats.mismatches
-            ],
+            "mismatches": stats.mismatches,
             "missing": stats.missing,
+            "worst": _category_worst(stats, rebuilt),
         }
     return {
         "eligible": len(eligible),
@@ -183,6 +184,20 @@ def _measure_date(src: _Sources, si: fii_status_invest.SIFiiCsv, d: date) -> dic
         "as_of_check": _as_of_check(src.quotes, si, eligible, d),
         "tickers": {ticker: _ticker(item) for ticker, item in rebuilt.items()},
     }
+
+
+def _category_worst(stats: fii_compare.CategoryStats, rebuilt: dict) -> list[dict]:
+    """The 10 worst category cases: the missing CVM values first, then the mismatches, by ticker."""
+    cases = [
+        {"ticker": item["ticker"], "reference": None, "rebuilt": None, **fii_audit.classify_missing(item["reason"])}
+        for item in sorted(stats.missing, key=lambda item: item["ticker"])
+    ]
+    cases += [
+        {**case, "class": fii_audit.METHOD, "evidence": rebuilt[case["ticker"]].informe.label(),
+         "note": "a classificação da CVM e a do Status Invest diferem depois do mapeamento"}
+        for case in stats.mismatches
+    ]
+    return cases[:WORST]
 
 
 def _used(item: fii_indicators.Rebuilt, name: str) -> str:
@@ -270,7 +285,7 @@ def _report_object(cache: Cache, req: _Request, src: _Sources, results: dict[dat
         if any(pct is None or pct < THRESHOLD_PCT for pct in pcts):
             failing.append(name)
     cases = [case for day in req.dates for stats in results[day]["fields"].values() for case in stats["worst"]]
-    cases += [case for day in req.dates for stats in results[day]["categories"].values() for case in stats["mismatches"][:10]]
+    cases += [case for day in req.dates for stats in results[day]["categories"].values() for case in stats["worst"]]
     open_cases = sum(1 for case in cases if case["class"] == fii_audit.OPEN)
     part1 = {"threshold_pct": THRESHOLD_PCT, "met": not failing, "failing": failing}
     part2 = {"cases": len(cases), "open": open_cases, "met": open_cases == 0,

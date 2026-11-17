@@ -199,9 +199,10 @@ def _worst(out: list[str], obj: dict, isos: list[str]) -> None:
     out.append("| data | indicador | erro nosso | erro do Status Invest | diferença de método | sem classificação |")
     out.append("| --- | --- | --- | --- | --- | --- |")
     for iso in isos:
-        for name in NUMERIC_FIELDS:
+        for name in FIELDS:
+            block = "fields" if name in NUMERIC_FIELDS else "categories"
             counts = {}
-            for case in obj["dates"][iso]["fields"][name]["worst"]:
+            for case in obj["dates"][iso][block][name]["worst"]:
                 counts[case["class"]] = counts.get(case["class"], 0) + 1
             out.append(f"| {iso} | `{name}` | {counts.get('erro nosso', 0)} | {counts.get('erro do Status Invest', 0)} | "
                        f"{counts.get('diferença de método', 0)} | {counts.get('sem classificação', 0)} |")
@@ -221,13 +222,13 @@ def _worst(out: list[str], obj: dict, isos: list[str]) -> None:
     for name in CATEGORY_FIELDS:
         for iso in isos:
             stats = obj["dates"][iso]["categories"][name]
-            if not stats["mismatches"]:
+            if not stats["worst"]:
                 continue
-            out.append(f"<details>\n<summary>{name}, {iso}: os 10 primeiros fora da categoria (por ticker)</summary>\n")
+            out.append(f"<details>\n<summary>{name}, {iso}: os 10 piores (sem valor da CVM primeiro, depois fora da categoria, por ticker)</summary>\n")
             out.append("| ticker | Status Invest | CVM | classe | evidência |")
             out.append("| --- | --- | --- | --- | --- |")
-            for case in stats["mismatches"][:10]:
-                out.append(f"| `{case['ticker']}` | {case['reference']} | {case['rebuilt']} | {case['class']} | {case['evidence']} |")
+            for case in stats["worst"]:
+                out.append(f"| `{case['ticker']}` | {case['reference'] or '-'} | {case['rebuilt'] or '-'} | {case['class']} | {case['evidence']} |")
             out.append("\n</details>\n")
 
 

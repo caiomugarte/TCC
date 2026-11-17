@@ -53,6 +53,22 @@ class ClassifyTest(unittest.TestCase):
         case = fii_audit.classify("N COTISTAS", 11, self.context(REPORTS + (decoy,)))
         self.assertEqual(case["class"], OURS)
 
+    def test_the_match_is_exact_so_a_value_within_five_percent_is_not_evidence(self):
+        reports = REPORTS + (informe(A, date(2026, 5, 1), date(2026, 6, 15), nav=130.0, equity=1_300_000_000, shares=10_000_000, holders=47000),)
+        self.assertEqual(fii_audit.classify("N COTISTAS", 47100, self.context(reports))["class"], OPEN)
+
+    def test_an_older_report_known_at_d_is_preferred_over_a_later_one(self):
+        reports = REPORTS + (
+            informe(A, date(2026, 5, 1), date(2026, 6, 15), nav=130.0, equity=1_300_000_000, shares=10_000_000, holders=51000),
+        )
+        case = fii_audit.classify("N COTISTAS", 51000, self.context(reports))  # 2026-07 (after d) has 51000 too
+        self.assertEqual(case["class"], SI_ERROR)
+
+    def test_a_missing_value_is_classified_by_its_reason(self):
+        self.assertEqual(fii_audit.classify_missing("no_cvm_match")["class"], OURS)
+        self.assertEqual(fii_audit.classify_missing("stale_informe")["class"], METHOD)
+        self.assertEqual(fii_audit.classify_missing("b3_short_history_yahoo_failed")["class"], OURS)
+
     def test_no_evidence_leaves_the_case_open(self):
         case = fii_audit.classify("N COTISTAS", 12345, self.context())
         self.assertEqual(case["class"], OPEN)
