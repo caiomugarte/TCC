@@ -119,5 +119,48 @@ class ColumnsAndScaleTests(CollectorCase):
         self.assertEqual(alfa["SUBSETOR"], "Siderurgia e Metalurgia")
 
 
+class FormulaTests(CollectorCase):
+    def test_roic_is_ebit_after_34_percent_over_controllers_equity_plus_debt_minus_cash(self):
+        _, rows, _ = self.collect(D1)
+
+        self.assertAlmostEqual(float(rows["ALFA3"]["ROIC"]), 5.617021, places=5)
+
+    def test_peg_is_pl_over_the_5_year_earnings_cagr_and_empty_when_the_cagr_is_not_positive(self):
+        _, rows, _ = self.collect(D1)
+
+        self.assertAlmostEqual(float(rows["SHRT3"]["CAGR LUCROS 5 ANOS"]), 100.0, places=6)
+        self.assertAlmostEqual(float(rows["SHRT3"]["PEG RATIO"]), 0.10, places=6)
+        self.assertLess(float(rows["NOBX3"]["CAGR LUCROS 5 ANOS"]), 0)
+        self.assertEqual(rows["NOBX3"]["PEG RATIO"], "")
+        self.assertEqual(rows["ALFA3"]["PEG RATIO"], "")  # no fiscal year 2020: no CAGR
+
+
+class ShareCountTests(CollectorCase):
+    def test_the_filed_count_moves_with_the_b3_split_between_the_period_end_and_the_cutoff(self):
+        _, rows, _ = self.collect(D1)
+
+        azul = rows["AZUL4"]
+        self.assertAlmostEqual(float(azul["LPA"]), 0.75)  # 30 M / (20 M x 2)
+        self.assertAlmostEqual(float(azul["VPA"]), 10.00)  # 400 M / 40 M
+        self.assertAlmostEqual(float(azul["P/L"]), 20.00)
+        self.assertAlmostEqual(float(azul["VALOR DE MERCADO"]), 600_000_000)
+
+
+MARKET_COLUMNS =("PRECO", "DY", "LIQUIDEZ MEDIA DIARIA", "VALOR DE MERCADO")
+
+
+class StaleFilingTests(CollectorCase):
+    def test_a_filing_older_than_270_days_leaves_every_accounting_column_empty(self):
+        header, rows, _ = self.collect(D2)
+
+        shrt = rows["SHRT3"]
+        accounting = [column for column in header if column not in ("TICKER", "SETOR", "SUBSETOR", *MARKET_COLUMNS)]
+        self.assertEqual({column: shrt[column] for column in accounting}, dict.fromkeys(accounting, ""))
+        self.assertAlmostEqual(float(shrt["PRECO"]), 10.00)
+        self.assertAlmostEqual(float(shrt["VALOR DE MERCADO"]), 300_000_000)
+        self.assertAlmostEqual(float(shrt["DY"]), 8.00)
+        self.assertEqual(shrt["SETOR"], "Consumo Cíclico")
+
+
 if __name__ == "__main__":
     unittest.main()

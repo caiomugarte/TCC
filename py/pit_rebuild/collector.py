@@ -62,6 +62,7 @@ COLUMNS = (
     "VPA", "LPA", "PEG RATIO", "VALOR DE MERCADO", "SETOR", "SUBSETOR",
 )
 GROSS_PROFIT = "3.03"
+TAX_RATE = 0.34  # ROIC = EBIT_12m × (1 − 34%) ÷ (PL_ctrl + dívida bruta − caixa), spec #75
 ACCOUNTS = cli.STATEMENT_ACCOUNTS | {GROSS_PROFIT}
 _TICKER = re.compile(r"^[A-Z]{3,4}\d{1,2}$")
 _RAW_KINDS = (  # cache file name prefix -> kind of raw file in the provenance
@@ -126,10 +127,13 @@ def collect(cache: Cache, day: date, clock=time.perf_counter) -> Collected:
         acq.histories[name] = cli._b3_history(cache, name, acq, clock)
     classes = {cd_cvm: _classification(cache, cd_cvm) for cd_cvm in sorted({acq.mapped[day][t].cd_cvm for t in kept})}
     result = cli._evaluate_day(acq, day)
+    stale = {row["ticker"] for row in result.mapping["stale_filing"]}
     rows = []
     for ticker in kept:
         item = acq.mapped[day][ticker]
         extra = _extra_fields(result.inputs[ticker], _gross_profit(acq, item.cnpj, day))
+        if ticker in stale:  # STL-01: every extra column reads the filing, so a stale filing leaves them empty too
+            extra = dict.fromkeys(extra)
         rows.append(_row(ticker, result.values[ticker], extra, classes[item.cd_cvm]))
     return Collected(day=day, rows=rows, excluded=excluded, raw_files=_raw_files(cache.used))
 
@@ -168,7 +172,9 @@ def _extra_fields(inputs: TickerInputs, gross: float | None) -> dict[str, float 
     total = None if inputs.n_on is None or inputs.n_pref is None else inputs.n_on + inputs.n_pref
     price = None if inputs.price is None else inputs.price.value / inputs.unit_divisor
     liabilities = None if at is None or pl is None else at - pl
+    invested = _minus(_plus(pl_ctrl, value(inputs.debt)), value(inputs.cash))
     return {
+        "ROIC": _times(_div(_times(ebit, 1 - TAX_RATE), invested if invested is None or invested > 0 else None), 100),
         "VPA": _div(pl_ctrl, total),
         "LPA": _div(ll, total),
         "P/ATIVOS": _price_over(price, at, total),
@@ -186,6 +192,10 @@ def _div(num: float | None, den: float | None) -> float | None:
     return None if num is None or den is None or den == 0 else num / den
 
 
+def _plus(left: float | None, right: float | None) -> float | None:
+    return None if left is None or right is None else left + right
+
+
 def _minus(left: float | None, right: float | None) -> float | None:
     return None if left is None or right is None else left - right
 
@@ -201,8 +211,16 @@ def _price_over(price: float | None, flow: float | None, total: int | None) -> f
     return _div(price, _div(flow, total))
 
 
+def _peg(values: dict[str, Value]) -> float | None:
+    """P/L ÷ CAGR LUCROS 5 ANOS (in %), empty when the CAGR is <= 0 or the P/L is negative (spec #75)."""
+    p_l, cagr = values["P/L"].value, values["CAGR LUCROS 5 ANOS"].value
+    if p_l is None or cagr is None or p_l < 0 or cagr <= 0:
+        return None
+    return p_l / cagr
+
+
 def _row(ticker: str, values: dict[str, Value], extra: dict[str, float | None], classification) -> dict[str, str]:
-    numbers = {name: values[name].value for name in ALL_FIELDS} | extra
+    numbers = {name: values[name].value for name in ALL_FIELDS} | extra | {"PEG RATIO": _peg(values)}
     row = {"TICKER": ticker}
     for column in COLUMNS[1:-2]:
         row[column] = _cell(numbers[column])
