@@ -186,10 +186,13 @@ def _measure_date(src: _Sources, si: fii_status_invest.SIFiiCsv, d: date) -> dic
 
 
 def _category_worst(stats: fii_compare.CategoryStats, rebuilt: dict) -> list[dict]:
-    """The 10 worst category cases: the mismatches after the mapping, by ticker (missing values are listed apart)."""
+    """The 10 worst category cases: the mismatches after the mapping, by ticker (missing values are listed apart).
+
+    No source gives the Status Invest category (the mapping is the only rule), so a mismatch stays open: it needs a
+    reading by hand, as every case fii_audit finds no source for."""
     cases = [
-        {**case, "class": fii_audit.METHOD, "evidence": rebuilt[case["ticker"]].informe.label(),
-         "note": "a classificação da CVM e a do Status Invest diferem depois do mapeamento"}
+        {**case, "class": fii_audit.OPEN, "evidence": rebuilt[case["ticker"]].informe.label(),
+         "note": "a classificação da CVM e a do Status Invest diferem depois do mapeamento; nenhuma fonte dá a do Status Invest"}
         for case in stats.mismatches
     ]
     return cases[:WORST]

@@ -170,7 +170,9 @@ class FiiReportTest(unittest.TestCase):
         setor = self.report["dates"][D1.isoformat()]["categories"]["SETOR"]
         self.assertEqual((setor["denominator"], setor["within"]), (4, 2))  # ALFA, BETA; AMBI is Outros, NOCV unmatched
         self.assertIn({"cvm": "Outros", "status_invest": "Papéis", "tickers": 1, "same_after_mapping": False}, setor["crosstab"])
-        self.assertEqual([(case["ticker"], case["class"]) for case in setor["worst"]], [("AMBI11", "diferença de método")])
+        self.assertEqual([(case["ticker"], case["class"]) for case in setor["worst"]], [("AMBI11", "sem classificação")])
+        # The CVM category is the only source, so a mismatch after the mapping is never classified by default.
+        self.assertGreaterEqual(self.report["criterion"]["part2"]["open"], 1)
         self.assertEqual([(case["ticker"], case["class"]) for case in setor["missing"]], [("NOCV11", "erro nosso")])
         gestao = self.report["dates"][D2.isoformat()]["categories"]["GESTAO"]
         self.assertEqual((gestao["denominator"], gestao["within"]), (2, 2))  # ALFA Ativa, BETA Definida -> Passiva
