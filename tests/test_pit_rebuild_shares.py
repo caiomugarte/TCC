@@ -187,6 +187,46 @@ class ClassWithoutIsinTests(unittest.TestCase):
         self.assertEqual(result.scaled_total, 1_000_000)  # the filed total times the factor
 
 
+class UnconfirmedScaleTests(unittest.TestCase):
+    """#77: a power of ten that the B3 total does not confirm is never applied; the company gets no count."""
+
+    def test_a_factor_of_ten_that_leaves_the_count_2_51_times_the_b3_total_gives_no_count(self):
+        # The VVEO3 shape of the #64 audit: 322,820,608 filed, 1,286,324,129 at B3. x10 is the nearest power of ten,
+        # but 3,228,206,080 is 2.51 times the B3 total, so B3 does not confirm it.
+        result = adjust(on=322_820_608, b3_total=1_286_324_129)
+        self.assertEqual(result.factor, 10)
+        self.assertFalse(result.confirmed)
+        self.assertEqual((result.n_on, result.n_pref), (None, None))
+        self.assertAlmostEqual(result.residual, 2.51, places=2)
+
+    def test_a_factor_that_leaves_the_count_under_half_the_b3_total_gives_no_count(self):
+        result = adjust(on=300_000, b3_total=7_000_000)  # x10 gives 3,000,000: 0.43 times the B3 total
+        self.assertEqual((result.factor, result.confirmed, result.n_on), (10, False, None))
+
+    def test_a_factor_within_twice_the_b3_total_either_way_is_confirmed_and_applied(self):
+        upper = adjust(on=100_000, b3_total=500_000)  # x10: 1,000,000 is exactly twice the B3 total
+        lower = adjust(on=100_000, b3_total=2_000_000)  # x10: 1,000,000 is exactly half the B3 total
+        self.assertEqual((upper.factor, upper.confirmed, upper.n_on), (10, True, 1_000_000))
+        self.assertEqual((lower.factor, lower.confirmed, lower.n_on), (10, True, 1_000_000))
+
+    def test_the_azev_shape_with_a_grouping_after_d_is_unconfirmed(self):
+        # AZEV: 592,755,600 filed, a 20:1 grouping on both classes after d and before R, 111,225,217 at B3.
+        # The filed total times the grouping is 29,637,780; x10 gives 2.66 times the B3 total.
+        grouping_on = StockEvent(ON_ISIN, "GRUPAMENTO", 0.05, date(2026, 9, 1))
+        grouping_pn = StockEvent(PREF_ISIN, "GRUPAMENTO", 0.05, date(2026, 9, 1))
+        result = adjust(
+            events=[grouping_on, grouping_pn], on=201_978_758, pref=390_776_842, b3_total=111_225_217,
+            retrieved_on=date(2026, 11, 9),
+        )
+        self.assertEqual((result.factor, result.confirmed, result.n_on, result.n_pref), (10, False, None, None))
+
+    def test_factor_one_is_never_a_scale_to_confirm(self):
+        result = adjust(on=1_000_000, b3_total=2_500_000)  # as filed, 0.4 times the B3 total: no factor is applied
+        self.assertEqual((result.factor, result.confirmed, result.n_on), (1, True, 1_000_000))
+        unverified = adjust(on=1_000_000, b3_total=None)
+        self.assertEqual((unverified.factor, unverified.confirmed, unverified.n_on), (1, True, 1_000_000))
+
+
 PREV_REFER = date(2026, 3, 31)  # the period end of the previous filing (a Tuesday)
 
 

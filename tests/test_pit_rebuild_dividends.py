@@ -111,14 +111,31 @@ class SourceChoiceTests(unittest.TestCase):
         complete_petr = dividends.parse_b3_cash([fixture("b3_cash_petrobras_p1.json"), fixture("b3_cash_petrobras_p2.json")])
         empty_azul = dividends.parse_b3_cash([fixture("b3_cash_azul_empty.json")])
         incomplete = dividends.parse_b3_cash([fixture("b3_cash_petrobras_p1.json")])
-        short = B3History([B3Dividend("ON", 0.1, date(2025, 8, 25))], total_records=1, complete=True)
         exact = B3History([B3Dividend("ON", 0.1, date(2025, 8, 24))], total_records=1, complete=True)
         self.assertEqual(dividends.choose_source(None, d), ("yahoo", "b3_failed"))
         self.assertEqual(dividends.choose_source(empty_azul, d), ("yahoo", "b3_empty"))
         self.assertEqual(dividends.choose_source(incomplete, d), ("yahoo", "b3_incomplete"))
-        self.assertEqual(dividends.choose_source(short, d), ("yahoo", "b3_short_history"))
         self.assertEqual(dividends.choose_source(exact, d), ("b3", None))
         self.assertEqual(dividends.choose_source(complete_petr, d), ("b3", None))
+
+    def test_a_complete_history_that_starts_inside_the_window_is_used(self):
+        # #77: a complete history is all B3 lists for the company, so it covers the window even when its first record
+        # is after d - 365 days (the HBRE3 case of the #64 audit). Yahoo is not asked.
+        short = B3History([B3Dividend("ON", 0.1, date(2025, 8, 25))], total_records=1, complete=True)
+        self.assertEqual(dividends.choose_source(short, date(2026, 8, 24)), ("b3", None))
+
+    def test_two_records_on_the_same_day_that_are_not_duplicates_add_up(self):
+        # #77, the HBRE3 records of 30/12/2025: two amounts on one lastDatePriorEx, different in valueCash. Both count.
+        page = {"page": {"pageNumber": 1, "pageSize": 120, "totalRecords": 3, "totalPages": 1}, "results": [
+            {"typeStock": "ON", "valueCash": "0,87407147387", "lastDatePriorEx": "30/12/2025", "corporateAction": "DIVIDENDO"},
+            {"typeStock": "ON", "valueCash": "0,29135715796", "lastDatePriorEx": "30/12/2025", "corporateAction": "JRS CAP PROPRIO"},
+            {"typeStock": "ON", "valueCash": "0,29135715796", "lastDatePriorEx": "30/12/2025", "corporateAction": "JRS CAP PROPRIO"},
+        ]}
+        history = dividends.parse_b3_cash([json.dumps(page).encode()])
+        d = date(2026, 8, 7)
+        self.assertEqual(dividends.choose_source(history, d), ("b3", None))
+        self.assertEqual(history.duplicates, 1)  # the third record repeats the second in every field
+        self.assertAlmostEqual(dividends.dps_12m(dividends.b3_ex_dates(history.records, next_session), d), 1.16542863183)
 
     def test_records_are_matched_by_type_stock(self):
         history = dividends.parse_b3_cash([fixture("b3_cash_petrobras_p1.json"), fixture("b3_cash_petrobras_p2.json")])
@@ -159,8 +176,8 @@ class LeakAndResolveTests(unittest.TestCase):
             ("yahoo", "b3_empty", yahoo),
         )
         self.assertEqual(
-            dividends.resolve(("yahoo", "b3_short_history"), None, yahoo),
-            ("yahoo", "b3_short_history", yahoo),
+            dividends.resolve(("yahoo", "b3_incomplete"), None, yahoo),
+            ("yahoo", "b3_incomplete", yahoo),
         )
         b3_divs = [Dividend(0.4, date(2026, 8, 24))]
         self.assertEqual(dividends.resolve(("b3", None), b3_divs, None), ("b3", None, b3_divs))
@@ -325,14 +342,14 @@ class EarliestRawAndSourceEdgeTests(unittest.TestCase):
         self.assertEqual(dividends.b3_earliest_raw([B3Dividend("ON", 0.1, date(2020, 12, 31))]), date(2021, 1, 1))
         self.assertIsNone(dividends.b3_earliest_raw([]))
 
-    def test_a_complete_history_of_capital_returns_only_is_a_short_history_not_a_crash(self):
+    def test_a_complete_history_of_capital_returns_only_is_a_b3_history_with_no_dividend(self):
         page = {"page": {"pageNumber": 1, "pageSize": 1, "totalRecords": 1, "totalPages": 1}, "results": [
             {"typeStock": "ON", "valueCash": "1,0", "lastDatePriorEx": "21/08/2026", "corporateAction": "REST CAP DIN"},
         ]}
         history = dividends.parse_b3_cash([json.dumps(page).encode()])
         self.assertTrue(history.complete)
         self.assertEqual(history.records, [])
-        self.assertEqual(dividends.choose_source(history, date(2026, 8, 24)), ("yahoo", "b3_short_history"))
+        self.assertEqual(dividends.choose_source(history, date(2026, 8, 24)), ("b3", None))  # B3 knows the company: no dividend
 
 
 class StockEventWindowTests(unittest.TestCase):

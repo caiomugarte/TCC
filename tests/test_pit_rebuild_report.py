@@ -37,6 +37,7 @@ MAPPING = {
     "share_scale": {
         "scaled": [{"cd_cvm": "1603", "factor": 1000, "residual": 1.0}, {"cd_cvm": "1605", "factor": 0.1, "residual": 1.02}],
         "unverified": ["1604"],
+        "unconfirmed": [{"cd_cvm": "1607", "factor": 10, "residual": 2.51}],
     },
     "reference_stale": ["ZZZZ3"],
     "vm_stale_class_price": [{"cd_cvm": "1606", "class": "ON", "ticker": "EMAE3", "session": "2025-08-18"}],
@@ -272,6 +273,7 @@ class MarkdownTests(ReportCase):
             {
                 "scaled": [{"cd_cvm": "1603", "factor": 1000, "residual": 1.0}, {"cd_cvm": "1605", "factor": 0.1, "residual": 1.02}],
                 "unverified": ["1604"],
+                "unconfirmed": [{"cd_cvm": "1607", "factor": 10, "residual": 2.51}],
             },
         )
         self.assertEqual(mapping["mapped_via_b3"], ["USIM6"])
@@ -280,6 +282,11 @@ class MarkdownTests(ReportCase):
         self.assertIn("`vm_price_fallback`", self.markdown)
         self.assertIn("`share_scale.unverified`", self.markdown)
         self.assertIn("Não verificada (`share_scale.unverified`): `1604`.", self.markdown)
+
+    def test_a_scale_the_b3_does_not_confirm_is_listed_with_its_factor_and_residual(self):
+        # #77: the company has no share count, and the reason of its count fields is share_scale_unconfirmed
+        self.assertIn("Escala não confirmada pela B3 (`share_scale.unconfirmed`, sem contagem): 1 empresa(s).", self.markdown)
+        self.assertIn("| `1607` | 10^1 | 2,51 |", self.markdown)
 
     def test_the_verdict_line_shows_both_class_verdicts_when_they_differ(self):
         verdicts = self.report["verdicts"]

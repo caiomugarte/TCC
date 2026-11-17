@@ -4,7 +4,7 @@ The inputs are assembled by the caller from the CVM, COTAHIST and dividend modul
 carries the date that dates it (DT_RECEB of the filing, session date). compute asserts that no
 input is dated after d (PIT-02). A field with a zero divisor or a missing input has no value and
 a reason (IND-03). Reasons: no_share_count, no_quote, no_dividend_source, short_history,
-zero_divisor, non_positive_base, missing_input: <name>, stale_filing (STL-01).
+zero_divisor, non_positive_base, missing_input: <name>, stale_filing (STL-01), share_scale_unconfirmed (#77).
 
 Per-share fields divide the ticker price by its unit divisor k (1 for a share, the composition
 total for a unit, MAP-03). VALOR DE MERCADO takes its class prices from the company (A-17). Share
@@ -127,6 +127,13 @@ def compute(inputs: TickerInputs, d: date) -> dict[str, Value]:
 
 
 STALE_FILING_REASON = "stale_filing"  # STL-01: the reason of an accounting field whose newest filing ends more than 270 days before d
+SCALE_UNCONFIRMED_REASON = "share_scale_unconfirmed"  # #77: the A-18 factor is not confirmed by the B3 total, so there is no count
+NO_SHARE_COUNT_REASON = "no_share_count"
+
+
+def mask_share_count(values: dict[str, Value], reason: str) -> dict[str, Value]:
+    """A copy of values in which every field left without value by the missing share count carries reason instead (#77)."""
+    return {field: Value(None, reason) if value.reason == NO_SHARE_COUNT_REASON else value for field, value in values.items()}
 
 
 def mask_accounting(values: dict[str, Value], reason: str) -> dict[str, Value]:

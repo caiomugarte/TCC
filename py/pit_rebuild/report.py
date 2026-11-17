@@ -49,7 +49,9 @@ SHARE_SCALE_RULE = (
     "√10 (3,16 vezes) entre o arquivamento e a obtenção do registro e nenhum evento a explica, ela fica como arquivada; se "
     "mudou √10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; "
     "sem evento da B3, um desdobramento de 1:5 resulta em ×10, errado por 2 vezes. O resíduo (`residual`), "
-    "arquivado × eventos até R × f / `totalNumberShares`, de cada empresa mostra cada caso."
+    "arquivado × eventos até R × f / `totalNumberShares`, de cada empresa mostra cada caso. Um `f` diferente de 1 só é "
+    "aplicado quando a B3 o confirma: o resíduo fica entre 0,5 e 2. Fora disso a empresa fica sem contagem, os campos que "
+    "dependem dela ficam sem valor com motivo `share_scale_unconfirmed`, e ela aparece em `share_scale.unconfirmed` (#77)."
 )
 NON_PIT_INPUTS: list[dict[str, str]] = [
     {
@@ -720,13 +722,25 @@ def _mapping_section(dates: Mapping[str, Mapping[str, object]]) -> list[str]:
             f"- Preço de classe de pregão antigo (`vm_stale_class_price`): {_count_or_missing(stale_prices, 'classe(s)')}.",
             f"- Escala das contagens (`share_scale.scaled`): {_count_or_missing(scaled, 'empresa(s)')}. "
             f"Não verificada (`share_scale.unverified`): {_list_or_none(scale['unverified'])}.",
-            "",
         ]
+        unconfirmed = scale.get("unconfirmed")  # #77; a report written before it has no such list
+        if unconfirmed is not None:
+            lines.append(
+                f"- Escala não confirmada pela B3 (`share_scale.unconfirmed`, sem contagem): {len(unconfirmed)} empresa(s). "
+                f"Os campos que dependem da contagem ficam sem valor, com motivo `share_scale_unconfirmed`."
+            )
+        lines.append("")
         if scaled:
             lines += ["Escala das contagens, com o fator e o resíduo de cada empresa:", ""]
             lines += _table(
                 ["cd_cvm", "fator", "resíduo"],
                 [[_code(row["cd_cvm"]), _power(row["factor"]), _num_or_none(row.get("residual"))] for row in scaled],
+            )
+        if unconfirmed:
+            lines += ["Escala não confirmada pela B3: o fator mais próximo e o resíduo, fora de [0,5; 2]:", ""]
+            lines += _table(
+                ["cd_cvm", "fator", "resíduo"],
+                [[_code(row["cd_cvm"]), _power(row["factor"]), _num_or_none(row.get("residual"))] for row in unconfirmed],
             )
         if stale_prices:
             lines += ["Empresas com preço de classe de pregão antigo:", ""]
@@ -903,12 +917,12 @@ def _dividends_section(dividends: Mapping[str, object]) -> list[str]:
         [[iso, counts["b3"], counts["yahoo"], counts["none"]] for iso, counts in dividends["by_source"].items()],
     )
     lines += ["### Motivos de troca para o Yahoo", ""]
+    # the reasons as the report lists them: a report written before #77 also has b3_short_history
+    present = next(iter(dividends["yahoo_reasons"].values()), {})
+    names = [name for name in ("b3_failed", "b3_empty", "b3_incomplete", "b3_short_history") if name in present]
     lines += _table(
-        ["data", "b3_failed", "b3_empty", "b3_incomplete", "b3_short_history"],
-        [
-            [iso, reasons["b3_failed"], reasons["b3_empty"], reasons["b3_incomplete"], reasons["b3_short_history"]]
-            for iso, reasons in dividends["yahoo_reasons"].items()
-        ],
+        ["data", *names],
+        [[iso, *(reasons[name] for name in names)] for iso, reasons in dividends["yahoo_reasons"].items()],
     )
     lines += ["Tickers sem dividendos confirmados (`b3_empty_yahoo_failed`):", ""]
     lines += _table(["data", "tickers"], [[iso, count] for iso, count in dividends["b3_empty_yahoo_failed"].items()])
