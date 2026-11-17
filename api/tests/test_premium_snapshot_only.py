@@ -308,19 +308,19 @@ class PremiumSnapshotOnlyTests(unittest.TestCase):
     def test_live_collection_is_never_called_on_the_premium_path(self):
         import fetch_status_invest
         import fetch_status_invest_fii
-        from app.services import b3_trading, status_invest_inputs
+        from app.services import b3_trading
+        from pit_rebuild import collector as pit_collector
 
         live = AssertionError("live collection called on the Premium path")
         run = self.queue_run()
         with mock.patch.object(fetch_status_invest, "refresh", side_effect=live) as stocks, \
                 mock.patch.object(fetch_status_invest_fii, "refresh", side_effect=live) as fiis, \
-                mock.patch.object(status_invest_inputs, "refresh_inputs", side_effect=live) as refresh, \
-                mock.patch.object(status_invest_inputs, "filter_recent_trades", side_effect=live) as recent, \
+                mock.patch.object(pit_collector, "collect", side_effect=live) as cvm_b3, \
                 mock.patch.object(b3_trading, "filter_recent_trades", side_effect=live) as b3:
             stored = self.execute(run)
 
         self.assertEqual(stored.status, "completed", stored.failure_code)
-        for collector in (stocks, fiis, refresh, recent, b3):
+        for collector in (stocks, fiis, cvm_b3, b3):
             collector.assert_not_called()
 
     def test_provenance_records_the_verified_hashes_in_todays_shape(self):

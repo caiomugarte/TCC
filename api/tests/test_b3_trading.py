@@ -18,9 +18,10 @@ from app.services.b3_trading import (
     B3TradingUnavailableError,
     CotahistCache,
     default_cache_root,
+    filter_recent_trades,
 )
 from app.services.premium_executor import PremiumExecutor
-from app.services.status_invest_inputs import refresh_inputs
+from types import SimpleNamespace
 from fetch_status_invest import OUTPUT_COLUMNS as STOCK_COLUMNS
 from fetch_status_invest_fii import OUTPUT_COLUMNS as FII_COLUMNS
 from pit_rebuild.sources import cotahist_url
@@ -35,13 +36,6 @@ def _csv_bytes(columns, tickers, *, bom=False) -> bytes:
         writer.writerow({column: ticker if column == "TICKER" else str(index + 1) for column in columns})
     data = buffer.getvalue().encode("utf-8")
     return codecs.BOM_UTF8 + data if bom else data
-
-
-def _writer(data: bytes):
-    def collect(*, output_path, timeout):
-        output_path.write_bytes(data)
-
-    return collect
 
 
 class Downloader:
@@ -74,14 +68,19 @@ class RecentTradeFilterTests(unittest.TestCase):
                     downloader=None, stock_bytes=None, fii_bytes=None):
         downloader = downloader or Downloader({cotahist_url(collected_on.year): cotahist_zip(lines)})
         cache = CotahistCache(self.root / "cache", downloader=downloader)
-        result = refresh_inputs(
-            self.root / workspace,
-            stock_collector=_writer(stock_bytes or _csv_bytes(STOCK_COLUMNS, stocks)),
-            fii_collector=_writer(fii_bytes or _csv_bytes(FII_COLUMNS, fiis)),
-            cotahist_cache=cache,
-            collected_on=collected_on,
-        )
+        paths = {
+            "stocks": self.root / workspace / "inputs" / "stocks.csv",
+            "fiis": self.root / workspace / "inputs" / "fiis.csv",
+        }
+        paths["stocks"].parent.mkdir(parents=True, exist_ok=True)
+        paths["stocks"].write_bytes(stock_bytes or _csv_bytes(STOCK_COLUMNS, stocks))
+        paths["fiis"].write_bytes(fii_bytes or _csv_bytes(FII_COLUMNS, fiis))
+        filter_recent_trades(paths, self.root / workspace, collected_on=collected_on, cache=cache)
         record = json.loads((self.root / workspace / "status-invest" / "universe-filter.json").read_text("utf-8"))
+        result = SimpleNamespace(**{
+            role: SimpleNamespace(path=path, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
+            for role, path in paths.items()
+        })
         return result, record, downloader
 
     @staticmethod
