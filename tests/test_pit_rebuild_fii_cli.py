@@ -10,6 +10,9 @@ tests/fixtures/pit_rebuild_fii holds four eligible funds, each with round number
 """
 
 import base64
+from contextlib import redirect_stderr
+import io
+import shutil
 from datetime import date, timedelta
 import json
 from pathlib import Path
@@ -211,6 +214,38 @@ class FiiReportTest(unittest.TestCase):
             self.assertEqual(fii_cli.main(args(root / "c", PROJECT_ROOT / "data" / "x"), opener=FakeOpener({})), 2)
             bad = ["fii-report", "--date", D1.isoformat(), "--si", str(root / "absent.csv"), "--cache-dir", str(root / "c"), "--out-dir", str(root / "o")]
             self.assertEqual(fii_cli.main(bad, opener=FakeOpener({})), 3)
+
+    def test_exit_code_1_when_the_report_files_cannot_be_written(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            blocker = Path(tmp) / "blocker"
+            blocker.write_bytes(b"a file where the output directory should go")
+            err = io.StringIO()
+            with redirect_stderr(err):
+                code = fii_cli.main(args(self.cache, blocker / "out", "--offline"), opener=FakeOpener({}))
+            self.assertEqual(code, 1, err.getvalue())
+            self.assertEqual(len(err.getvalue().strip().splitlines()), 1, err.getvalue())
+
+    def test_exit_code_4_on_a_tampered_cache_file_or_a_status_invest_csv_without_a_column(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            tampered = root / "tampered"
+            shutil.copytree(self.cache, tampered)
+            cached = json.loads((tampered / "manifest.json").read_text(encoding="utf-8"))["files"]
+            (tampered / sorted(cached)[0]).write_bytes(b"changed")
+            header, *rows = SI1.read_text(encoding="utf-8").splitlines()
+            sep = ";" if ";" in header else ","
+            short = root / "si_short.csv"
+            short.write_text("\n".join(sep.join(line.split(sep)[:-1]) for line in [header, *rows]) + "\n", encoding="utf-8")
+            short_args = args(self.cache, root / "o2", "--offline")
+            short_args[short_args.index(str(SI1))] = str(short)
+            for name, argv in (("tampered cache", args(tampered, root / "o1", "--offline")), ("short CSV", short_args)):
+                with self.subTest(name):
+                    err = io.StringIO()
+                    with redirect_stderr(err):
+                        code = fii_cli.main(argv, opener=FakeOpener({}))
+                    self.assertEqual(code, 4, err.getvalue())
+            self.assertFalse((root / "o1").exists())
+            self.assertFalse((root / "o2").exists())
 
 
     def test_the_package_entry_point_routes_fii_commands(self):

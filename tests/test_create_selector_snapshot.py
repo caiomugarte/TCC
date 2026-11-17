@@ -156,6 +156,38 @@ class StockSourceTests(CreationCase):
         self.assertFalse(self.out.exists())
 
 
+class ExitCodeTests(CreationCase):
+    def run_main(self, argv):
+        err = io.StringIO()
+        with redirect_stderr(err), redirect_stdout(io.StringIO()):
+            code = creation.main(
+                argv, opener=no_network, fii_collector=fii_writer(["FUND11"]),
+                cotahist_cache=self.fii_cotahist([fii_trade("FUND11", D1, codbdi="12")]),
+            )
+        return code, err.getvalue()
+
+    def test_exit_codes_of_the_documented_table(self):
+        blocker = self.root / "blocker"
+        blocker.write_bytes(b"a file where the output directory should go")
+        tampered = self.root / "tampered"
+        shutil.copytree(self.cache, tampered)
+        (tampered / "cad_cia_aberta.csv").write_bytes(b"changed")
+        (self.root / "empty").mkdir()
+        offline = ["--date", D1.isoformat(), "--offline"]
+        cases = {
+            1: (blocker / "selectors", [*offline, "--cache-dir", str(self.cache)]),
+            2: (self.out, ["--date", "2026-02-30", "--offline", "--cache-dir", str(self.cache)]),
+            4: (self.out, [*offline, "--cache-dir", str(tampered)]),
+            5: (self.out, [*offline, "--cache-dir", str(self.root / "empty")]),
+        }
+        for expected, (out_dir, argv) in cases.items():
+            with self.subTest(code=expected):
+                code, err = self.run_main([*argv, "--out-dir", str(out_dir)])
+                self.assertEqual(code, expected, err)
+                self.assertEqual(len(err.strip().splitlines()), 1, err)
+                self.assertFalse(out_dir.exists())
+
+
 class FiiFilterTests(CreationCase):
     def test_a_fii_without_a_session_in_the_30_days_up_to_the_cutoff_is_left_out_and_recorded(self):
         code, err = self.create(

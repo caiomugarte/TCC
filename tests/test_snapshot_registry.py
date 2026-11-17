@@ -708,6 +708,58 @@ class BuildCommandTests(unittest.TestCase):
             )
 
 
+class BuildProvenanceExitCodeTests(unittest.TestCase):
+    """build with a selector provenance: a missing file exits 3, a malformed or incomplete one exits 4."""
+
+    def build(self, root: Path, **provenance: str) -> tuple:
+        snapshot_dir, stock_universe, fii_universe = build_fetch_inputs(root)
+        extra = []
+        for role, text in provenance.items():
+            path = root / f"{role}.provenance.json"
+            if text is not None:
+                path.write_text(text, encoding="utf-8")
+            extra += [f"--{role}-provenance", str(path)]
+        return run_cli(
+            "build", "--registry", str(root), "--manifest-id", "snap-2020-01", "--created-at", CREATED_AT,
+            "--snapshot-dir", str(snapshot_dir), "--stock-universe", str(stock_universe),
+            "--fii-universe", str(fii_universe), *extra,
+        )
+
+    def test_a_missing_provenance_file_exits_3(self):
+        for role in ("stock", "fii"):
+            with self.subTest(role=role), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                code, _, err = self.build(root, **{role: None})
+                self.assertEqual(code, 3, err)
+                self.assertIn(f"--{role}-provenance not found", err)
+                self.assertFalse((root / "snap-2020-01.json").exists())
+
+    def test_a_malformed_or_incomplete_provenance_exits_4(self):
+        cases = {
+            "stock": {
+                "not JSON": "{not json",
+                "not an object": "[]",
+                "missing raw_files": json.dumps({"provider": "cvm-b3", "as_of": "2020-01-04", "csv_sha256": "0" * 64}),
+            },
+            "fii": {
+                "not JSON": "{not json",
+                "not an object": "[]",
+                "missing recent_trade_filter": json.dumps(
+                    {"provider": "statusinvest", "retrieved_at": CREATED_AT, "csv_sha256": "0" * 64}
+                ),
+            },
+        }
+        labels = {"stock": "stock provenance", "fii": "FII provenance"}
+        for role, texts in cases.items():
+            for name, text in texts.items():
+                with self.subTest(role=role, case=name), tempfile.TemporaryDirectory() as directory:
+                    root = Path(directory)
+                    code, _, err = self.build(root, **{role: text})
+                    self.assertEqual(code, 4, err)
+                    self.assertIn(labels[role], err)
+                    self.assertFalse((root / "snap-2020-01.json").exists())
+
+
 class LifecycleHelperTests(unittest.TestCase):
     def test_transition_state_enforces_the_state_machine(self):
         with tempfile.TemporaryDirectory() as directory:

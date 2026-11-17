@@ -250,7 +250,9 @@ class CommandLineTests(CollectorCase):
             shutil.copytree(self.cache, tampered)
             (tampered / "cad_cia_aberta.csv").write_bytes(b"changed")
             (root / "empty").mkdir()
+            (root / "blocker").write_bytes(b"a file where the output directory should go")
             cases = {
+                1: ["--date", D1.isoformat(), "--out", str(root / "blocker" / "stocks.csv"), "--cache-dir", str(self.cache), "--offline"],
                 2: ["--date", "2026-02-30", "--out", out, "--cache-dir", str(self.cache), "--offline"],
                 3: ["--date", D1.isoformat(), "--out", out, "--cache-dir", str(root / "absent"), "--offline"],
                 4: ["--date", D1.isoformat(), "--out", out, "--cache-dir", str(tampered), "--offline"],
