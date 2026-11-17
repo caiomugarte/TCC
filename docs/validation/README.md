@@ -505,6 +505,23 @@ Resultado da regeneração, com as chaves do JSON:
   `share_events.no_isin` com 9 e 10 classes; `share_count_suspect` com 5 e 8 empresas;
   `ttm_prior_from_itr` com 18 e 20 empresas; `stale_filing` com 1 e 3 tickers.
 
+Regeneração da #77, com o cache baixado de novo em 2026-11-17 (o da #64 é de 2026-11-09 e não
+estava mais disponível). Das 571 entradas de `inputs.raw_files` da #64, 506 têm o mesmo sha256 no
+cache novo e 62 mudaram (18 arquivos da CVM e da COTAHIST de 2026, 35 `b3_company_*.json` e 9
+respostas do Yahoo). As outras 3 (Yahoo de ALPK3, HBRE3 e OPCT3) não são mais pedidas, porque
+esses DY agora vêm da B3. O cache novo tem 398 versões de DFP e ITR recebidas entre 2026-11-10 e
+2026-11-14.
+
+- Veredito oficial e ajustado da classe: os mesmos (`não reconstruível` e `com ressalvas`).
+- Critério, parte 1: cumprida. O menor percentual é o de P/L em 2026-11-05, 73,21%.
+- `share_scale.unconfirmed`: 3 empresas em 2026-08-07 (VVEO3, AZEV3/AZEV4, LIGT3) e 2 em
+  2026-11-05 (VVEO3, LIGT3), com P/L, P/VP, EV/EBIT e PSR sem valor (`share_scale_unconfirmed`).
+- DY do Yahoo (`dividends.by_source`): 5 tickers em 2026-08-07 e 9 em 2026-11-05 (8 e 11 na #64).
+  O DY do HBRE3 em 2026-08-07 sai 52,50%, contra 52,5% do Status Invest.
+- Auditoria: zero linhas `erro nosso` nas duas datas (24 na #64), e o critério de liberação continua
+  cumprido. As linhas de contagem da OPCT3 e da EGIE3 passam de `diferença de método` a `erro do
+  Status Invest` por causa dos ITR novos do cache; o caso está nos limites declarados da auditoria.
+
 ## Sensibilidades (não são o veredito)
 
 O relatório traz três sensibilidades, calculadas na mesma execução (A-22). Elas ajudam

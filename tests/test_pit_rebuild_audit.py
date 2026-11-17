@@ -10,7 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -124,7 +124,7 @@ class SearchScopeTests(unittest.TestCase):
         versions = {
             "DFP": {"C1": {(date(2015, 12, 31), 1): _cached(date(2016, 3, 31)),
                            (date(2025, 12, 31), 2): _cached(date(2026, 3, 30)),
-                           (date(2026, 6, 30), 1): _cached(date(2026, 11, 10))}},  # received after R: not read
+                           (date(2026, 6, 30), 1): _cached(audit.R_DATE + timedelta(days=1))}},  # received after R: not read
             "ITR": {"C1": {(date(2026, 3, 31), 1): _cached(date(2026, 5, 10)),
                            (date(2026, 6, 30), 1): _cached(date(2026, 8, 20))}},  # received after d: read at R
         }

@@ -1,7 +1,7 @@
 # Reconstrução PIT dos indicadores de ações
 
 - Esquema: `pit-rebuild-stocks/v3` (issue #59, correções da #64)
-- Commit da ferramenta: `2b600a90c1429518acd3d6295b5162effa418e1a`
+- Commit da ferramenta: `0873b3d3e3086f424077e0830a9ec5b6e845e25b`
 - Datas de decisão: 2026-08-07, 2026-11-05
 
 ## Veredito
@@ -28,12 +28,12 @@ Escopo da classe: 16 indicadores de METRIC_GROUPS, grupo não financeiro incluin
 | `MARGEM EBIT` | com ressalvas | com ressalvas | não reconstruível |
 | `P/L` | não reconstruível | não reconstruível | não reconstruível |
 | `P/VP` | com ressalvas | com ressalvas | não reconstruível |
-| `EV/EBIT` | não reconstruível | não reconstruível | não reconstruível |
+| `EV/EBIT` | não reconstruível | com ressalvas | não reconstruível |
 | `PSR` | com ressalvas | com ressalvas | com ressalvas |
 | `CAGR RECEITAS 5 ANOS` | com ressalvas | com ressalvas | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | com ressalvas | com ressalvas | não reconstruível |
 | `PEG RATIO` | não reconstruível | não reconstruível | não reconstruível |
-| `DY` | não reconstruível | com ressalvas | com ressalvas |
+| `DY` | com ressalvas | com ressalvas | com ressalvas |
 | `PRECO` | reconstruível | reconstruível | reconstruível |
 | `VALOR DE MERCADO` | com ressalvas | com ressalvas | com ressalvas |
 | `LIQUIDEZ MEDIA DIARIA` | com ressalvas | com ressalvas | com ressalvas |
@@ -45,19 +45,19 @@ Escopo da classe: 16 indicadores de METRIC_GROUPS, grupo não financeiro incluin
 | indicador | 2026-08-07: % na tolerância (n) | 2026-08-07: si_lag | 2026-11-05: % na tolerância (n) | 2026-11-05: si_lag | veredito |
 | --- | --- | --- | --- | --- | --- |
 | `LIQ. CORRENTE` | 97,69% (216) | 1 | 84,82% (224) | 30 | com ressalvas |
-| `DIVIDA LIQUIDA / EBIT` | 94,44% (216) | 4 | 77,68% (224) | 35 | com ressalvas |
+| `DIVIDA LIQUIDA / EBIT` | 94,44% (216) | 4 | 78,12% (224) | 34 | com ressalvas |
 | `DIV. LIQ. / PATRI.` | 96,23% (212) | 1 | 84,72% (216) | 27 | com ressalvas |
 | `ROE` | 93,52% (216) | 1 | 75,89% (224) | 40 | com ressalvas |
-| `ROA` | 95,37% (216) | 3 | 81,25% (224) | 31 | com ressalvas |
-| `MARG. LIQUIDA` | 92,99% (214) | 2 | 77,48% (222) | 36 | com ressalvas |
-| `MARGEM EBIT` | 94,86% (214) | 1 | 80,18% (222) | 30 | com ressalvas |
-| `P/L` | 87,50% (216) | 5 | 72,77% (224) | 35 | com ressalvas |
-| `P/VP` | 90,74% (216) | 4 | 86,16% (224) | 13 | com ressalvas |
-| `EV/EBIT` | 87,96% (216) | 4 | 74,11% (224) | 31 | com ressalvas |
-| `PSR` | 88,79% (214) | 4 | 86,04% (222) | 14 | com ressalvas |
+| `ROA` | 95,37% (216) | 3 | 81,70% (224) | 30 | com ressalvas |
+| `MARG. LIQUIDA` | 92,99% (214) | 2 | 77,48% (222) | 37 | com ressalvas |
+| `MARGEM EBIT` | 94,86% (214) | 1 | 80,18% (222) | 31 | com ressalvas |
+| `P/L` | 87,50% (216) | 5 | 73,21% (224) | 34 | com ressalvas |
+| `P/VP` | 90,74% (216) | 4 | 86,61% (224) | 12 | com ressalvas |
+| `EV/EBIT` | 87,96% (216) | 4 | 74,55% (224) | 30 | com ressalvas |
+| `PSR` | 88,79% (214) | 4 | 86,04% (222) | 15 | com ressalvas |
 | `CAGR RECEITAS 5 ANOS` | 96,70% (212) | 0 | 96,82% (220) | 0 | reconstruível |
-| `CAGR LUCROS 5 ANOS` | 93,92% (148) | 2 | 76,97% (152) | 28 | com ressalvas |
-| `DY` | 76,39% (216) | 0 | 82,14% (224) | 0 | com ressalvas |
+| `CAGR LUCROS 5 ANOS` | 93,92% (148) | 2 | 76,97% (152) | 29 | com ressalvas |
+| `DY` | 76,85% (216) | 0 | 82,14% (224) | 0 | com ressalvas |
 
 Critério de liberação (#64), parte 1 (≥ 70 % nas duas datas): cumprida.
 
@@ -348,18 +348,18 @@ Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
 
 | ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
 | --- | --- | --- | --- | --- | --- | --- |
-| `VVEO3` | 10,25 | 102,46 | 899,61% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 113,28 |
 | `BRST3` | 10,58 | 31,04 | 193,38% | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 30,03 |
-| `AZEV4` | -0,32 | -0,86 | 168,75% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | -0,84 |
-| `AZEV3` | -0,68 | -1,82 | 167,65% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | -1,77 |
-| `LIGT3` | 1,91 | 4,42 | 131,41% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 54,20 |
 | `VTRU3` | -6,32 | 1,53 | 124,21% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 4,61 |
 | `INTB3` | 8,08 | 16,92 | 109,41% | sim | ITR 2026-06-30 v1, recebido em 2026-07-29 | 8,39 |
 | `CAML3` | 8,25 | 14,57 | 76,61% | não | ITR 2026-05-31 v1, recebido em 2026-07-14 | 10,83 |
 | `BHIA3` | -0,46 | -0,19 | 58,70% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | -0,16 |
 | `TIMS3` | 22,67 | 10,37 | 54,26% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 10,36 |
+| `ORVR3` | 109,30 | 76,51 | 30,00% | sim | ITR 2026-03-31 v1, recebido em 2026-05-14 | 108,45 |
+| `EMAE4` | -10,85 | -13,85 | 27,65% | sim | ITR 2026-06-30 v1, recebido em 2026-08-07 | -10,42 |
+| `SIMH3` | -46,09 | -33,69 | 26,90% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 77,86 |
+| `EGIE3` | 10,64 | 8,58 | 19,36% | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | 13,24 |
 
-Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: LL).
+Sem valor reconstruído: `AMBP3` (stale_filing), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `EQPA3` (missing_input: LL), `LIGT3` (share_scale_unconfirmed), `VVEO3` (share_scale_unconfirmed).
 
 </details>
 
@@ -373,13 +373,13 @@ Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: LL).
 | `SIMH3` | -17,22 | 31,70 | 284,09% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | -17,22 |
 | `AGRO3` | -20,56 | 33,31 | 262,01% | sim | ITR 2026-09-30 v1, recebido em 2026-11-03 | -20,56 |
 | `AMER3` | 2,22 | -3,00 | 235,14% | não | ITR 2026-06-30 v1, recebido em 2026-08-12 | 1,52 |
-| `VVEO3` | 15,38 | 38,60 | 150,98% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 108,86 |
-| `LIGT3` | 1,65 | 3,83 | 132,12% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | 3,53 |
 | `VTRU3` | -6,09 | 1,68 | 127,59% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 1,47 |
 | `MYPK3` | 15,83 | 35,92 | 126,91% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 15,83 |
 | `CAML3` | 9,20 | 19,89 | 116,20% | não | ITR 2026-08-31 v1, recebido em 2026-10-08 | 13,11 |
+| `BRST3` | 8,92 | 17,38 | 94,84% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 26,16 |
+| `BHIA3` | -0,44 | -0,05 | 88,64% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | -0,18 |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing), `LIGT3` (share_scale_unconfirmed), `VVEO3` (share_scale_unconfirmed).
 
 </details>
 
@@ -388,18 +388,18 @@ Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
 
 | ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
 | --- | --- | --- | --- | --- | --- | --- |
-| `VVEO3` | 0,11 | 1,10 | 900,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 1,07 |
-| `AZEV3` | 3,65 | 9,73 | 166,58% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | 9,82 |
-| `AZEV4` | 1,73 | 4,60 | 165,90% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | 4,64 |
-| `LIGT3` | 0,60 | 1,39 | 131,67% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 2,12 |
 | `VTRU3` | 1,87 | 0,46 | 75,40% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 0,58 |
 | `BHIA3` | 0,23 | 0,38 | 65,22% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 0,17 |
 | `TIMS3` | 3,61 | 1,79 | 50,42% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 1,84 |
 | `ONCO3` | 1,32 | 0,78 | 40,91% | não | DFP 2025-12-31 v1, recebido em 2026-04-09 | - |
 | `ORVR3` | 6,38 | 4,47 | 29,94% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 4,52 |
 | `SIMH3` | 0,97 | 0,71 | 26,80% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 0,68 |
+| `EGIE3` | 2,80 | 2,26 | 19,29% | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | 2,50 |
+| `MOVI3` | 1,02 | 0,86 | 15,69% | não | ITR 2026-03-31 v1, recebido em 2026-05-04 | 0,91 |
+| `VAMO3` | 1,44 | 1,26 | 12,50% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 1,30 |
+| `AALR3` | -1,84 | -1,67 | 9,24% | não | DFP 2025-12-31 v1, recebido em 2026-07-30 | - |
 
-Sem valor reconstruído: `AMBP3` (stale_filing).
+Sem valor reconstruído: `AMBP3` (stale_filing), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `LIGT3` (share_scale_unconfirmed), `VVEO3` (share_scale_unconfirmed).
 
 </details>
 
@@ -409,17 +409,17 @@ Sem valor reconstruído: `AMBP3` (stale_filing).
 | ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
 | --- | --- | --- | --- | --- | --- | --- |
 | `PCAR3` | 2,88 | -3,67 | 227,43% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 2,88 |
-| `VVEO3` | 0,48 | 1,20 | 150,00% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 1,17 |
 | `BHIA3` | 0,22 | -0,08 | 136,36% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 0,37 |
-| `LIGT3` | 0,43 | 0,99 | 130,23% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | 1,11 |
 | `VTRU3` | 1,80 | 0,46 | 74,44% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 0,44 |
 | `RAIZ4` | -0,38 | -0,12 | 68,42% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | -0,36 |
-| `VIVA3` | 1,35 | 0,45 | 66,67% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 1,35 |
 | `OPCT3` | 4,16 | 1,75 | 57,93% | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 1,81 |
 | `TIMS3` | 3,82 | 1,91 | 50,00% | não | ITR 2026-06-30 v1, recebido em 2026-07-27 | 1,96 |
 | `EALT4` | 0,68 | 0,41 | 39,71% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 0,66 |
+| `EMAE4` | 2,32 | 3,12 | 34,48% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 2,32 |
+| `PMAM3` | -0,14 | -0,10 | 28,57% | não | ITR 2026-06-30 v1, recebido em 2026-08-31 | - |
+| `LJQQ3` | 0,78 | 0,93 | 19,23% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 0,78 |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing), `LIGT3` (share_scale_unconfirmed), `VVEO3` (share_scale_unconfirmed).
 
 </details>
 
@@ -431,15 +431,15 @@ Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
 | `TFCO4` | 10,90 | 64,31 | 490,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-11 | 65,47 |
 | `VTRU3` | -9,11 | 4,99 | 154,77% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 5,63 |
 | `BHIA3` | -15,89 | 5,00 | 131,47% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 3,89 |
-| `AZEV3` | -1,26 | -2,46 | 95,24% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | -2,40 |
-| `AZEV4` | -1,26 | -2,46 | 95,24% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | -2,40 |
 | `SHUL4` | 23,73 | 6,81 | 71,30% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 5,93 |
-| `VVEO3` | 5,40 | 8,65 | 60,19% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 9,12 |
-| `LIGT3` | 16,63 | 24,76 | 48,89% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 15,38 |
 | `CAML3` | 7,50 | 10,12 | 34,93% | sim | ITR 2026-05-31 v1, recebido em 2026-07-14 | 7,71 |
 | `ORVR3` | 31,80 | 23,50 | 26,10% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 25,14 |
+| `EMAE4` | -7,21 | -8,12 | 12,62% | não | ITR 2026-06-30 v1, recebido em 2026-08-07 | -7,73 |
+| `EGIE3` | 10,10 | 8,87 | 12,18% | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | 9,15 |
+| `CASH3` | -6,02 | -6,69 | 11,13% | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | -11,34 |
+| `IGTI11` | 7,59 | 8,31 | 9,49% | não | ITR 2026-06-30 v1, recebido em 2026-08-04 | 7,15 |
 
-Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: EBIT).
+Sem valor reconstruído: `AMBP3` (stale_filing), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `EQPA3` (missing_input: EBIT), `LIGT3` (share_scale_unconfirmed), `VVEO3` (share_scale_unconfirmed).
 
 </details>
 
@@ -455,11 +455,11 @@ Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: EBIT).
 | `VTRU3` | -8,65 | 4,52 | 152,25% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 4,90 |
 | `BHIA3` | -15,82 | -2,85 | 81,98% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 4,98 |
 | `TUPY3` | -10,99 | -18,34 | 66,88% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | -10,99 |
-| `VIVA3` | 5,97 | 2,52 | 57,79% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 5,85 |
-| `LIGT3` | 17,61 | 25,79 | 46,45% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | 21,90 |
 | `OPCT3` | 14,12 | 8,18 | 42,07% | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 9,69 |
+| `PRIO3` | 12,80 | 7,61 | 40,55% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 12,80 |
+| `EZTC3` | 6,43 | 8,64 | 34,37% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 6,43 |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing), `LIGT3` (share_scale_unconfirmed), `VVEO3` (share_scale_unconfirmed).
 
 </details>
 
@@ -468,18 +468,18 @@ Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
 
 | ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
 | --- | --- | --- | --- | --- | --- | --- |
-| `VVEO3` | 0,02 | 0,18 | 800,00% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 0,18 |
-| `AZEV3` | 0,92 | 2,46 | 167,39% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | 3,14 |
-| `AZEV4` | 0,44 | 1,16 | 163,64% | não | ITR 2026-03-31 v2, recebido em 2026-05-15 | 1,48 |
-| `LIGT3` | 0,33 | 0,75 | 127,27% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 0,77 |
 | `BHIA3` | 0,03 | 0,02 | 33,33% | não | ITR 2026-03-31 v1, recebido em 2026-05-13 | 0,02 |
 | `ORVR3` | 8,17 | 5,72 | 29,99% | não | ITR 2026-03-31 v1, recebido em 2026-05-14 | 6,21 |
 | `SIMH3` | 0,09 | 0,07 | 22,22% | não | ITR 2026-03-31 v1, recebido em 2026-05-07 | 0,07 |
 | `VTRU3` | 0,94 | 0,74 | 21,28% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 0,75 |
 | `BRST3` | 0,89 | 0,71 | 20,22% | não | ITR 2026-03-31 v1, recebido em 2026-05-12 | 0,73 |
 | `EGIE3` | 3,08 | 2,48 | 19,48% | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | 2,56 |
+| `AMER3` | 0,07 | 0,06 | 14,29% | sim | ITR 2026-03-31 v1, recebido em 2026-05-13 | 0,07 |
+| `MOVI3` | 0,21 | 0,18 | 14,29% | não | ITR 2026-03-31 v1, recebido em 2026-05-04 | 0,18 |
+| `EMAE4` | 3,20 | 2,75 | 14,06% | não | ITR 2026-06-30 v1, recebido em 2026-08-07 | 2,73 |
+| `VAMO3` | 0,62 | 0,54 | 12,90% | não | ITR 2026-03-31 v1, recebido em 2026-05-06 | 0,58 |
 
-Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: REC).
+Sem valor reconstruído: `AMBP3` (stale_filing), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `EQPA3` (missing_input: REC), `LIGT3` (share_scale_unconfirmed), `VVEO3` (share_scale_unconfirmed).
 
 </details>
 
@@ -488,18 +488,18 @@ Sem valor reconstruído: `AMBP3` (stale_filing), `EQPA3` (missing_input: REC).
 
 | ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
 | --- | --- | --- | --- | --- | --- | --- |
-| `VVEO3` | 0,07 | 0,19 | 171,43% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 0,19 |
-| `LIGT3` | 0,26 | 0,59 | 126,92% | não | ITR 2026-06-30 v1, recebido em 2026-08-13 | 0,60 |
-| `VIVA3` | 1,36 | 0,47 | 65,44% | não | ITR 2026-09-30 v1, recebido em 2026-11-05 | 1,28 |
 | `OPCT3` | 1,80 | 0,76 | 57,78% | não | ITR 2026-06-30 v1, recebido em 2026-08-06 | 0,84 |
 | `EALT4` | 0,47 | 0,28 | 40,43% | sim | ITR 2026-09-30 v1, recebido em 2026-11-05 | 0,46 |
 | `BHIA3` | 0,03 | 0,02 | 33,33% | não | ITR 2026-06-30 v1, recebido em 2026-08-16 | 0,02 |
-| `PMAM3` | 1,84 | 1,29 | 29,89% | não | ITR 2026-06-30 v1, recebido em 2026-08-31 | 0,64 |
+| `PMAM3` | 1,84 | 1,29 | 29,89% | não | ITR 2026-06-30 v1, recebido em 2026-08-31 | - |
 | `BRST3` | 0,75 | 0,57 | 24,00% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 0,59 |
 | `EMAE4` | 3,75 | 4,52 | 20,53% | não | ITR 2026-09-30 v1, recebido em 2026-11-04 | 3,22 |
 | `EGIE3` | 2,76 | 2,22 | 19,57% | não | ITR 2026-06-30 v1, recebido em 2026-08-05 | 2,30 |
+| `PRIO3` | 2,51 | 2,05 | 18,33% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 2,51 |
+| `PCAR3` | 0,06 | 0,07 | 16,67% | sim | ITR 2026-09-30 v1, recebido em 2026-11-04 | 0,06 |
+| `VTRU3` | 0,90 | 0,78 | 13,33% | não | ITR 2026-06-30 v1, recebido em 2026-08-11 | 0,72 |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing).
+Sem valor reconstruído: `AALR3` (stale_filing), `AMBP3` (stale_filing), `LIGT3` (share_scale_unconfirmed), `VVEO3` (share_scale_unconfirmed).
 
 </details>
 
@@ -588,7 +588,6 @@ Sem valor reconstruído: `BRST3` (short_history), `DXCO3` (non_positive_base), `
 
 | ticker | referência | reconstruído | diferença | si_lag | arquivo | valor anterior |
 | --- | --- | --- | --- | --- | --- | --- |
-| `HBRE3` | 52,50 | 21,87 | 30,63 p.p. | não | - | - |
 | `RIAA3` | 31,29 | 41,94 | 10,65 p.p. | não | - | - |
 | `MDNE3` | 14,37 | 7,24 | 7,13 p.p. | não | - | - |
 | `VLID3` | 9,90 | 3,27 | 6,63 p.p. | não | - | - |
@@ -598,6 +597,7 @@ Sem valor reconstruído: `BRST3` (short_history), `DXCO3` (non_positive_base), `
 | `COCE5` | 0,00 | 4,36 | 4,36 p.p. | não | - | - |
 | `CLSC4` | 0,36 | 4,48 | 4,12 p.p. | não | - | - |
 | `TGMA3` | 10,84 | 14,87 | 4,03 p.p. | não | - | - |
+| `FIQE3` | 14,17 | 10,51 | 3,66 p.p. | não | - | - |
 
 </details>
 
@@ -643,7 +643,7 @@ Nota (D-C): ROIC e PEG RATIO falham porque as fórmulas do Status Invest para el
 - Liquidez: média de VOLTOT das últimas 21 sessões até d.
 - Cotações (`quote_codbdi`, CODBDI): `02`, `07`, `08`.
 - Cortes de filings (`filings_cutoffs`): `2026-11-05` com filings recebidos até `2026-11-02`.
-- Escala das ações: A CVM não informa escala em `composicao_capital`. Cada contagem de classe em `d` é N = arquivado × f × eventos da B3 da classe com data-ex em (DT_REFER, d], com cada evento entrando pelo seu múltiplo (AD-033). Para cada arquivamento, o fator f ∈ {10^-2, 10^-1, 1, 10, 10^2, 10^3} é a potência de dez que deixa o arquivado vezes os eventos com data-ex em (DT_REFER, R] mais perto da `totalNumberShares` da B3, medido pela distância em log10; R é a data em que o registro da B3 foi obtido. Os eventos com data-ex depois de d só escolhem a potência de dez. A contagem da B3 só escolhe o fator e nunca entra num valor. Sem registro da B3, ou com contagem zero, `f` é 1 e a empresa aparece em `share_scale.unverified`. As contagens escalonadas são arredondadas. Limite (√10), só para mudança sem evento da B3: se a contagem mudou menos de √10 (3,16 vezes) entre o arquivamento e a obtenção do registro e nenhum evento a explica, ela fica como arquivada; se mudou √10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; sem evento da B3, um desdobramento de 1:5 resulta em ×10, errado por 2 vezes. O resíduo (`residual`), arquivado × eventos até R × f / `totalNumberShares`, de cada empresa mostra cada caso.
+- Escala das ações: A CVM não informa escala em `composicao_capital`. Cada contagem de classe em `d` é N = arquivado × f × eventos da B3 da classe com data-ex em (DT_REFER, d], com cada evento entrando pelo seu múltiplo (AD-033). Para cada arquivamento, o fator f ∈ {10^-2, 10^-1, 1, 10, 10^2, 10^3} é a potência de dez que deixa o arquivado vezes os eventos com data-ex em (DT_REFER, R] mais perto da `totalNumberShares` da B3, medido pela distância em log10; R é a data em que o registro da B3 foi obtido. Os eventos com data-ex depois de d só escolhem a potência de dez. A contagem da B3 só escolhe o fator e nunca entra num valor. Sem registro da B3, ou com contagem zero, `f` é 1 e a empresa aparece em `share_scale.unverified`. As contagens escalonadas são arredondadas. Limite (√10), só para mudança sem evento da B3: se a contagem mudou menos de √10 (3,16 vezes) entre o arquivamento e a obtenção do registro e nenhum evento a explica, ela fica como arquivada; se mudou √10 ou mais, `f` absorve a mudança como a potência de dez mais próxima. Isso é exato só para grupamento de 10:1; sem evento da B3, um desdobramento de 1:5 resulta em ×10, errado por 2 vezes. O resíduo (`residual`), arquivado × eventos até R × f / `totalNumberShares`, de cada empresa mostra cada caso. Um `f` diferente de 1 só é aplicado quando a B3 o confirma: o resíduo fica entre 0,5 e 2. Fora disso a empresa fica sem contagem, os campos que dependem dela ficam sem valor com motivo `share_scale_unconfirmed`, e ela aparece em `share_scale.unconfirmed` (#77).
 
 ### Fórmulas
 
@@ -694,7 +694,8 @@ Estas entradas são lidas como foram obtidas, e não como estavam em cada data. 
 - Usaram o preço da outra classe (`vm_price_fallback`): 7 empresa(s).
 - Sem cotação recente (`reference_stale`, sem registro em [d − 30 dias, d]): `AESB3`, `APER3`, `AXIA6`, `AZUL53`, `AZUL54`, `BPAN4`, `BRFS3`, `CLSA3`, `CPLE5`, `CPLE6`, `CRFB3`, `ELMD3`, `ENAT3`, `GPIV33`, `JBSS3`, `NEOE3`, `NTCO3`, `PETZ3`, `PORT3`, `SOMA3`, `STBP3`, `SULA11`, `ZAMP3`.
 - Preço de classe de pregão antigo (`vm_stale_class_price`): 3 classe(s).
-- Escala das contagens (`share_scale.scaled`): 66 empresa(s). Não verificada (`share_scale.unverified`): nenhum.
+- Escala das contagens (`share_scale.scaled`): 63 empresa(s). Não verificada (`share_scale.unverified`): nenhum.
+- Escala não confirmada pela B3 (`share_scale.unconfirmed`, sem contagem): 3 empresa(s). Os campos que dependem da contagem ficam sem valor, com motivo `share_scale_unconfirmed`.
 
 Escala das contagens, com o fator e o resíduo de cada empresa:
 
@@ -703,13 +704,12 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `1155` | 10^3 | 1,00 |
 | `11762` | 10^3 | 1,00 |
 | `11932` | 10^3 | 1,00 |
-| `11975` | 10^1 | 2,66 |
 | `1210` | 10^3 | 1,00 |
 | `1325` | 10^3 | 1,00 |
 | `13773` | 10^3 | 1,00 |
 | `13781` | 10^3 | 1,00 |
 | `14109` | 10^3 | 1,00 |
-| `14460` | 10^3 | 1,01 |
+| `14460` | 10^3 | 1,08 |
 | `14826` | 10^3 | 1,00 |
 | `16993` | 10^3 | 1,00 |
 | `18724` | 10^3 | 1,00 |
@@ -719,12 +719,11 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `19453` | 10^3 | 1,00 |
 | `19550` | 10^3 | 1,00 |
 | `19615` | 10^3 | 1,00 |
-| `19879` | 10^1 | 2,31 |
 | `20044` | 10^3 | 1,00 |
 | `20087` | 10^3 | 1,00 |
 | `20257` | 10^3 | 1,00 |
 | `20346` | 10^3 | 1,00 |
-| `20362` | 10^3 | 1,00 |
+| `20362` | 10^3 | 1,01 |
 | `20370` | 10^3 | 1,00 |
 | `20532` | 10^3 | 1,00 |
 | `20877` | 10^3 | 1,00 |
@@ -752,7 +751,6 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `25330` | 10^3 | 1,00 |
 | `25372` | 10^3 | 1,00 |
 | `25550` | 10^3 | 0,70 |
-| `25682` | 10^1 | 2,51 |
 | `25984` | 10^3 | 1,00 |
 | `26000` | 10^3 | 1,00 |
 | `26620` | 10^3 | 1,00 |
@@ -766,6 +764,14 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `7617` | 10^3 | 1,00 |
 | `7870` | 10^3 | 1,00 |
 | `8133` | 10^3 | 1,00 |
+
+Escala não confirmada pela B3: o fator mais próximo e o resíduo, fora de [0,5; 2]:
+
+| cd_cvm | fator | resíduo |
+| --- | --- | --- |
+| `11975` | 10^1 | 2,66 |
+| `19879` | 10^1 | 2,31 |
+| `25682` | 10^1 | 2,51 |
 
 Empresas com preço de classe de pregão antigo:
 
@@ -927,11 +933,12 @@ Empresas com preço de outra classe:
 
 - Elegíveis: 274. Mapeados: 257. Não mapeados: 17.
 - Mapeados pela B3 (`mapped_via_b3`): `ALUP3`, `ALUP4`, `AMAR3`, `BPAC11`, `BPAC3`, `BPAC5`, `CMIN3`, `CSNA3`, `EQPA3`, `KLBN3`, `KLBN4`, `MBRF3`, `TGMA3`.
-- Caíram para o período anterior porque o mais recente foi reapresentado depois de d, com uma versão já recebida até d (`refiled_after_d`): nenhum.
+- Caíram para o período anterior porque o mais recente foi reapresentado depois de d, com uma versão já recebida até d (`refiled_after_d`): `VIVA3`.
 - Usaram o preço da outra classe (`vm_price_fallback`): 8 empresa(s).
 - Sem cotação recente (`reference_stale`, sem registro em [d − 30 dias, d]): `AESB3`, `AXIA6`, `AZUL54`, `BPAN4`, `BRFS3`, `CPLE5`, `CPLE6`, `ENAT3`, `GPIV33`, `JBSS3`, `NEOE3`, `NTCO3`, `PETZ3`, `PORT3`, `STBP3`, `SULA11`, `ZAMP3`.
 - Preço de classe de pregão antigo (`vm_stale_class_price`): 4 classe(s).
-- Escala das contagens (`share_scale.scaled`): 66 empresa(s). Não verificada (`share_scale.unverified`): nenhum.
+- Escala das contagens (`share_scale.scaled`): 64 empresa(s). Não verificada (`share_scale.unverified`): nenhum.
+- Escala não confirmada pela B3 (`share_scale.unconfirmed`, sem contagem): 2 empresa(s). Os campos que dependem da contagem ficam sem valor, com motivo `share_scale_unconfirmed`.
 
 Escala das contagens, com o fator e o resíduo de cada empresa:
 
@@ -946,7 +953,7 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `13781` | 10^3 | 1,00 |
 | `14109` | 10^3 | 1,00 |
 | `14346` | 10^3 | 1,00 |
-| `14460` | 10^3 | 1,00 |
+| `14460` | 10^3 | 1,08 |
 | `14524` | 10^3 | 1,00 |
 | `14826` | 10^3 | 1,00 |
 | `16993` | 10^3 | 1,40 |
@@ -957,12 +964,11 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `19453` | 10^3 | 1,00 |
 | `19550` | 10^3 | 1,00 |
 | `19615` | 10^3 | 1,00 |
-| `19879` | 10^1 | 2,31 |
 | `20044` | 10^3 | 1,00 |
 | `20087` | 10^3 | 1,00 |
 | `20257` | 10^3 | 1,00 |
 | `20346` | 10^3 | 1,00 |
-| `20362` | 10^3 | 1,00 |
+| `20362` | 10^3 | 1,01 |
 | `20532` | 10^3 | 1,00 |
 | `20915` | 10^3 | 1,00 |
 | `21016` | 10^3 | 1,00 |
@@ -989,7 +995,6 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `25372` | 10^3 | 1,00 |
 | `25496` | 10^-1 | 1,00 |
 | `25550` | 10^3 | 1,00 |
-| `25682` | 10^1 | 2,51 |
 | `25984` | 10^3 | 1,00 |
 | `26000` | 10^3 | 1,00 |
 | `26620` | 10^3 | 1,00 |
@@ -1003,6 +1008,13 @@ Escala das contagens, com o fator e o resíduo de cada empresa:
 | `7870` | 10^3 | 1,00 |
 | `8133` | 10^3 | 1,00 |
 | `9393` | 10^1 | 0,70 |
+
+Escala não confirmada pela B3: o fator mais próximo e o resíduo, fora de [0,5; 2]:
+
+| cd_cvm | fator | resíduo |
+| --- | --- | --- |
+| `19879` | 10^1 | 2,31 |
+| `25682` | 10^1 | 2,51 |
 
 Empresas com preço de classe de pregão antigo:
 
@@ -1043,7 +1055,6 @@ Contagens suspeitas, sem evento da B3 que as explique (`share_count_suspect`):
 | `16993` | 2026-06-30 | 36924000 | 2026-09-30 | 51629000 | 1,3983 |
 | `23574` | 2026-03-31 | 573353080 | 2026-06-30 | 315344194 | 0,5500 |
 | `24112` | 2026-03-31 | 547308517788 | 2026-06-30 | 368557924 | 0,0007 |
-| `24805` | 2026-06-30 | 236197769 | 2026-09-30 | 82118477 | 0,3477 |
 | `25550` | 2026-03-31 | 96127000 | 2026-06-30 | 137324000 | 1,4286 |
 | `25917` | 2026-03-31 | 10352509484 | 2026-06-30 | 4557597117 | 0,4402 |
 | `5380` | 2026-06-30 | 22500000 | 2026-09-30 | 14170000 | 0,6298 |
@@ -1193,17 +1204,17 @@ Empresas com preço de outra classe:
 | `MARGEM EBIT` | não financeiro | 234 | 86,75% | 0,00 p.p. | 0,01 p.p. | com ressalvas |
 | `MARGEM EBIT` | não financeiro sem não classificados | 233 | 87,12% | 0,00 p.p. | 0,01 p.p. | com ressalvas |
 | `MARGEM EBIT` | financeiro | 32 | 68,75% | 0,00 p.p. | 39,02 p.p. | não reconstruível |
-| `P/L` | não financeiro | 236 | 80,08% | 0,00% | 5,57% | com ressalvas |
-| `P/L` | não financeiro sem não classificados | 235 | 80,43% | 0,00% | 5,57% | com ressalvas |
+| `P/L` | não financeiro | 236 | 80,08% | 0,00% | 4,14% | com ressalvas |
+| `P/L` | não financeiro sem não classificados | 235 | 80,43% | 0,00% | 4,14% | com ressalvas |
 | `P/L` | financeiro | 33 | 60,61% | 0,00% | 3,30% | não reconstruível |
-| `P/VP` | não financeiro | 236 | 83,05% | 0,00% | 3,51% | com ressalvas |
-| `P/VP` | não financeiro sem não classificados | 235 | 83,40% | 0,00% | 3,51% | com ressalvas |
+| `P/VP` | não financeiro | 236 | 83,05% | 0,00% | 1,89% | com ressalvas |
+| `P/VP` | não financeiro sem não classificados | 235 | 83,40% | 0,00% | 1,89% | com ressalvas |
 | `P/VP` | financeiro | 33 | 27,27% | 86,75% | 1265,32% | não reconstruível |
-| `EV/EBIT` | não financeiro | 236 | 80,51% | 0,00% | 5,92% | com ressalvas |
-| `EV/EBIT` | não financeiro sem não classificados | 235 | 80,85% | 0,00% | 5,92% | com ressalvas |
+| `EV/EBIT` | não financeiro | 236 | 80,51% | 0,00% | 3,19% | com ressalvas |
+| `EV/EBIT` | não financeiro sem não classificados | 235 | 80,85% | 0,00% | 3,19% | com ressalvas |
 | `EV/EBIT` | financeiro | 33 | 18,18% | 0,47% | 356,17% | não reconstruível |
-| `PSR` | não financeiro | 233 | 81,55% | 0,00% | 5,95% | com ressalvas |
-| `PSR` | não financeiro sem não classificados | 233 | 81,55% | 0,00% | 5,95% | com ressalvas |
+| `PSR` | não financeiro | 233 | 81,55% | 0,00% | 3,80% | com ressalvas |
+| `PSR` | não financeiro sem não classificados | 233 | 81,55% | 0,00% | 3,80% | com ressalvas |
 | `PSR` | financeiro | 32 | 75,00% | 0,00% | 111,32% | com ressalvas |
 | `CAGR RECEITAS 5 ANOS` | não financeiro | 230 | 89,13% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `CAGR RECEITAS 5 ANOS` | não financeiro sem não classificados | 230 | 89,13% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
@@ -1211,17 +1222,17 @@ Empresas com preço de outra classe:
 | `CAGR LUCROS 5 ANOS` | não financeiro | 160 | 86,88% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | não financeiro sem não classificados | 160 | 86,88% | 0,00 p.p. | 0,00 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | financeiro | 29 | 51,72% | 0,00 p.p. | 0,03 p.p. | não reconstruível |
-| `PEG RATIO` | não financeiro | 235 | 68,94% | 0,00% | 4,00% | não reconstruível |
-| `PEG RATIO` | não financeiro sem não classificados | 234 | 69,23% | 0,00% | 4,00% | não reconstruível |
+| `PEG RATIO` | não financeiro | 235 | 68,94% | 0,00% | 3,70% | não reconstruível |
+| `PEG RATIO` | não financeiro sem não classificados | 234 | 69,23% | 0,00% | 3,70% | não reconstruível |
 | `PEG RATIO` | financeiro | 33 | 54,55% | 0,00% | 0,00% | não reconstruível |
-| `DY` | não financeiro | 236 | 69,92% | 0,00 p.p. | 2,01 p.p. | não reconstruível |
-| `DY` | não financeiro sem não classificados | 235 | 70,21% | 0,00 p.p. | 2,01 p.p. | com ressalvas |
+| `DY` | não financeiro | 236 | 70,34% | 0,00 p.p. | 1,96 p.p. | com ressalvas |
+| `DY` | não financeiro sem não classificados | 235 | 70,64% | 0,00 p.p. | 1,96 p.p. | com ressalvas |
 | `DY` | financeiro | 33 | 78,79% | 0,00 p.p. | 0,56 p.p. | com ressalvas |
 | `PRECO` | não financeiro | 236 | 91,53% | 0,00% | 0,00% | reconstruível |
 | `PRECO` | não financeiro sem não classificados | 235 | 91,91% | 0,00% | 0,00% | reconstruível |
 | `PRECO` | financeiro | 33 | 90,91% | 0,00% | 0,00% | reconstruível |
-| `VALOR DE MERCADO` | não financeiro | 236 | 83,05% | 0,00% | 4,13% | com ressalvas |
-| `VALOR DE MERCADO` | não financeiro sem não classificados | 235 | 83,40% | 0,00% | 4,13% | com ressalvas |
+| `VALOR DE MERCADO` | não financeiro | 236 | 83,05% | 0,00% | 2,87% | com ressalvas |
+| `VALOR DE MERCADO` | não financeiro sem não classificados | 235 | 83,40% | 0,00% | 2,87% | com ressalvas |
 | `VALOR DE MERCADO` | financeiro | 33 | 75,76% | 0,00% | 14,56% | com ressalvas |
 | `LIQUIDEZ MEDIA DIARIA` | não financeiro | 236 | 86,86% | 0,35% | 2,02% | com ressalvas |
 | `LIQUIDEZ MEDIA DIARIA` | não financeiro sem não classificados | 235 | 87,23% | 0,35% | 2,02% | com ressalvas |
@@ -1559,18 +1570,18 @@ Sem valor reconstruído: `APER3` (no_quote), `BBSE3` (zero_divisor), `BPAN4` (no
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `VVEO3` | 10,25 | 102,46 | 899,61% |
 | `BRST3` | 10,58 | 31,04 | 193,38% |
-| `AZEV4` | -0,32 | -0,86 | 168,75% |
-| `AZEV3` | -0,68 | -1,82 | 167,65% |
-| `LIGT3` | 1,91 | 4,42 | 131,41% |
 | `VTRU3` | -6,32 | 1,53 | 124,21% |
 | `INTB3` | 8,08 | 16,92 | 109,41% |
 | `CAML3` | 8,25 | 14,57 | 76,61% |
 | `BHIA3` | -0,46 | -0,19 | 58,70% |
 | `TIMS3` | 22,67 | 10,37 | 54,26% |
+| `ORVR3` | 109,30 | 76,51 | 30,00% |
+| `EMAE4` | -10,85 | -13,85 | 27,65% |
+| `SIMH3` | -46,09 | -33,69 | 26,90% |
+| `EGIE3` | 10,64 | 8,58 | 19,36% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1599,18 +1610,18 @@ Sem valor reconstruído: `APER3` (no_quote), `BMGB4` (missing_input: LL), `BPAC1
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `VVEO3` | 0,11 | 1,10 | 900,00% |
-| `AZEV3` | 3,65 | 9,73 | 166,58% |
-| `AZEV4` | 1,73 | 4,60 | 165,90% |
-| `LIGT3` | 0,60 | 1,39 | 131,67% |
 | `VTRU3` | 1,87 | 0,46 | 75,40% |
 | `BHIA3` | 0,23 | 0,38 | 65,22% |
 | `TIMS3` | 3,61 | 1,79 | 50,42% |
 | `ONCO3` | 1,32 | 0,78 | 40,91% |
 | `ORVR3` | 6,38 | 4,47 | 29,94% |
 | `SIMH3` | 0,97 | 0,71 | 26,80% |
+| `EGIE3` | 2,80 | 2,26 | 19,29% |
+| `MOVI3` | 1,02 | 0,86 | 15,69% |
+| `VAMO3` | 1,44 | 1,26 | 12,50% |
+| `AALR3` | -1,84 | -1,67 | 9,24% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1642,15 +1653,15 @@ Sem valor reconstruído: `ABCB4` (zero_divisor), `APER3` (no_quote), `BPAN4` (no
 | `TFCO4` | 10,90 | 64,31 | 490,00% |
 | `VTRU3` | -9,11 | 4,99 | 154,77% |
 | `BHIA3` | -15,89 | 5,00 | 131,47% |
-| `AZEV3` | -1,26 | -2,46 | 95,24% |
-| `AZEV4` | -1,26 | -2,46 | 95,24% |
 | `SHUL4` | 23,73 | 6,81 | 71,30% |
-| `VVEO3` | 5,40 | 8,65 | 60,19% |
-| `LIGT3` | 16,63 | 24,76 | 48,89% |
 | `CAML3` | 7,50 | 10,12 | 34,93% |
 | `ORVR3` | 31,80 | 23,50 | 26,10% |
+| `EMAE4` | -7,21 | -8,12 | 12,62% |
+| `EGIE3` | 10,10 | 8,87 | 12,18% |
+| `CASH3` | -6,02 | -6,69 | 11,13% |
+| `IGTI11` | 7,59 | 8,31 | 9,49% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: EBIT), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1679,18 +1690,18 @@ Sem valor reconstruído: `APER3` (no_quote), `BBAS3` (missing_input: DB), `BBDC3
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `VVEO3` | 0,02 | 0,18 | 800,00% |
-| `AZEV3` | 0,92 | 2,46 | 167,39% |
-| `AZEV4` | 0,44 | 1,16 | 163,64% |
-| `LIGT3` | 0,33 | 0,75 | 127,27% |
 | `BHIA3` | 0,03 | 0,02 | 33,33% |
 | `ORVR3` | 8,17 | 5,72 | 29,99% |
 | `SIMH3` | 0,09 | 0,07 | 22,22% |
 | `VTRU3` | 0,94 | 0,74 | 21,28% |
 | `BRST3` | 0,89 | 0,71 | 20,22% |
 | `EGIE3` | 3,08 | 2,48 | 19,48% |
+| `AMER3` | 0,07 | 0,06 | 14,29% |
+| `MOVI3` | 0,21 | 0,18 | 14,29% |
+| `EMAE4` | 3,20 | 2,75 | 14,06% |
+| `VAMO3` | 0,62 | 0,54 | 12,90% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: REC), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: REC), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1800,7 +1811,6 @@ Sem valor reconstruído: `BMEB3` (short_history), `BMEB4` (short_history), `BMGB
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
 | `INTB3` | 0,26 | -0,45 | 273,08% |
-| `LIGT3` | 0,24 | 0,55 | 129,17% |
 | `EMAE4` | 0,04 | 0,06 | 50,00% |
 | `TIMS3` | 1,06 | 0,54 | 49,06% |
 | `ORVR3` | 0,56 | 0,40 | 28,57% |
@@ -1809,8 +1819,9 @@ Sem valor reconstruído: `BMEB3` (short_history), `BMEB4` (short_history), `BMGB
 | `MOVI3` | 0,22 | 0,18 | 18,18% |
 | `GMAT3` | 0,21 | 0,18 | 14,29% |
 | `VAMO3` | 21,72 | 18,95 | 12,75% |
+| `CAML3` | -0,29 | -0,32 | 10,34% |
 
-Sem valor reconstruído: `AALR3` (non_positive_base), `AESB3` (no_quote), `ALPK3` (non_positive_base), `AMAR3` (non_positive_base), `AMBP3` (stale_filing), `AURE3` (non_positive_base), `AXIA6` (no_quote), `AZEV3` (non_positive_base), `AZEV4` (non_positive_base), `AZUL53` (no_quote), `AZUL54` (no_quote), `BEEF3` (non_positive_base), `BHIA3` (non_positive_base), `BIOM3` (non_positive_base), `BRFS3` (no_quote), `BRKM3` (non_positive_base), `BRKM5` (non_positive_base), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `CRPG5` (non_positive_base), `CSAN3` (non_positive_base), `CSNA3` (non_positive_base), `CVCB3` (non_positive_base), `DASA3` (non_positive_base), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `HAPV3` (non_positive_base), `HBSA3` (non_positive_base), `JALL3` (non_positive_base), `JBSS3` (no_quote), `LJQQ3` (non_positive_base), `MATD3` (non_positive_base), `MLAS3` (non_positive_base), `MRVE3` (non_positive_base), `NEOE3` (no_quote), `NGRD3` (non_positive_base), `NTCO3` (no_quote), `ONCO3` (non_positive_base), `OPCT3` (non_positive_base), `PCAR3` (non_positive_base), `PETZ3` (no_quote), `PORT3` (no_quote), `PTBL3` (non_positive_base), `RAIL3` (non_positive_base), `RAIZ4` (non_positive_base), `SCAR3` (non_positive_base), `SIMH3` (non_positive_base), `SOMA3` (no_quote), `STBP3` (no_quote), `SUZB3` (non_positive_base), `TUPY3` (non_positive_base), `VSTE3` (non_positive_base), `VVEO3` (non_positive_base), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (non_positive_base), `AESB3` (no_quote), `ALPK3` (non_positive_base), `AMAR3` (non_positive_base), `AMBP3` (stale_filing), `AURE3` (non_positive_base), `AXIA6` (no_quote), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `AZUL53` (no_quote), `AZUL54` (no_quote), `BEEF3` (non_positive_base), `BHIA3` (non_positive_base), `BIOM3` (non_positive_base), `BRFS3` (no_quote), `BRKM3` (non_positive_base), `BRKM5` (non_positive_base), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `CRPG5` (non_positive_base), `CSAN3` (non_positive_base), `CSNA3` (non_positive_base), `CVCB3` (non_positive_base), `DASA3` (non_positive_base), `ELMD3` (no_quote), `ENAT3` (no_quote), `EQPA3` (missing_input: LL), `GPIV33` (no_cvm_code), `HAPV3` (non_positive_base), `HBSA3` (non_positive_base), `JALL3` (non_positive_base), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `LJQQ3` (non_positive_base), `MATD3` (non_positive_base), `MLAS3` (non_positive_base), `MRVE3` (non_positive_base), `NEOE3` (no_quote), `NGRD3` (non_positive_base), `NTCO3` (no_quote), `ONCO3` (non_positive_base), `OPCT3` (non_positive_base), `PCAR3` (non_positive_base), `PETZ3` (no_quote), `PORT3` (no_quote), `PTBL3` (non_positive_base), `RAIL3` (non_positive_base), `RAIZ4` (non_positive_base), `SCAR3` (non_positive_base), `SIMH3` (non_positive_base), `SOMA3` (no_quote), `STBP3` (no_quote), `SUZB3` (non_positive_base), `TUPY3` (non_positive_base), `VSTE3` (non_positive_base), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -1839,7 +1850,6 @@ Sem valor reconstruído: `APER3` (no_quote), `BMGB4` (missing_input: LL), `BPAC1
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `HBRE3` | 52,50 | 21,87 | 30,63 p.p. |
 | `RIAA3` | 31,29 | 41,94 | 10,65 p.p. |
 | `MDNE3` | 14,37 | 7,24 | 7,13 p.p. |
 | `VLID3` | 9,90 | 3,27 | 6,63 p.p. |
@@ -1849,6 +1859,7 @@ Sem valor reconstruído: `APER3` (no_quote), `BMGB4` (missing_input: LL), `BPAC1
 | `COCE5` | 0,00 | 4,36 | 4,36 p.p. |
 | `CLSC4` | 0,36 | 4,48 | 4,12 p.p. |
 | `TGMA3` | 10,84 | 14,87 | 4,03 p.p. |
+| `FIQE3` | 14,17 | 10,51 | 3,66 p.p. |
 
 Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
 
@@ -1919,18 +1930,18 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `VVEO3` | 206605189,12 | 2066051891,20 | 900,00% |
 | `TFCO4` | 2238515001,92 | 13773493331,79 | 515,30% |
 | `VTRU3` | 481531784,47 | 1705331559,88 | 254,15% |
-| `AZEV3` | 268547946,85 | 715590439,05 | 166,47% |
-| `AZEV4` | 268547946,85 | 715590439,05 | 166,47% |
-| `LIGT3` | 4990409763,10 | 11549215044,00 | 131,43% |
 | `SHUL4` | 5056312514,12 | 1547432797,40 | 69,40% |
 | `COCE5` | 2063151133,37 | 2759315027,57 | 33,74% |
 | `ORVR3` | 9317440252,85 | 6522216950,00 | 30,00% |
 | `SIMH3` | 4109665408,64 | 3004656209,28 | 26,89% |
+| `EGIE3` | 42109022589,60 | 33960544394,28 | 19,35% |
+| `MOVI3` | 3120753382,16 | 2624166344,16 | 15,91% |
+| `VAMO3` | 3763226744,20 | 3283226743,72 | 12,76% |
+| `IGTI11` | 6425772699,90 | 7243534910,36 | 12,73% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZEV3` (share_scale_unconfirmed), `AZEV4` (share_scale_unconfirmed), `AZUL53` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CLSA3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRFB3` (no_quote), `ELMD3` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `SOMA3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -2001,8 +2012,8 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 | `LIQ. CORRENTE` | não financeiro | 239 | 79,50% | 0,00% | 10,13% | com ressalvas |
 | `LIQ. CORRENTE` | não financeiro sem não classificados | 238 | 79,83% | 0,00% | 10,13% | com ressalvas |
 | `LIQ. CORRENTE` | financeiro | 29 | 48,28% | 2,42% | 600,00% | não reconstruível |
-| `DIVIDA LIQUIDA / EBIT` | não financeiro | 239 | 72,80% | 0,00% | 20,81% | com ressalvas |
-| `DIVIDA LIQUIDA / EBIT` | não financeiro sem não classificados | 238 | 73,11% | 0,00% | 20,81% | com ressalvas |
+| `DIVIDA LIQUIDA / EBIT` | não financeiro | 239 | 73,22% | 0,00% | 19,73% | com ressalvas |
+| `DIVIDA LIQUIDA / EBIT` | não financeiro sem não classificados | 238 | 73,53% | 0,00% | 19,73% | com ressalvas |
 | `DIVIDA LIQUIDA / EBIT` | financeiro | 9 | 44,44% | 12,78% | 366,67% | não reconstruível |
 | `DIV. LIQ. / PATRI.` | não financeiro | 230 | 79,57% | 0,00% | 8,60% | com ressalvas |
 | `DIV. LIQ. / PATRI.` | não financeiro sem não classificados | 229 | 79,91% | 0,00% | 8,60% | com ressalvas |
@@ -2010,11 +2021,11 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 | `ROE` | não financeiro | 239 | 71,13% | 0,00 p.p. | 3,67 p.p. | com ressalvas |
 | `ROE` | não financeiro sem não classificados | 238 | 71,43% | 0,00 p.p. | 3,67 p.p. | com ressalvas |
 | `ROE` | financeiro | 35 | 14,29% | 12,37 p.p. | 258,67 p.p. | não reconstruível |
-| `ROA` | não financeiro | 239 | 76,15% | 0,00 p.p. | 1,44 p.p. | com ressalvas |
-| `ROA` | não financeiro sem não classificados | 238 | 76,47% | 0,00 p.p. | 1,44 p.p. | com ressalvas |
+| `ROA` | não financeiro | 239 | 76,57% | 0,00 p.p. | 1,30 p.p. | com ressalvas |
+| `ROA` | não financeiro sem não classificados | 238 | 76,89% | 0,00 p.p. | 1,30 p.p. | com ressalvas |
 | `ROA` | financeiro | 35 | 62,86% | 0,02 p.p. | 0,12 p.p. | não reconstruível |
-| `ROIC` | não financeiro | 239 | 43,93% | 0,57 p.p. | 5,29 p.p. | não reconstruível |
-| `ROIC` | não financeiro sem não classificados | 238 | 44,12% | 0,57 p.p. | 5,29 p.p. | não reconstruível |
+| `ROIC` | não financeiro | 239 | 44,35% | 0,56 p.p. | 5,29 p.p. | não reconstruível |
+| `ROIC` | não financeiro sem não classificados | 238 | 44,54% | 0,56 p.p. | 5,29 p.p. | não reconstruível |
 | `ROIC` | financeiro | 9 | 55,56% | 0,30 p.p. | 12,79 p.p. | não reconstruível |
 | `MARG. LIQUIDA` | não financeiro | 237 | 72,57% | 0,00 p.p. | 3,37 p.p. | com ressalvas |
 | `MARG. LIQUIDA` | não financeiro sem não classificados | 236 | 72,88% | 0,00 p.p. | 3,37 p.p. | com ressalvas |
@@ -2022,17 +2033,17 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 | `MARGEM EBIT` | não financeiro | 237 | 75,11% | 0,00 p.p. | 1,86 p.p. | com ressalvas |
 | `MARGEM EBIT` | não financeiro sem não classificados | 236 | 75,42% | 0,00 p.p. | 1,86 p.p. | com ressalvas |
 | `MARGEM EBIT` | financeiro | 33 | 60,61% | 0,18 p.p. | 11,18 p.p. | não reconstruível |
-| `P/L` | não financeiro | 239 | 68,20% | 0,00% | 34,49% | não reconstruível |
-| `P/L` | não financeiro sem não classificados | 238 | 68,49% | 0,00% | 34,49% | não reconstruível |
+| `P/L` | não financeiro | 239 | 68,62% | 0,00% | 32,23% | não reconstruível |
+| `P/L` | não financeiro sem não classificados | 238 | 68,91% | 0,00% | 32,23% | não reconstruível |
 | `P/L` | financeiro | 35 | 60,00% | 0,00% | 4,67% | não reconstruível |
-| `P/VP` | não financeiro | 239 | 80,75% | 0,00% | 7,53% | com ressalvas |
-| `P/VP` | não financeiro sem não classificados | 238 | 81,09% | 0,00% | 7,53% | com ressalvas |
+| `P/VP` | não financeiro | 239 | 81,17% | 0,00% | 6,97% | com ressalvas |
+| `P/VP` | não financeiro sem não classificados | 238 | 81,51% | 0,00% | 6,97% | com ressalvas |
 | `P/VP` | financeiro | 35 | 20,00% | 87,20% | 1461,54% | não reconstruível |
-| `EV/EBIT` | não financeiro | 239 | 69,46% | 0,00% | 23,48% | não reconstruível |
-| `EV/EBIT` | não financeiro sem não classificados | 238 | 69,75% | 0,00% | 23,48% | não reconstruível |
+| `EV/EBIT` | não financeiro | 239 | 69,87% | 0,00% | 19,59% | não reconstruível |
+| `EV/EBIT` | não financeiro sem não classificados | 238 | 70,17% | 0,00% | 19,59% | com ressalvas |
 | `EV/EBIT` | financeiro | 35 | 11,43% | 5,33% | 225,51% | não reconstruível |
-| `PSR` | não financeiro | 236 | 80,93% | 0,00% | 6,49% | com ressalvas |
-| `PSR` | não financeiro sem não classificados | 236 | 80,93% | 0,00% | 6,49% | com ressalvas |
+| `PSR` | não financeiro | 236 | 80,93% | 0,00% | 6,25% | com ressalvas |
+| `PSR` | não financeiro sem não classificados | 236 | 80,93% | 0,00% | 6,25% | com ressalvas |
 | `PSR` | financeiro | 33 | 72,73% | 2,17% | 8,00% | com ressalvas |
 | `CAGR RECEITAS 5 ANOS` | não financeiro | 233 | 91,42% | 0,00 p.p. | 0,00 p.p. | reconstruível |
 | `CAGR RECEITAS 5 ANOS` | não financeiro sem não classificados | 233 | 91,42% | 0,00 p.p. | 0,00 p.p. | reconstruível |
@@ -2040,8 +2051,8 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 | `CAGR LUCROS 5 ANOS` | não financeiro | 161 | 72,67% | 0,00 p.p. | 4,22 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | não financeiro sem não classificados | 161 | 72,67% | 0,00 p.p. | 4,22 p.p. | com ressalvas |
 | `CAGR LUCROS 5 ANOS` | financeiro | 32 | 50,00% | 0,00 p.p. | 2,27 p.p. | não reconstruível |
-| `PEG RATIO` | não financeiro | 238 | 53,36% | 0,00% | 102,99% | não reconstruível |
-| `PEG RATIO` | não financeiro sem não classificados | 237 | 53,59% | 0,00% | 102,99% | não reconstruível |
+| `PEG RATIO` | não financeiro | 238 | 53,36% | 0,00% | 95,15% | não reconstruível |
+| `PEG RATIO` | não financeiro sem não classificados | 237 | 53,59% | 0,00% | 95,15% | não reconstruível |
 | `PEG RATIO` | financeiro | 35 | 40,00% | 0,00% | 30,77% | não reconstruível |
 | `DY` | não financeiro | 239 | 76,99% | 0,00 p.p. | 2,27 p.p. | com ressalvas |
 | `DY` | não financeiro sem não classificados | 238 | 77,31% | 0,00 p.p. | 2,27 p.p. | com ressalvas |
@@ -2049,8 +2060,8 @@ Sem valor reconstruído: `APER3` (no_quote), `BPAN4` (no_quote), `SULA11` (no_qu
 | `PRECO` | não financeiro | 239 | 93,72% | 0,00% | 0,00% | reconstruível |
 | `PRECO` | não financeiro sem não classificados | 238 | 94,12% | 0,00% | 0,00% | reconstruível |
 | `PRECO` | financeiro | 35 | 94,29% | 0,00% | 0,00% | reconstruível |
-| `VALOR DE MERCADO` | não financeiro | 239 | 84,52% | 0,00% | 4,70% | com ressalvas |
-| `VALOR DE MERCADO` | não financeiro sem não classificados | 238 | 84,87% | 0,00% | 4,70% | com ressalvas |
+| `VALOR DE MERCADO` | não financeiro | 239 | 84,94% | 0,00% | 4,13% | com ressalvas |
+| `VALOR DE MERCADO` | não financeiro sem não classificados | 238 | 85,29% | 0,00% | 4,13% | com ressalvas |
 | `VALOR DE MERCADO` | financeiro | 35 | 71,43% | 0,00% | 9,79% | com ressalvas |
 | `LIQUIDEZ MEDIA DIARIA` | não financeiro | 239 | 91,21% | 0,28% | 1,78% | reconstruível |
 | `LIQUIDEZ MEDIA DIARIA` | não financeiro sem não classificados | 238 | 91,60% | 0,28% | 1,78% | reconstruível |
@@ -2393,13 +2404,13 @@ Sem valor reconstruído: `BPAN4` (no_quote), `BSLI3` (stale_filing), `SULA11` (n
 | `SIMH3` | -17,22 | 31,70 | 284,09% |
 | `AGRO3` | -20,56 | 33,31 | 262,01% |
 | `AMER3` | 2,22 | -3,00 | 235,14% |
-| `VVEO3` | 15,38 | 38,60 | 150,98% |
-| `LIGT3` | 1,65 | 3,83 | 132,12% |
 | `VTRU3` | -6,09 | 1,68 | 127,59% |
 | `MYPK3` | 15,83 | 35,92 | 126,91% |
 | `CAML3` | 9,20 | 19,89 | 116,20% |
+| `BRST3` | 8,92 | 17,38 | 94,84% |
+| `BHIA3` | -0,44 | -0,05 | 88,64% |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -2429,17 +2440,17 @@ Sem valor reconstruído: `BMGB4` (missing_input: LL), `BPAC11` (missing_input: L
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
 | `PCAR3` | 2,88 | -3,67 | 227,43% |
-| `VVEO3` | 0,48 | 1,20 | 150,00% |
 | `BHIA3` | 0,22 | -0,08 | 136,36% |
-| `LIGT3` | 0,43 | 0,99 | 130,23% |
 | `VTRU3` | 1,80 | 0,46 | 74,44% |
 | `RAIZ4` | -0,38 | -0,12 | 68,42% |
-| `VIVA3` | 1,35 | 0,45 | 66,67% |
 | `OPCT3` | 4,16 | 1,75 | 57,93% |
 | `TIMS3` | 3,82 | 1,91 | 50,00% |
 | `EALT4` | 0,68 | 0,41 | 39,71% |
+| `EMAE4` | 2,32 | 3,12 | 34,48% |
+| `PMAM3` | -0,14 | -0,10 | 28,57% |
+| `LJQQ3` | 0,78 | 0,93 | 19,23% |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -2475,11 +2486,11 @@ Sem valor reconstruído: `ABCB4` (zero_divisor), `BPAN4` (no_quote), `BSLI3` (st
 | `VTRU3` | -8,65 | 4,52 | 152,25% |
 | `BHIA3` | -15,82 | -2,85 | 81,98% |
 | `TUPY3` | -10,99 | -18,34 | 66,88% |
-| `VIVA3` | 5,97 | 2,52 | 57,79% |
-| `LIGT3` | 17,61 | 25,79 | 46,45% |
 | `OPCT3` | 14,12 | 8,18 | 42,07% |
+| `PRIO3` | 12,80 | 7,61 | 40,55% |
+| `EZTC3` | 6,43 | 8,64 | 34,37% |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -2508,9 +2519,6 @@ Sem valor reconstruído: `BBAS3` (missing_input: DB), `BBDC3` (missing_input: DB
 
 | ticker | referência | reconstruído | diferença |
 | --- | --- | --- | --- |
-| `VVEO3` | 0,07 | 0,19 | 171,43% |
-| `LIGT3` | 0,26 | 0,59 | 126,92% |
-| `VIVA3` | 1,36 | 0,47 | 65,44% |
 | `OPCT3` | 1,80 | 0,76 | 57,78% |
 | `EALT4` | 0,47 | 0,28 | 40,43% |
 | `BHIA3` | 0,03 | 0,02 | 33,33% |
@@ -2518,8 +2526,11 @@ Sem valor reconstruído: `BBAS3` (missing_input: DB), `BBDC3` (missing_input: DB
 | `BRST3` | 0,75 | 0,57 | 24,00% |
 | `EMAE4` | 3,75 | 4,52 | 20,53% |
 | `EGIE3` | 2,76 | 2,22 | 19,57% |
+| `PRIO3` | 2,51 | 2,05 | 18,33% |
+| `PCAR3` | 0,06 | 0,07 | 16,67% |
+| `VTRU3` | 0,90 | 0,78 | 13,33% |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AMBP3` (stale_filing), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -2639,7 +2650,7 @@ Sem valor reconstruído: `BMEB3` (short_history), `BMEB4` (short_history), `BMGB
 | `RADL3` | 1,97 | -5,83 | 395,94% |
 | `MELK3` | -1,06 | 1,62 | 252,83% |
 
-Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AGRO3` (non_positive_base), `AMAR3` (non_positive_base), `AMBP3` (stale_filing), `AURE3` (non_positive_base), `AXIA3` (non_positive_base), `AXIA6` (no_quote), `AXIA7` (non_positive_base), `AZEV3` (non_positive_base), `AZEV4` (non_positive_base), `AZUL54` (no_quote), `BEEF3` (non_positive_base), `BHIA3` (non_positive_base), `BIOM3` (non_positive_base), `BRFS3` (no_quote), `BRKM3` (non_positive_base), `BRKM5` (non_positive_base), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRPG5` (non_positive_base), `CSAN3` (non_positive_base), `CSNA3` (non_positive_base), `CVCB3` (non_positive_base), `DASA3` (non_positive_base), `ENAT3` (no_quote), `ENEV3` (non_positive_base), `EVEN3` (non_positive_base), `GPIV33` (no_cvm_code), `HAPV3` (non_positive_base), `HBSA3` (non_positive_base), `JALL3` (non_positive_base), `JBSS3` (no_quote), `LJQQ3` (non_positive_base), `MEAL3` (non_positive_base), `MLAS3` (non_positive_base), `MRVE3` (non_positive_base), `NEOE3` (no_quote), `NTCO3` (no_quote), `ONCO3` (non_positive_base), `OPCT3` (non_positive_base), `PCAR3` (non_positive_base), `PETZ3` (no_quote), `PMAM3` (non_positive_base), `PORT3` (no_quote), `POSI3` (non_positive_base), `PTBL3` (non_positive_base), `RAIZ4` (non_positive_base), `RNEW3` (non_positive_base), `RNEW4` (non_positive_base), `SCAR3` (non_positive_base), `SEQL3` (non_positive_base), `SIMH3` (non_positive_base), `STBP3` (no_quote), `TUPY3` (non_positive_base), `USIM3` (non_positive_base), `USIM5` (non_positive_base), `VVEO3` (non_positive_base), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AALR3` (stale_filing), `AESB3` (no_quote), `AGRO3` (non_positive_base), `AMAR3` (non_positive_base), `AMBP3` (stale_filing), `AURE3` (non_positive_base), `AXIA3` (non_positive_base), `AXIA6` (no_quote), `AXIA7` (non_positive_base), `AZEV3` (non_positive_base), `AZEV4` (non_positive_base), `AZUL54` (no_quote), `BEEF3` (non_positive_base), `BHIA3` (non_positive_base), `BIOM3` (non_positive_base), `BRFS3` (no_quote), `BRKM3` (non_positive_base), `BRKM5` (non_positive_base), `CPLE5` (no_quote), `CPLE6` (no_quote), `CRPG5` (non_positive_base), `CSAN3` (non_positive_base), `CSNA3` (non_positive_base), `CVCB3` (non_positive_base), `DASA3` (non_positive_base), `ENAT3` (no_quote), `ENEV3` (non_positive_base), `EVEN3` (non_positive_base), `GPIV33` (no_cvm_code), `HAPV3` (non_positive_base), `HBSA3` (non_positive_base), `JALL3` (non_positive_base), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `LJQQ3` (non_positive_base), `MEAL3` (non_positive_base), `MLAS3` (non_positive_base), `MRVE3` (non_positive_base), `NEOE3` (no_quote), `NTCO3` (no_quote), `ONCO3` (non_positive_base), `OPCT3` (non_positive_base), `PCAR3` (non_positive_base), `PETZ3` (no_quote), `PMAM3` (non_positive_base), `PORT3` (no_quote), `POSI3` (non_positive_base), `PTBL3` (non_positive_base), `RAIZ4` (non_positive_base), `RNEW3` (non_positive_base), `RNEW4` (non_positive_base), `SCAR3` (non_positive_base), `SEQL3` (non_positive_base), `SIMH3` (non_positive_base), `STBP3` (no_quote), `TUPY3` (non_positive_base), `USIM3` (non_positive_base), `USIM5` (non_positive_base), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -2751,15 +2762,15 @@ Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
 | `AZUL3` | 387468275,00 | 4238416126,00 | 993,87% |
 | `TFCO4` | 1539840915,08 | 9474579601,95 | 515,30% |
 | `VTRU3` | 464104198,25 | 1835409378,25 | 295,47% |
-| `VVEO3` | 874700407,72 | 2195180134,40 | 150,96% |
-| `LIGT3` | 3994493014,16 | 9239372035,20 | 131,30% |
-| `VIVA3` | 4294075440,42 | 1492913911,86 | 65,23% |
 | `OPCT3` | 4308559880,00 | 1815632750,32 | 57,86% |
 | `RAIZ4` | 3105752845,20 | 1367279135,10 | 55,98% |
 | `EALT4` | 263067786,77 | 156856210,00 | 40,37% |
 | `PMAM3` | 1096570827,56 | 772715405,80 | 29,53% |
+| `COCE5` | 1997466643,85 | 2496230568,05 | 24,97% |
+| `RNEW3` | 401720944,15 | 317760006,65 | 20,90% |
+| `RNEW4` | 401720944,15 | 317760006,65 | 20,90% |
 
-Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `ZAMP3` (no_quote).
+Sem valor reconstruído: `AESB3` (no_quote), `AXIA6` (no_quote), `AZUL54` (no_quote), `BRFS3` (no_quote), `CPLE5` (no_quote), `CPLE6` (no_quote), `ENAT3` (no_quote), `GPIV33` (no_cvm_code), `JBSS3` (no_quote), `LIGT3` (share_scale_unconfirmed), `NEOE3` (no_quote), `NTCO3` (no_quote), `PETZ3` (no_quote), `PORT3` (no_quote), `STBP3` (no_quote), `VVEO3` (share_scale_unconfirmed), `ZAMP3` (no_quote).
 
 </details>
 
@@ -2833,15 +2844,15 @@ Sem valor reconstruído: `BPAN4` (no_quote), `SULA11` (no_quote).
 
 | data | B3 | Yahoo | sem fonte |
 | --- | --- | --- | --- |
-| 2026-08-07 | 238 | 8 | 0 |
-| 2026-11-05 | 246 | 11 | 0 |
+| 2026-08-07 | 241 | 5 | 0 |
+| 2026-11-05 | 248 | 9 | 0 |
 
 ### Motivos de troca para o Yahoo
 
-| data | b3_failed | b3_empty | b3_incomplete | b3_short_history |
-| --- | --- | --- | --- | --- |
-| 2026-08-07 | 0 | 5 | 0 | 3 |
-| 2026-11-05 | 0 | 9 | 0 | 2 |
+| data | b3_failed | b3_empty | b3_incomplete |
+| --- | --- | --- | --- |
+| 2026-08-07 | 0 | 5 | 0 |
+| 2026-11-05 | 0 | 9 | 0 |
 
 Tickers sem dividendos confirmados (`b3_empty_yahoo_failed`):
 
@@ -2911,23 +2922,23 @@ Nomes com `/` na B3 (`dividends.slash_names`):
 
 | fonte | tickers | primeira data bruta | primeiro ano | mediana do ano por ticker | retenção |
 | --- | --- | --- | --- | --- | --- |
-| `b3` | 252 | 1995-12-29 | 1995 | 2007 | histórico completo da empresa (GetListedCashDividends, todas as páginas) |
-| `yahoo` | 12 | 2016-05-02 | 2016 | 2026 | a partir de 2000-01-01 (period1 da requisição) |
+| `b3` | 255 | 1995-12-29 | 1995 | 2007 | histórico completo da empresa (GetListedCashDividends, todas as páginas) |
+| `yahoo` | 9 | 2016-05-02 | 2016 | 2016 | a partir de 2000-01-01 (period1 da requisição) |
 
 O DY começa em 1995, pela fonte `b3`.
 
 ### Esforço da reconstrução completa
 
-- Total projetado: 230 s. Carga: 166 s. Compute: 64 s (0,35 s por data × 180 datas).
+- Total projetado: 188 s. Carga: 165 s. Compute: 23 s (0,13 s por data × 180 datas).
 - Premissa: compute por data com o universo de hoje.
 
 | tipo | segundos | bytes medidos | bytes completos | segundos projetados |
 | --- | --- | --- | --- | --- |
-| `CADASTRO` | 0,02 | 1494679 | 1494679 | 0,02 |
-| `COTAHIST` | 15,61 | 179489589 | 616660205 | 53,65 |
-| `DFP` | 12,30 | 90623836 | 175412433 | 23,81 |
-| `FCA` | 0,03 | 6646755 | 6646755 | 0,03 |
-| `ITR` | 17,91 | 86594608 | 428000310 | 88,53 |
+| `CADASTRO` | 0,02 | 1495337 | 1495337 | 0,02 |
+| `COTAHIST` | 13,86 | 183773865 | 620944481 | 46,83 |
+| `DFP` | 12,90 | 90623763 | 175412360 | 24,97 |
+| `FCA` | 0,03 | 6646929 | 6646929 | 0,03 |
+| `ITR` | 20,02 | 93194538 | 434600349 | 93,38 |
 
 ### Anos lidos na reconstrução completa
 
@@ -2945,7 +2956,7 @@ O DY começa em 1995, pela fonte `b3`.
 | arquivo | URL | sha256 | bytes |
 | --- | --- | --- | --- |
 | COTAHIST_A2025.ZIP | https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2025.ZIP | `6cc0ad851c8f605ca30418acac48be81f1767f6ed05b4f563772d06ae448047d` | 89056788 |
-| COTAHIST_A2026.ZIP | https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2026.ZIP | `4df3625cbb2dcbf12308c0acaae4acff1887427b620854072bb56cf6d63d60b0` | 90432801 |
+| COTAHIST_A2026.ZIP | https://bvmf.bmfbovespa.com.br/InstDados/SerHist/COTAHIST_A2026.ZIP | `5127126d28fa67e35e266ed4d513196e4d21b471bdb4a7afd23e293c4cd9d6c0` | 94717077 |
 | b3_cash_3TENTOS_p1.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/eyJsYW5ndWFnZSI6InB0LWJyIiwicGFnZU51bWJlciI6MSwicGFnZVNpemUiOjEyMCwidHJhZGluZ05hbWUiOiIzVEVOVE9TIn0= | `6d6ca4e79fcc2af2e3930f86e044a8765eea377ed24be31eaa000932a3a02ead` | 1696 |
 | b3_cash_ABC_BRASIL_p1.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/eyJsYW5ndWFnZSI6InB0LWJyIiwicGFnZU51bWJlciI6MSwicGFnZVNpemUiOjEyMCwidHJhZGluZ05hbWUiOiJBQkMgQlJBU0lMIn0= | `73c7877465e42a546732fecbd7b06c549af8715c6896b126a1e954caaf5a3ed9` | 23305 |
 | b3_cash_ACO_ALTONA_p1.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/eyJsYW5ndWFnZSI6InB0LWJyIiwicGFnZU51bWJlciI6MSwicGFnZVNpemUiOjEyMCwidHJhZGluZ05hbWUiOiJBQ08gQUxUT05BIn0= | `8fd62bd6397406fb3b42ea50d1c1e9ae3524ea26f3f3e3ace75f3c53886a386e` | 36795 |
@@ -3239,11 +3250,11 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_ABEV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFCRVYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `0387bb19ba04630530bc1cc31cf9307e4d7cdd5e133dd078c5407ef9240d6188` | 1601 |
 | b3_company_AESB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFFU0IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5c928a8a08b72f52e174d20dfff221a24c4bd70ad9b0e649daed41dc0b00b37c` | 436 |
 | b3_company_AGRO.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFHUk8iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4c171acee34a091bf7a1c40fda397cc063b47922e3ed280b209b151801b8b302` | 825 |
-| b3_company_ALLD.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFMTEQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `04d4fafc6574983a2c716e80cb63d44d8b8292b1f5674f7154b07b51ebbffad4` | 1339 |
+| b3_company_ALLD.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFMTEQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9fa134276436c2233be88ca12ca255c8759ad4a11d6e86244a981ef3b1a23e2d` | 1109 |
 | b3_company_ALOS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFMT1MiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1e3525539e0a93a19fe7b997c6530ba37dcfe060ba2731b53e83123dde60a0bc` | 3308 |
 | b3_company_ALPA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFMUEEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `72ae3ef16d0d0fea1fb0b3f9aa2455d3cf71350ba24971e78e9482a695a0a6ff` | 3428 |
 | b3_company_ALPK.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFMUEsiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `bd2d72cb3ef3d0b6278fadf709b8fa6d4c800d4773018563274f9fae37aec640` | 943 |
-| b3_company_ALUP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFMVVAiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4344859a45b86ce6428281f7fdae5d0a66f1d3e5173fd020496b1169264900fd` | 5237 |
+| b3_company_ALUP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFMVVAiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5f9d861019c0c26d1c229bb1de4fa9b13a6823e87f236d43f419a5c3fa2685fa` | 5237 |
 | b3_company_AMAR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFNQVIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f841cc3e5e20e57946d3008ec6975de15365ee72569628765e4d4b894f62e48e` | 1050 |
 | b3_company_AMBP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFNQlAiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `b6c4aa2cfbd784f9b586a834cb6b4d47b7b7a800f2118dea9fe1c13359c7c474` | 614 |
 | b3_company_AMER.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFNRVIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `78fb7e7f972d4692cfac5c499d2dd25f71b0478d92d77cc15e0cff2c5cd730b5` | 1081 |
@@ -3252,29 +3263,29 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_ARML.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFSTUwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f3e2e6d0a8a3f7cd03f6038e0266190baa386d478461d9a7eb816232d43f2c03` | 890 |
 | b3_company_ASAI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFTQUkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `d335f4e162e832242ba8792fc3ec8a1014be3133b2b5746abc26fbb03eef193e` | 854 |
 | b3_company_AURE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFVUkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `2afb1a31dcbe079b04594ab77fbbca27da08c98ef2967ee895e811200072d38c` | 626 |
-| b3_company_AXIA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFYSUEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `c38bd436b522076a62e840e15b76b7c38b970fdb5fb54d7521ddaaa5b3f3be81` | 2799 |
+| b3_company_AXIA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFYSUEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `b27c601c22af9538dc308aab6bbf91f762d4f9f130b2f2d21f748fd3cb09a5dc` | 2140 |
 | b3_company_AZEV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFaRVYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `a684b9a3bf00c7a2c18d0c0c51cdbce6f3ddfde81022632c3f636bba413b5615` | 3118 |
-| b3_company_AZUL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFaVUwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `b249d036f3e504407a8f327a3d603cbb251a9aaec44df5002a4f4defa75972b8` | 1908 |
+| b3_company_AZUL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFaVUwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `91b96e33a239bee2da9db335ec9eb586567f04c0aa92c191ce23ab0d2f944c50` | 1908 |
 | b3_company_AZZA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkFaWkEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `893ea41b48b22b7d25c9c3151842c0564ed0419590194a2f0b544afeacb2ee98` | 868 |
 | b3_company_B3SA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkIzU0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1f682fdaee8a6e217dffa6ba5ba7f006f7772105b63e0d557fb16f8261a51dfc` | 2930 |
 | b3_company_BAZA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJBWkEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `00eef5f2c60c789a5be0e419d24392581f954a1a9535f7e14af7f9e24c528332` | 1925 |
 | b3_company_BBAS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJCQVMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `6dd58623893be3c5b3bbde815c1c71022e33217f6d1f76e9776fb6d75bf5b4ff` | 10674 |
 | b3_company_BBDC.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJCREMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1c4d2b89f81b1f387c4c76378eee620fdf99928aa322c55ed2d4eee2bca71e9c` | 10063 |
 | b3_company_BBSE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJCU0UiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `dfa8d7d5835ec59f29e51fc1d9fbddc97ffa8c2cb564431cf7444f2c6487eac1` | 1100 |
-| b3_company_BEEF.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJFRUYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5a5a6fe8a3d17966a103ffcb07e057905979ee661cd053d0fe6547173ac3b8d0` | 1330 |
+| b3_company_BEEF.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJFRUYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `038dbf5e6819a12faebb711ea467ac46cf4655c095234856cb85ceb72c7aa431` | 1326 |
 | b3_company_BEES.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJFRVMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `c93952a3243ef26f94563d247fd8b2a7d56d0a6e5c72778017e4b8a065750eba` | 9832 |
 | b3_company_BHIA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJISUEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `50091da3f6d478add2d3461c904ae1ecadbfbd3317233db3b11e64d048dac6dc` | 632 |
 | b3_company_BIOM.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJJT00iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `2ddf829ba3991465c708952bb2c765f29671b2548958f8ff4ea9e16b2db61a4a` | 731 |
 | b3_company_BLAU.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJMQVUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `967778db6f4cc4a93a021c6117d0a2ab255fea3a14f4aec02fdf5d8eb8dd40c1` | 1763 |
 | b3_company_BMEB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJNRUIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `947570cc2c999acbc13b331f032c3c5e2cc1eb7a9e4f343766546f3a5d9dd9b0` | 3262 |
-| b3_company_BMGB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJNR0IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `de7ef5078595abd9b392b349b8b7161c2d6ac63399e8e894f449cae6ff6f7cc4` | 3359 |
+| b3_company_BMGB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJNR0IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `edfa704b67c57dc9da701e3af7e71069218f4f7670e0d8fd064ba2bdaca52527` | 2891 |
 | b3_company_BMOB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJNT0IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `49e5292f8bf6e52cd56f3340c239e1a5451a435e5f822ec6c313b6c53254bc6a` | 1575 |
 | b3_company_BNBR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJOQlIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `64475ab64fe48823729d77cfc8509689e97417c0793d1733e6c4ba9551b2664b` | 2149 |
 | b3_company_BPAC.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJQQUMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `ff9c22e8f876e49a8966a9fe41c13a2dc898a97250ee79f0a2c522b4fdb882d7` | 3488 |
 | b3_company_BPAN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJQQU4iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `99fd8eaf8eee2d9f3b77c3948b9b6bcc282145dfa30e5a277cddc309e1298df8` | 513 |
-| b3_company_BRAP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJSQVAiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `a017eeaf47b28021f1ccb6f560c8f4dca735d65cda98d74cf0f8865894666c0c` | 4216 |
+| b3_company_BRAP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJSQVAiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `6f89a21c5612a2659b4bddf77e7d007beaf161fcec51f53ca567bd0e135fc950` | 4656 |
 | b3_company_BRAV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJSQVYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `a24529b1cb8a294ae8d3fe195a9c661991435fad0b342ec96f809f57f72fd8c1` | 649 |
-| b3_company_BRBI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJSQkkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `660d737c9112b92bae7e8263864fb25bc12f7c0a3efd316f405a9a1621dcb73b` | 2557 |
+| b3_company_BRBI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJSQkkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `927ce60dbff8fc3639c491fcd8834ec8835e94faf2ade3f3d1c0996cfd767383` | 3241 |
 | b3_company_BRFS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJSRlMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f59d9e494662072dce1ea849811bb98f2a66690639c46d719e9a372fdfdc2738` | 792 |
 | b3_company_BRKM.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJSS00iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `957fe783d50326f21a09d713505eff95df16d52879e15417e71745b96b3da6d6` | 2350 |
 | b3_company_BRSR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkJSU1IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `30bf8c5d23db1b2ae1c5830bf48246ec550d79be946014aca1c7d608a073c5a6` | 6052 |
@@ -3287,12 +3298,12 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_CEAB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNFQUIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `bebff1af05246d76603e3e02ef864c06e134f664b63a0360b101a16d707b3723` | 675 |
 | b3_company_CEBR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNFQlIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `489f81ac69f916b11518b08c9a0bdfd12b8063bde2d46ec51a55c8f0d29eb6ac` | 4665 |
 | b3_company_CEEB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNFRUIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4839228ec9af68df65cd8eaf287eb8e76f2f095fd217d04b15e8da865f166437` | 5149 |
-| b3_company_CGAS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNHQVMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `232dd4b5913b8adda0bacf6163309519c810aef26658250cf82abb87fce848ea` | 3196 |
+| b3_company_CGAS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNHQVMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `e590f8e8645a2b20421a20b1402c79f1aa752d701f4e43b9de42a0a2d2185465` | 2272 |
 | b3_company_CGRA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNHUkEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `2776a5be441a143fe4d944bd6080e9c9a4bf057801c3caddd7ec5df8aefb1b99` | 3711 |
 | b3_company_CLSA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNMU0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `a0c394012125885ac5c46022f45b0bccff683538104584a3f8cf2d966a621d5f` | 430 |
 | b3_company_CLSC.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNMU0MiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f56f28fdf3ff557e4fc27a9d92a076096daec7f52891c0c2b7ff4a47c28aa0c9` | 8037 |
 | b3_company_CMIG.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNNSUciLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1bfcd6a5d1c5208cdc8dad44b29bbfeed3eff51a8fd7677d6de09a32ad1e92c9` | 6650 |
-| b3_company_CMIN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNNSU4iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `50c993fdb998197151f10b7f96e3824d98711b5cd8f80fbce66d285d54770225` | 1548 |
+| b3_company_CMIN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNNSU4iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8a4e5a19f89fe6cc6a8bb7e5a7fc32bdc0f959cb6eba4adce9c2154a7dde7430` | 1086 |
 | b3_company_COCE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNPQ0UiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `03efb8767a8ee2d7780c20f3e046dc2a877471d10a9f0b670661745b936d178f` | 4088 |
 | b3_company_COGN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNPR04iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1efb1970d6cce7a1d2d21f5228db671b276806a186fd73afb90b5446288179ae` | 1294 |
 | b3_company_CPFE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNQRkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1b78f1925d2975827d1b036ebc2b9dec2d6b8fc2f6077dd5e9d46845a866bbf3` | 1158 |
@@ -3304,13 +3315,13 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_CSMG.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNTTUciLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4f3dea82569aed85148b95eb3304f6d47026950e6fe8a3556f1fb4ed55c254e7` | 2510 |
 | b3_company_CSNA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNTTkEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `83c79dc771ceb3fa1a5e2bebd2256fdbf66c11d7e7ce36c33c7bc02308730dfb` | 1396 |
 | b3_company_CSUD.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNTVUQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1f5867a68c334b811e0246fd3786cbe1de6846488f93067e01949e1cdfe2787d` | 1601 |
-| b3_company_CURY.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNVUlkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4959084b078000c3b49ed00c44526198f28bdb49bbd3599c25afec3c3c0d65be` | 1576 |
+| b3_company_CURY.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNVUlkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `d084341530fabb8cb8c9e0f29ddac4869da6a4568533752e30f8dfc70e6d021c` | 1804 |
 | b3_company_CVCB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNWQ0IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `0a67cab65e5a461eb194e2e52465ca0325d74168626897da974eba70f8fa6ea5` | 779 |
 | b3_company_CXSE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNYU0UiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `bbaecd43abf95b3e2c9dfe796d0585971eb0314620bc03b3021b390ccc03f765` | 1593 |
-| b3_company_CYRE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNZUkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `3336fcc87061ddb96212c76a1de22041097112b97e521129b474077032a40fbe` | 1980 |
+| b3_company_CYRE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkNZUkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `c1620d654cf7dea9afd1bbb3df710ac4f8ecafdc8460cc51109e6cc2ec9b2766` | 1980 |
 | b3_company_DASA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkRBU0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `639bd4e78ab12223329985d48034a665a8c7ada1e2d56cc7e7c907c32c08daed` | 1080 |
 | b3_company_DESK.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkRFU0siLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9d99a9f0299bd9844db43c0f42af8aae5aa288966ec5611d7e8edeef42552684` | 1393 |
-| b3_company_DEXP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkRFWFAiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `274807c859973b74b50e2353638f6c88578f4504e5f2144b8b941091cb13c01f` | 1601 |
+| b3_company_DEXP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkRFWFAiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `35df44f7db58704e71fe21d572aed9fb54163ffec0ee47456aaf552fb1c7d09c` | 2921 |
 | b3_company_DIRR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkRJUlIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `487a4652713a918aae7395aaece198d91cba74845f7453c1388fda35f27890c1` | 830 |
 | b3_company_DMVF.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkRNVkYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `25c098475ca9c30f7fd404547ec24168328cf75165ac23c863291de9f4ddde60` | 448 |
 | b3_company_DXCO.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkRYQ08iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `94ebea6826dac839629d18beab484c8d9af31973b137a75fad0ba34e723d8862` | 601 |
@@ -3320,7 +3331,7 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_EMAE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVNQUUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9ce769975f5db9e422776a5063f39780ac3835d700a500c63b45f0abe78e3358` | 1514 |
 | b3_company_EMBJ.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVNQkoiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `7fdcc9b11aa209ad2d42879180bcba8098459da17c5ab30371c8ce9060974496` | 1640 |
 | b3_company_ENAT.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVOQVQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4288c0e9150fd283d07b0416a2f10323c02542208ae229867408bf65829b1863` | 583 |
-| b3_company_ENEV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVORVYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `48bec09203110b6295364717e429cdd04aacf754a36e78396722e58b54502066` | 1058 |
+| b3_company_ENEV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVORVYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `2e8fab8924c6414b4089aa9f922c0d9d5e4acb2465c9c4cd37eb03716a92f3a0` | 1058 |
 | b3_company_ENGI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVOR0kiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `51065ee893113a78000ba31e05e3c717c942d50182bda79ca9dc136c904c4acb` | 3542 |
 | b3_company_EQPA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVRUEEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f69cbaf535fc839e6e032a99b34ed27eb3e92e35b99a038aaaedabf0b9cf1eed` | 3113 |
 | b3_company_EQTL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVRVEwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f28e3232c16fccfe8623671b64ec9787c0d508fdd01da128b00be105cc78b342` | 1664 |
@@ -3328,17 +3339,17 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_ETER.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVURVIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `d93d530f6c8b5efbb98d31fe200d0113b99d529f92442daa803fc957e623ec87` | 1659 |
 | b3_company_EUCA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVVQ0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `b62fba4ddf22b8b1be341a034611b8fb841d92a31867c11919b5052964da6a3d` | 4530 |
 | b3_company_EVEN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVWRU4iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `cafb166d269064e2569868fd865d87b1dd8989bbd3ff62f2decfea91f3c25479` | 1161 |
-| b3_company_EZTC.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVaVEMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `00f06cc1cccdae0f35f043d3506f946454b5ac891d5d594151612b3fc70e5beb` | 1512 |
+| b3_company_EZTC.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkVaVEMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `b3726cedf5832fac0f66b2064095fccea583cc7ff5821fbd814650b7d36228b2` | 1740 |
 | b3_company_FESA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkZFU0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `ceaf601b9abd588ad9a620d3596acac38f5a6e29d06225651e43b9116c504f73` | 3077 |
 | b3_company_FIQE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkZJUUUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `b94b40934560fdaa72d25deb918cee7f891dc7da94cd1cb71071db977b1015e7` | 2387 |
 | b3_company_FLRY.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkZMUlkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `79ca1bbfc812e66c600e3f589b68d606cb9d58e50425bbe4a9c92fe6b64b107a` | 2153 |
 | b3_company_FRAS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkZSQVMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `24b2506f79ca5de20d7e95288a6376be6781b983b28f550c11849b6cf9d1e07f` | 1431 |
-| b3_company_GGBR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdHQlIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `980b253f587dd162f86a2c4517c142ed26782ffc50d6a7e06d1c5e89ea8eb8b0` | 3025 |
+| b3_company_GGBR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdHQlIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `0bc6fd180ca028cb48b326c794dda48756e077e364429ab529f93f143dc7e1cb` | 3025 |
 | b3_company_GGPS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdHUFMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8895a05a0c283560712f4d2276e716d2c848e69abcc7612d381c09bac3c66efb` | 828 |
 | b3_company_GMAT.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdNQVQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f06f032469ec09f59cdbd7e229b8d7417e715bcc4788eca5ff17de0cd52c0dd3` | 942 |
-| b3_company_GOAU.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdPQVUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8206a4a2388b12d4396983b8b4fce0a20fdfbe9deea12d0335798ade44608d0d` | 4510 |
+| b3_company_GOAU.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdPQVUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `bdd166d139505bd421b91b2ce815764682f1699febc2c8d081e3e26c4fbb806d` | 4510 |
 | b3_company_GPIV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdQSVYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `48181d26e5b3243ba4c1e26947ccb81eae0189d0d358755b6b21d809fa88db01` | 413 |
-| b3_company_GRND.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdSTkQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `68cc25828367ba8109e89e3d93da7443e349c3afeabf21932d25f4ac6f41e38b` | 3840 |
+| b3_company_GRND.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkdSTkQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `77b20fe4844d7221cfbe9e62f9c5e51b1d58b3c7286108d2d786b87a3efd4f84` | 4068 |
 | b3_company_HAPV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkhBUFYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `861b0ed9262e90b7f18630b73cceb0624a5576c0466a89a11750e0fe5e926c0d` | 806 |
 | b3_company_HBOR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkhCT1IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9e04c0f3c8a9911e98e080aabed05ee927b4afc12d6e8862c3c1cf66901369de` | 1655 |
 | b3_company_HBRE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkhCUkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `b189e46a8423e75d7f9c6d23142ea33289f942ba079fd7234c63aa1b11dc3e1a` | 872 |
@@ -3347,7 +3358,7 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_IGTI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IklHVEkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `eca1f7a107db9df32f830e2a2787e42c6b7b4296e6c2832d818ae8fc38aace1b` | 3636 |
 | b3_company_INTB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IklOVEIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1ec74bc4d1a4cc2a0b1176ebdbe338d2ccb3280da06974cf9d7e15f10313e46a` | 1137 |
 | b3_company_IRBR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IklSQlIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `c7a698be29f5ec839943c24cd88dd22efdfe97dc4fd41409f0ab144af6afe173` | 2198 |
-| b3_company_ISAE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IklTQUUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4ff46f04940adfc60972917736f5217c56d0d960af96b9297c14b50330da7c66` | 4514 |
+| b3_company_ISAE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IklTQUUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `ec42c9a26d33aa7da0129593aabb6fef0490585a44848c617cd618a97968c989` | 4980 |
 | b3_company_ITSA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IklUU0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `3fe45778c1e45be344d9062250198fb0d2105050c322ac8988f91dc12d8e4ede` | 5367 |
 | b3_company_ITUB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IklUVUIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `3c561a6b1540b54b4570f546e7e6203a26f00132ad998f4c67684a3c647e100c` | 9512 |
 | b3_company_JALL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkpBTEwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `e671b1059e051843f575167da3b4d6d55cbc83f5e98ed68784deec566a6527d1` | 945 |
@@ -3355,13 +3366,13 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_JHSF.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkpIU0YiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `69aa6e86dfe842bd627bc3b14b2945831bea13d92be6e02eb0572b7419dec1a9` | 3366 |
 | b3_company_JSLG.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkpTTEciLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9961050812786f93adcb380efd57faa9cd7f9569624c0284d6677ff18bd547a1` | 1042 |
 | b3_company_KEPL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IktFUEwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `0d50bf987e9625926d4fa573ebeae019483729132a115bea9f0ac30003084dfd` | 2041 |
-| b3_company_KLBN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IktMQk4iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `865a83b6a22d6c614b12639adaf6384775ceb750ac78aa1fd684a13f3282fe3b` | 5770 |
+| b3_company_KLBN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IktMQk4iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `3e2299699d92d9906493bd625b87e6dff815072485c475995d481d972506be2f` | 5086 |
 | b3_company_LAND.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxBTkQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `745f6eeff62a19805f5802ffe47aa2a906b546e2f49b805b2ad0d67ddf45ebbe` | 446 |
-| b3_company_LAVV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxBVlYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5e1635e4681d2f070a69ba861bf789b0fe0b834e37d9febf2af25c6a8fb2ec39` | 1110 |
-| b3_company_LEVE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxFVkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `dd382cf8272476068aa178f01eeb45dfa0b8622766c6941f49f06b35d6a562eb` | 2703 |
+| b3_company_LAVV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxBVlYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `0508906a506183120b62fbddeb8f12dff4f2db0f0dc88714b1e976174ce2d1cf` | 882 |
+| b3_company_LEVE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxFVkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `01bc4a73074949e33fedea603aa2820b073959ff6c0bba5aef80a119aac4c2da` | 2703 |
 | b3_company_LIGT.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxJR1QiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8221035b498de38d898dffaad729255d670fe1691441a1862fe1907adfb1cf58` | 1046 |
 | b3_company_LJQQ.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxKUVEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `dc9a1bc19d27b7a126c185a8a1e17f1098d312113f60d072c710e52640fa1e07` | 724 |
-| b3_company_LOGG.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxPR0ciLCJsYW5ndWFnZSI6InB0LWJyIn0= | `59b5b00328d135379fc7b5b06d2f449b342c775e492a959b8468a482a302ba69` | 1863 |
+| b3_company_LOGG.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxPR0ciLCJsYW5ndWFnZSI6InB0LWJyIn0= | `702f1a01b5ab01608168e473c5680860b696c613827bdae1a556a08f32d09613` | 1863 |
 | b3_company_LOGN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxPR04iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `28d195e3fe49e033d168e6b4b8d56fed15b7733f3d046578663e90820f9f8ec8` | 906 |
 | b3_company_LPSB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxQU0IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `903dc88772efd908c26d7045017a1f14521adaf8def8a793d76a810f59041666` | 1345 |
 | b3_company_LREN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IkxSRU4iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `c0459c1c41a9db9552cad5f13de77afff0f9673c956242c4abc799940fb2bcb7` | 3162 |
@@ -3369,7 +3380,7 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_MATD.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1BVEQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `c7e48d495a95e853341eeba3a3b88173b76a55ee0c3ad223a417ef04759ef984` | 831 |
 | b3_company_MBRF.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1CUkYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4ef27f46a8be7feadecd8c509a86eedc04a23087871f88365212a252bbb0581c` | 440 |
 | b3_company_MDIA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1ESUEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `22bba1b121ff7339a1806cefd56e4d11f0b121abe843baf916cef950778680ca` | 3503 |
-| b3_company_MDNE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1ETkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `95137984677f937790609227d138d1f90fa02ec2480596404a4ed36a268260f0` | 2188 |
+| b3_company_MDNE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1ETkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `e67355651e3343b68697f388472b3e0010132998aab5fd792673e1f726596f75` | 1968 |
 | b3_company_MEAL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1FQUwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `3de3de45a66ddb1e0c572c43d50880abdebd8c78cc19b973dd695b9b60487dda` | 707 |
 | b3_company_MELK.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1FTEsiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `7cf2ad83b6c5c5651e9cf04d2ebad8f1d2f3c8fa39775877174ae50fd0f8015a` | 1131 |
 | b3_company_MGLU.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1HTFUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `742100ac89abae1a0ea712bfbcfaf8373269b47e9a58c0a917914f76d018c6da` | 1464 |
@@ -3378,7 +3389,7 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_MOTV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1PVFYiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `08ecb4066f166e1372fe04647e2a7b4557fbb58ebb0e687361ffe3e09216f444` | 1113 |
 | b3_company_MOVI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1PVkkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `48eea770dcb95d4b3bdfe8d069380ef12d6aa8df0ca39a13a825dbe5ee3db983` | 1205 |
 | b3_company_MRVE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1SVkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `825b20e0bc6b7d0fec5decce7d445a07d4b378928172bf106cf0771c16ece6b7` | 971 |
-| b3_company_MTRE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1UUkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `55e8dc94a97a6b372a842651e1c93111e15b4d737fa3b920e76b3615e39138a4` | 2676 |
+| b3_company_MTRE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1UUkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `acd353ce98f871d6c55a184d5ed40d64f59aa261326f052bed156755a9a5125d` | 2896 |
 | b3_company_MTSA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1UU0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `7153d68d1b632bdb30e609f6d629825390ff7349f2488ba29ba6ec1aad4bda79` | 3048 |
 | b3_company_MULT.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1VTFQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f9067f5235c3917d5bcfdf48a3d02ed24c42f24fc731effde7fb09c6f5fff2c0` | 1846 |
 | b3_company_MYPK.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6Ik1ZUEsiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `e69472a6ecf923289ee591b68888ad5f3c469b9b1ac80a57c010534ec8c5639e` | 4830 |
@@ -3398,11 +3409,11 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_PGMN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBHTU4iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `a0af19070b3b168f33d489262828fdc3d55e7052fd664f0ae5a4f2912e14f1c6` | 930 |
 | b3_company_PINE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBJTkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `3ad35e064b4fa36f4bd3cdb98f3e0b261041177c81bd896f78a7e1429aaf8771` | 3734 |
 | b3_company_PLPL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBMUEwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8fcb72e4098726e74c444431c15fdc9aeba42f095bd63ab3b0ea696e5f6ac950` | 646 |
-| b3_company_PMAM.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBNQU0iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `703587118006f4991bacfde09e3821ec4e69aa1faffb90046595f946cb793b98` | 4869 |
+| b3_company_PMAM.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBNQU0iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `d43b5c46076dc65f5b3592e801985d6079ea38d37571e3f9fdbfb909064038ee` | 4587 |
 | b3_company_PNVL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBOVkwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `45da80f372075342a3cdfac774e3e44d4210f3a734505b7076ad919378c45c10` | 4783 |
 | b3_company_POMO.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBPTU8iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `2c7430ecf0a72ccab3f4c84375a57b6daa75d54c2f0010f7526b18a98953b179` | 3469 |
 | b3_company_PORT.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBPUlQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8229bfcc136da708e4dadb8def4841978f72c149fb222b02cd31c30f8a1f1ef0` | 453 |
-| b3_company_POSI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBPU0kiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5baa31b41fcfc8f4c326e2e6c3992a00c2b674eabf4240e1d61aba08b3b80a3d` | 648 |
+| b3_company_POSI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBPU0kiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `a841669fa711bf0195ee58bc87b14218df1902bff016452fb15d7844858eb8ef` | 648 |
 | b3_company_PRIO.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBSSU8iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `d0c0a4d49e8c3c8e54a5452477ec09a43f041aa73b274ab1c16b618564188d89` | 776 |
 | b3_company_PRNR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBSTlIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `85a0b79d7400684400de480ff6db6d18702b2bc22adbd8ccdee7588a6c0be4c9` | 1155 |
 | b3_company_PSSA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlBTU0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1044e5334ae6ba855f5dbef21bb725abfd4acd464ee4b560efcca3754ad74e17` | 1954 |
@@ -3411,7 +3422,7 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_RADL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlJBREwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `585c42ecb42ca8c883197f2113620b7fa4680cb7699a6acd5d4a77227c27b166` | 2197 |
 | b3_company_RAIL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlJBSUwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `d463ee764891b7a403e7d0a339abb6e5023406874c87143af3d470ee041e4ddb` | 683 |
 | b3_company_RAIZ.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlJBSVoiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `38ebc06b1ce6ab94cc1eed52ff4cca875d96feb0ed1bf220bfcd655170deee54` | 1354 |
-| b3_company_RANI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlJBTkkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8911da629284149873e51aec3c39e92afef5c33993a82df5e11ef3f50430bc6e` | 3189 |
+| b3_company_RANI.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlJBTkkiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `3f76dc8d8ccb1c23e3ed571843115348f6be6cac7f9a920bbf99a53b64c748ab` | 3189 |
 | b3_company_RAPT.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlJBUFQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8702270d8037a9028d78ba2c2f06a845ab6fc7a53d99c37ca6dd4127793a3dec` | 1709 |
 | b3_company_RDOR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlJET1IiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9e41ae628fe0724e0b77220431365596f8b5faf4dcefdb754d2d6a23b4b614fb` | 1823 |
 | b3_company_RECV.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlJFQ1YiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `bbd06b2fab7da6e3fce177439d6cff33b28b6c722a78140011acd34979adb440` | 1556 |
@@ -3422,11 +3433,11 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_SANB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNBTkIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `df91abda096be136a0c2596c5b269f9663ce1553693e9367d9c10532fe36b9c5` | 6524 |
 | b3_company_SAPR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNBUFIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `88f3085e05f9b6d2aae913569fcbb5914f89c8d5705ef8bf43c1bc80d5eec1d6` | 2577 |
 | b3_company_SAUD.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNBVUQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `a9ff7bfe1f1556e51cae1bfe32a0f36b4a71a987e5a35a4a62415dd0f3b518f1` | 1117 |
-| b3_company_SBFG.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNCRkciLCJsYW5ndWFnZSI6InB0LWJyIn0= | `63316c534c28457c5a9c842574ce1571f8e5210edb0656e8eb23ce158fbcfeaa` | 648 |
-| b3_company_SBSP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNCU1AiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `037b72a06c1927b7bc2522069a4e235c23ddb13aa4dcc6b0a73bc3a222a8d6cc` | 1853 |
+| b3_company_SBFG.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNCRkciLCJsYW5ndWFnZSI6InB0LWJyIn0= | `b56bcda3dae423ee962bb774891214e9a077bd8fce9eee70f73ebc1acf1c6b63` | 648 |
+| b3_company_SBSP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNCU1AiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `6766690e126e2a8bfa025b403034a1bbd0ff6e575eb66149710336bbb782bdca` | 2079 |
 | b3_company_SCAR.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNDQVIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `c189ba01cc73bb12eb88c4afd96cc676985fd560a9c13a6bf7139b6daf4e9eaa` | 1542 |
 | b3_company_SEER.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNFRVIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `f2d79bda952b7a814b2afe0fafdfc6f9c59e3ad76dccf765b5c148ddce9f887e` | 1614 |
-| b3_company_SEQL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNFUUwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `e226bf3de26f58db8ce0a18241ae8a4d0a4ebce2c086026bc2bc24b737c9e0f8` | 1208 |
+| b3_company_SEQL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNFUUwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `07a99714eb7826f749225a0ad9359e6737a0fef11a9bacae606237696dfadbad` | 1208 |
 | b3_company_SHUL.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNIVUwiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `938a1576c5f45f2aa22c68c95a6609098107f4e786cf0921579a62ebfa06bb76` | 4658 |
 | b3_company_SIMH.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNJTUgiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9a212fa0b6e15514fb16b49bc8f36061336d8a720c7409c31b6961d839965ab4` | 1260 |
 | b3_company_SLCE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNMQ0UiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `26740e82e7bdb2f1be97ece891f33667a8653f3cf8dc963d97ff413cc6c3dbb7` | 1236 |
@@ -3438,13 +3449,13 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_SULA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNVTEEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `42c834fd53fa6f2be906d37f504dd64b3992e136e6d9245eeb5c0bf58ce850d0` | 474 |
 | b3_company_SUZB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNVWkIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `6ea6f67bca458dee17613994a78d1203705ab125f12ee421341c82c86f126ad1` | 2270 |
 | b3_company_SYNE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlNZTkUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `498379cfe4f247a4169159dd2c45ff96407a8695a3aa4ea40c84565c9a115791` | 868 |
-| b3_company_TAEE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRBRUUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9ab86c56b8a0283e930ed4398d2c82633ca0e8df223e3b8841b2a2eb2539deb5` | 5881 |
+| b3_company_TAEE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRBRUUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `67583204e867a449d48d9d3c6d788c9efbf62f3c7860c91277a3d99462bdf7c6` | 5179 |
 | b3_company_TASA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRBU0EiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `4814043c213ecd177a8de6a07ea59f4ed157d06ab5765926539339b816bf2f35` | 1248 |
-| b3_company_TECN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRFQ04iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `38176b314fb0d8388535b7aa82b8d0f668441210e5ed59c0b6d38fb04386c05a` | 880 |
+| b3_company_TECN.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRFQ04iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `aa01cf2f43c8797c61487876ebb4d7450351d81aab373e9ae80402da2bc81452` | 880 |
 | b3_company_TELB.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRFTEIiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9a5c83ad47467b08aa12a830d4a0585d6d253dd5853d2aa88595a7f90edd4a54` | 6214 |
 | b3_company_TEND.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRFTkQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `9b8d4353af1380f262e22056da074637bdaac97f11805346b9d4bdb90723fbab` | 1230 |
 | b3_company_TFCO.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRGQ08iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `e26cc2c521a14c3acaa9eef6daad52b05164da7193424390fe3992bd018e27c8` | 2763 |
-| b3_company_TGMA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRHTUEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5e7cdc95fa02f665ef011e36c65d4a783088777ba7cc28abeff732f3c7c6aa9b` | 1111 |
+| b3_company_TGMA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRHTUEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `169cf6a8435c48385009c035941b2ed1ca59b52b962a5852809522c1f5d71f8d` | 1573 |
 | b3_company_TIMS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRJTVMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5a36dda5525fb46c4ecc348da1771db31fcca7148d39aaff46653ac6b9f00521` | 1925 |
 | b3_company_TOTS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRPVFMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `27477956f7d2293ab636a5230c723546e36ae4a46aa771dec32efab5b2ab11e8` | 1846 |
 | b3_company_TPIS.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlRQSVMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `fd4a41de0854d95f03842b0ba4f69fafc6a58a36c07e5dcf1afd88db07eef436` | 1099 |
@@ -3460,7 +3471,7 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_VITT.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlZJVFQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `7244d18607edc5bc6e27f4a127943c40bf9c4ad8b0ee0dc94713a0ac51a35ef0` | 1297 |
 | b3_company_VIVA.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlZJVkEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5b998a02b1ec161092b3457b7c9e0cd295ad615112ae78c92d47dc33ae923b2b` | 656 |
 | b3_company_VIVT.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlZJVlQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `2a4e8a08b826d13cfa0d12e24dca5edc0d7f8f09c487819bef6db163cff808c0` | 3580 |
-| b3_company_VLID.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlZMSUQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8ebcb5adcaf85c9d1760fc5529e2ba03e7feb70211810ff66b75b782fa91303e` | 2235 |
+| b3_company_VLID.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlZMSUQiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8bfe0d1a976007d938758ece0b6d5d99052b350c7709156760a0a534396e2b5f` | 2463 |
 | b3_company_VSTE.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlZTVEUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `54efe0e0998854a9ec97abcaf53d5ae0fd721cd2e7cebd08ab980177368837dd` | 923 |
 | b3_company_VTRU.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlZUUlUiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `8ced23545e5399b59f9a8901d82728f12649c4770981d87d5809ad36b9ee5eda` | 669 |
 | b3_company_VULC.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlZVTEMiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `37f87295f01d07c36ea7340c7c30a536e6014f97c2b4c3a25e319ab7fa938736` | 2153 |
@@ -3471,15 +3482,15 @@ O DY começa em 1995, pela fonte `b3`.
 | b3_company_WLMM.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IldMTU0iLCJsYW5ndWFnZSI6InB0LWJyIn0= | `1d5fd07d00d38ae018f583e6a15fa01351ed9663be5eaaafd9fff887bb6bb523` | 3628 |
 | b3_company_YDUQ.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IllEVVEiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `5f1012426cfe1f84fee802d1bbfb6d5de5da58db70934c3d7a77b037b2548985` | 675 |
 | b3_company_ZAMP.json | https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedSupplementCompany/eyJpc3N1aW5nQ29tcGFueSI6IlpBTVAiLCJsYW5ndWFnZSI6InB0LWJyIn0= | `a5ea2ba9a659b94e47840a038c6d0026a8a838474469acb7b1501e15a2b6a531` | 709 |
-| cad_cia_aberta.csv | https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv | `4364c52c1102d94db8e99ecc67a038350e5936c9aa298802fcebb76349a58121` | 1494679 |
+| cad_cia_aberta.csv | https://dados.cvm.gov.br/dados/CIA_ABERTA/CAD/DADOS/cad_cia_aberta.csv | `5497664e5b9c4253fde37fa37c76830ed3d313b5606c0bcd67f7066c5fd65563` | 1495337 |
 | dfp_cia_aberta_2019.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2019.zip | `bc82a1162b44686e8953b521e3424a5938b6661ff4655f832db4ea9488296a0d` | 11185526 |
 | dfp_cia_aberta_2020.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2020.zip | `8fb97d1887aed1e1e2d85e54cb133baf9f65b9f46f60fa8720f09c1f7a74362e` | 12637854 |
 | dfp_cia_aberta_2021.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2021.zip | `64b8693b709538a0357c5179ae02231cb380d0000956ee57a873a21d4efda2e4` | 13283026 |
-| dfp_cia_aberta_2022.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2022.zip | `151d605dc4c2bbe324ecbcfda29730017a6891314382ee3ebd9554df765c2f2a` | 13449824 |
-| dfp_cia_aberta_2023.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2023.zip | `344e37b704a588b3863c5dd4ad6ee54b3dc9a2ee18cf88e0e4e35f5a641cdc2d` | 13563493 |
-| dfp_cia_aberta_2024.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2024.zip | `b6a485b540728dcd4e7ed030bad8e749471044594ec17866fff4f0e94c54120a` | 13397599 |
-| dfp_cia_aberta_2025.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2025.zip | `a0aaf1ed8be9f7a644d1ec7eb6c17f2d0860f40416c0e3151c2c690329eeb343` | 12863166 |
-| dfp_cia_aberta_2026.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2026.zip | `eda1116c2434715051b7fcaa165ff8e53f7c791fc44233282f3d00203f44e159` | 243348 |
+| dfp_cia_aberta_2022.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2022.zip | `0cdb73c0aa57a68e8b2c2d0a0b4a1a3ccce359f16c2964fde656f9624de9a6a4` | 13449819 |
+| dfp_cia_aberta_2023.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2023.zip | `5748ee4e9f1c8cd428931050e9da2ead174ad737af11d842a50d7bad8064145b` | 13563405 |
+| dfp_cia_aberta_2024.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2024.zip | `0a1e41edc81900df6605448acb2fcf6fae36f9a8ac4756a7d658cd7c718a1501` | 13397608 |
+| dfp_cia_aberta_2025.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2025.zip | `6b24bc65a614605e2c1e45ae1fa237ebbe72672467e87f7761cca94f3e6bc040` | 12863177 |
+| dfp_cia_aberta_2026.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_2026.zip | `6b8cbf055cc6dc904fba580c9c534b25bc543ab75c164b8542a91688d88c0e9e` | 243348 |
 | fca_cia_aberta_2010.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2010.zip | `9a9b933fa02c96f7cf632dbb1f7b004bb78696c81c989792b1eb60f70b001021` | 337720 |
 | fca_cia_aberta_2011.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2011.zip | `f5c7aaa2a4464b4232a05d77c288d33bca5474edd72199a9295d6fa2a34012e8` | 381161 |
 | fca_cia_aberta_2012.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2012.zip | `ba68b8e8c12b74fc56bf76a75ae582aa53e5adef1d61d940d5191c55b9be2e06` | 381058 |
@@ -3492,29 +3503,26 @@ O DY começa em 1995, pela fonte `b3`.
 | fca_cia_aberta_2019.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2019.zip | `09f84e5f5485217c8b36f8379c36f718dbdcd6d6908b4e96b68861394e76fe97` | 371770 |
 | fca_cia_aberta_2020.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2020.zip | `ccf2ac081747da9ccefa50349a5494c263763d5dd8bb961565fd2ae64c264b20` | 405892 |
 | fca_cia_aberta_2021.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2021.zip | `65ba4b0225e9b2106901cdf348215933be8affba79925fc71361e2f6818c7999` | 465704 |
-| fca_cia_aberta_2022.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2022.zip | `c30912a49163e54503b5664c118cf088212e8715fcdbc7cad76bb4944b36c6a2` | 458295 |
-| fca_cia_aberta_2023.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2023.zip | `04364dea9a0bfca8816315792720f640e971f4b3c5ab67d5cb918803173bbc71` | 434052 |
-| fca_cia_aberta_2024.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2024.zip | `469bccc738b4e71f94d130ac10757123b5b1ef9f7170e1df2f8330e3926ab481` | 391984 |
-| fca_cia_aberta_2025.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2025.zip | `62877519e3543a568b64f8bd5ea8c956327ae9b21bb0cb0e7af901e94aa1f926` | 383613 |
-| fca_cia_aberta_2026.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2026.zip | `b24da0981f891532bb7d3068bf714f93d76c3a0cdf0ecb16badbab52b7081917` | 363925 |
-| itr_cia_aberta_2024.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_2024.zip | `bdfa4c83bcc2bfac8f78dbca85494eea209c018ce429ac2ec15eb8d900762d7a` | 32725967 |
-| itr_cia_aberta_2025.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_2025.zip | `d29c6e378b60f61b1fb9978e5d407a8f13c245ab268194430227ebf392bba61f` | 31684923 |
-| itr_cia_aberta_2026.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_2026.zip | `115227a5d0872e23a532c0f17c17683f7218ac225013eea2901844a92b3fe4a9` | 22183718 |
-| listing_dfp.html | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/ | `6951d9486073da7cd6ea2583756a84a501e472734677aa776e561f830f09f921` | 3972 |
-| listing_fca.html | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/ | `c1ede9df2449bf9e8426c70c2dc0ae7dfdc627e165ac3832003892a2b5f0174a` | 3972 |
-| listing_itr.html | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/ | `6c21a1fa4c9b80d423b140ceaa5688a3132c2dca8c38e4128d9c0cbb89633472` | 3856 |
-| yahoo_ALPK3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/ALPK3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `dfc05ae9b379b0445464535b3f7d87dd5d1ad03a33538b11c7ad01b456ea72e5` | 170750 |
-| yahoo_AZUL3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/AZUL3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `bce2d32dfc2b09e795975d4987578b7ed715b60dbcee073b58d7e2d4b83625df` | 20489 |
-| yahoo_BIOM3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/BIOM3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `607cd71227d3c2bc7c0cf25fa2f5b1e7ef54f3cbad9b83e83bb43aef761b4e78` | 715370 |
-| yahoo_DMVF3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/DMVF3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `c29d33f899e1de38d8973affa0cbda52a13c47e2e44aa07462587b96f7112b5d` | 161390 |
-| yahoo_HBRE3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/HBRE3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `33304bac960b194e72ad4e4f4fdb1f26b54b28936e85a8178a5c301cac84bbcd` | 152392 |
-| yahoo_HBSA3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/HBSA3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `abdf59704c0e2d04406f655049ebe49b37b5e849028dfb1dd63d1c44f2f8c43e` | 164460 |
-| yahoo_ONCO3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/ONCO3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `4938bdd28ec283b5e751783d16182efae30d3faf8ddc1ff8342fe97233652d5a` | 139030 |
-| yahoo_OPCT3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/OPCT3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `4219bd183f376d87c5bb76c5f9c39feb350377b697aa810675a64e0125dd8e8e` | 152463 |
-| yahoo_ORVR3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/ORVR3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `0ba63604225701f86739c90977bbdb55e4481044ab8e1fd4247ead50a8b6ecce` | 153966 |
-| yahoo_RNEW3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/RNEW3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `011b6028dbdf6a13a72de5d298f95ce8a2040bfe844be9fd08b71b7e493c67b4` | 300778 |
-| yahoo_RNEW4_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/RNEW4.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `3bd3e42ce23b0e1bd209905d74522658211b75f2776415856492dfaf733aa670` | 246261 |
-| yahoo_SEQL3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/SEQL3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `875db8ddd11139c5d0718040b5b7a3eff9bed35f871903f460d22f6faffa1bef` | 130861 |
+| fca_cia_aberta_2022.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2022.zip | `a5afd93f7b4ff8694b35c584163d27764b7de8adbb2bb80873325df0dfb22337` | 458295 |
+| fca_cia_aberta_2023.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2023.zip | `292b64f25a3c473c138d95687cb0088a7d1e55d235cb65f744b71911af284f29` | 434052 |
+| fca_cia_aberta_2024.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2024.zip | `169e209876b9e1c11568019e74bbd1b9a4cfc91d37b361b1138ab43707c96cbe` | 391984 |
+| fca_cia_aberta_2025.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2025.zip | `b7d2e3b98b99e9e595efa0d3575cd40a55c5dbf15d8d4087c5c3f4afec08f1d4` | 383613 |
+| fca_cia_aberta_2026.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/fca_cia_aberta_2026.zip | `338821f7109fea415bab2e56bc1f04dc47f9c1854355372478eaac2c085ba9d6` | 364099 |
+| itr_cia_aberta_2024.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_2024.zip | `5297f51f628243f725bc53151d894cafe638c83968eb35b2fcc32c4a2782c6c8` | 32726009 |
+| itr_cia_aberta_2025.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_2025.zip | `518d4fc5d452dd109f7d8772c43ce495d9b4ef0d978b9c7270446901ae7cafbc` | 31684925 |
+| itr_cia_aberta_2026.zip | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/itr_cia_aberta_2026.zip | `a578a832671afa859de4e6355d76f4e372814976d6fe61f8d12f14062dfd425f` | 28783604 |
+| listing_dfp.html | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/ | `e5affb5deafc35efb74fc6f4dc68432c662cfb4ecee22aab75f80a3f8b0b373c` | 3972 |
+| listing_fca.html | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/FCA/DADOS/ | `2fbeeb929c14c3a8cc2c50215affd11e1562a5b7050b104f89e629683598264d` | 3972 |
+| listing_itr.html | https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/ITR/DADOS/ | `d34f241fe39bc7612177abe9d1db7397dc8433d01e7535eb3f439cefc74b1e6a` | 3856 |
+| yahoo_AZUL3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/AZUL3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `53c2b901272bd094c048e1942796af07cf23b448c14630e2bafab2f2196036f9` | 20486 |
+| yahoo_BIOM3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/BIOM3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `7ef7f3663ab2de888cda32410a864e60e3a0b0ca63123a4255dac339b06a6833` | 715371 |
+| yahoo_DMVF3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/DMVF3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `d2bcd6350c19ae21c41a8237f5de282163ad4e8ebf75fca84c46cbd35c478ad4` | 161391 |
+| yahoo_HBSA3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/HBSA3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `230cc4b55ef9723aa3fcc598d049a233daec9cbd73443678589cdc88bb7200a9` | 164457 |
+| yahoo_ONCO3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/ONCO3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `35f604e32ab7de2cf55171d999ce44e772bc5ae6b9a0328d2c2a9124250ff1e1` | 139029 |
+| yahoo_ORVR3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/ORVR3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `3207363c2b91968474e02d392659aa64ed692b0621aca86d0920150077c2af12` | 153969 |
+| yahoo_RNEW3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/RNEW3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `d20c173a370db8f42bb1b92ade619cf4d92a8ab03c7864a6ed7df9ed652aefb4` | 300777 |
+| yahoo_RNEW4_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/RNEW4.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `b3a1594a6210f62ca8738c44b937a65477e0dd877aa961183268f35e95b00871` | 246260 |
+| yahoo_SEQL3_2026-11-07.json | https://query1.finance.yahoo.com/v8/finance/chart/SEQL3.SA?period1=946684800&period2=1794009600&interval=1d&events=div | `16f0a53ea6577eef93422e9a506b3111c0c0b7b1cf053697f9e64d4db806acce` | 130867 |
 
 ### Status Invest
 
