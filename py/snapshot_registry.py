@@ -256,6 +256,31 @@ def premium_level_series(snapshot_dir: Path) -> dict:
     }
 
 
+def _stock_source(path: str, sha256: str, provenance_path: Optional[Path]) -> dict:
+    """The stock selector source: the fixed literal, or the provider and raw hashes of a collector provenance."""
+
+    if provenance_path is None:
+        return {"path": path, "sha256": sha256, "provider": PROVIDER_SELECTOR, "metadata": {}}
+    try:
+        provenance = json.loads(Path(provenance_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SnapshotError(f"stock provenance cannot be read: {exc}") from exc
+    if not isinstance(provenance, dict) or not all(
+        key in provenance for key in ("provider", "as_of", "csv_sha256", "raw_files")
+    ):
+        raise SnapshotError("stock provenance needs provider, as_of, csv_sha256 and raw_files")
+    if provenance["csv_sha256"] != sha256:
+        raise SnapshotError(
+            "stock provenance was written for another CSV: its csv_sha256 differs from --stock-universe"
+        )
+    return {
+        "path": path,
+        "sha256": sha256,
+        "provider": str(provenance["provider"]),
+        "metadata": {"as_of": provenance["as_of"], "raw_files": provenance["raw_files"]},
+    }
+
+
 def build_manifest(
     *,
     registry_root: Path,
@@ -264,6 +289,7 @@ def build_manifest(
     snapshot_dir: Path,
     stock_universe: Path,
     fii_universe: Path,
+    stock_provenance: Optional[Path] = None,
 ) -> dict:
     """Compose the ``draft`` manifest payload for one local snapshot.
 
@@ -273,6 +299,10 @@ def build_manifest(
     ``cutoff_date`` is the last of them.  Emits exactly the
     ``SnapshotManifest.as_dict()`` projection with fixed provider/metadata
     literals and registry-root-relative POSIX paths.
+
+    ``stock_provenance`` is the ``*.provenance.json`` the CVM/B3 collector
+    writes next to its stock CSV (issue #78): the stock source then carries
+    its provider and the hashes of the raw files used.
     """
 
     registry_root = registry_root.resolve()
@@ -299,12 +329,7 @@ def build_manifest(
                 "provider": PROVIDER_ALLOCATION,
                 "metadata": {"files": files},
             },
-            "stock": {
-                "path": rel(stock_universe),
-                "sha256": file_sha256(stock_universe),
-                "provider": PROVIDER_SELECTOR,
-                "metadata": {},
-            },
+            "stock": _stock_source(rel(stock_universe), file_sha256(stock_universe), stock_provenance),
             "fii": {
                 "path": rel(fii_universe),
                 "sha256": file_sha256(fii_universe),
@@ -549,6 +574,11 @@ def _cmd_build(args: argparse.Namespace) -> int:
         )
         return EXIT_TARGET_MISSING
 
+    stock_provenance = Path(args.stock_provenance) if args.stock_provenance else None
+    if stock_provenance is not None and not stock_provenance.is_file():
+        print(f"--stock-provenance not found on disk: {stock_provenance}", file=sys.stderr)
+        return EXIT_TARGET_MISSING
+
     if target.exists():
         print(f"manifest already exists: {target}", file=sys.stderr)
         return EXIT_TARGET_MISSING
@@ -561,6 +591,7 @@ def _cmd_build(args: argparse.Namespace) -> int:
             snapshot_dir=snapshot_dir,
             stock_universe=stock_universe,
             fii_universe=fii_universe,
+            stock_provenance=stock_provenance,
         )
     except (SnapshotError, SnapshotManifestError) as exc:
         print(f"build failed: {exc}", file=sys.stderr)
@@ -589,6 +620,10 @@ def _build_parser() -> argparse.ArgumentParser:
     build.add_argument("--snapshot-dir", required=True, help="fetch output directory")
     build.add_argument("--stock-universe", required=True, help="stock selector CSV")
     build.add_argument("--fii-universe", required=True, help="FII selector CSV")
+    build.add_argument(
+        "--stock-provenance",
+        help="provenance JSON of a CVM/B3 stock CSV (py/pit_rebuild collect): provider and raw hashes",
+    )
     build.set_defaults(handler=_cmd_build)
 
     validate = subparsers.add_parser(
