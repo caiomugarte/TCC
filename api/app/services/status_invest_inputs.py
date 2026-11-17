@@ -9,7 +9,7 @@ import io
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
-from snapshot_manifest import file_sha256
+from snapshot_manifest import SnapshotChangedError, SnapshotUnavailableError, file_sha256
 
 from app.services.b3_trading import (
     B3TradingUnavailableError,
@@ -151,6 +151,64 @@ def refresh_inputs(
     except Exception as exc:
         raise StatusInvestInputError("Status Invest inputs could not be filtered by recent B3 trading") from exc
     snapshots = {role: _source_snapshot(path, retrieved[role]) for role, path in paths.items()}
+    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
+
+
+def _check_recorded_hashes(manifest: Any, recorded: Mapping[str, str]) -> None:
+    for key, source in manifest.sources.items():
+        expected = recorded.get(key)
+        if expected is not None and str(expected).lower() != source.sha256:
+            raise SnapshotChangedError(
+                f"source {key} hash differs from the one recorded for the run"
+            )
+
+
+def load_snapshot_inputs(
+    manifest: Any,
+    workspace: Path,
+    recorded_hashes: Mapping[str, str] | None = None,
+) -> StatusInvestInputs:
+    """Selector inputs read only from the run's snapshot, never collected live.
+
+    Each stock/FII CSV named by the manifest is read once; its bytes are checked
+    against the manifest SHA-256 and against the hashes recorded for the run,
+    validated, and copied into the run workspace so the engines read exactly
+    the verified bytes. A missing file raises SnapshotUnavailableError; a hash
+    divergence or a malformed CSV raises SnapshotChangedError.
+    """
+
+    from fetch_status_invest import validate_rows as validate_stocks
+    from fetch_status_invest_fii import validate_rows as validate_fiis
+
+    _check_recorded_hashes(manifest, recorded_hashes or {})
+    retrieved_at = str(manifest.created_at)
+    snapshots: dict[str, SourceSnapshot] = {}
+    for role, key, validator in (
+        ("stocks", "stock", validate_stocks),
+        ("fiis", "fii", validate_fiis),
+    ):
+        source = manifest.selector_source_for(key)
+        source_path = source.resolved_path()
+        try:
+            data = source_path.read_bytes()
+        except OSError as exc:
+            raise SnapshotUnavailableError(f"source {key} not found: {source_path}") from exc
+        digest = hashlib.sha256(data).hexdigest()
+        if digest != source.sha256:
+            raise SnapshotChangedError(f"SHA-256 mismatch for source {key}: {source_path}")
+        path = Path(workspace) / "snapshot" / f"{role}.csv"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        try:
+            _validate_csv(path, validator)
+        except Exception as exc:
+            raise SnapshotChangedError(f"source {key} is not a valid selector CSV") from exc
+        snapshots[role] = SourceSnapshot(
+            path=path.resolve(),
+            provider=source.provider,
+            retrieved_at=str(source.metadata.get("retrieved_at") or retrieved_at),
+            sha256=digest,
+        )
     return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 

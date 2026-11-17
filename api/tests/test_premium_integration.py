@@ -203,7 +203,7 @@ class PremiumIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=lambda _workspace: _default_selector_inputs(),
+            selector_inputs_loader=lambda *_args: _default_selector_inputs(),
             optimization_runner=self.runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
@@ -372,7 +372,7 @@ class ProtectionZoneIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=priced_selector_inputs,
+            selector_inputs_loader=lambda _manifest, workspace, _hashes: priced_selector_inputs(workspace),
             optimization_runner=self.zone_runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
@@ -511,7 +511,7 @@ class SegmentCapIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=priced_selector_inputs,
+            selector_inputs_loader=lambda _manifest, workspace, _hashes: priced_selector_inputs(workspace),
             optimization_runner=self.recording_runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
@@ -671,7 +671,7 @@ class WholeUnitIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=lambda workspace: priced_selector_inputs(workspace, WHOLE_UNIT_PRICES),
+            selector_inputs_loader=lambda _manifest, workspace, _hashes: priced_selector_inputs(workspace, WHOLE_UNIT_PRICES),
             optimization_runner=self.runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )

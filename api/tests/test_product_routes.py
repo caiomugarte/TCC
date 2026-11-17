@@ -107,7 +107,7 @@ COMPLETED_BASIC_RESULT = {
 }
 
 
-def _status_invest_inputs_for(workspace):
+def _status_invest_inputs_for(_manifest, workspace, _recorded_hashes=None):
     source_root = Path(workspace) / "status-invest"
     source_root.mkdir(parents=True, exist_ok=True)
     snapshots = {}
@@ -495,7 +495,7 @@ class ProductRouteTests(unittest.TestCase):
             executor = PremiumExecutor(
                 session_factory=lambda: Session(self.engine),
                 manifest_loader=lambda _provenance: {"fixture": True},
-                status_invest_inputs_loader=_status_invest_inputs_for,
+                selector_inputs_loader=_status_invest_inputs_for,
                 optimization_runner=optimization_runner,
                 workspace_root=Path(directory) / "workspaces",
             )

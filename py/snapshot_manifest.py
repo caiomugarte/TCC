@@ -47,6 +47,18 @@ class SnapshotManifestError(ValueError):
     """Raised when a snapshot manifest cannot be trusted for a run."""
 
 
+class SnapshotUnavailableError(SnapshotManifestError):
+    """A manifest or a source it names is missing from disk."""
+
+    code = "snapshot_unavailable"
+
+
+class SnapshotChangedError(SnapshotManifestError):
+    """A source's bytes no longer match the SHA-256 the manifest recorded."""
+
+    code = "snapshot_changed"
+
+
 # Public aliases make the failure boundary easy for API adapters to catch.
 ManifestError = SnapshotManifestError
 ManifestValidationError = SnapshotManifestError
@@ -56,7 +68,7 @@ def sha256_path(path: Path) -> str:
     """Return a stable SHA-256 for a file or a directory tree."""
 
     if not path.exists():
-        raise SnapshotManifestError(f"snapshot source not found: {path}")
+        raise SnapshotUnavailableError(f"snapshot source not found: {path}")
     digest = hashlib.sha256()
     if path.is_file():
         with path.open("rb") as handle:
@@ -81,7 +93,7 @@ def file_sha256(path: Path) -> str:
     """File-specific spelling retained for callers that hash individual CSVs."""
 
     if not path.exists() or not path.is_file():
-        raise SnapshotManifestError(f"snapshot file not found: {path}")
+        raise SnapshotUnavailableError(f"snapshot file not found: {path}")
     return sha256_path(path)
 
 
@@ -318,7 +330,7 @@ class SnapshotManifest:
     def load(cls, path: Path) -> "SnapshotManifest":
         path = Path(path)
         if not path.exists() or not path.is_file():
-            raise SnapshotManifestError(f"manifest file not found: {path}")
+            raise SnapshotUnavailableError(f"manifest file not found: {path}")
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except json.JSONDecodeError as exc:
@@ -523,7 +535,7 @@ def validate_manifest(
     if checked.manifest_sha256 is not None:
         recomputed = manifest_canonical_sha256(checked)
         if recomputed != checked.manifest_sha256:
-            raise SnapshotManifestError("manifest_sha256 does not match the manifest content")
+            raise SnapshotChangedError("manifest_sha256 does not match the manifest content")
     if not set(required_classes).issubset(set(checked.supported_classes)):
         missing = sorted(set(required_classes) - set(checked.supported_classes))
         raise SnapshotManifestError(f"manifest does not support classes: {missing}")
@@ -535,7 +547,7 @@ def validate_manifest(
         source = checked.source_for(key)
         source_path = source.resolved_path()
         if not source_path.exists():
-            raise SnapshotManifestError(f"source {key} not found: {source_path}")
+            raise SnapshotUnavailableError(f"source {key} not found: {source_path}")
         if verify_hashes:
             actual = sha256_path(source_path)
             # Derived files inherit a directory hash and are checked by the
@@ -547,11 +559,11 @@ def validate_manifest(
                 allocation_path = allocation.resolved_path()
                 allocation_actual = sha256_path(allocation_path)
                 if allocation_actual != allocation.sha256:
-                    raise SnapshotManifestError(
+                    raise SnapshotChangedError(
                         f"SHA-256 mismatch for source allocation: {allocation_path}"
                     )
             elif actual != source.sha256:
-                raise SnapshotManifestError(
+                raise SnapshotChangedError(
                     f"SHA-256 mismatch for source {key}: {source_path}"
                 )
     # Allocation files cannot double as the security-selection universes.
@@ -559,9 +571,9 @@ def validate_manifest(
         source = checked.selector_source_for(key)
         source_path = source.resolved_path()
         if not source_path.exists():
-            raise SnapshotManifestError(f"source {key} not found: {source_path}")
+            raise SnapshotUnavailableError(f"source {key} not found: {source_path}")
         if verify_hashes and sha256_path(source_path) != source.sha256:
-            raise SnapshotManifestError(
+            raise SnapshotChangedError(
                 f"SHA-256 mismatch for source {key}: {source_path}"
             )
     return checked

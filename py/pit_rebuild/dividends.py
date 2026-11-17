@@ -1,8 +1,9 @@
 """Dividends per share over the 12 months to d, from B3 or Yahoo Finance (D-4, A-15, A-16, SRC-05, PIT-02).
 
 B3 is the first source for a company: its listed cash-dividend history, every page
-fetched, complete, non-empty and reaching back to d - 365 days. Otherwise the ticker's
-Yahoo dividends are used, with the reason recorded. One window rule holds for both
+fetched, complete and non-empty. A complete history is everything B3 lists for the company,
+so it covers the window even when its first record is after d - 365 days (#77). Otherwise
+the ticker's Yahoo dividends are used, with the reason recorded. One window rule holds for both
 sources: d - 365 days < ex_date <= d. A B3 record's ex-date is the first market session
 after its lastDatePriorEx (A-16). B3 amounts are divided by the split, bonus and grouping multipliers
 of the company's stock events that fall after the dividend's ex-date and by d (A-20).
@@ -19,7 +20,6 @@ import json
 from .errors import PITLeakError
 
 WINDOW_DAYS = 365  # A-16: d - 365 days < ex_date <= d
-SHORT_HISTORY_REASON = "b3_short_history"
 SPLIT_LABELS = ("DESDOBRAMENTO", "BONIFICACAO", "GRUPAMENTO")  # A-20: the stockDividends labels that change share counts
 REST_CAPITAL_RETURN = "REST CAP DIN"  # A-15 (F16): a capital return, not a dividend
 
@@ -176,17 +176,17 @@ def parse_yahoo(payload: bytes) -> list[Dividend]:
 
 
 def choose_source(history: B3History | None, d: date) -> tuple[str, str | None]:
-    """("b3", None) or ("yahoo", reason) for one company at d (A-15)."""
+    """("b3", None) or ("yahoo", reason) for one company at d (A-15, #77).
+
+    d is kept for the callers: since #77 no reason depends on it.
+    """
     if history is None:
         return "yahoo", "b3_failed"
     if history.complete and history.total_records == 0:
         return "yahoo", "b3_empty"
     if not history.complete:
         return "yahoo", "b3_incomplete"
-    earliest = min((record.last_date_prior_ex for record in history.records), default=None)
-    if earliest is None or earliest > d - timedelta(days=WINDOW_DAYS):  # no record left after the F16 filters: none reaches d
-        return "yahoo", SHORT_HISTORY_REASON
-    return "b3", None
+    return "b3", None  # #77: complete, so it covers the window; same-day records that are not duplicates add up
 
 
 def resolve(
