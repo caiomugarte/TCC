@@ -102,22 +102,23 @@ FII_MAX_PER_SEGMENT = 2
 WHOLE_UNITS_MODEL_VERSION = "whole-units-v1"
 
 # Eligible universe (#63): tickers with no B3 session in the 30 days before the
-# Status Invest collection are dropped before selection, for both plans.
+# snapshot cutoff are dropped when the snapshot is created, for both plans.
 UNIVERSE_MODEL_VERSION = "b3-recent-trade-v1"
 
 # Selection method versions persisted in provenance. The Premium FII method
 # changed with the segment cap (#56); Basic keeps the uncapped v1 method and
-# gets no whole-unit buy list.
+# gets no whole-unit buy list. Stock scoring moved to v2 for both plans with
+# the financials' own indicators and peer groups (#79).
 PREMIUM_MODEL_VERSIONS = {
     "allocation": "allocation-v1",
-    "stocks": "stock-selection-v1",
+    "stocks": "stock-selection-v2",
     "fiis": "fii-selection-v2",
     "whole_units": WHOLE_UNITS_MODEL_VERSION,
     "universe": UNIVERSE_MODEL_VERSION,
 }
 BASIC_MODEL_VERSIONS = {
     "allocation": "allocation-v1",
-    "stocks": "stock-selection-v1",
+    "stocks": "stock-selection-v2",
     "fiis": "fii-selection-v1",
     "universe": UNIVERSE_MODEL_VERSION,
 }

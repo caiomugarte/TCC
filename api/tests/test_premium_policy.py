@@ -302,7 +302,7 @@ BASIC_GOLDEN_JSON = (
     '"raw_score":0.73,"restrictions":["limitar_concentracao"],"schema_version":1,"score":0.5,'
     '"warnings":["fixture warning"]},'
     '"provenance":{"cutoff_date":null,"model_versions":{"allocation":"allocation-v1",'
-    '"fiis":"fii-selection-v1","stocks":"stock-selection-v1","universe":"b3-recent-trade-v1"},'
+    '"fiis":"fii-selection-v1","stocks":"stock-selection-v2","universe":"b3-recent-trade-v1"},'
     '"policy_version":"basic-policy-v2",'
     '"random_seed":null,"source_snapshot_hashes":{},"source_snapshot_ids":[]},'
     '"stocks":{"factor_weights":{"div":0.1,"growth":0.2,"liquidez":0.2,"rent":0.25,"value":0.25},'
@@ -425,14 +425,14 @@ class SegmentCapPolicyTests(unittest.TestCase):
     def test_model_versions_record_fii_selection_v2(self) -> None:
         premium_versions = {
             "allocation": "allocation-v1",
-            "stocks": "stock-selection-v1",
+            "stocks": "stock-selection-v2",
             "fiis": "fii-selection-v2",
             "whole_units": "whole-units-v1",
             "universe": "b3-recent-trade-v1",
         }
         basic_versions = {
             "allocation": "allocation-v1",
-            "stocks": "stock-selection-v1",
+            "stocks": "stock-selection-v2",
             "fiis": "fii-selection-v1",
             "universe": "b3-recent-trade-v1",
         }
