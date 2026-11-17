@@ -257,23 +257,28 @@ def premium_level_series(snapshot_dir: Path) -> dict:
     }
 
 
+def _read_provenance(provenance_path: Path, label: str, keys: tuple, sha256: str, flag: str) -> dict:
+    """A selector provenance JSON with every key in ``keys``, written for the CSV whose hash is ``sha256``."""
+
+    try:
+        provenance = json.loads(Path(provenance_path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SnapshotError(f"{label} provenance cannot be read: {exc}") from exc
+    if not isinstance(provenance, dict) or not all(key in provenance for key in keys):
+        raise SnapshotError(f"{label} provenance needs {', '.join(keys[:-1])} and {keys[-1]}")
+    if provenance["csv_sha256"] != sha256:
+        raise SnapshotError(f"{label} provenance was written for another CSV: its csv_sha256 differs from {flag}")
+    return provenance
+
+
 def _stock_source(path: str, sha256: str, provenance_path: Optional[Path]) -> dict:
     """The stock selector source: the fixed literal, or the provider and raw hashes of a collector provenance."""
 
     if provenance_path is None:
         return {"path": path, "sha256": sha256, "provider": PROVIDER_SELECTOR, "metadata": {}}
-    try:
-        provenance = json.loads(Path(provenance_path).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise SnapshotError(f"stock provenance cannot be read: {exc}") from exc
-    if not isinstance(provenance, dict) or not all(
-        key in provenance for key in ("provider", "as_of", "csv_sha256", "raw_files")
-    ):
-        raise SnapshotError("stock provenance needs provider, as_of, csv_sha256 and raw_files")
-    if provenance["csv_sha256"] != sha256:
-        raise SnapshotError(
-            "stock provenance was written for another CSV: its csv_sha256 differs from --stock-universe"
-        )
+    provenance = _read_provenance(
+        provenance_path, "stock", ("provider", "as_of", "csv_sha256", "raw_files"), sha256, "--stock-universe"
+    )
     return {
         "path": path,
         "sha256": sha256,
@@ -288,15 +293,10 @@ def _fii_source(path: str, sha256: str, provenance_path: Optional[Path]) -> dict
 
     if provenance_path is None:
         return {"path": path, "sha256": sha256, "provider": PROVIDER_SELECTOR, "metadata": {}}
-    try:
-        provenance = json.loads(Path(provenance_path).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise SnapshotError(f"FII provenance cannot be read: {exc}") from exc
-    keys = ("provider", "retrieved_at", "csv_sha256", "recent_trade_filter")
-    if not isinstance(provenance, dict) or not all(key in provenance for key in keys):
-        raise SnapshotError("FII provenance needs provider, retrieved_at, csv_sha256 and recent_trade_filter")
-    if provenance["csv_sha256"] != sha256:
-        raise SnapshotError("FII provenance was written for another CSV: its csv_sha256 differs from --fii-universe")
+    provenance = _read_provenance(
+        provenance_path, "FII", ("provider", "retrieved_at", "csv_sha256", "recent_trade_filter"), sha256,
+        "--fii-universe",
+    )
     record = provenance["recent_trade_filter"]
     return {
         "path": path,
