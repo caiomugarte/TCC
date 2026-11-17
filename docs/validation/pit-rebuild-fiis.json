@@ -225,10 +225,12 @@
     "PERCENTUAL EM CAIXA",
     "CAGR DIVIDENDOS 3 ANOS",
     "CAGR VALOR COTA 3 ANOS",
-    "GESTAO",
     "SETOR"
    ],
    "met": false,
+   "no_reference": [
+    "GESTAO"
+   ],
    "threshold_pct": 70
   },
   "part2": {
@@ -24173,7 +24175,7 @@
  "issue": 60,
  "parent": 75,
  "schema": "pit-rebuild-fiis/v1",
- "tool_commit": "22a9a5f94027da8355a447d87c8c9a6c7606ca66",
+ "tool_commit": "b290f5ef6d2bcb2c42f774752579018aebdaa2b8",
  "verdicts": {
   "CAGR DIVIDENDOS 3 ANOS": {
    "dates": {

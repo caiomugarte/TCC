@@ -1,7 +1,7 @@
 # Reconstrução PIT dos indicadores de FIIs
 
 - Esquema: `pit-rebuild-fiis/v1` (issue #60, spec #75)
-- Commit da ferramenta: `22a9a5f94027da8355a447d87c8c9a6c7606ca66`
+- Commit da ferramenta: `b290f5ef6d2bcb2c42f774752579018aebdaa2b8`
 - Datas de decisão: 2026-08-10, 2026-11-05
 - Status Invest de 2026-08-10 (coletado em 2026-08-10): `status_invest_fii.csv`, 588 linhas, sha256 `f69bc7d05772d7b2d266ea7b5d320df2da67333942ab2440d005ed574554b105`
 - Status Invest de 2026-11-05 (coletado em 2026-11-06): `fiis.csv`, 592 linhas, sha256 `11da8a99e03531d39581edb0abc6949288e1bc3b9a9dbd5d19faae6bf739ba52`
@@ -10,7 +10,7 @@
 
 **Veredito da classe:** `não reconstruível`.
 
-Critério de liberação, parte 1 (≥ 70% nas duas datas): não cumprida (`PERCENTUAL EM CAIXA`, `CAGR DIVIDENDOS 3 ANOS`, `CAGR VALOR COTA 3 ANOS`, `GESTAO`, `SETOR`).
+Critério de liberação, parte 1 (≥ 70% nas duas datas): não cumprida (`PERCENTUAL EM CAIXA`, `CAGR DIVIDENDOS 3 ANOS`, `CAGR VALOR COTA 3 ANOS`, `SETOR`; sem referência, fora da conta: `GESTAO`).
 Critério de liberação, parte 2 (piores casos classificados): não cumprida (94 de 538 casos sem classificação).
 Critério inteiro: não cumprido.
 
@@ -79,6 +79,9 @@ Contagem de FIIs elegíveis por fonte (`b3`, `yahoo` marcado como reserva, `none
 | 2026-11-05 | `DY` | none: 3, yahoo: 163 | b3_empty: 10, b3_empty_yahoo_failed: 1, b3_failed_yahoo_failed: 2, b3_short_history: 153 |
 | 2026-11-05 | `ULTIMO DIVIDENDO` | b3: 153, none: 3, yahoo: 10 | b3_empty: 10, b3_empty_yahoo_failed: 1, b3_failed_yahoo_failed: 2 |
 | 2026-11-05 | `CAGR DIVIDENDOS 3 ANOS` | none: 3, yahoo: 163 | b3_empty: 10, b3_empty_yahoo_failed: 1, b3_failed_yahoo_failed: 2, b3_short_history: 153 |
+
+Na prática, a fonte do `DY` e do `CAGR DIVIDENDOS 3 ANOS` dos FIIs é o Yahoo, não a B3: em 2026-08-10, `DY`: 158 de 162 do Yahoo e 0 da B3 (148 por `b3_short_history`); em 2026-11-05, `DY`: 163 de 166 do Yahoo e 0 da B3 (153 por `b3_short_history`).
+`b3_short_history` quer dizer que a página de fundos da B3 não alcança o início da janela de 12 meses do `DY` (2025-08-10 para 2026-08-10, 2025-11-05 para 2026-11-05): ela só lista os proventos recentes (primeiro registro com mediana 2025-11-28 entre 157 fundos, ver Cobertura histórica). A regra das ações da #77 (um histórico da B3 que cobre a janela vence o Yahoo) já é a dos FIIs: o Yahoo só entra, marcado, quando a B3 não cobre a janela. O `ULTIMO DIVIDENDO` não depende da janela e vem da B3 em 147 de 162 em 2026-08-10; 153 de 166 em 2026-11-05.
 
 `DY só com a B3` (sensibilidade, não entra no veredito): os proventos da B3 com data-ex até `d`, na janela truncada no primeiro registro dela.
 
