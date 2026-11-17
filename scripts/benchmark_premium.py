@@ -162,7 +162,7 @@ def verify_snapshot(declaration: Mapping[str, Any], registry: Path) -> tuple[obj
 def selector_inputs_from_manifest(manifest: Any, snapshot: Mapping[str, Any]) -> Any:
     """Frozen selector CSVs from the manifest, in place of live ``refresh_inputs``."""
 
-    from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+    from app.services.snapshot_inputs import SourceSnapshot, SnapshotInputs
 
     def source(role: str, key: str) -> SourceSnapshot:
         return SourceSnapshot(
@@ -172,7 +172,7 @@ def selector_inputs_from_manifest(manifest: Any, snapshot: Mapping[str, Any]) ->
             sha256=snapshot["sources"][role],
         )
 
-    return StatusInvestInputs(stocks=source("stock", "stocks"), fiis=source("fii", "fiis"))
+    return SnapshotInputs(stocks=source("stock", "stocks"), fiis=source("fii", "fiis"))
 
 
 # --------------------------------------------------------------------------

@@ -45,6 +45,12 @@ def b3_company_url(root: str) -> str:
     return f"{B3_BASE}/GetListedSupplementCompany/{_b64_json(payload)}"
 
 
+def b3_detail_url(cd_cvm: str) -> str:
+    """GetDetail of a company: its B3 sector classification, "setor / subsetor / segmento" (#78)."""
+    payload = {"codeCVM": cd_cvm, "language": "pt-br"}
+    return f"{B3_BASE}/GetDetail/{_b64_json(payload)}"
+
+
 def b3_query_name(trading_name: str) -> str:
     """The name GetListedCashDividends is queried with: stripped, every "/" removed, inner whitespace collapsed (A-15, F15)."""
     return " ".join(trading_name.replace("/", "").split())

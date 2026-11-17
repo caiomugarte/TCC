@@ -320,9 +320,9 @@ class StageAccountingTests(unittest.TestCase):
             created_at="2026-10-29T00:00:00+00:00",
             sources={},
         )
-        from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+        from app.services.snapshot_inputs import SourceSnapshot, SnapshotInputs
 
-        self.inputs = StatusInvestInputs(
+        self.inputs = SnapshotInputs(
             stocks=SourceSnapshot(Path("/tmp/stocks.csv"), "statusinvest", "t", "s"),
             fiis=SourceSnapshot(Path("/tmp/fiis.csv"), "statusinvest", "t", "f"),
         )

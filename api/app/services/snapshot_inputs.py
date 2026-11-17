@@ -2,32 +2,13 @@ from __future__ import annotations
 
 import csv
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 import hashlib
 import io
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
-from snapshot_manifest import file_sha256
-
-from app.services.b3_trading import (
-    B3TradingUnavailableError,
-    CotahistCache,
-    b3_today,
-    filter_recent_trades,
-)
-
-
-STATUS_INVEST_TIMEOUT_SECONDS = 30
-
-
-class StatusInvestInputError(RuntimeError):
-    code = "status_invest_input_failed"
-
-
-class SelectorSnapshotChangedError(RuntimeError):
-    """The selector CSV bytes no longer match the SHA-256 recorded for the run."""
+from snapshot_manifest import SnapshotChangedError, SnapshotUnavailableError
 
 
 class SelectorPriceError(ValueError):
@@ -50,7 +31,7 @@ class SourceSnapshot:
 
 
 @dataclass(frozen=True)
-class StatusInvestInputs:
+class SnapshotInputs:
     stocks: SourceSnapshot
     fiis: SourceSnapshot
 
@@ -78,80 +59,62 @@ def _validate_csv(path: Path, validator: Callable[[list[Mapping[str, str]]], Non
     validator(rows)
 
 
-def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+def _check_recorded_hashes(manifest: Any, recorded: Mapping[str, str]) -> None:
+    for key, source in manifest.sources.items():
+        expected = recorded.get(key)
+        if expected is not None and str(expected).lower() != source.sha256:
+            raise SnapshotChangedError(
+                f"source {key} hash differs from the one recorded for the run"
+            )
 
 
-def _source_snapshot(path: Path, retrieved_at: str) -> SourceSnapshot:
-    return SourceSnapshot(
-        path=path.resolve(),
-        provider="statusinvest",
-        retrieved_at=retrieved_at,
-        sha256=file_sha256(path),
-    )
-
-
-def refresh_inputs(
+def load_snapshot_inputs(
+    manifest: Any,
     workspace: Path,
-    *,
-    stock_collector: Callable[..., Any] | None = None,
-    fii_collector: Callable[..., Any] | None = None,
-    timeout: int = STATUS_INVEST_TIMEOUT_SECONDS,
-    cotahist_cache: CotahistCache | None = None,
-    collected_on: date | None = None,
-) -> StatusInvestInputs:
-    """Refresh and validate immutable Status Invest files for one run workspace.
+    recorded_hashes: Mapping[str, str] | None = None,
+) -> SnapshotInputs:
+    """Selector inputs read only from the run's snapshot, never collected live.
 
-    The validated CSVs are then filtered by recent B3 trading (issue #63); the
-    recorded SHA-256 is that of the filtered files. B3TradingUnavailableError
-    fails the run when COTAHIST cannot be had.
+    Each stock/FII CSV named by the manifest is read once; its bytes are checked
+    against the manifest SHA-256 and against the hashes recorded for the run,
+    validated, and copied into the run workspace so the engines read exactly
+    the verified bytes. A missing file raises SnapshotUnavailableError; a hash
+    divergence or a malformed CSV raises SnapshotChangedError.
     """
 
-    from fetch_status_invest import refresh as refresh_stocks, validate_rows as validate_stocks
-    from fetch_status_invest_fii import refresh as refresh_fiis, validate_rows as validate_fiis
+    from fetch_status_invest import validate_rows as validate_stocks
+    from fetch_status_invest_fii import validate_rows as validate_fiis
 
-    collectors = (
-        (
-            "stocks",
-            stock_collector or refresh_stocks,
-            validate_stocks,
-            Path(workspace) / "status-invest" / "stocks.csv",
-        ),
-        (
-            "fiis",
-            fii_collector or refresh_fiis,
-            validate_fiis,
-            Path(workspace) / "status-invest" / "fiis.csv",
-        ),
-    )
-    retrieved: dict[str, str] = {}
-    failures: list[tuple[str, Exception]] = []
-    for role, collector, validator, path in collectors:
+    _check_recorded_hashes(manifest, recorded_hashes or {})
+    retrieved_at = str(manifest.created_at)
+    snapshots: dict[str, SourceSnapshot] = {}
+    for role, key, validator in (
+        ("stocks", "stock", validate_stocks),
+        ("fiis", "fii", validate_fiis),
+    ):
+        source = manifest.selector_source_for(key)
+        source_path = source.resolved_path()
         try:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            collector(output_path=path, timeout=timeout)
+            data = source_path.read_bytes()
+        except OSError as exc:
+            raise SnapshotUnavailableError(f"source {key} not found: {source_path}") from exc
+        digest = hashlib.sha256(data).hexdigest()
+        if digest != source.sha256:
+            raise SnapshotChangedError(f"SHA-256 mismatch for source {key}: {source_path}")
+        path = Path(workspace) / "snapshot" / f"{role}.csv"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        try:
             _validate_csv(path, validator)
-            retrieved[role] = _utc_now()
         except Exception as exc:
-            failures.append((role, exc))
-    if failures:
-        role, error = failures[0]
-        raise StatusInvestInputError(f"Status Invest {role} input failed validation") from error
-
-    paths = {role: path for role, _, _, path in collectors}
-    try:
-        filter_recent_trades(
-            paths,
-            Path(workspace),
-            collected_on=collected_on or b3_today(),
-            cache=cotahist_cache or CotahistCache(),
+            raise SnapshotChangedError(f"source {key} is not a valid selector CSV") from exc
+        snapshots[role] = SourceSnapshot(
+            path=path.resolve(),
+            provider=source.provider,
+            retrieved_at=str(source.metadata.get("retrieved_at") or retrieved_at),
+            sha256=digest,
         )
-    except B3TradingUnavailableError:
-        raise
-    except Exception as exc:
-        raise StatusInvestInputError("Status Invest inputs could not be filtered by recent B3 trading") from exc
-    snapshots = {role: _source_snapshot(path, retrieved[role]) for role, path in paths.items()}
-    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
+    return SnapshotInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
 def _price_cents(ticker: str, raw: str | None) -> tuple[Decimal, int]:
@@ -179,7 +142,7 @@ def load_selector_prices(snapshot: SourceSnapshot, tickers: Sequence[str]) -> di
     except OSError as exc:
         raise SelectorPriceError(f"selector CSV {snapshot.path} could not be read") from exc
     if hashlib.sha256(data).hexdigest() != snapshot.sha256:
-        raise SelectorSnapshotChangedError(f"selector CSV {snapshot.path} changed after the run recorded it")
+        raise SnapshotChangedError(f"selector CSV {snapshot.path} changed after the run recorded it")
     wanted = [str(ticker).strip().upper() for ticker in tickers]
     reader = csv.DictReader(io.StringIO(data.decode("utf-8-sig"), newline=""))
     has_price_column = "PRECO" in (reader.fieldnames or [])

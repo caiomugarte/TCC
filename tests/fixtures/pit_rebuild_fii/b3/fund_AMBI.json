@@ -1,0 +1,191 @@
+{
+ "quotedPer": "",
+ "form": "Escritural",
+ "fund": "FII AMBI",
+ "ifd": "",
+ "tradingLot": "1",
+ "quantity": "5.000.000",
+ "code": "AMBI",
+ "codeCVM": null,
+ "segment": "BOLSA",
+ "cashDividends": [
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/07/2025",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/08/2025",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/09/2025",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/10/2025",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/11/2025",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/12/2025",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/01/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/02/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/03/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/04/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/05/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/06/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/07/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/08/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/09/2026",
+   "remarks": ""
+  },
+  {
+   "assetIssued": "BRAMBICTF003",
+   "paymentDate": "",
+   "rate": "0,80000000000",
+   "relatedTo": "",
+   "approvedOn": "",
+   "isinCode": "BRAMBICTF003",
+   "label": "RENDIMENTO",
+   "lastDatePrior": "14/10/2026",
+   "remarks": ""
+  }
+ ],
+ "stockDividends": [],
+ "subscriptions": []
+}

@@ -33,7 +33,7 @@ from app.services.premium_executor import PremiumExecutor
 from app.services.premium_policy import resolve_recommendation_policy
 from app.services.premium_recommendation import PremiumRecommendationError
 from app.services.profile import compute_profile
-from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from app.services.snapshot_inputs import SourceSnapshot, SnapshotInputs
 from fii_selection import FiiUniverseInfeasibleError
 
 
@@ -107,7 +107,7 @@ COMPLETED_BASIC_RESULT = {
 }
 
 
-def _status_invest_inputs_for(workspace):
+def _snapshot_inputs_for(_manifest, workspace, _recorded_hashes=None):
     source_root = Path(workspace) / "status-invest"
     source_root.mkdir(parents=True, exist_ok=True)
     snapshots = {}
@@ -120,7 +120,7 @@ def _status_invest_inputs_for(workspace):
             retrieved_at="2026-07-21T00:00:00Z",
             sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         )
-    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
+    return SnapshotInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
 class ProductRouteTests(unittest.TestCase):
@@ -495,7 +495,7 @@ class ProductRouteTests(unittest.TestCase):
             executor = PremiumExecutor(
                 session_factory=lambda: Session(self.engine),
                 manifest_loader=lambda _provenance: {"fixture": True},
-                status_invest_inputs_loader=_status_invest_inputs_for,
+                selector_inputs_loader=_snapshot_inputs_for,
                 optimization_runner=optimization_runner,
                 workspace_root=Path(directory) / "workspaces",
             )

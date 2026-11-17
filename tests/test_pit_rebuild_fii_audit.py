@@ -1,0 +1,101 @@
+"""Classification of the worst FII cases from the evidence the sources hold (issue #60). No network."""
+
+from datetime import date, timedelta
+from pathlib import Path
+import sys
+import unittest
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "py"))
+sys.path.insert(0, str(PROJECT_ROOT / "tests"))
+
+from pit_rebuild import fii_audit, fii_indicators  # noqa: E402
+from pit_rebuild.dividends import Dividend  # noqa: E402
+from test_pit_rebuild_fii_indicators import A, B3, D, REPORTS, YAHOO, informe, informes, quotes  # noqa: E402
+
+SI_ERROR = "erro do Status Invest"
+METHOD = "diferença de método"
+OURS = "erro nosso"
+OPEN = "sem classificação"
+
+
+class ClassifyTest(unittest.TestCase):
+    def context(self, reports=REPORTS, b3=B3, yahoo=YAHOO):
+        q = quotes()
+        store = informes(*reports)
+        rebuilt = fii_indicators.rebuild("ALFA11", D, q, store, b3, yahoo)
+        return fii_audit.Context(rebuilt=rebuilt, informes=store, quotes=q, b3_fund=b3, yahoo=yahoo)
+
+    def test_a_reference_equal_to_an_older_report_known_at_d_is_a_status_invest_lag(self):
+        reports = REPORTS + (informe(A, date(2026, 5, 1), date(2026, 6, 15), nav=130.0, equity=1_300_000_000, shares=10_000_000, holders=47000),)
+        case = fii_audit.classify("N COTISTAS", 47000, self.context(reports))
+        self.assertEqual(case["class"], SI_ERROR)
+        self.assertEqual(case["evidence"], "informe 2026-05 v1, entregue em 2026-06-15")
+
+    def test_a_reference_equal_to_a_report_delivered_after_d_is_a_method_difference(self):
+        case = fii_audit.classify("PATRIMONIO", 1_400_000_000, self.context())  # the 2026-07 report, delivered 2026-08-14
+        self.assertEqual(case["class"], METHOD)
+        self.assertEqual(case["evidence"], "informe 2026-07 v1, entregue em 2026-08-14")
+
+    def test_a_price_equal_to_the_close_of_another_session_is_a_method_difference(self):
+        case = fii_audit.classify("PRECO", 120.0, self.context())  # the close of every session before D
+        self.assertEqual(case["class"], METHOD)
+        self.assertIn((D - timedelta(days=1)).isoformat(), case["evidence"])
+
+    def test_a_dividend_value_equal_to_the_other_source_is_a_method_difference(self):
+        # DY from Yahoo is 12 / 121; the nine B3 records in the window give 9 / 121 = 7.44 %
+        case = fii_audit.classify("DY", 7.44, self.context())
+        self.assertEqual(case["class"], METHOD)
+        self.assertIn("b3", case["evidence"])
+
+    def test_a_reference_equal_to_the_other_fund_of_the_isin_is_our_error(self):
+        decoy = informe("22.222.222/0001-22", date(2026, 5, 1), date(2026, 6, 15), nav=22000.0, equity=5e9, shares=224_952, holders=11)
+        case = fii_audit.classify("N COTISTAS", 11, self.context(REPORTS + (decoy,)))
+        self.assertEqual(case["class"], OURS)
+
+    def test_the_match_is_exact_so_a_value_within_five_percent_is_not_evidence(self):
+        reports = REPORTS + (informe(A, date(2026, 5, 1), date(2026, 6, 15), nav=130.0, equity=1_300_000_000, shares=10_000_000, holders=47000),)
+        self.assertEqual(fii_audit.classify("N COTISTAS", 47100, self.context(reports))["class"], OPEN)
+
+    def test_an_older_report_known_at_d_is_preferred_over_a_later_one(self):
+        reports = REPORTS + (
+            informe(A, date(2026, 5, 1), date(2026, 6, 15), nav=130.0, equity=1_300_000_000, shares=10_000_000, holders=51000),
+        )
+        case = fii_audit.classify("N COTISTAS", 51000, self.context(reports))  # 2026-07 (after d) has 51000 too
+        self.assertEqual(case["class"], SI_ERROR)
+
+    def test_an_older_month_whose_version_was_delivered_after_d_is_a_method_difference_not_a_status_invest_lag(self):
+        # The 2026-05 report is older than the 2026-06 one used at d, but its only version in the file was delivered
+        # on 2026-09-01, after d: Status Invest showing it is point in time (method), not a lag behind d.
+        reports = REPORTS + (informe(A, date(2026, 5, 1), date(2026, 9, 1), nav=130.0, equity=1_300_000_000, shares=10_000_000, holders=47000),)
+        case = fii_audit.classify("N COTISTAS", 47000, self.context(reports))
+        self.assertEqual(case["class"], METHOD)
+        self.assertEqual(case["evidence"], "informe 2026-05 v1, entregue em 2026-09-01")
+
+    def test_the_cagr_of_another_report_is_split_adjusted_as_the_rebuilt_value(self):
+        # 2023-07 at 100.00 per quota, a 1:10 split in 2024-02, 2026-07 (delivered after d) at 14.00 per new quota:
+        # 14.00 x 10 / 100 = 1.4, so the later report gives (1.4 ** (1/3) - 1) = 11.87 % a year, a method difference.
+        reports = REPORTS[:1] + (
+            informe(A, date(2023, 7, 1), date(2023, 8, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2024, 1, 1), date(2024, 2, 14), nav=100.0, equity=1_000_000_000, shares=10_000_000),
+            informe(A, date(2024, 2, 1), date(2024, 3, 14), nav=10.2, equity=1_020_000_000, shares=100_000_000),
+            informe(A, date(2026, 6, 1), date(2026, 7, 15), nav=13.31, equity=1_331_000_000, shares=100_000_000),
+            informe(A, date(2026, 7, 1), date(2026, 8, 14), nav=14.0, equity=1_400_000_000, shares=100_000_000),
+        )
+        case = fii_audit.classify("CAGR VALOR COTA 3 ANOS", round((1.4 ** (1 / 3) - 1) * 100, 2), self.context(reports))
+        self.assertEqual(case["class"], METHOD)
+        self.assertEqual(case["evidence"], "informe 2026-07 v1, entregue em 2026-08-14")
+
+    def test_a_missing_value_is_classified_by_its_reason(self):
+        self.assertEqual(fii_audit.classify_missing("no_cvm_match")["class"], OURS)
+        self.assertEqual(fii_audit.classify_missing("stale_informe")["class"], METHOD)
+        self.assertEqual(fii_audit.classify_missing("b3_short_history_yahoo_failed")["class"], OURS)
+
+    def test_no_evidence_leaves_the_case_open(self):
+        case = fii_audit.classify("N COTISTAS", 12345, self.context())
+        self.assertEqual(case["class"], OPEN)
+        self.assertEqual(case["evidence"], "informe 2026-06 v1, entregue em 2026-07-15")
+
+
+if __name__ == "__main__":
+    unittest.main()

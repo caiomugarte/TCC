@@ -13,7 +13,9 @@ from app.db.models import Account, ProfileRecord
 from app.adapters.premium_optimization import PremiumOptimizationError
 from app.repositories.recommendations import RecommendationRepository, _output_hash
 from app.services.premium_executor import PremiumExecutor
-from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputError, StatusInvestInputs
+from app.services.snapshot_inputs import SourceSnapshot, SnapshotInputs
+
+from snapshot_manifest import SnapshotUnavailableError
 
 
 SHORTAGE_FIELDS = {
@@ -47,7 +49,7 @@ def create_run(session, account, profile, status="queued", plan="premium"):
     return run
 
 
-def selector_inputs_for(workspace):
+def selector_inputs_for(_manifest, workspace, _recorded_hashes=None):
     source_root = Path(workspace) / "status-invest"
     source_root.mkdir(parents=True, exist_ok=True)
     snapshots = {}
@@ -60,7 +62,7 @@ def selector_inputs_for(workspace):
             retrieved_at="2026-07-21T00:00:00Z",
             sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         )
-    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
+    return SnapshotInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
 class PremiumExecutorTests(unittest.TestCase):
@@ -113,7 +115,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=session_factory,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=lambda *_args, **_kwargs: self.result(),
             workspace_root=Path(self.directory.name) / "workspaces",
         )
@@ -133,7 +135,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError("fixture boom")),
         )
         try:
@@ -164,7 +166,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=runner,
             workspace_root=Path(self.directory.name) / "workspaces",
         )
@@ -188,16 +190,16 @@ class PremiumExecutorTests(unittest.TestCase):
         calls = []
         workspace_root = Path(self.directory.name) / "workspaces"
 
-        def partial_refresh(workspace):
+        def partial_refresh(_manifest, workspace, _recorded_hashes):
             path = Path(workspace) / "status-invest" / "stocks.csv"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text("TICKER\nAAA3\n", encoding="utf-8")
-            raise StatusInvestInputError("collector failed at /private/statusinvest/session.log")
+            raise SnapshotUnavailableError("source fii not found: /private/statusinvest/fiis.csv")
 
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=partial_refresh,
+            selector_inputs_loader=partial_refresh,
             optimization_runner=lambda *_args, **_kwargs: calls.append(True),
             workspace_root=workspace_root,
         )
@@ -229,7 +231,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=runner,
             workspace_root=Path(self.directory.name) / "workspaces",
         )
@@ -262,8 +264,8 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=lambda _workspace: (_ for _ in ()).throw(
-                StatusInvestInputError("FII collector failed")
+            selector_inputs_loader=lambda *_args: (_ for _ in ()).throw(
+                SnapshotUnavailableError("source fii not found")
             ),
             optimization_runner=lambda *_args, **_kwargs: self.fail("runner must not execute"),
         )
@@ -309,7 +311,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(shortage),
         )
         try:
@@ -334,7 +336,7 @@ class PremiumExecutorTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=lambda *_args, **_kwargs: (_ for _ in ()).throw(shortage),
         )
         try:
@@ -420,7 +422,7 @@ class PremiumExecutorIncumbentTests(unittest.TestCase):
         executor = PremiumExecutor(
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: {"fixture": True},
-            status_invest_inputs_loader=selector_inputs_for,
+            selector_inputs_loader=selector_inputs_for,
             optimization_runner=runner,
             workspace_root=Path(self.directory.name) / "workspaces",
         )
@@ -448,7 +450,7 @@ class PremiumExecutorIncumbentTests(unittest.TestCase):
 
         self.assertEqual(self.execute(run, runner), "completed")
         self.assertEqual(len(calls), 1)
-        self.assertIsInstance(calls[0], StatusInvestInputs)
+        self.assertIsInstance(calls[0], SnapshotInputs)
 
     def test_prior_completed_premium_run_is_passed_normalized(self):
         previous = self.completed_run(
@@ -462,7 +464,7 @@ class PremiumExecutorIncumbentTests(unittest.TestCase):
             calls[0]["incumbents"],
             {"run_id": previous.id, "stocks": ["BBSE3", "ITSA4"], "fiis": ["HGLG11", "KNRI11"]},
         )
-        self.assertIsInstance(calls[0]["selector_inputs"], StatusInvestInputs)
+        self.assertIsInstance(calls[0]["selector_inputs"], SnapshotInputs)
 
     def test_run_that_completed_while_this_one_was_queued_is_the_incumbent(self):
         first = self.zone_run()

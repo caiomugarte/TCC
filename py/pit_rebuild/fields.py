@@ -1,6 +1,7 @@
 """The 19 fields the comparison covers and their tolerance class (IND-02, A-2).
 
-The 16 score fields are read from METRIC_GROUPS in py/config.py with ast. They
+The 16 score fields are read from METRIC_GROUPS in py/config.py with ast (as are the financial
+subsectors and the indicators that do not apply to them, #79). They
 are neither copied nor imported: importing config creates directories under
 data/ and outputs/ (design, Risks).
 """
@@ -26,17 +27,22 @@ PERCENT_FIELDS = frozenset(
 )
 
 
-def metric_groups(config_path: Path = CONFIG_PATH) -> dict[str, list[str]]:
-    """Return METRIC_GROUPS as written in the config source, without importing it."""
+def config_literal(name: str, config_path: Path = CONFIG_PATH):
+    """Return the literal assigned to name in the config source, without importing it."""
     tree = ast.parse(Path(config_path).read_text(encoding="utf-8"), filename=str(config_path))
     for node in tree.body:
         if isinstance(node, ast.AnnAssign) and node.value is not None:
-            if isinstance(node.target, ast.Name) and node.target.id == "METRIC_GROUPS":
+            if isinstance(node.target, ast.Name) and node.target.id == name:
                 return ast.literal_eval(node.value)
         if isinstance(node, ast.Assign):
-            if any(isinstance(t, ast.Name) and t.id == "METRIC_GROUPS" for t in node.targets):
+            if any(isinstance(t, ast.Name) and t.id == name for t in node.targets):
                 return ast.literal_eval(node.value)
-    raise ValueError(f"METRIC_GROUPS is not a literal assignment in {config_path}")
+    raise ValueError(f"{name} is not a literal assignment in {config_path}")
+
+
+def metric_groups(config_path: Path = CONFIG_PATH) -> dict[str, list[str]]:
+    """Return METRIC_GROUPS as written in the config source, without importing it."""
+    return config_literal("METRIC_GROUPS", config_path)
 
 
 SCORE_FIELDS: tuple[str, ...] = tuple(

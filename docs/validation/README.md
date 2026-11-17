@@ -505,6 +505,23 @@ Resultado da regeneração, com as chaves do JSON:
   `share_events.no_isin` com 9 e 10 classes; `share_count_suspect` com 5 e 8 empresas;
   `ttm_prior_from_itr` com 18 e 20 empresas; `stale_filing` com 1 e 3 tickers.
 
+Regeneração da #77, com o cache baixado de novo em 2026-11-17 (o da #64 é de 2026-11-09 e não
+estava mais disponível). Das 571 entradas de `inputs.raw_files` da #64, 506 têm o mesmo sha256 no
+cache novo e 62 mudaram (18 arquivos da CVM e da COTAHIST de 2026, 35 `b3_company_*.json` e 9
+respostas do Yahoo). As outras 3 (Yahoo de ALPK3, HBRE3 e OPCT3) não são mais pedidas, porque
+esses DY agora vêm da B3. O cache novo tem 398 versões de DFP e ITR recebidas entre 2026-11-10 e
+2026-11-14.
+
+- Veredito oficial e ajustado da classe: os mesmos (`não reconstruível` e `com ressalvas`).
+- Critério, parte 1: cumprida. O menor percentual é o de P/L em 2026-11-05, 73,21%.
+- `share_scale.unconfirmed`: 3 empresas em 2026-08-07 (VVEO3, AZEV3/AZEV4, LIGT3) e 2 em
+  2026-11-05 (VVEO3, LIGT3), com P/L, P/VP, EV/EBIT e PSR sem valor (`share_scale_unconfirmed`).
+- DY do Yahoo (`dividends.by_source`): 5 tickers em 2026-08-07 e 9 em 2026-11-05 (8 e 11 na #64).
+  O DY do HBRE3 em 2026-08-07 sai 52,50%, contra 52,5% do Status Invest.
+- Auditoria: zero linhas `erro nosso` nas duas datas (24 na #64), e o critério de liberação continua
+  cumprido. As linhas de contagem da OPCT3 e da EGIE3 passam de `diferença de método` a `erro do
+  Status Invest` por causa dos ITR novos do cache; o caso está nos limites declarados da auditoria.
+
 ## Sensibilidades (não são o veredito)
 
 O relatório traz três sensibilidades, calculadas na mesma execução (A-22). Elas ajudam
@@ -573,6 +590,12 @@ nem na linha do veredito.
   Empresas com fator diferente de 1 aparecem em `share_scale.scaled`, com o fator e o
   resíduo. Sem registro da B3, ou com total zero nela, o fator é 1 e a empresa aparece em
   `share_scale.unverified`.
+- **Fator sem confirmação da B3 (#77).** Um fator diferente de 1 só é aplicado quando a B3
+  o confirma: o resíduo (arquivado × eventos até `R` × f ÷ `totalNumberShares`) fica entre
+  0,5 e 2. Fora disso, a empresa fica sem contagem. `VALOR DE MERCADO`, P/L, P/VP, PSR,
+  EV/EBIT e PEG ficam sem valor, com motivo `share_scale_unconfirmed`, e a empresa aparece
+  em `share_scale.unconfirmed` com o fator e o resíduo. Foi o caso de VVEO3, AZEV3/AZEV4 e
+  LIGT3 na auditoria da #64, com ×10 e resíduo entre 2,3 e 2,7.
 - Limite (√10), só para mudança sem evento da B3: se a contagem mudou menos de √10 vezes
   entre o arquivamento e a obtenção do registro da B3, e nenhum evento a explica, ela fica
   como arquivada. Se mudou √10 vezes ou mais, o fator absorve a mudança como a potência de
@@ -587,15 +610,21 @@ nem na linha do veredito.
 
 ## Proventos (D-4, A-15, A-16)
 
-- A B3 vem primeiro, empresa por empresa. O histórico da B3 só é usado quando está
-  completo (todas as páginas, e o número bruto de registros bate com `totalRecords`),
-  não está vazio e o registro mais antigo tem data `d − 365 dias` ou antes. Caso
-  contrário, o ticker vai ao Yahoo Finance naquela data, e o motivo fica registrado:
-  `b3_failed`, `b3_empty`, `b3_incomplete` ou `b3_short_history`.
+- A B3 vem primeiro, empresa por empresa. O histórico da B3 é usado quando está
+  completo (todas as páginas, e o número bruto de registros bate com `totalRecords`)
+  e não está vazio. Caso contrário, o ticker vai ao Yahoo Finance naquela data, e o
+  motivo fica registrado: `b3_failed`, `b3_empty` ou `b3_incomplete`.
+- **Histórico que começa dentro da janela (#77).** Um histórico completo é tudo o que a
+  B3 lista para a empresa, então ele cobre a janela mesmo quando o primeiro registro é
+  posterior a `d − 365 dias`. Até a #77 esse caso ia ao Yahoo com motivo
+  `b3_short_history`. Na auditoria da #64, o HBRE3 caiu nesse caso: o Yahoo tinha um só
+  registro (0,4856), e a B3 tinha dois na mesma data (0,8741 e 0,2914), cuja soma
+  reproduz o DY do Status Invest. Os relatórios gerados antes da #77 ainda têm a coluna
+  `b3_short_history`.
 - **Nome com barra.** Um nome com `/` na B3 é consultado sem a barra (F15). Se a
   resposta vem vazia, o motivo é `b3_failed`, e não `b3_empty`. Um nome que a B3 não
   entendeu não prova que a empresa não paga proventos.
-- **Registros.** Registros idênticos em todos os campos contam uma vez, e os de
+- **Registros.** Registros da mesma data que não são idênticos somam. Registros idênticos em todos os campos contam uma vez, e os de
   `REST CAP DIN` saem, porque são devolução de capital e não provento (F16). O
   relatório conta os registros brutos, os repetidos e os de capital.
 - **Desdobramento, bonificação e grupamento.** Cada provento da B3 é dividido pelo
@@ -728,3 +757,84 @@ Uma falha não escreve nenhum arquivo do relatório e imprime uma linha no stder
 - **Defasagem não é erro comprovado.** `si_lag` conta as marcas que somem com o filing anterior.
   Ele não diz quem errou. Em 2026-11-05 a maior parte das marcas tem como filing mais recente um
   ITR de 2026-09-30, recebido entre 2026-11-03 e 2026-11-05.
+
+# Reconstrução PIT de FIIs (issue #60)
+
+Pergunta: dá para reconstruir, na data `d`, os 13 indicadores do seletor de FIIs a partir
+dos informes mensais de FII da CVM, do COTAHIST e dos proventos da B3, de modo que batam com
+o Status Invest daquela data? O veredito decide a troca da fonte dos FIIs (spec #75). A
+ferramenta é a mesma `py/pit_rebuild/`, em módulos próprios (`fii_*.py`), e o comando é
+`fii-report`. Os resultados ficam no relatório gerado (`pit-rebuild-fiis.json` e
+`pit-rebuild-fiis.md`), não aqui.
+
+## Fontes
+
+| Fonte | Usada para | Endereço |
+| --- | --- | --- |
+| CVM, informe mensal estruturado de FII (zips anuais) | cotistas, patrimônio, cotas, valor patrimonial da cota, liquidez, segmento, gestão, ISIN e data de entrega | `dados.cvm.gov.br/dados/FII/DOC/INF_MENSAL/DADOS/` |
+| B3, COTAHIST anual (CODBDI 12) | preço, liquidez, ISIN do ticker em `d` e calendário de pregões | `bvmf.bmfbovespa.com.br/InstDados/SerHist/` |
+| B3, página do fundo (API não documentada) | proventos em dinheiro e número de cotas | `sistemaswebb3-listados.b3.com.br/fundsProxy/fundsCall/GetListedSupplementFunds/` |
+| Yahoo Finance | proventos, só como reserva marcada | `query1.finance.yahoo.com/v8/finance/chart/` |
+| Status Invest | valor de referência de cada data, lido em modo somente leitura | o CSV passado em `--si` |
+
+## Regras
+
+- **Universo.** O que o seletor de FIIs considera elegível no CSV daquela data: `PRECO`,
+  `P/VP`, `LIQUIDEZ MEDIA DIARIA`, `PATRIMONIO`, `N COTISTAS` e `N COTAS` positivos e `DY` ≥ 0
+  (`py/fii_selection.py`, `apply_fii_eligibility`), com o piso mais largo do Premium, o do
+  perfil arrojado: `PATRIMONIO` ≥ 200.000.000 e `LIQUIDEZ MEDIA DIARIA` ≥ 50.000
+  (`api/app/services/premium_policy.py`, `FII_RULES`). Um teste confere a regra contra
+  `apply_fii_eligibility`.
+- **Comparação e veredito.** As do relatório de ações: 5% de diferença relativa, ou 0,5 ponto
+  percentual em `DY`, `PERCENTUAL EM CAIXA`, `CAGR DIVIDENDOS 3 ANOS` e `CAGR VALOR COTA 3 ANOS`;
+  90% e 70% para `reconstruível` e `com ressalvas`; o pior das duas datas. O veredito da
+  classe é o pior dos 13 indicadores.
+- **Setor e gestão.** São categorias. O valor da CVM passa por uma tabela de correspondência
+  fixa (`SEGMENT_MAP` e `MANAGEMENT_MAP` em `py/pit_rebuild/fii_compare.py`), escrita antes da
+  medição, e o FII fica dentro quando a tradução contém o valor do Status Invest. O relatório
+  mostra a tabela e o cruzamento CVM × Status Invest de cada data.
+- **Critério de liberação (#64).** Parte 1: todo indicador com pelo menos 70% na tolerância nas
+  duas datas. Parte 2: os 10 piores de cada indicador e data classificados como erro nosso, erro
+  do Status Invest ou diferença de método, com o informe, o pregão ou a fonte que sustenta a
+  classificação. A classificação é automática (`py/pit_rebuild/fii_audit.py`): ela procura a
+  fonte que dá o valor do Status Invest, e o caso sem fonte fica `sem classificação`.
+- **Ponto no tempo.** Um informe vale em `d` quando a versão que o arquivo da CVM traz foi
+  entregue (`Data_Entrega`) até `d`. O arquivo só traz a versão mais recente, então um informe
+  reapresentado depois de `d` some, e o fundo usa o anterior. Um informe de mês encerrado há
+  mais de 270 dias não dá valor (`stale_informe`). Só entram pregões até `d`, e proventos com
+  data-ex em `d − 365 dias < data-ex ≤ d`.
+- **Desdobramento de cotas.** O `CAGR VALOR COTA 3 ANOS` compara o valor por cota de hoje com o
+  de 36 meses antes, por cota antiga. O informe mensal não traz o evento, então ele é deduzido
+  de dois informes consecutivos conhecidos em `d`: o número de cotas multiplicado por um inteiro
+  k ≥ 2 (até 2%) e o valor patrimonial por cota dividido por cerca de k (até 15%); o grupamento é
+  o inverso (`fii_informes.split_factor`). Uma emissão muda o número de cotas sem mudar o valor
+  por cota e não é tomada por desdobramento. Um evento fora dessas faixas não é ajustado.
+- **Ticker → fundo.** O ISIN do último pregão do ticker até `d` é procurado no `Codigo_ISIN` dos
+  informes entregues até `d` e, se nenhum o traz, em qualquer informe
+  (`isin_from_later_informe`): o informe posterior só identifica o fundo, e os valores continuam
+  vindo dos informes entregues até `d`. Se mais de um fundo informa o mesmo ISIN, vale o de
+  número de cotas mais perto do da página da B3 (`ambiguous_isin` sem ela). Sem fundo:
+  `no_cvm_match`.
+- **Proventos.** Contam os registros `RENDIMENTO` do ISIN da cota, com data-ex no pregão seguinte
+  ao `lastDatePrior`. A B3 é a fonte quando o primeiro registro dela chega ao início da janela;
+  senão o Yahoo, com a fonte e o motivo no relatório (`b3_failed`, `b3_empty`,
+  `b3_short_history`). O relatório também traz o `DY` só com a B3, como sensibilidade.
+- **Cobertura.** Para cada indicador dos informes, o primeiro ano em que a coluna tem valor e,
+  por ano, o % dos fundos ligados na última data que têm a coluna preenchida.
+
+## Como rodar
+
+```sh
+python3 py/pit_rebuild fii-report \
+  --date 2026-08-10 --si data/raw/status_invest_fii.csv --collected-on 2026-08-10 \
+  --date 2026-11-05 --si <checkout-principal>/snapshots/data/selectors-2026-11-06/fiis.csv \
+  --collected-on 2026-11-06 --out-dir docs/validation
+```
+
+O CSV "de 11-06" foi coletado às 9h de 2026-11-06 e traz os fechamentos de 2026-11-05, por isso
+`--date 2026-11-05`. O `as_of_check` do relatório diz, para cada CSV, qual sessão bate com os
+preços. Sem `--offline`, o comando baixa o que falta para `--cache-dir` (padrão
+`.cache/pit-rebuild`, o mesmo das ações). Com `--offline`, não faz nenhuma requisição. Os
+códigos de saída são os da tabela de ações, com uma diferença: a pasta do cache inexistente dá
+código 3 só com `--offline`. Os testes rodam sem rede:
+`python3 -m unittest discover -s tests -p "test_pit_rebuild_fii*.py"`.

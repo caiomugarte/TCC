@@ -261,6 +261,106 @@ class NetIncomeTests(unittest.TestCase):
         )
 
 
+def named_line(cnpj: str, dt_refer: str, ordem: str, dt_ini: str, account: str, name: str, value: str) -> str:
+    return f"{cnpj};{dt_refer};1;CASE S.A.;1;UNIDADE;{ordem};{dt_ini};{dt_refer};{account};{name};{value};S\n"
+
+
+class FinancialLayoutNetIncomeTests(unittest.TestCase):
+    """Banks and insurers file another DRE layout: the net income is the "Lucro/Prejuízo ... do Período" account.
+
+    The shapes are those of the real filings: a bank (ITUB, SANB ITR 2026) ends the DRE at 3.09, an insurer
+    holding (BBSE) at 3.13, where 3.11 is the result of the continuing operations, not the net income.
+    """
+
+    CNPJ = "34.567.890/0001-12"
+    D = date(2026, 11, 16)
+
+    def store(self, kind: str, dt_refer: str, received: str, rows: str, accounts=None) -> cvm.FilingStore:
+        index = f"{self.CNPJ};{dt_refer};1;CASE S.A.;1;{kind};1;{received} 18:00:00;\n"
+        return inline_store(kind, int(dt_refer[:4]), index, {"DRE_con": rows}, accounts=accounts)
+
+    def bank(self, dt_refer: str, dt_ini: str, ordem: str, total: str, controllers: str) -> str:
+        return (
+            named_line(self.CNPJ, dt_refer, ordem, dt_ini, "3.01", "Receitas da Intermediação Financeira", "9000.00")
+            + named_line(self.CNPJ, dt_refer, ordem, dt_ini, "3.07", "Resultado Líquido das Operações Continuadas", total)
+            + named_line(self.CNPJ, dt_refer, ordem, dt_ini, "3.09", "Lucro/Prejuízo Consolidado do Período", total)
+            + named_line(self.CNPJ, dt_refer, ordem, dt_ini, "3.09.01", "Atribuído a Sócios da Empresa Controladora", controllers)
+        )
+
+    def test_a_bank_net_income_is_the_controllers_share_of_its_3_09(self):
+        store = self.store("DFP", "2025-12-31", "2026-02-10", self.bank("2025-12-31", "2025-01-01", "ÚLTIMO", "460.00", "450.00"),
+                           accounts={"3.01"})
+        self.assertEqual(cvm.annual(store, self.CNPJ, self.D, cvm.NET_INCOME), cvm.Dated(450.0, date(2026, 2, 10)))
+
+    def test_an_insurer_net_income_is_its_3_13_and_not_the_continuing_operations_in_3_11(self):
+        rows = (
+            named_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "3.11", "Resultado Líquido das Operações Continuadas", "900.00")
+            + named_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "3.13", "Lucro/Prejuízo Consolidado do Período", "700.00")
+            + named_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "3.13.01", "Atribuído a Sócios da Empresa Controladora", "650.00")
+        )
+        store = self.store("DFP", "2025-12-31", "2026-02-10", rows, accounts={"3.01"})
+        self.assertEqual(cvm.annual(store, self.CNPJ, self.D, cvm.NET_INCOME), cvm.Dated(650.0, date(2026, 2, 10)))
+
+    def test_ttm_combines_a_dfp_ending_at_3_11_with_an_itr_ending_at_3_09(self):
+        # SANB: the DFP 2025 closes at 3.11 "Lucro ou Prejuízo Líquido Consolidado do Período", the ITR 2026 at 3.09.
+        # TTM = FY 2025 (1 200) + YTD 2026 (900) - YTD 2025 (800) = 1 300.
+        dfp_rows = (
+            named_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "3.07", "Lucro ou Prejuízo das Operações Continuadas", "1250.00")
+            + named_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "3.11", "Lucro ou Prejuízo Líquido Consolidado do Período", "1250.00")
+            + named_line(self.CNPJ, "2025-12-31", "ÚLTIMO", "2025-01-01", "3.11.01", "Atribuído aos Sócios da Empresa Controladora", "1200.00")
+        )
+        itr_rows = self.bank("2026-09-30", "2026-01-01", "ÚLTIMO", "950.00", "900.00") + self.bank(
+            "2026-09-30", "2025-01-01", "PENÚLTIMO", "850.00", "800.00"
+        )
+        dfp = self.store("DFP", "2025-12-31", "2026-02-10", dfp_rows, accounts={"3.01"})
+        itr = self.store("ITR", "2026-09-30", "2026-11-05", itr_rows, accounts={"3.01"})
+        self.assertEqual(cvm.ttm(dfp, itr, self.CNPJ, self.D, cvm.NET_INCOME), cvm.Dated(1300.0, date(2026, 11, 5)))
+
+
+class FinancialLayoutEquityTests(unittest.TestCase):
+    """The equity is the level-2 BPP account named "Patrimônio Líquido ...": 2.03 in the common layout, 2.08 or 2.07 for banks.
+
+    The non-controlling interest is its child named "... Não Controladores" (2.08.09 at ITUB and SANB, 2.07.02 in the
+    older bank layout). Without those names, 2.03 and 2.03.09 as before.
+    """
+
+    CNPJ = "45.678.901/0001-23"
+    D = date(2026, 11, 16)
+
+    def store(self, rows: list[tuple[str, str, str]]) -> cvm.FilingStore:
+        text = "".join(
+            named_line(self.CNPJ, "2026-09-30", "ÚLTIMO", "", account, name, value) for account, name, value in rows
+        )
+        index = f"{self.CNPJ};2026-09-30;1;CASE S.A.;1;ITR;1;2026-11-05 18:00:00;\n"
+        return inline_store("ITR", 2026, index, {"BPP_con": text}, accounts={"1", "2.03", "2.03.09"})
+
+    def equity(self, store: cvm.FilingStore) -> tuple[float | None, float | None]:
+        empty = cvm.FilingStore(cvm.DFP, {})
+        found = [cvm.balance(empty, store, self.CNPJ, self.D, name) for name in (cvm.EQUITY, cvm.MINORITY)]
+        return tuple(None if item is None else item.value for item in found)
+
+    def test_a_bank_equity_is_its_2_08_with_the_minority_in_2_08_09(self):
+        store = self.store([
+            ("2.03", "Passivos Financeiros ao Custo Amortizado", "2500.00"),
+            ("2.03.09", "Outros", "7.00"),
+            ("2.08", "Patrimônio Líquido Consolidado", "240.00"),
+            ("2.08.09", "Participação dos Acionistas Não Controladores", "10.00"),
+        ])
+        self.assertEqual(self.equity(store), (240.0, 10.0))
+
+    def test_the_older_bank_layout_has_the_equity_in_2_07_and_the_minority_in_2_07_02(self):
+        store = self.store([
+            ("2.07", "Patrimônio Líquido Consolidado", "180.00"),
+            ("2.07.01", "Patrimônio Líquido Atribuído ao Controlador", "175.00"),
+            ("2.07.02", "Patrimônio Líquido Atribuído aos Não Controladores", "5.00"),
+        ])
+        self.assertEqual(self.equity(store), (180.0, 5.0))
+
+    def test_without_those_names_the_equity_is_2_03(self):
+        store = self.store([("2.03", "Conta 2.03", "400.00"), ("2.03.09", "Conta 2.03.09", "3.00")])
+        self.assertEqual(self.equity(store), (400.0, 3.0))
+
+
 class ShareScaleFactorTests(unittest.TestCase):
     """F13 (A-18): the factor is the power of ten from 10^-2 to 10^3 nearest the B3 count on a log scale."""
 

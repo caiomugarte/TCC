@@ -18,7 +18,8 @@ from typing import Dict, List, Mapping, Optional
 
 import pandas as pd
 
-from config import METRIC_GROUPS, PROFILE_WEIGHTS
+from config import FINANCIAL_METRIC_GROUPS, METRIC_GROUPS, PROFILE_WEIGHTS
+from core.preprocessing import financial_mask
 
 
 def _metric_groups(
@@ -58,7 +59,9 @@ def calculate_group_scores(
     """
     Calcula a média de cada grupo de métricas.
 
-    Cria colunas AVG_LIQUIDEZ, AVG_RENT, AVG_VALUE, AVG_GROWTH, AVG_DIV.
+    Cria colunas AVG_LIQUIDEZ, AVG_RENT, AVG_VALUE, AVG_GROWTH, AVG_DIV. Para
+    um financeiro, cada grupo usa ``FINANCIAL_METRIC_GROUPS`` (AVG_LIQUIDEZ é a
+    solidez, PL/ativos).
 
     Parameters
     ----------
@@ -72,6 +75,7 @@ def calculate_group_scores(
     """
     df = df.copy()
     groups = add_dynamic_columns(df, metric_groups)
+    financial = financial_mask(df)
 
     for group, cols in groups.items():
         # Seleciona apenas colunas que existem no DataFrame
@@ -82,6 +86,13 @@ def calculate_group_scores(
         else:
             # Média ignorando NaNs
             df[f"AVG_{group.upper()}"] = df[existing].mean(axis=1, skipna=True)
+
+        if financial.any():
+            # Financeiro: mesmo grupo e mesmo peso, com o conteúdo dele
+            own = [c for c in FINANCIAL_METRIC_GROUPS.get(group, ()) if c in df.columns]
+            df.loc[financial, f"AVG_{group.upper()}"] = (
+                df.loc[financial, own].mean(axis=1, skipna=True) if own else float("nan")
+            )
 
     return df
 

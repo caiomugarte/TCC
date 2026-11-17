@@ -42,17 +42,36 @@ function hasQuantity(item: RecommendationConstituent): boolean {
   return typeof item.quantity === "number";
 }
 
-function statusInvestRetrievedAt(recommendation: Recommendation): string {
+const providerLabel: Record<string, string> = {
+  "cvm-b3": "CVM/B3",
+  statusinvest: "Status Invest",
+};
+
+// Where the stock prices of the snapshot come from, with its article: the cvm-b3 CSV takes the B3 quote.
+const stockQuoteSource: Record<string, string> = {
+  "cvm-b3": "da B3",
+  statusinvest: "do Status Invest",
+};
+
+function stockQuoteNote(recommendation: Recommendation): string {
+  const provider = recommendation.provenance?.selector_sources?.stocks?.provider;
+  if (!provider) return "";
+  return `, com a cotação ${stockQuoteSource[provider] ?? `de ${provider}`} para ações`;
+}
+
+function selectorSnapshotSources(recommendation: Recommendation): string {
   const sources = recommendation.provenance?.selector_sources;
   const values: string[] = [];
-  for (const [label, value] of ([
-    ["Ações", sources?.stocks?.retrieved_at],
-    ["FIIs", sources?.fiis?.retrieved_at],
+  for (const [label, source] of ([
+    ["Ações", sources?.stocks],
+    ["FIIs", sources?.fiis],
   ] as const)) {
+    const value = source?.retrieved_at;
     if (!value) continue;
     const parsed = new Date(value);
     const formatted = Number.isNaN(parsed.getTime()) ? value : dateTime.format(parsed);
-    values.push(`${label}: ${formatted}`);
+    const provider = source?.provider ? ` (${providerLabel[source.provider] ?? source.provider})` : "";
+    values.push(`${label}${provider}: ${formatted}`);
   }
   return values.length > 0 ? values.join(" · ") : "Horário indisponível";
 }
@@ -274,7 +293,7 @@ export function RecommendationView() {
             <div><span>Perfil</span><strong>v{completed.profileVersion}</strong></div>
             <div><span>Modelo</span><strong>{completed.modelVersion}</strong></div>
             <div><span>Dados até</span><strong>{completed.snapshotCutoff}</strong></div>
-            <div><span>Status Invest</span><strong>{statusInvestRetrievedAt(completed)}</strong></div>
+            <div><span>Snapshot de seleção</span><strong>{selectorSnapshotSources(completed)}</strong></div>
           </div>
 
           <div className="card split-card">
@@ -302,7 +321,7 @@ export function RecommendationView() {
 
           {[...completed.stocks, ...completed.fiis].some(hasQuantity) && (
             <div className="notice">
-              Quantidades calculadas com os preços da coleta Status Invest desta execução ({statusInvestRetrievedAt(completed)}). São referência, não cotação ao vivo.
+              Quantidades calculadas com os preços do snapshot registrado desta execução{stockQuoteNote(completed)} ({selectorSnapshotSources(completed)}). São referência, não cotação ao vivo.
             </div>
           )}
 

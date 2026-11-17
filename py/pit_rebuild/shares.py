@@ -16,16 +16,18 @@ from .dividends import StockEvent, class_events
 
 EVENT_EPSILON = 1e-9  # SHR-03: a class whose event product is within this distance of 1 is not listed as adjusted
 SUSPECT_CHANGE = 0.20  # B-4, SHR-07: a scaled count that moves by more than this with no B3 event in between is suspect
+SCALE_CONFIRM_RATIO = 2.0  # #77: an A-18 factor other than 1 is confirmed when its residual is within this ratio of 1, either way
 
 
 @dataclass(frozen=True)
 class Adjusted:
     """The counts of one company at d, the A-18 factor and the events that moved them (SHR-01..SHR-04, SHR-08)."""
 
-    n_on: int
-    n_pref: int
+    n_on: int | None  # None when f is unconfirmed (#77)
+    n_pref: int | None
     factor: float  # f: the A-18 power of ten
-    verified: bool  # the B3 total confirmed f
+    verified: bool  # a B3 total was there to choose f
+    confirmed: bool  # f is 1, or its residual is within SCALE_CONFIRM_RATIO of 1 (#77); unconfirmed, the counts are None
     residual: float | None  # the event-adjusted total times f over the B3 total; None without a B3 total
     scaled_total: float  # the filed total times f, events left out
     applied: list[dict]  # the classes whose events changed the count: {class, isins, factor, events}
@@ -46,6 +48,10 @@ def adjust(
 
     isins_d[cls] are the ISINs of the class at d (I_d, B-2); isins_all[cls] also holds every ISIN the class had after d
     (I_all, B-3). retrieved_on None leaves the window of the scale without an upper bound.
+
+    A factor other than 1 is applied only when the B3 total confirms it: the residual is within SCALE_CONFIRM_RATIO of 1
+    either way. Otherwise the company has no count (n_on and n_pref None, confirmed False), never a count with a factor
+    B3 does not support (#77).
     """
     counts = {"ON": filed.on, "PREF": filed.pref}
     m_all = {
@@ -55,6 +61,7 @@ def adjust(
     scale_total = round(sum(count * m_all[cls] for cls, count in counts.items()))
     factor, verified = cvm.share_scale(scale_total, b3_total) if scale_total > 0 else (1.0, False)
     residual = None if b3_total is None or b3_total <= 0 else scale_total * factor / b3_total
+    confirmed = factor == 1 or (residual is not None and 1 / SCALE_CONFIRM_RATIO <= residual <= SCALE_CONFIRM_RATIO)
 
     applied: list[dict] = []
     no_isin: list[str] = []
@@ -78,10 +85,11 @@ def adjust(
                 ],
             })
     return Adjusted(
-        n_on=round(filed.on * factor * m_d["ON"]),
-        n_pref=round(filed.pref * factor * m_d["PREF"]),
+        n_on=round(filed.on * factor * m_d["ON"]) if confirmed else None,
+        n_pref=round(filed.pref * factor * m_d["PREF"]) if confirmed else None,
         factor=factor,
         verified=verified,
+        confirmed=confirmed,
         residual=residual,
         scaled_total=(filed.on + filed.pref) * factor,
         applied=applied,

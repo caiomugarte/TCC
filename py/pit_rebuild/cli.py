@@ -44,7 +44,7 @@ from . import shares as share_counts
 from .cache import Cache
 from .errors import ArgumentError, MissingPathError, OutputError, RebuildError, SourceError
 from .fields import ADJUSTED_FIELDS, ALL_FIELDS
-from .indicators import STALE_FILING_REASON, Input, TickerInputs, Value, compute, mask_accounting
+from .indicators import SCALE_UNCONFIRMED_REASON, STALE_FILING_REASON, Input, TickerInputs, Value, compute, mask_accounting, mask_share_count
 
 DEFAULT_CACHE_DIR = safety.REPO_ROOT / ".cache" / "pit-rebuild"
 DEFAULT_OUT_DIR = safety.REPO_ROOT / "docs" / "validation"
@@ -60,7 +60,7 @@ STATEMENT_ACCOUNTS = frozenset(
     {"1", "1.01", "1.01.01", "1.01.02", "2.01", "2.01.04", "2.02.01", "2.03", "2.03.09", "3.01", "3.05", "3.08", "3.11", "3.11.01"}
 )
 SOURCES = ("b3", "yahoo", "none")
-YAHOO_REASONS = ("b3_failed", "b3_empty", "b3_incomplete", "b3_short_history")
+YAHOO_REASONS = ("b3_failed", "b3_empty", "b3_incomplete")  # #77: a complete history covers the window, so no b3_short_history
 _DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 _TICKER = re.compile(r"^[A-Z]{3,4}\d{1,2}$")  # A-9 (r5): a 3- or 4-letter key, as in the FCA string "1 ENG3 e 4 ENGI4"
 _NO_FILINGS = "no_usable_filing"
@@ -377,6 +377,7 @@ class _Company:
     n_pref: int | None
     scaled: dict | None  # {cd_cvm, factor, residual} for a verified factor other than 1 (A-18)
     unverified: bool  # no B3 count: the counts are used as filed (A-18)
+    unconfirmed: dict | None  # {cd_cvm, factor, residual} for a factor the B3 total does not confirm: no count (#77)
     price_on: Input | None
     price_pref: Input | None
     fallback: dict | None  # vm_price_fallback: a class with shares and no session on or before d (A-17)
@@ -425,8 +426,8 @@ def _company_inputs(acq: _Acquired, cnpj: str, day: date) -> dict:
         "ebit": flow("3.05"),
         "ir": flow("3.08"),
         "ll_1y": _dated(cvm.ttm_year_before(dfp, itr, cnpj, day, cvm.NET_INCOME)),
-        "pl": balance("2.03"),
-        "pl_ctrl": _controllers_equity(balance("2.03"), balance("2.03.09")),
+        "pl": balance(cvm.EQUITY),
+        "pl_ctrl": _controllers_equity(balance(cvm.EQUITY), balance(cvm.MINORITY)),
         "at": balance("1"),
         "ac": balance("1.01"),
         "pc": balance("2.01"),
@@ -455,6 +456,7 @@ class _Counts:
     share_events: list[dict]  # share_events.adjusted (SHR-03)
     no_isin: list[dict]  # share_events.no_isin (SHR-04)
     suspect: dict | None  # share_count_suspect (SHR-05)
+    unconfirmed: dict | None = None  # share_scale.unconfirmed: a factor the B3 total does not confirm, so no count (#77)
 
 
 def _class_isin_sets(quotes: cotahist.Quotes, ticker: str | None, dt_refer: date, day: date) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -529,6 +531,9 @@ def _counts(
             }
     if not adjusted.verified:
         return _Counts(adjusted.n_on, adjusted.n_pref, None, True, share_events, no_isin, suspect)
+    if not adjusted.confirmed:
+        unconfirmed = {"cd_cvm": cd_cvm, "factor": adjusted.factor, "residual": adjusted.residual}
+        return _Counts(None, None, None, False, share_events, no_isin, suspect, unconfirmed)
     scaled = {"cd_cvm": cd_cvm, "factor": adjusted.factor, "residual": adjusted.residual} if adjusted.factor != 1 else None
     return _Counts(adjusted.n_on, adjusted.n_pref, scaled, False, share_events, no_isin, suspect)
 
@@ -581,6 +586,7 @@ def _company(acq: _Acquired, day: date, cnpj: str, cd_cvm: str, tickers: list[st
             break
     return _Company(
         cnpj=cnpj, cd_cvm=cd_cvm, n_on=counts.n_on, n_pref=counts.n_pref, scaled=counts.scaled, unverified=counts.unverified,
+        unconfirmed=counts.unconfirmed,
         price_on=quoted["ON"], price_pref=quoted["PREF"], fallback=fallback, stale=stale,
         inputs=_company_inputs(acq, cnpj, filings_day), dre_desc=cvm.dre_description(acq.dfp, acq.itr, cnpj, filings_day),
         share_events=counts.share_events, no_isin=counts.no_isin, suspect=counts.suspect,
@@ -685,6 +691,8 @@ class _DayResult:
     dy_dates: dict[str, dict[str, date | None]]  # per dividend source, each ticker's earliest date (COV-02)
     previous: dict[str, dict[str, float | None]] = field(default_factory=dict)  # B-9: each ticker's values on its previous filing
     filings: dict[str, cvm.Filing | None] = field(default_factory=dict)  # each computed ticker's newest usable filing (ADJ-04)
+    values: dict[str, dict[str, Value]] = field(default_factory=dict)  # every eligible ticker's fields, masks applied (#78)
+    inputs: dict[str, TickerInputs] = field(default_factory=dict)  # each computed ticker's inputs (#78)
 
 
 def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *, previous: bool = False) -> _DayResult:
@@ -715,7 +723,7 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
         "mapped": 0, "unmapped": [], "refiled_after_d": [], "mapped_via_b3": [],
         "vm_price_fallback": {"count": 0, "companies": []},
         "vm_stale_class_price": [],
-        "share_scale": {"scaled": [], "unverified": []},
+        "share_scale": {"scaled": [], "unverified": [], "unconfirmed": []},
         "share_events": {"adjusted": [], "no_isin": []},
         "share_count_suspect": [],
         "stale_filing": [],
@@ -732,6 +740,8 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
             out["share_scale"]["scaled"].append(company.scaled)
         if company.unverified:
             out["share_scale"]["unverified"].append(company.cd_cvm)
+        if company.unconfirmed is not None:
+            out["share_scale"]["unconfirmed"].append(company.unconfirmed)
         out["share_events"]["adjusted"].extend(company.share_events)
         out["share_events"]["no_isin"].extend(company.no_isin)
         if company.suspect is not None:
@@ -745,6 +755,7 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
     out["vm_stale_class_price"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
     out["share_scale"]["scaled"].sort(key=lambda row: row["cd_cvm"])
     out["share_scale"]["unverified"].sort()
+    out["share_scale"]["unconfirmed"].sort(key=lambda row: row["cd_cvm"])
     out["share_events"]["adjusted"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
     out["share_events"]["no_isin"].sort(key=lambda row: (row["cd_cvm"], row["class"]))
     out["share_count_suspect"].sort(key=lambda row: row["cd_cvm"])
@@ -754,6 +765,7 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
     group_of: dict[str, str] = {}
     previous_values: dict[str, dict[str, float | None]] = {}
     filings: dict[str, cvm.Filing | None] = {}
+    inputs_of: dict[str, TickerInputs] = {}
     counts = {
         "by_source": {name: 0 for name in SOURCES}, "yahoo_reasons": {r: 0 for r in YAHOO_REASONS},
         "b3_empty_yahoo_failed": 0, "split_adjust_no_isin": 0,
@@ -804,7 +816,10 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
             dividends=found.amounts,
             **company.inputs,
         )
+        inputs_of[ticker] = inputs
         values[ticker] = compute(inputs, day)
+        if company.unconfirmed is not None:  # #77: the count fields have no value because B3 does not confirm the scale
+            values[ticker] = mask_share_count(values[ticker], SCALE_UNCONFIRMED_REASON)
         if _is_stale(company.period_end, day):  # STL-01: a stale filing gives its accounting fields no value
             values[ticker] = mask_accounting(values[ticker], STALE_FILING_REASON)
             out["stale_filing"].append({
@@ -839,6 +854,8 @@ def _evaluate_day(acq: _Acquired, day: date, filings_day: date | None = None, *,
         dy_dates=dy_dates,
         previous=previous_values,
         filings=filings,
+        values=values,
+        inputs=inputs_of,
     )
 
 

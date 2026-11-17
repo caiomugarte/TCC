@@ -14,7 +14,7 @@ from app.db.base import Base
 from app.db.models import Account, ProfileRecord, RecommendationRun
 from app.services.premium_executor import PremiumExecutor
 from app.services.premium_recommendation import PremiumRecommendationService
-from app.services.status_invest_inputs import SourceSnapshot, StatusInvestInputs
+from app.services.snapshot_inputs import SourceSnapshot, SnapshotInputs
 from app.repositories.recommendations import RecommendationRepository
 from app.routers.recommendations import read_recommendation
 from app.schemas.recommendation import PremiumRecommendationRequest
@@ -47,7 +47,7 @@ class Manifest:
 
 
 def _default_selector_inputs():
-    return StatusInvestInputs(
+    return SnapshotInputs(
         stocks=SourceSnapshot(
             Path("/tmp/run/status-invest/stocks.csv"),
             "statusinvest",
@@ -85,7 +85,7 @@ def priced_selector_inputs(workspace, prices=CHEAP_PRICES):
             retrieved_at="2026-07-21T00:00:00Z",
             sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
         )
-    return StatusInvestInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
+    return SnapshotInputs(stocks=snapshots["stocks"], fiis=snapshots["fiis"])
 
 
 def policy(profile, **kwargs):
@@ -203,7 +203,7 @@ class PremiumIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=lambda _workspace: _default_selector_inputs(),
+            selector_inputs_loader=lambda *_args: _default_selector_inputs(),
             optimization_runner=self.runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
@@ -372,7 +372,7 @@ class ProtectionZoneIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=priced_selector_inputs,
+            selector_inputs_loader=lambda _manifest, workspace, _hashes: priced_selector_inputs(workspace),
             optimization_runner=self.zone_runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
@@ -511,7 +511,7 @@ class SegmentCapIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=priced_selector_inputs,
+            selector_inputs_loader=lambda _manifest, workspace, _hashes: priced_selector_inputs(workspace),
             optimization_runner=self.recording_runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )
@@ -671,7 +671,7 @@ class WholeUnitIntegrationTests(unittest.TestCase):
             session_factory=self.sessions,
             manifest_loader=lambda _provenance: manifest,
             manifest_validator=lambda value: value,
-            status_invest_inputs_loader=lambda workspace: priced_selector_inputs(workspace, WHOLE_UNIT_PRICES),
+            selector_inputs_loader=lambda _manifest, workspace, _hashes: priced_selector_inputs(workspace, WHOLE_UNIT_PRICES),
             optimization_runner=self.runner,
             workspace_root=Path(self.temp.name) / "workspaces",
         )

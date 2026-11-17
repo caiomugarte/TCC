@@ -217,5 +217,5 @@ O grupo que ocupa o lugar da liquidez na nota de um financeiro, medido pela prop
 _Evitar_: liquidez corrente para bancos
 
 **Grupo de comparação**:
-O conjunto de ações contra o qual um papel é normalizado: o setor da B3 e, no setor "Financeiro", o subsetor, desde que tenha pelo menos 3 papéis elegíveis.
+O conjunto de ações contra o qual um papel é normalizado: o setor da B3 e, no setor "Financeiro", o subsetor, desde que tenha papéis elegíveis de pelo menos 3 empresas (a raiz de 4 letras do ticker: as classes de uma empresa contam como uma).
 _Evitar_: comparar um banco com uma empresa de outro tipo

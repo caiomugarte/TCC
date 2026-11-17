@@ -22,9 +22,9 @@ from app.schemas.recommendation import (
     RecommendationConstituent,
 )
 from app.services.premium_policy import resolve_recommendation_policy
-from app.services.status_invest_inputs import (
+from app.services.snapshot_inputs import (
     SourceSnapshot,
-    StatusInvestInputs,
+    SnapshotInputs,
     load_selector_prices,
 )
 from core.allocation import DailyReturn
@@ -49,7 +49,7 @@ class Manifest:
 
 
 def selector_inputs():
-    return StatusInvestInputs(
+    return SnapshotInputs(
         stocks=SourceSnapshot(
             Path("/tmp/run/status-invest/stocks.csv"),
             "statusinvest",
@@ -1103,8 +1103,8 @@ LOT_TEST_1_FIIS = (
     ("CPTS11", "7.00", 14),
 )
 WHOLE_UNIT_ASSUMPTION = (
-    "Quantidades calculadas com o preço da coleta Status Invest desta execução; "
-    "a cotação na hora da compra pode ser diferente."
+    "Quantidades calculadas com o preço do snapshot registrado desta execução "
+    "(B3 para ações, Status Invest para FIIs); a cotação na hora da compra pode ser diferente."
 )
 PRE_CHANGE_ASSUMPTIONS = [
     "Resultado Premium bruto, baseado em snapshots imutáveis e regras versionadas.",
@@ -1122,9 +1122,9 @@ def _price_snapshot(path: Path, rows) -> SourceSnapshot:
     return SourceSnapshot(path, "statusinvest", "2026-11-06T12:29:37Z", hashlib.sha256(data).hexdigest())
 
 
-def priced_inputs(directory, stock_rows, fii_rows) -> StatusInvestInputs:
+def priced_inputs(directory, stock_rows, fii_rows) -> SnapshotInputs:
     root = Path(directory) / "status-invest"
-    return StatusInvestInputs(
+    return SnapshotInputs(
         stocks=_price_snapshot(root / "stocks.csv", stock_rows),
         fiis=_price_snapshot(root / "fiis.csv", fii_rows),
     )
