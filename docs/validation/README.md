@@ -573,6 +573,12 @@ nem na linha do veredito.
   Empresas com fator diferente de 1 aparecem em `share_scale.scaled`, com o fator e o
   resíduo. Sem registro da B3, ou com total zero nela, o fator é 1 e a empresa aparece em
   `share_scale.unverified`.
+- **Fator sem confirmação da B3 (#77).** Um fator diferente de 1 só é aplicado quando a B3
+  o confirma: o resíduo (arquivado × eventos até `R` × f ÷ `totalNumberShares`) fica entre
+  0,5 e 2. Fora disso, a empresa fica sem contagem. `VALOR DE MERCADO`, P/L, P/VP, PSR,
+  EV/EBIT e PEG ficam sem valor, com motivo `share_scale_unconfirmed`, e a empresa aparece
+  em `share_scale.unconfirmed` com o fator e o resíduo. Foi o caso de VVEO3, AZEV3/AZEV4 e
+  LIGT3 na auditoria da #64, com ×10 e resíduo entre 2,3 e 2,7.
 - Limite (√10), só para mudança sem evento da B3: se a contagem mudou menos de √10 vezes
   entre o arquivamento e a obtenção do registro da B3, e nenhum evento a explica, ela fica
   como arquivada. Se mudou √10 vezes ou mais, o fator absorve a mudança como a potência de
@@ -587,15 +593,21 @@ nem na linha do veredito.
 
 ## Proventos (D-4, A-15, A-16)
 
-- A B3 vem primeiro, empresa por empresa. O histórico da B3 só é usado quando está
-  completo (todas as páginas, e o número bruto de registros bate com `totalRecords`),
-  não está vazio e o registro mais antigo tem data `d − 365 dias` ou antes. Caso
-  contrário, o ticker vai ao Yahoo Finance naquela data, e o motivo fica registrado:
-  `b3_failed`, `b3_empty`, `b3_incomplete` ou `b3_short_history`.
+- A B3 vem primeiro, empresa por empresa. O histórico da B3 é usado quando está
+  completo (todas as páginas, e o número bruto de registros bate com `totalRecords`)
+  e não está vazio. Caso contrário, o ticker vai ao Yahoo Finance naquela data, e o
+  motivo fica registrado: `b3_failed`, `b3_empty` ou `b3_incomplete`.
+- **Histórico que começa dentro da janela (#77).** Um histórico completo é tudo o que a
+  B3 lista para a empresa, então ele cobre a janela mesmo quando o primeiro registro é
+  posterior a `d − 365 dias`. Até a #77 esse caso ia ao Yahoo com motivo
+  `b3_short_history`. Na auditoria da #64, o HBRE3 caiu nesse caso: o Yahoo tinha um só
+  registro (0,4856), e a B3 tinha dois na mesma data (0,8741 e 0,2914), cuja soma
+  reproduz o DY do Status Invest. Os relatórios gerados antes da #77 ainda têm a coluna
+  `b3_short_history`.
 - **Nome com barra.** Um nome com `/` na B3 é consultado sem a barra (F15). Se a
   resposta vem vazia, o motivo é `b3_failed`, e não `b3_empty`. Um nome que a B3 não
   entendeu não prova que a empresa não paga proventos.
-- **Registros.** Registros idênticos em todos os campos contam uma vez, e os de
+- **Registros.** Registros da mesma data que não são idênticos somam. Registros idênticos em todos os campos contam uma vez, e os de
   `REST CAP DIN` saem, porque são devolução de capital e não provento (F16). O
   relatório conta os registros brutos, os repetidos e os de capital.
 - **Desdobramento, bonificação e grupamento.** Cada provento da B3 é dividido pelo
