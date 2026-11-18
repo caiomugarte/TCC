@@ -35,8 +35,15 @@ Caminhos:
 - Relatório: --relatorio-dir (padrão docs/validation/ciclos/ do checkout de onde o script roda); não pode ser o
   próprio registro, onde todo *.json da raiz é lido como manifesto.
 
-Aviso ao fim (issue #88). main() aceita ``notificar``: uma função chamada uma vez, no fim, com o CicloResult (sucesso
-ou falha, com ``etapa`` e ``erro``). Uma exceção dela é impressa no stderr e não muda o código de saída.
+Aviso ao fim no Telegram (issue #88, scripts/aviso_telegram.py), ligado por padrão: no fim, também em falha ou
+interrupção, o bot do Prumo manda o resumo (sucesso) ou a etapa e o erro (falha). Variáveis de ambiente:
+
+    PRUMO_TELEGRAM_BOT_TOKEN   token do bot (BotFather)
+    PRUMO_TELEGRAM_CHAT_ID     chat que recebe o aviso
+
+Sem uma delas, o ciclo segue e o stderr diz que o aviso não foi enviado. Falha no envio (rede, timeout de 10 s, token
+inválido) só vira uma linha no stderr, sem o token, e não muda o código de saída. main() aceita outro ``notificar``
+(chamado uma vez com o CicloResult; ``None`` desliga o aviso); uma exceção dele também não muda o código de saída.
 
 Exit codes:
 
@@ -456,6 +463,7 @@ def render_markdown(report: Mapping, cycles: Sequence[Mapping] = ()) -> str:
 
 
 Notificador = Callable[[CicloResult], None]
+_AVISO_TELEGRAM: Any = object()  # padrão de main(): o aviso do Telegram configurado pelo ambiente
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -524,10 +532,11 @@ def main(
     session_factory=None,
     executor=None,
     medir: Callable[[Mapping, Any], dict] | None = None,
-    notificar: Notificador | None = None,
+    notificar: Notificador | None = _AVISO_TELEGRAM,
 ) -> int:
     """Roda o ciclo; devolve o código de saída. ``session_factory``, ``executor`` e ``medir`` trocam banco, cálculo e
-    rede nos testes; ``notificar`` recebe o CicloResult no fim (ponto de extensão do aviso, issue #88)."""
+    rede nos testes; ``notificar`` recebe o CicloResult no fim (padrão: o aviso no Telegram de
+    ``aviso_telegram.notificador_telegram``, que lê PRUMO_TELEGRAM_BOT_TOKEN e PRUMO_TELEGRAM_CHAT_ID; ``None`` desliga)."""
     try:
         args = _build_parser().parse_args(argv)
     except SystemExit as exc:
@@ -588,6 +597,10 @@ def main(
     finally:
         signal.signal(signal.SIGTERM, previous_sigterm)
     _print_result(result)
+    if notificar is _AVISO_TELEGRAM:
+        from aviso_telegram import notificador_telegram
+
+        notificar = notificador_telegram()
     if notificar is not None:
         try:
             notificar(result)
