@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 from concurrent.futures import Future, ThreadPoolExecutor
 from threading import RLock
-from typing import Any
+from typing import Any, Protocol
 
 from app.adapters.premium_optimization import PremiumOptimizationError, run_premium_optimization
 from app.db.models import ProfileRecord
@@ -98,8 +98,19 @@ def _recorded_hashes(policy: object, provenance: Mapping[str, Any]) -> dict[str,
     return recorded
 
 
-class PremiumExecutor:
-    """Single-process bounded worker for the private Premium pilot."""
+class RunExecutor(Protocol):
+    """Executa um run já criado (``queued``) por ``create_run``.
+
+    ``PremiumExecutor`` roda numa thread do processo da API; ``InProcessPremiumExecutor``
+    roda no processo do chamador e só devolve no fim. Uma fila ou worker seria outra
+    implementação deste mesmo ``submit``.
+    """
+
+    def submit(self, run_id: str) -> object: ...
+
+
+class PremiumRunWorker:
+    """Executa um run Premium; as subclasses decidem onde e quando (``submit``)."""
 
     def __init__(
         self,
@@ -112,44 +123,13 @@ class PremiumExecutor:
             [object, Path, Mapping[str, str]], SnapshotInputs
         ] = load_snapshot_inputs,
         workspace_root: Path | None = None,
-        max_workers: int = 1,
-        max_pending: int = 2,
     ) -> None:
-        if max_workers != 1:
-            raise ValueError("Premium pilot executor must use one worker")
-        if max_pending < 1:
-            raise ValueError("Premium pilot executor queue must allow one run")
         self.session_factory = session_factory
         self.optimization_runner = optimization_runner
         self.manifest_loader = manifest_loader
         self.manifest_validator = manifest_validator
         self.selector_inputs_loader = selector_inputs_loader
         self.workspace_root = Path(workspace_root or Path(tempfile.gettempdir()) / "prumo-premium")
-        self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="premium")
-        self.futures: dict[str, Future[None]] = {}
-        self.max_pending = max_pending
-        self._futures_lock = RLock()
-        self.closed = False
-
-    def submit(self, run_id: str) -> Future[None]:
-        with self._futures_lock:
-            if self.closed:
-                raise RuntimeError("Premium worker is shut down")
-            self.futures = {
-                current_id: future
-                for current_id, future in self.futures.items()
-                if not future.done()
-            }
-            if len(self.futures) >= self.max_pending:
-                raise RuntimeError("Premium worker queue is full")
-            future = self.pool.submit(self.execute_run, run_id)
-            self.futures[run_id] = future
-            future.add_done_callback(lambda _future: self._forget_future(run_id))
-            return future
-
-    def _forget_future(self, run_id: str) -> None:
-        with self._futures_lock:
-            self.futures.pop(run_id, None)
 
     def execute_run(self, run_id: str) -> None:
         session = _open_session(self.session_factory)
@@ -236,19 +216,6 @@ class PremiumExecutor:
             "fiis": _incumbent_tickers(previous.result_json, "fiis"),
         }
 
-    def recover_stale(self) -> int:
-        session = _open_session(self.session_factory)
-        try:
-            count = len(RecommendationRepository(session).fail_stale_runs())
-            session.commit()
-            return count
-        finally:
-            _close_session(session)
-
-    def shutdown(self, wait: bool = True) -> None:
-        self.pool.shutdown(wait=wait)
-        self.closed = True
-
     def _load_manifest(self, provenance: Mapping[str, Any]) -> object:
         if self.manifest_loader is not None:
             manifest = self.manifest_loader(provenance)
@@ -282,7 +249,7 @@ class PremiumExecutor:
             return exc.code
         return "engine_error"
 
-    def _fail(self, run_id: str, code: str, exc: Exception) -> None:
+    def _fail(self, run_id: str, code: str, exc: BaseException) -> None:
         session = _open_session(self.session_factory)
         try:
             repository = RecommendationRepository(session)
@@ -320,7 +287,83 @@ class PremiumExecutor:
             "policy_invalid": "O perfil não produziu uma política Premium válida.",
             "submission_failed": "A execução Premium não pôde ser enviada ao worker.",
             "worker_restarted": "A execução foi interrompida e precisa ser solicitada novamente.",
+            "interrupted": "A execução foi interrompida e precisa ser solicitada novamente.",
         }.get(code, "A execução Premium não produziu um resultado.")
+
+
+class PremiumExecutor(PremiumRunWorker):
+    """Single-process bounded worker for the private Premium pilot."""
+
+    def __init__(
+        self,
+        *,
+        max_workers: int = 1,
+        max_pending: int = 2,
+        **worker_options: Any,
+    ) -> None:
+        if max_workers != 1:
+            raise ValueError("Premium pilot executor must use one worker")
+        if max_pending < 1:
+            raise ValueError("Premium pilot executor queue must allow one run")
+        super().__init__(**worker_options)
+        self.pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="premium")
+        self.futures: dict[str, Future[None]] = {}
+        self.max_pending = max_pending
+        self._futures_lock = RLock()
+        self.closed = False
+
+    def submit(self, run_id: str) -> Future[None]:
+        with self._futures_lock:
+            if self.closed:
+                raise RuntimeError("Premium worker is shut down")
+            self.futures = {
+                current_id: future
+                for current_id, future in self.futures.items()
+                if not future.done()
+            }
+            if len(self.futures) >= self.max_pending:
+                raise RuntimeError("Premium worker queue is full")
+            future = self.pool.submit(self.execute_run, run_id)
+            self.futures[run_id] = future
+            future.add_done_callback(lambda _future: self._forget_future(run_id))
+            return future
+
+    def _forget_future(self, run_id: str) -> None:
+        with self._futures_lock:
+            self.futures.pop(run_id, None)
+
+    def recover_stale(self) -> int:
+        session = _open_session(self.session_factory)
+        try:
+            count = len(RecommendationRepository(session).fail_stale_runs())
+            session.commit()
+            return count
+        finally:
+            _close_session(session)
+
+    def shutdown(self, wait: bool = True) -> None:
+        self.pool.shutdown(wait=wait)
+        self.closed = True
+
+
+class InProcessPremiumExecutor(PremiumRunWorker):
+    """Executa o run dentro de ``submit``, no processo do chamador, e só devolve no fim.
+
+    Uma interrupção (Ctrl-C, ``SystemExit``) no meio marca o run ``failed`` com o código
+    ``interrupted`` antes de propagar, para ele não ficar preso em ``running``.
+    """
+
+    def __init__(self, **worker_options: Any) -> None:
+        super().__init__(**worker_options)
+        self.submitted: list[str] = []
+
+    def submit(self, run_id: str) -> None:
+        self.submitted.append(run_id)
+        try:
+            self.execute_run(run_id)
+        except BaseException as exc:
+            self._fail(run_id, "interrupted", exc)
+            raise
 
 
 _default: PremiumExecutor | None = None
