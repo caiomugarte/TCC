@@ -296,6 +296,9 @@ class PremiumRunTests(unittest.TestCase):
             self.assertEqual(run.status, "failed")
             self.assertEqual(run.failure_code, "interrupted")
             self.assertIsNone(run.result_json)
+            self.assertEqual(
+                run.failure_message, "A execução foi interrompida e precisa ser solicitada novamente."
+            )
 
     def test_run_interrompido_nao_bloqueia_o_proximo_sem_force(self):
         def interrupted(*_args, **_kwargs):
