@@ -57,9 +57,12 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 import json
+import os
 from pathlib import Path
+import re
 import shutil
 import sys
+import tempfile
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 for _path in (PROJECT_ROOT / "py", PROJECT_ROOT / "api", PROJECT_ROOT / "scripts"):
@@ -181,7 +184,7 @@ def publish_snapshot(
 
     start = _years_before(day, SERIES_YEARS)
     _run_stage("series", lambda: fetch_series(series_dir, start, day))
-    cache_dir = Path(cache_root) / day.isoformat()
+    cache_dir = _run_stage("cache", lambda: prepare_cycle_cache(Path(cache_root), day, seed_cache=seed_cache))
     _run_stage("selecao", lambda: create_selectors(selection_dir, day, cache_dir))
 
     created_at = clock().isoformat()
@@ -352,6 +355,82 @@ def _published(registry: Path, predicate: Callable[[SnapshotManifest], bool]) ->
     if not matches:
         return None
     return max(matches, key=lambda item: (item.cutoff_date, item.created_at, item.manifest_id))
+
+
+FROZEN_YEARLY = re.compile(
+    r"^(?:(?:dfp|itr|fca)_cia_aberta_(?P<cvm>\d{4})\.zip|COTAHIST_A(?P<cotahist>\d{4})\.ZIP"
+    r"|inf_mensal_fii_(?P<fii>\d{4})\.zip)$"
+)
+FROZEN_AGE_YEARS = 2
+CACHE_MANIFEST = "manifest.json"
+
+
+def prepare_cycle_cache(cache_root: Path, day: date, *, seed_cache: Path | None = None) -> Path:
+    """O cache de brutos de ``day``: ``<cache_root>/<day>``, criado na primeira vez e reaproveitado depois.
+
+    O Cache do pit_rebuild nunca baixa de novo um arquivo que já tem. Um cache novo por data força COTAHIST, B3
+    (classificação, eventos, proventos), cadastro, listagens e os anuais recentes da CVM a serem baixados de novo;
+    só os anuais de anos até ano(day) - 2 (que não mudam mais) vêm por hard link do ciclo anterior mais recente em
+    ``cache_root`` ou, sem ele, de ``seed_cache``, com as entradas do manifest.json deles (hash e retrieved_at
+    originais). Os probes (HEAD dos COTAHIST antigos) também vêm. O diretório é montado ao lado e renomeado no fim,
+    então um semeio interrompido não deixa um cache pela metade que seria reaproveitado.
+    """
+    from pit_rebuild import safety
+
+    cache_root = safety.assert_writable_dir(Path(cache_root), "--cache-root")
+    target = cache_root / day.isoformat()
+    if target.is_dir():
+        return target
+    cache_root.mkdir(parents=True, exist_ok=True)
+    source = _seed_source(cache_root, day) or (Path(seed_cache) if seed_cache is not None else None)
+    manifest = {"files": {}, "sizes": {}, "probes": {}}
+    staging = Path(tempfile.mkdtemp(dir=cache_root, prefix=f".{day.isoformat()}."))
+    try:
+        if source is not None:
+            seed = json.loads((source / CACHE_MANIFEST).read_text(encoding="utf-8"))
+            frozen = {name: entry for name, entry in seed.get("files", {}).items()
+                      if _frozen(name, day) and (source / name).is_file()}
+            for name in sorted(frozen):
+                _link_or_copy(source / name, staging / name)
+            urls = {entry.get("url") for entry in frozen.values()}
+            manifest["files"] = frozen
+            manifest["sizes"] = {url: size for url, size in seed.get("sizes", {}).items() if url in urls}
+            manifest["probes"] = dict(seed.get("probes", {}))
+        text = json.dumps(manifest, sort_keys=True, indent=2, ensure_ascii=False) + "\n"
+        (staging / CACHE_MANIFEST).write_text(text, encoding="utf-8")
+        os.replace(staging, target)
+    except BaseException:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
+    return target
+
+
+def _seed_source(cache_root: Path, day: date) -> Path | None:
+    """O cache de ciclo mais recente anterior a ``day`` em ``cache_root``."""
+    earlier = []
+    for path in cache_root.iterdir():
+        try:
+            other = date.fromisoformat(path.name)
+        except ValueError:
+            continue
+        if other < day and (path / CACHE_MANIFEST).is_file():
+            earlier.append((other, path))
+    return max(earlier)[1] if earlier else None
+
+
+def _frozen(name: str, day: date) -> bool:
+    match = FROZEN_YEARLY.match(name)
+    if match is None:
+        return False
+    year = int(next(value for value in match.groupdict().values() if value))
+    return year <= day.year - FROZEN_AGE_YEARS
+
+
+def _link_or_copy(source: Path, target: Path) -> None:
+    try:
+        os.link(source, target)
+    except OSError:
+        shutil.copy2(source, target)
 
 
 def _years_before(day: date, years: int) -> date:

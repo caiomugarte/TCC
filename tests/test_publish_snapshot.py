@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+import zipfile
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 for _path in (PROJECT_ROOT / "py", PROJECT_ROOT / "scripts"):
@@ -257,6 +258,125 @@ class PublishSnapshotTests(unittest.TestCase):
         self.assertEqual((caught.exception.stage, caught.exception.exit_code), ("registro", 3))
         self.assertEqual(stages.fetch_calls, [])
         self.assertEqual(self.space.states(), {"mensal-2026-11-17": "retired"})
+
+
+def raw_cache(root: Path, names: dict) -> Path:
+    """Um cache do pit_rebuild com ``names`` (nome -> bytes) e o manifest.json com o hash de cada um."""
+    root.mkdir(parents=True)
+    files = {}
+    for name, data in names.items():
+        (root / name).write_bytes(data)
+        files[name] = {"bytes": len(data), "name": name, "retrieved_at": "2026-11-17T12:00:00Z",
+                       "sha256": hashlib.sha256(data).hexdigest(), "url": f"https://example.invalid/{name}"}
+    sizes = {f"https://example.invalid/{name}": len(data) for name, data in names.items()}
+    manifest = {"files": files, "sizes": sizes, "probes": {"https://example.invalid/COTAHIST_A2005.ZIP": False}}
+    (root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    return root
+
+
+SEED_FILES = {
+    "COTAHIST_A2024.ZIP": b"cotahist 2024", "COTAHIST_A2025.ZIP": b"cotahist 2025", "COTAHIST_A2026.ZIP": b"cotahist 2026",
+    "dfp_cia_aberta_2019.zip": b"dfp 2019", "dfp_cia_aberta_2025.zip": b"dfp 2025", "dfp_cia_aberta_2026.zip": b"dfp 2026",
+    "itr_cia_aberta_2024.zip": b"itr 2024", "itr_cia_aberta_2026.zip": b"itr 2026",
+    "fca_cia_aberta_2010.zip": b"fca 2010", "fca_cia_aberta_2026.zip": b"fca 2026",
+    "inf_mensal_fii_2023.zip": b"inf 2023", "inf_mensal_fii_2026.zip": b"inf 2026",
+    "cad_cia_aberta.csv": b"cadastro", "listing_dfp.html": b"listing",
+    "b3_cash_AMBEV_SA_p1.json": b"{}", "b3_company_ABEV.json": b"{}", "b3_detail_1234.json": b"{}",
+    "yahoo_ABCP11_2026-11-07.json": b"{}",
+}
+FROZEN_2026 = ["COTAHIST_A2024.ZIP", "dfp_cia_aberta_2019.zip", "fca_cia_aberta_2010.zip",
+               "inf_mensal_fii_2023.zip", "itr_cia_aberta_2024.zip"]
+
+
+class CycleCacheTests(unittest.TestCase):
+    """O cache de brutos de cada --date: só os anuais congelados vêm do ciclo anterior; o resto é baixado de novo."""
+
+    def setUp(self):
+        self._directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._directory.cleanup)
+        self.root = Path(self._directory.name)
+
+    def cached_names(self, cache: Path) -> list:
+        return sorted(path.name for path in cache.iterdir() if path.name != "manifest.json")
+
+    def test_a_new_date_is_seeded_only_with_frozen_yearly_files_of_the_seed_cache(self):
+        seed = raw_cache(self.root / "seed", SEED_FILES)
+
+        cache = publish_snapshot.prepare_cycle_cache(self.root / "ciclos", date(2026, 12, 15), seed_cache=seed)
+
+        self.assertEqual(cache, self.root / "ciclos" / "2026-12-15")
+        self.assertEqual(self.cached_names(cache), FROZEN_2026)
+        manifest = json.loads((cache / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(manifest["files"]), FROZEN_2026)
+        self.assertEqual(sorted(manifest["sizes"]), [f"https://example.invalid/{name}" for name in FROZEN_2026])
+        self.assertEqual(manifest["probes"], {"https://example.invalid/COTAHIST_A2005.ZIP": False})
+
+    def test_the_seeded_files_are_served_by_the_cache_without_a_download_and_the_rest_is_downloaded(self):
+        from pit_rebuild.cache import Cache
+
+        seed = raw_cache(self.root / "seed", SEED_FILES)
+        cache_dir = publish_snapshot.prepare_cycle_cache(self.root / "ciclos", date(2026, 12, 15), seed_cache=seed)
+        requested = []
+
+        class Response(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+        december = io.BytesIO()
+        with zipfile.ZipFile(december, "w") as archive:
+            archive.writestr("COTAHIST_A2026.TXT", "dezembro")
+
+        def opener(request, timeout):
+            requested.append(request.full_url)
+            return Response(december.getvalue())
+
+        cache = Cache(cache_dir, offline=False, opener=opener)
+        cache.verify()
+        frozen = cache.get("https://example.invalid/COTAHIST_A2024.ZIP", "COTAHIST_A2024.ZIP")
+        fresh = cache.get("https://example.invalid/COTAHIST_A2026.ZIP", "COTAHIST_A2026.ZIP")
+
+        self.assertEqual(frozen.read_bytes(), b"cotahist 2024")
+        self.assertEqual(fresh.read_bytes(), december.getvalue())
+        self.assertEqual(requested, ["https://example.invalid/COTAHIST_A2026.ZIP"])
+        self.assertEqual((seed / "COTAHIST_A2026.ZIP").read_bytes(), b"cotahist 2026")
+
+    def test_the_latest_earlier_cycle_cache_is_the_seed(self):
+        ciclos = self.root / "ciclos"
+        raw_cache(ciclos / "2026-10-15", {"dfp_cia_aberta_2019.zip": b"outubro"})
+        raw_cache(ciclos / "2026-11-17", {"dfp_cia_aberta_2020.zip": b"novembro"})
+        raw_cache(ciclos / "2027-01-15", {"dfp_cia_aberta_2021.zip": b"janeiro"})
+        seed = raw_cache(self.root / "seed", {"dfp_cia_aberta_2018.zip": b"semente"})
+
+        cache = publish_snapshot.prepare_cycle_cache(ciclos, date(2026, 12, 15), seed_cache=seed)
+
+        self.assertEqual(self.cached_names(cache), ["dfp_cia_aberta_2020.zip"])
+
+    def test_an_existing_cache_of_the_same_date_is_reused_as_is(self):
+        ciclos = self.root / "ciclos"
+        existing = raw_cache(ciclos / "2026-12-15", {"COTAHIST_A2026.ZIP": b"baixado em dezembro"})
+        seed = raw_cache(self.root / "seed", SEED_FILES)
+
+        cache = publish_snapshot.prepare_cycle_cache(ciclos, date(2026, 12, 15), seed_cache=seed)
+
+        self.assertEqual(cache, existing)
+        self.assertEqual(self.cached_names(cache), ["COTAHIST_A2026.ZIP"])
+
+    def test_without_any_seed_the_cycle_cache_starts_empty(self):
+        cache = publish_snapshot.prepare_cycle_cache(self.root / "ciclos", date(2026, 12, 15))
+
+        self.assertEqual(self.cached_names(cache), [])
+
+    def test_publish_hands_the_selection_the_cache_of_its_date(self):
+        space = Workspace(self.root)
+        stages = FakeStages()
+
+        space.publish(date(2026, 11, 17), stages)
+
+        self.assertEqual(stages.selector_calls[0][2], space.cache_root / "2026-11-17")
+        self.assertTrue((space.cache_root / "2026-11-17" / "manifest.json").is_file())
 
 
 if __name__ == "__main__":
