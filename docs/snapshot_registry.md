@@ -453,7 +453,7 @@ Then `build` with `--stock-provenance <out>/stocks.provenance.json
   IBOV, IFIX e CDI com dado até o corte e no máximo `max_cutoff_lag_days` antes de `D`; corte no máximo
   `max_cutoff_lag_days` antes de `D` (pega SP500, BTC e PTAX parados); linhas de `stocks.csv` e `fiis.csv` sem queda
   maior que `max_universe_drop` contra o último publicado. Padrões: 40 ações com score, 8 FIIs elegíveis, 5 dias,
-  20%. Referência: no `cvm-b3-2026-11-17` o perfil conservador tem 97 ações com score e 14 FIIs elegíveis.
+  20%.
 - **Data de corte e idempotência**: o corte é a última data comum das séries, não `D`. Já publicado = há manifesto
   `published` com id `mensal-D` ou com corte igual a `D` (checado antes de buscar), ou com o mesmo corte efetivo que
   as séries recém-buscadas dão (checado depois do `build`, antes de gravar; os dados buscados são apagados). Nos três

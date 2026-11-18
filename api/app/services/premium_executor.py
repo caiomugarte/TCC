@@ -30,7 +30,7 @@ def _close_session(session: Any) -> None:
         close()
 
 
-def _incumbent_tickers(result_json: object, key: str) -> list[str] | None:
+def incumbent_tickers(result_json: object, key: str) -> list[str] | None:
     """Tickers of one class of a completed run; None when the data is unreadable.
 
     Entries without a quantity (pre-change) or with an int quantity >= 1 are kept;
@@ -212,8 +212,8 @@ class PremiumRunWorker:
             return None
         return {
             "run_id": previous.id,
-            "stocks": _incumbent_tickers(previous.result_json, "stocks"),
-            "fiis": _incumbent_tickers(previous.result_json, "fiis"),
+            "stocks": incumbent_tickers(previous.result_json, "stocks"),
+            "fiis": incumbent_tickers(previous.result_json, "fiis"),
         }
 
     def _load_manifest(self, provenance: Mapping[str, Any]) -> object:

@@ -7,7 +7,9 @@ import io
 import json
 import os
 from pathlib import Path
+import signal
 import sys
+import time
 import unittest
 from unittest import mock
 
@@ -32,6 +34,9 @@ def _load_cli():
 
 
 ciclo = _load_cli()
+
+from publish_snapshot import PublishResult, PublishSnapshotError  # noqa: E402 - scripts/ entra no sys.path ao carregar o CLI
+from teste_para_frente import TesteParaFrenteError  # noqa: E402
 
 OUTUBRO = "2026-10-29"
 NOVEMBRO = "2026-10-30"
@@ -65,7 +70,7 @@ class FakePublish:
         if self.error is not None:
             raise self.error
         manifest = validate_manifest(SnapshotManifest.load(self.manifest_path))
-        return ciclo.PublishResult(manifest, self.manifest_path, reused=len(self.calls) > 1)
+        return PublishResult(manifest, self.manifest_path, reused=len(self.calls) > 1)
 
 
 TESTE_PARA_FRENTE = {
@@ -243,9 +248,35 @@ class CicloMensalTests(CicloMensalCase):
         self.assertEqual(self.forward.calls, [])
         self.assertEqual(self.report()["teste_para_frente"]["status"], "sem carteira anterior")
 
+    def test_mudanca_e_zona_comparam_com_o_run_titular_que_a_zona_usou_e_nao_com_o_de_corte_anterior(self):
+        october = self.run_october()
+        # Um run concluído do mesmo manifesto de novembro, de uma política antiga, antes do run do ciclo: é ele o
+        # último run Premium concluído da conta e portanto o titular da zona; o run de corte anterior segue outubro.
+        earlier = self.rodar(None, self.november)
+        with self.sessions() as session:
+            run = session.get(RecommendationRun, earlier.run_id)
+            run.policy_version = "politica-antiga"
+            run.result_json = {**run.result_json, "stocks": [
+                entry for entry in run.result_json["stocks"] if entry["ticker"] != "S00"]}
+            session.commit()
+
+        result = self.ciclo()
+
+        self.assertTrue(result.ok, result.erro)
+        self.assertNotEqual(result.run_id, earlier.run_id)
+        self.assertEqual(self.forward.calls, [(october.run_id, "mensal-2026-10-31")])
+        report = self.report()
+        self.assertEqual(report["run_anterior"]["id"], october.run_id)
+        self.assertEqual(report["zona_de_protecao"]["run_titular"], earlier.run_id)
+        self.assertEqual(report["carteira"]["run_comparado"], earlier.run_id)
+        self.assertEqual(report["carteira"]["acoes"]["entraram"], ["S00"])
+        self.assertEqual(report["carteira"]["acoes"]["sairam"], [])
+        self.assertEqual(report["carteira"]["fiis"]["contagem"], {"ficaram": 5, "entraram": 0, "sairam": 0})
+        self.assertIn(f"Comparada com a carteira do run `{earlier.run_id}`", self.markdown())
+
     def test_publicacao_falhada_para_o_ciclo_sem_chegar_ao_run(self):
         october = self.run_october()
-        self.publish.error = ciclo.PublishSnapshotError("sanidade", "acoes_com_score: 3; mínimo 40", check="acoes_com_score")
+        self.publish.error = PublishSnapshotError("sanidade", "acoes_com_score: 3; mínimo 40", check="acoes_com_score")
 
         result = self.ciclo()
 
@@ -275,7 +306,7 @@ class CicloMensalTests(CicloMensalCase):
         self.run_october()
 
         def unavailable(_run, _manifest):
-            raise ciclo.TesteParaFrenteError("o COTAHIST do cache vai até 2026-10-29")
+            raise TesteParaFrenteError("o COTAHIST do cache vai até 2026-10-29")
 
         self.forward = unavailable
         result = self.ciclo()
@@ -318,7 +349,7 @@ class CicloMensalTests(CicloMensalCase):
         measured = self.forward
 
         def unavailable(_run, _manifest):
-            raise ciclo.TesteParaFrenteError("COTAHIST desatualizado")
+            raise TesteParaFrenteError("COTAHIST desatualizado")
 
         self.forward = unavailable
         failed = self.ciclo()
@@ -421,12 +452,26 @@ class CicloMensalCliTests(CicloMensalCase):
         for name, argv in cases.items():
             with self.subTest(name), mock.patch.dict(os.environ, {}, clear=False):
                 os.environ.pop("PREMIUM_SNAPSHOT_REGISTRY", None)
+                self.notified.clear()
                 self.assertEqual(self.main(*argv)[0], 2)
+                (result,) = self.notified
+                self.assertEqual((result.ok, result.etapa, result.exit_code), (False, "argumentos", 2))
+                self.assertTrue(result.erro)
+        self.notified.clear()
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("PREMIUM_SNAPSHOT_REGISTRY", None)
             code, _out, err = self.main("--date", "2026-10-31")
         self.assertEqual(code, 2)
         self.assertIn("--registry", err)
+        (result,) = self.notified
+        self.assertEqual((result.etapa, result.data), ("argumentos", date(2026, 10, 31)))
+        self.assertIn("--registry", result.erro)
+        self.assertEqual(self.runs(), [])
+
+    def test_0_help_nao_avisa(self):
+        code, out, _err = self.main("--help")
+        self.assertEqual(code, 0)
+        self.assertIn("--registry", out)
         self.assertEqual(self.notified, [])
 
     def test_3_conta(self):
@@ -458,7 +503,7 @@ class CicloMensalCliTests(CicloMensalCase):
         self.run_october()
 
         def unavailable(_run, _manifest):
-            raise ciclo.TesteParaFrenteError("COTAHIST desatualizado")
+            raise TesteParaFrenteError("COTAHIST desatualizado")
 
         code, _out, err = self.main(medir=unavailable)
         self.assertEqual(code, 6)
@@ -479,6 +524,24 @@ class CicloMensalCliTests(CicloMensalCase):
         self.assertEqual(code, 130)
         self.assertEqual([status for _id, _manifest, status in self.runs()], ["failed"])
         self.assertEqual((self.notified[0].etapa, self.notified[0].exit_code), ("run", 130))
+
+    def test_130_sigterm_no_run_marca_o_run_failed_avisa_e_restaura_o_handler(self):
+        def unhandled(_signum, _frame):
+            raise AssertionError("o ciclo não tratou SIGTERM")
+
+        before = signal.signal(signal.SIGTERM, unhandled)
+        self.addCleanup(signal.signal, signal.SIGTERM, before)
+
+        def terminated(*_args, **_kwargs):
+            os.kill(os.getpid(), signal.SIGTERM)
+            time.sleep(1)
+            raise AssertionError("SIGTERM não interrompeu o run")
+
+        code, _out, _err = self.main(runner=terminated)
+        self.assertEqual(code, 130)
+        self.assertEqual([status for _id, _manifest, status in self.runs()], ["failed"])
+        self.assertEqual((self.notified[0].etapa, self.notified[0].exit_code), ("run", 130))
+        self.assertIs(signal.getsignal(signal.SIGTERM), unhandled)
 
     def test_notificador_que_falha_nao_muda_o_codigo_de_saida(self):
         def broken(_result):

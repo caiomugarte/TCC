@@ -48,7 +48,8 @@ inválido) só vira uma linha no stderr, sem o token, e não muda o código de s
 Exit codes:
 
     0    ciclo concluído: manifesto publicado (ou reaproveitado), run concluído (ou reaproveitado), relatório gravado
-    2    argumentos inválidos (inclusive --registry ausente ou --relatorio-dir igual ao registro)
+    2    etapa argumentos: argumentos inválidos (inclusive --registry ausente ou --relatorio-dir igual ao registro);
+         avisa no Telegram como as outras falhas (--help não avisa)
     3    etapa conta: --account inexistente, sem Premium ativo ou sem perfil; ou, sem --account, zero ou mais de
          uma conta Premium com perfil
     4    etapa publicacao falhou; nenhum manifesto novo publicado, o anterior continua valendo
@@ -76,8 +77,7 @@ for _path in (PROJECT_ROOT / "py", PROJECT_ROOT / "api", PROJECT_ROOT / "scripts
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from publish_snapshot import PublishResult, PublishSnapshotError  # noqa: E402,F401
-from teste_para_frente import TesteParaFrenteError  # noqa: E402,F401
+from publish_snapshot import PublishResult  # noqa: E402
 
 EXIT_OK = 0
 EXIT_USAGE = 2
@@ -88,6 +88,7 @@ EXIT_FORWARD = 6
 EXIT_REPORT = 7
 EXIT_INTERRUPTED = 130
 
+ETAPA_ARGUMENTOS = "argumentos"
 ETAPA_CONTA = "conta"
 ETAPA_PUBLICACAO = "publicacao"
 ETAPA_RUN = "run"
@@ -109,9 +110,10 @@ DEFAULT_RELATORIO_DIR = PROJECT_ROOT / "docs" / "validation" / "ciclos"
 
 @dataclass
 class CicloResult:
-    """O que o ciclo fez até parar. ``etapa`` e ``erro`` só vêm preenchidos quando ele falhou."""
+    """O que o ciclo fez até parar. ``etapa`` e ``erro`` só vêm preenchidos quando ele falhou; ``data`` é ``None``
+    quando --date faltou ou é ilegível."""
 
-    data: date
+    data: date | None
     ok: bool = False
     etapa: str | None = None
     erro: str | None = None
@@ -184,7 +186,7 @@ def ciclo_mensal(
         result.run_reaproveitado = outcome.reused
 
         current = ETAPA_TESTE
-        new_run, previous = _stage(
+        new_run, previous, incumbent = _stage(
             ETAPA_TESTE, lambda: _runs(session_factory, result.account_id, outcome.run_id, result.corte)
         )
         if previous is None:
@@ -195,7 +197,7 @@ def ciclo_mensal(
             forward = {"status": "medido", "resultado": _without_local_paths(measured)}
 
         current = ETAPA_RELATORIO
-        report = _stage(ETAPA_RELATORIO, lambda: build_report(manifest, new_run, previous, forward))
+        report = _stage(ETAPA_RELATORIO, lambda: build_report(manifest, new_run, previous, forward, incumbent))
         result.relatorio_json, result.relatorio_md = _stage(
             ETAPA_RELATORIO, lambda: write_report(Path(relatorio_dir), report)
         )
@@ -214,8 +216,9 @@ _RUN_FIELDS = ("id", "plan", "status", "snapshot_id", "snapshot_cutoff", "policy
                "provenance_json")
 
 
-def _runs(session_factory, account_id: str, run_id: str, cutoff: str) -> tuple[dict, dict | None]:
-    """O run novo e o run Premium concluído anterior da conta (corte menor que ``cutoff``, criado por último)."""
+def _runs(session_factory, account_id: str, run_id: str, cutoff: str) -> tuple[dict, dict | None, dict | None]:
+    """O run novo, o run Premium concluído anterior da conta (corte menor que ``cutoff``, criado por último; é o que o
+    teste para frente mede) e o run titular que a zona de proteção do run novo usou (``None`` sem titular gravado)."""
     from sqlalchemy import desc, select
 
     from app.db.models import RecommendationRun
@@ -234,8 +237,19 @@ def _runs(session_factory, account_id: str, run_id: str, cutoff: str) -> tuple[d
             .order_by(desc(RecommendationRun.created_at), desc(RecommendationRun.id))
             .limit(1)
         )
-        as_dict = lambda run: {name: getattr(run, name) for name in _RUN_FIELDS}  # noqa: E731
-        return as_dict(new_run), (as_dict(previous) if previous is not None else None)
+        incumbent_id = _incumbent_run_id(new_run.result_json)
+        incumbent = session.get(RecommendationRun, incumbent_id) if incumbent_id else None
+        as_dict = lambda run: None if run is None else {name: getattr(run, name) for name in _RUN_FIELDS}  # noqa: E731
+        return as_dict(new_run), as_dict(previous), as_dict(incumbent)
+
+
+def _zone_record(result_json: Any) -> Mapping | None:
+    zone = ((result_json or {}).get("provenance") or {}).get("protection_zone")
+    return zone if isinstance(zone, Mapping) else None
+
+
+def _incumbent_run_id(result_json: Any) -> str | None:
+    return (_zone_record(result_json) or {}).get("incumbent_run_id")
 
 
 def _without_local_paths(measured: Mapping) -> dict:
@@ -250,19 +264,19 @@ CLASSES = (("acoes", "stocks", "Ações"), ("fiis", "fiis", "FIIs"))
 
 
 def _tickers(run: Mapping | None, key: str) -> list[str]:
-    from app.services.premium_executor import _incumbent_tickers
+    from app.services.premium_executor import incumbent_tickers
 
     if run is None:
         return []
-    tickers = _incumbent_tickers(run.get("result_json"), key)
+    tickers = incumbent_tickers(run.get("result_json"), key)
     if tickers is None:
         raise ValueError(f"carteira ilegível no run {run['id']} ({key})")
     return tickers
 
 
 def _portfolio_changes(new_run: Mapping, previous: Mapping | None) -> dict:
-    """Por classe, os tickers comprados do run novo contra os do run anterior (quantity 0 não conta)."""
-    changes = {}
+    """Por classe, os tickers comprados do run novo contra os de ``previous`` (quantity 0 não conta)."""
+    changes: dict[str, Any] = {"run_comparado": None if previous is None else previous["id"]}
     for label, key, _title in CLASSES:
         now, before = set(_tickers(new_run, key)), set(_tickers(previous, key))
         groups = {"ficaram": sorted(now & before), "entraram": sorted(now - before), "sairam": sorted(before - now)}
@@ -273,9 +287,8 @@ def _portfolio_changes(new_run: Mapping, previous: Mapping | None) -> dict:
 def _protection_zone(new_run: Mapping) -> dict | None:
     """O que a zona de proteção do run novo fez; ``mantidos_pela_zona`` são os titulares mantidos que o consenso puro
     teria tirado."""
-    result = new_run.get("result_json") or {}
-    zone = (result.get("provenance") or {}).get("protection_zone")
-    if not isinstance(zone, Mapping):
+    zone = _zone_record(new_run.get("result_json"))
+    if zone is None:
         return None
     summary: dict[str, Any] = {"run_titular": zone.get("incumbent_run_id")}
     for label, key, _title in CLASSES:
@@ -293,7 +306,11 @@ def _protection_zone(new_run: Mapping) -> dict | None:
     return summary
 
 
-def build_report(manifest, new_run: Mapping, previous: Mapping | None, forward: Mapping) -> dict:
+def build_report(
+    manifest, new_run: Mapping, previous: Mapping | None, forward: Mapping, incumbent: Mapping | None = None
+) -> dict:
+    """``previous`` é a carteira medida no teste para frente; a mudança da carteira compara com ``incumbent``, o run
+    titular que a zona de proteção do run novo usou, e só cai em ``previous`` quando o run novo não gravou titular."""
     provenance = new_run.get("provenance_json") or {}
     return {
         "versao": VERSAO_RELATORIO,
@@ -307,7 +324,7 @@ def build_report(manifest, new_run: Mapping, previous: Mapping | None, forward: 
         "run_anterior": None if previous is None else {
             "id": previous["id"], "manifesto": previous["snapshot_id"], "corte": previous["snapshot_cutoff"],
         },
-        "carteira": _portfolio_changes(new_run, previous),
+        "carteira": _portfolio_changes(new_run, incumbent if incumbent is not None else previous),
         "zona_de_protecao": _protection_zone(new_run),
         "teste_para_frente": dict(forward),
     }
@@ -371,6 +388,12 @@ def _forward_section(forward: Mapping) -> list[str]:
     return lines
 
 
+def _compared_with(run_id: str | None) -> list[str]:
+    if run_id is None:
+        return []
+    return [f"Comparada com a carteira do run `{run_id}`.", ""]
+
+
 TABLE_HEADER = [
     "| Corte | Manifesto | Run | Período medido | Carteira | Peso igual | Ações | IBOV | FIIs | IFIX | CDI |",
     "|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|",
@@ -416,6 +439,7 @@ def render_markdown(report: Mapping, cycles: Sequence[Mapping] = ()) -> str:
         "",
         "## O que mudou na carteira",
         "",
+        *_compared_with(report["carteira"].get("run_comparado")),
         "| Classe | Ficaram | Entraram | Saíram |",
         "|---|---:|---:|---:|",
     ]
@@ -466,11 +490,23 @@ Notificador = Callable[[CicloResult], None]
 _AVISO_TELEGRAM: Any = object()  # padrão de main(): o aviso do Telegram configurado pelo ambiente
 
 
+class _ArgumentosInvalidos(Exception):
+    pass
+
+
+class _Parser(argparse.ArgumentParser):
+    """Erro de argumento vira exceção (para o aviso) em vez de ``SystemExit``; ``--help`` continua saindo com 0."""
+
+    def error(self, message):
+        self.print_usage(sys.stderr)
+        raise _ArgumentosInvalidos(message)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     from publish_snapshot import DEFAULT_CACHE_ROOT
     from teste_para_frente import DEFAULT_CACHE_ROOT as FORWARD_CACHE_ROOT
 
-    parser = argparse.ArgumentParser(
+    parser = _Parser(
         prog="ciclo_mensal",
         description="Publica o snapshot do mês, refaz a carteira Premium, mede a anterior e grava o relatório.",
     )
@@ -537,12 +573,16 @@ def main(
     """Roda o ciclo; devolve o código de saída. ``session_factory``, ``executor`` e ``medir`` trocam banco, cálculo e
     rede nos testes; ``notificar`` recebe o CicloResult no fim (padrão: o aviso no Telegram de
     ``aviso_telegram.notificador_telegram``, que lê PRUMO_TELEGRAM_BOT_TOKEN e PRUMO_TELEGRAM_CHAT_ID; ``None`` desliga)."""
+    day = None
     try:
-        args = _build_parser().parse_args(argv)
-    except SystemExit as exc:
-        return int(exc.code or 0)
-    try:
-        day = date.fromisoformat(args.date)
+        try:
+            args = _build_parser().parse_args(argv)
+        except SystemExit as exc:  # --help
+            return int(exc.code or 0)
+        try:
+            day = date.fromisoformat(args.date)
+        except ValueError as exc:
+            raise ValueError(f"--date {args.date!r}: {exc}") from exc
         if not args.registry:
             raise ValueError("informe --registry ou PREMIUM_SNAPSHOT_REGISTRY")
         registry, relatorio_dir = Path(args.registry).expanduser(), Path(args.relatorio_dir).expanduser()
@@ -551,9 +591,11 @@ def main(
         from publish_snapshot import load_limits
 
         limits = load_limits(Path(args.limits) if args.limits else None)
-    except (OSError, TypeError, ValueError) as exc:
+    except (_ArgumentosInvalidos, OSError, TypeError, ValueError) as exc:
         print(f"ciclo_mensal: argumento inválido: {exc}", file=sys.stderr)
-        return EXIT_USAGE
+        failure = CicloResult(data=day, etapa=ETAPA_ARGUMENTOS, erro=str(exc), exit_code=EXIT_USAGE)
+        _notify(failure, notificar)
+        return failure.exit_code
 
     from app.services.premium_run import run_premium
     from publish_snapshot import publish_snapshot
@@ -597,6 +639,11 @@ def main(
     finally:
         signal.signal(signal.SIGTERM, previous_sigterm)
     _print_result(result)
+    _notify(result, notificar)
+    return result.exit_code
+
+
+def _notify(result: CicloResult, notificar: Notificador | None) -> None:
     if notificar is _AVISO_TELEGRAM:
         from aviso_telegram import notificador_telegram
 
@@ -606,7 +653,6 @@ def main(
             notificar(result)
         except Exception as exc:  # noqa: BLE001 - o aviso nunca muda o resultado do ciclo
             print(f"ciclo_mensal: o aviso do fim do ciclo falhou: {type(exc).__name__}: {exc}", file=sys.stderr)
-    return result.exit_code
 
 
 if __name__ == "__main__":

@@ -139,7 +139,7 @@ def _sucesso(result, report: Mapping) -> list[str]:
 
 def formatar_mensagem(result) -> str:
     """O texto do aviso para um ``CicloResult`` de ``scripts/ciclo_mensal.py``; não recalcula nada."""
-    day = result.data.isoformat()
+    day = result.data.isoformat() if result.data else "(sem data válida)"
     lines = [f"Prumo: ciclo mensal {day} {'concluído' if result.ok else 'falhou'}"]
     if result.manifest_id:
         origin = "reaproveitado" if result.manifesto_reaproveitado else "publicado"

@@ -11,6 +11,7 @@ import urllib.error
 from tests.test_ciclo_mensal import CicloMensalCase, ciclo
 
 import aviso_telegram  # noqa: E402 - scripts/ entra no sys.path ao carregar scripts/ciclo_mensal.py
+from teste_para_frente import TesteParaFrenteError  # noqa: E402
 
 TOKEN = "123456:segredo-do-bot"
 ENV = {aviso_telegram.ENV_TOKEN: TOKEN, aviso_telegram.ENV_CHAT_ID: "4242"}
@@ -87,7 +88,7 @@ class MensagensTests(TelegramCase):
         self.run_october()
 
         def unavailable(_run, _manifest):
-            raise ciclo.TesteParaFrenteError("COTAHIST desatualizado")
+            raise TesteParaFrenteError("COTAHIST desatualizado")
 
         code, _out, _err = self.main(medir=unavailable)
 
@@ -97,6 +98,15 @@ class MensagensTests(TelegramCase):
         self.assertIn("Etapa: teste_para_frente (saída 6)", text)
         self.assertIn("Erro: COTAHIST desatualizado", text)
         self.assertIn("Manifesto mensal-2026-10-31", text)
+
+    def test_argumento_invalido_envia_a_etapa_argumentos(self):
+        code, _out, _err = self.main("--date", "31/10/2026", "--registry", str(self.cli_registry))
+
+        self.assertEqual(code, 2)
+        (text,) = self.sent()
+        self.assertIn("falhou", text.splitlines()[0])
+        self.assertIn("Etapa: argumentos (saída 2)", text)
+        self.assertIn("31/10/2026", text)
 
     def test_publicacao_falhada_avisa_que_o_manifesto_anterior_continua_valendo(self):
         empty = self.root / "registro-que-nao-existe"
