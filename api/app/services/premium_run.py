@@ -1,7 +1,7 @@
 """Cria e executa um run Premium no processo do chamador, sem a API (issue #84).
 
 ``run_premium`` é a etapa "run Premium" do ciclo mensal e o miolo do CLI
-``api/scripts/premium_run.py``: escolhe a conta, cria o run pelo mesmo ``create_run``
+``scripts/premium_run.py``: escolhe a conta, cria o run pelo mesmo ``create_run``
 da API (mesma regra de reuso e mesma proveniência) e o executa com
 ``InProcessPremiumExecutor``, que só devolve no fim.
 """

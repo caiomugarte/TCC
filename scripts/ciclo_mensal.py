@@ -250,11 +250,11 @@ CLASSES = (("acoes", "stocks", "Ações"), ("fiis", "fiis", "FIIs"))
 
 
 def _tickers(run: Mapping | None, key: str) -> list[str]:
-    from app.services.premium_executor import _incumbent_tickers
+    from app.services.premium_executor import incumbent_tickers
 
     if run is None:
         return []
-    tickers = _incumbent_tickers(run.get("result_json"), key)
+    tickers = incumbent_tickers(run.get("result_json"), key)
     if tickers is None:
         raise ValueError(f"carteira ilegível no run {run['id']} ({key})")
     return tickers
