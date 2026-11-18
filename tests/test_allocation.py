@@ -347,6 +347,30 @@ class AllocationCoreTests(unittest.TestCase):
                     self.assertEqual(lines[0], "date,value")
             mocks["ifix"].assert_called_once()
 
+    def test_snapshot_fetch_without_portfolios_writes_only_the_class_series(self):
+        # #85: o snapshot do mês não baixa nem grava as cestas legadas caio_*.
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            directory = Path(temporary_directory)
+            levels = {date(2020, 1, 1): 100.0, date(2020, 1, 2): 101.0}
+            stack, mocks = self._patched_providers(levels)
+            with stack:
+                result = fetch_snapshot(
+                    directory / "snapshot", None, date(2020, 1, 1), date(2020, 1, 2)
+                )
+
+            snapshot = directory / "snapshot"
+            self.assertEqual(
+                sorted(path.name for path in snapshot.iterdir()),
+                ["btc_usd.csv", "di.csv", "ibovespa.csv", "ifix.csv", "metadata.json",
+                 "ptax.csv", "sp500_total_return_usd.csv"],
+            )
+            metadata = json.loads((snapshot / "metadata.json").read_text(encoding="utf-8"))
+            self.assertNotIn("caio_stocks", metadata["sources"])
+            self.assertEqual(metadata["portfolio_artifacts"], {})
+            self.assertEqual(result["tickers"], ())
+            yahoo_symbols = [call.args[0] for call in mocks["yahoo"].call_args_list]
+            self.assertEqual(yahoo_symbols, ["^SP500TR", "BTC-USD", "^BVSP"])
+
     def test_snapshot_cli_rejects_removed_ifix_flags(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
             directory = Path(temporary_directory)
