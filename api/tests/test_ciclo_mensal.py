@@ -426,12 +426,26 @@ class CicloMensalCliTests(CicloMensalCase):
         for name, argv in cases.items():
             with self.subTest(name), mock.patch.dict(os.environ, {}, clear=False):
                 os.environ.pop("PREMIUM_SNAPSHOT_REGISTRY", None)
+                self.notified.clear()
                 self.assertEqual(self.main(*argv)[0], 2)
+                (result,) = self.notified
+                self.assertEqual((result.ok, result.etapa, result.exit_code), (False, "argumentos", 2))
+                self.assertTrue(result.erro)
+        self.notified.clear()
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("PREMIUM_SNAPSHOT_REGISTRY", None)
             code, _out, err = self.main("--date", "2026-10-31")
         self.assertEqual(code, 2)
         self.assertIn("--registry", err)
+        (result,) = self.notified
+        self.assertEqual((result.etapa, result.data), ("argumentos", date(2026, 10, 31)))
+        self.assertIn("--registry", result.erro)
+        self.assertEqual(self.runs(), [])
+
+    def test_0_help_nao_avisa(self):
+        code, out, _err = self.main("--help")
+        self.assertEqual(code, 0)
+        self.assertIn("--registry", out)
         self.assertEqual(self.notified, [])
 
     def test_3_conta(self):

@@ -48,7 +48,8 @@ inválido) só vira uma linha no stderr, sem o token, e não muda o código de s
 Exit codes:
 
     0    ciclo concluído: manifesto publicado (ou reaproveitado), run concluído (ou reaproveitado), relatório gravado
-    2    argumentos inválidos (inclusive --registry ausente ou --relatorio-dir igual ao registro)
+    2    etapa argumentos: argumentos inválidos (inclusive --registry ausente ou --relatorio-dir igual ao registro);
+         avisa no Telegram como as outras falhas (--help não avisa)
     3    etapa conta: --account inexistente, sem Premium ativo ou sem perfil; ou, sem --account, zero ou mais de
          uma conta Premium com perfil
     4    etapa publicacao falhou; nenhum manifesto novo publicado, o anterior continua valendo
@@ -87,6 +88,7 @@ EXIT_FORWARD = 6
 EXIT_REPORT = 7
 EXIT_INTERRUPTED = 130
 
+ETAPA_ARGUMENTOS = "argumentos"
 ETAPA_CONTA = "conta"
 ETAPA_PUBLICACAO = "publicacao"
 ETAPA_RUN = "run"
@@ -108,9 +110,10 @@ DEFAULT_RELATORIO_DIR = PROJECT_ROOT / "docs" / "validation" / "ciclos"
 
 @dataclass
 class CicloResult:
-    """O que o ciclo fez até parar. ``etapa`` e ``erro`` só vêm preenchidos quando ele falhou."""
+    """O que o ciclo fez até parar. ``etapa`` e ``erro`` só vêm preenchidos quando ele falhou; ``data`` é ``None``
+    quando --date faltou ou é ilegível."""
 
-    data: date
+    data: date | None
     ok: bool = False
     etapa: str | None = None
     erro: str | None = None
@@ -465,11 +468,23 @@ Notificador = Callable[[CicloResult], None]
 _AVISO_TELEGRAM: Any = object()  # padrão de main(): o aviso do Telegram configurado pelo ambiente
 
 
+class _ArgumentosInvalidos(Exception):
+    pass
+
+
+class _Parser(argparse.ArgumentParser):
+    """Erro de argumento vira exceção (para o aviso) em vez de ``SystemExit``; ``--help`` continua saindo com 0."""
+
+    def error(self, message):
+        self.print_usage(sys.stderr)
+        raise _ArgumentosInvalidos(message)
+
+
 def _build_parser() -> argparse.ArgumentParser:
     from publish_snapshot import DEFAULT_CACHE_ROOT
     from teste_para_frente import DEFAULT_CACHE_ROOT as FORWARD_CACHE_ROOT
 
-    parser = argparse.ArgumentParser(
+    parser = _Parser(
         prog="ciclo_mensal",
         description="Publica o snapshot do mês, refaz a carteira Premium, mede a anterior e grava o relatório.",
     )
@@ -536,12 +551,16 @@ def main(
     """Roda o ciclo; devolve o código de saída. ``session_factory``, ``executor`` e ``medir`` trocam banco, cálculo e
     rede nos testes; ``notificar`` recebe o CicloResult no fim (padrão: o aviso no Telegram de
     ``aviso_telegram.notificador_telegram``, que lê PRUMO_TELEGRAM_BOT_TOKEN e PRUMO_TELEGRAM_CHAT_ID; ``None`` desliga)."""
+    day = None
     try:
-        args = _build_parser().parse_args(argv)
-    except SystemExit as exc:
-        return int(exc.code or 0)
-    try:
-        day = date.fromisoformat(args.date)
+        try:
+            args = _build_parser().parse_args(argv)
+        except SystemExit as exc:  # --help
+            return int(exc.code or 0)
+        try:
+            day = date.fromisoformat(args.date)
+        except ValueError as exc:
+            raise ValueError(f"--date {args.date!r}: {exc}") from exc
         if not args.registry:
             raise ValueError("informe --registry ou PREMIUM_SNAPSHOT_REGISTRY")
         registry, relatorio_dir = Path(args.registry).expanduser(), Path(args.relatorio_dir).expanduser()
@@ -550,9 +569,11 @@ def main(
         from publish_snapshot import load_limits
 
         limits = load_limits(Path(args.limits) if args.limits else None)
-    except (OSError, TypeError, ValueError) as exc:
+    except (_ArgumentosInvalidos, OSError, TypeError, ValueError) as exc:
         print(f"ciclo_mensal: argumento inválido: {exc}", file=sys.stderr)
-        return EXIT_USAGE
+        failure = CicloResult(data=day, etapa=ETAPA_ARGUMENTOS, erro=str(exc), exit_code=EXIT_USAGE)
+        _notify(failure, notificar)
+        return failure.exit_code
 
     from app.services.premium_run import run_premium
     from publish_snapshot import publish_snapshot
@@ -596,6 +617,11 @@ def main(
     finally:
         signal.signal(signal.SIGTERM, previous_sigterm)
     _print_result(result)
+    _notify(result, notificar)
+    return result.exit_code
+
+
+def _notify(result: CicloResult, notificar: Notificador | None) -> None:
     if notificar is _AVISO_TELEGRAM:
         from aviso_telegram import notificador_telegram
 
@@ -605,7 +631,6 @@ def main(
             notificar(result)
         except Exception as exc:  # noqa: BLE001 - o aviso nunca muda o resultado do ciclo
             print(f"ciclo_mensal: o aviso do fim do ciclo falhou: {type(exc).__name__}: {exc}", file=sys.stderr)
-    return result.exit_code
 
 
 if __name__ == "__main__":
