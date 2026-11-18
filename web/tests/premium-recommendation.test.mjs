@@ -181,7 +181,7 @@ test("whole-unit field names match the API schema aliases (REVIEW.md copied-name
     ["RecommendationConstituent", "RecommendationConstituent", ["price_brl", "quantity", "amount_brl", "effective_portfolio_weight"]],
     ["AllocationClass", "AllocationClass", ["cash_residual_brl", "over_target_brl"]],
     ["DroppedConstituent", "DroppedConstituent", ["ticker", "sleeve_weight", "portfolio_weight", "target_amount_brl", "price_brl", "reasons"]],
-    ["Recommendation", "RecommendationResponse", ["stocks_dropped", "fiis_dropped"]],
+    ["Recommendation", "RecommendationResponse", ["stocks_dropped", "fiis_dropped", "snapshot_cutoff"]],
   ];
   for (const [webType, apiClass, fields] of pairs) {
     const web = typeBody(webType);
