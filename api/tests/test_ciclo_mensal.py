@@ -146,7 +146,7 @@ class CicloMensalCase(unittest.TestCase):
             account_id,
             session_factory=self.sessions,
             manifest_loader=lambda: validate_manifest(SnapshotManifest.load(manifest_path)),
-            executor=self.executor(),
+            executor=getattr(self, "rodar_executor", None) or self.executor(),
         )
 
     def ciclo(self, account_id=None):
@@ -243,6 +243,57 @@ class CicloMensalTests(CicloMensalCase):
         self.assertTrue(result.ok, result.erro)
         self.assertEqual(self.forward.calls, [])
         self.assertEqual(self.report()["teste_para_frente"]["status"], "sem carteira anterior")
+
+    def test_publicacao_falhada_para_o_ciclo_sem_chegar_ao_run(self):
+        october = self.run_october()
+        self.publish.error = ciclo.PublishSnapshotError("sanidade", "acoes_com_score: 3; mínimo 40", check="acoes_com_score")
+
+        result = self.ciclo()
+
+        self.assertFalse(result.ok)
+        self.assertEqual(result.etapa, "publicacao")
+        self.assertIn("acoes_com_score", result.erro)
+        self.assertEqual(result.exit_code, 4)
+        self.assertEqual([run_id for run_id, _manifest, _status in self.runs()], [october.run_id])
+        self.assertEqual(self.forward.calls, [])
+        self.assertFalse(self.reports.exists())
+
+    def test_run_que_falha_para_o_ciclo_antes_do_teste_para_frente(self):
+        self.run_october()
+
+        def broken(*_args, **_kwargs):
+            raise RuntimeError("engine exploded")
+
+        self.rodar_executor = self.executor(broken)
+        result = self.ciclo()
+
+        self.assertEqual((result.etapa, result.exit_code), ("run", 5))
+        self.assertIn("engine_error", result.erro)
+        self.assertEqual(self.forward.calls, [])
+        self.assertFalse(self.reports.exists())
+
+    def test_teste_para_frente_que_falha_para_o_ciclo_sem_relatorio(self):
+        self.run_october()
+
+        def unavailable(_run, _manifest):
+            raise ciclo.TesteParaFrenteError("o COTAHIST do cache vai até 2026-10-29")
+
+        self.forward = unavailable
+        result = self.ciclo()
+
+        self.assertEqual((result.etapa, result.exit_code), ("teste_para_frente", 6))
+        self.assertIn("COTAHIST", result.erro)
+        self.assertIsNotNone(result.run_id)
+        self.assertFalse(self.reports.exists())
+
+    def test_conta_ambigua_para_antes_de_publicar(self):
+        self.add_account("outra@example.com", plan="premium")
+
+        result = self.ciclo()
+
+        self.assertEqual((result.etapa, result.exit_code), ("conta", 3))
+        self.assertIn("--account", result.erro)
+        self.assertEqual(self.publish.calls, [])
 
 
 if __name__ == "__main__":
