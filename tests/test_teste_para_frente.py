@@ -3,11 +3,13 @@
 import contextlib
 import io
 import json
+import os
 from datetime import date
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 for _path in (PROJECT_ROOT / "py", PROJECT_ROOT / "tests"):
@@ -237,6 +239,152 @@ class CarteiraDeFixtureTest(Base):
         self.assertAlmostEqual(resultado["carteira"]["retorno_peso_igual"], 0.0285)
         self.assertAlmostEqual(resultado["carteira"]["peso_coberto"], 1.0)
         json.dumps(resultado)
+
+
+
+class EventosSocietariosTest(Base):
+    def test_desdobramento_no_intervalo_multiplica_a_quantidade_e_o_provento_seguinte(self):
+        # 1:2 com data-ex 10/11; provento de 0,20 por papel novo com data-ex 26/11
+        self.linhas += [linha("AAA3", INICIO, 10.0, isin=ISIN_AAA), linha("AAA3", FIM, 5.5, isin=ISIN_AAA)]
+        self.rotas[sources.b3_company_url("AAA3")] = empresa("AAA SA", [
+            {"label": "DESDOBRAMENTO", "factor": "100,00", "lastDatePrior": "03/11/2026", "isinCode": ISIN_AAA},
+        ])
+        self.rotas[sources.b3_cash_url("AAA SA", 1)] = proventos_b3([("ON", "0,20", "10/11/2026"),
+                                                                     ("ON", "0,10", "01/10/2026")])
+        ativo = self.calcular(run(stocks=[acao("AAA3", 1.0)]))["ativos"]["acoes"][0]
+
+        self.assertAlmostEqual(ativo["retorno_preco"], 0.10)  # 2 × 5,50 / 10 - 1
+        self.assertAlmostEqual(ativo["retorno"], 0.14)  # (2 × 5,50 + 2 × 0,20) / 10 - 1
+        self.assertEqual(ativo["eventos"], [{"tipo": "DESDOBRAMENTO", "multiplicador": 2.0, "data_ex": "2026-11-10"}])
+
+    def test_grupamento_sem_preco_no_fim_fica_marcado_com_o_evento(self):
+        self.linhas += [linha("AAA3", INICIO, 1.0, isin=ISIN_AAA)]
+        self.rotas[sources.b3_company_url("AAA3")] = empresa("AAA SA", [
+            {"label": "GRUPAMENTO", "factor": "0,1", "lastDatePrior": "03/11/2026", "isinCode": ISIN_AAA},
+        ])
+        resultado = self.calcular(run(stocks=[acao("AAA3", 1.0)]))
+        ativo = resultado["ativos"]["acoes"][0]
+
+        self.assertIn("sem_preco_fim", ativo["marcas"])
+        self.assertEqual(ativo["eventos"][0]["tipo"], "GRUPAMENTO")
+        self.assertIsNone(resultado["classes"]["brazilian_stocks"]["retorno_ponderado"])
+        self.assertEqual(resultado["carteira"]["classes_sem_retorno"], ["brazilian_stocks", "fiis"])
+        self.assertAlmostEqual(resultado["carteira"]["peso_coberto"], 0.4)  # internacional, renda fixa e cripto
+
+
+class EntradaTest(Base):
+    def assertFalha(self, erro, run_anterior, manifesto=None):
+        with self.assertRaises(erro) as contexto:
+            self.calcular(run_anterior, manifesto)
+        return contexto.exception
+
+    def test_run_que_nao_esta_concluido_e_recusado(self):
+        self.assertEqual(self.assertFalha(tpf.EntradaInvalida, run(status="running")).exit_code, 4)
+
+    def test_run_basic_e_recusado(self):
+        self.assertFalha(tpf.EntradaInvalida, run(plan="basic"))
+
+    def test_manifesto_que_nao_e_posterior_ao_run_e_recusado(self):
+        self.assertFalha(tpf.EntradaInvalida, run(cutoff=FIM))
+
+    def test_manifesto_nao_publicado_e_recusado(self):
+        rascunho = construir_manifesto(self.tmp / "rascunho", estado="validated")
+        self.assertFalha(tpf.EntradaInvalida, run(), rascunho)
+
+    def test_manifesto_ausente(self):
+        self.assertEqual(self.assertFalha(tpf.EntradaAusente, run(), self.tmp / "nao-existe.json").exit_code, 3)
+
+    def test_aceita_um_objeto_com_atributos_como_o_recommendation_run(self):
+        from types import SimpleNamespace
+
+        resultado = self.calcular(SimpleNamespace(**run()))
+        self.assertEqual(resultado["run_id"], "run-1")
+
+
+class CacheTest(Base):
+    def test_cotahist_sem_a_sessao_do_fim_para_com_fonte_indisponivel(self):
+        self.linhas = [linha("ZZZZ3", dia, 1.0) for dia in SESSOES if dia < FIM]
+        with self.assertRaises(tpf.FonteIndisponivel) as contexto:
+            self.calcular(run())
+        self.assertEqual(contexto.exception.exit_code, 5)
+
+    def test_cache_fica_num_diretorio_por_data_de_corte_e_e_reusado_offline(self):
+        self.linhas.append(linha("AAA3", INICIO, 10.0))
+        self.linhas.append(linha("AAA3", FIM, 12.0))
+        primeiro = self.calcular(run(stocks=[acao("AAA3", 1.0)]))
+        self.assertEqual(Path(primeiro["cache_dir"]).name, "2026-11-27")
+
+        segundo = tpf.teste_para_frente(run(stocks=[acao("AAA3", 1.0)]), self.manifesto, cache_dir=self.tmp / "cache",
+                                        offline=True, opener=FakeOpener())
+        self.assertAlmostEqual(segundo["ativos"]["acoes"][0]["retorno_preco"], 0.2)
+
+
+
+class CliTest(Base):
+    def rodar(self, *argv: str, opener=None) -> tuple[int, str, str]:
+        self.rotas[sources.cotahist_url(2026)] = FakeResponse(cotahist_zip(self.linhas))
+        saida, erro = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(saida), contextlib.redirect_stderr(erro):
+            codigo = tpf.main(list(argv), opener=opener or FakeOpener(self.rotas))
+        return codigo, saida.getvalue(), erro.getvalue()
+
+    def gravar_run(self, nome: str = "run.json", **campos) -> Path:
+        caminho = self.tmp / nome
+        caminho.write_text(json.dumps(run(**campos)), encoding="utf-8")
+        return caminho
+
+    def comum(self) -> list[str]:
+        return ["--manifest", str(self.manifesto), "--cache-dir", str(self.tmp / "cache")]
+
+    def test_run_em_json_grava_o_resultado(self):
+        destino = self.tmp / "saida" / "resultado.json"
+        codigo, _, erro = self.rodar(*self.comum(), "--run-json", str(self.gravar_run()), "--saida", str(destino))
+
+        self.assertEqual(codigo, tpf.EXIT_OK, erro)
+        self.assertAlmostEqual(json.loads(destino.read_text(encoding="utf-8"))["referencias"]["IBOV"]["retorno"], 0.03)
+
+    def test_run_lido_do_banco(self):
+        sys.path.insert(0, str(PROJECT_ROOT / "api"))
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import Session
+
+        from app.db.base import Base as Modelos
+        from app.db.models import RecommendationRun
+
+        url = f"sqlite:///{self.tmp / 'prumo.db'}"
+        engine = create_engine(url)
+        Modelos.metadata.create_all(engine)
+        dados = run()
+        with Session(engine) as sessao:
+            sessao.add(RecommendationRun(account_id="conta", profile_id="perfil", model_version="m", classes=[],
+                                         assumptions=[], risks=[], **dados))
+            sessao.commit()
+        engine.dispose()
+
+        codigo, saida, erro = self.rodar(*self.comum(), "--run-id", "run-1", "--database-url", url)
+        self.assertEqual(codigo, tpf.EXIT_OK, erro)
+        self.assertEqual(json.loads(saida)["run_id"], "run-1")
+        codigo, _, _ = self.rodar(*self.comum(), "--run-id", "outro", "--database-url", url)
+        self.assertEqual(codigo, tpf.EXIT_AUSENTE)
+
+    def test_codigos_de_saida(self):
+        run_json = str(self.gravar_run())
+        casos = {
+            "sem argumentos": ([], tpf.EXIT_USO),
+            "run-id sem banco": ([*self.comum(), "--run-id", "x"], tpf.EXIT_USO),
+            "cache dentro de snapshots/": (["--manifest", str(self.manifesto), "--run-json", run_json,
+                                             "--cache-dir", str(PROJECT_ROOT / "snapshots" / "cache")], tpf.EXIT_USO),
+            "manifesto ausente": (["--manifest", str(self.tmp / "x.json"), "--run-json", run_json], tpf.EXIT_AUSENTE),
+            "run-json ausente": ([*self.comum(), "--run-json", str(self.tmp / "x.json")], tpf.EXIT_AUSENTE),
+            "run não concluído": ([*self.comum(), "--run-json", str(self.gravar_run("falhou.json", status="failed"))], tpf.EXIT_ENTRADA),
+            "offline sem cache": ([*self.comum(), "--run-json", run_json, "--offline"], tpf.EXIT_FONTE),
+        }
+        for nome, (argv, esperado) in casos.items():
+            with self.subTest(nome):
+                with mock.patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop("DATABASE_URL", None)
+                    codigo, _, _ = self.rodar(*argv)
+                self.assertEqual(codigo, esperado)
 
 
 if __name__ == "__main__":
