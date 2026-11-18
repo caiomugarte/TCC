@@ -238,6 +238,53 @@ def _without_local_paths(measured: Mapping) -> dict:
 # --- relatório -------------------------------------------------------------------------------------------------------
 
 
+CLASSES = (("acoes", "stocks", "Ações"), ("fiis", "fiis", "FIIs"))
+
+
+def _tickers(run: Mapping | None, key: str) -> list[str]:
+    from app.services.premium_executor import _incumbent_tickers
+
+    if run is None:
+        return []
+    tickers = _incumbent_tickers(run.get("result_json"), key)
+    if tickers is None:
+        raise ValueError(f"carteira ilegível no run {run['id']} ({key})")
+    return tickers
+
+
+def _portfolio_changes(new_run: Mapping, previous: Mapping | None) -> dict:
+    """Por classe, os tickers comprados do run novo contra os do run anterior (quantity 0 não conta)."""
+    changes = {}
+    for label, key, _title in CLASSES:
+        now, before = set(_tickers(new_run, key)), set(_tickers(previous, key))
+        groups = {"ficaram": sorted(now & before), "entraram": sorted(now - before), "sairam": sorted(before - now)}
+        changes[label] = {**groups, "contagem": {name: len(items) for name, items in groups.items()}}
+    return changes
+
+
+def _protection_zone(new_run: Mapping) -> dict | None:
+    """O que a zona de proteção do run novo fez; ``mantidos_pela_zona`` são os titulares mantidos que o consenso puro
+    teria tirado."""
+    result = new_run.get("result_json") or {}
+    zone = (result.get("provenance") or {}).get("protection_zone")
+    if not isinstance(zone, Mapping):
+        return None
+    summary: dict[str, Any] = {"run_titular": zone.get("incumbent_run_id")}
+    for label, key, _title in CLASSES:
+        record = zone.get(key)
+        if not isinstance(record, Mapping):
+            summary[label] = None
+            continue
+        summary[label] = {
+            "status": record.get("status"),
+            "titulares": list(record.get("incumbents") or []),
+            "mantidos_pela_zona": sorted(set(record.get("kept") or []) - set(record.get("consensus_tickers") or [])),
+            "substituicoes": [{"sai": item.get("out"), "entra": item.get("in")} for item in record.get("replaced") or []],
+            "turnover": record.get("turnover"),
+        }
+    return summary
+
+
 def build_report(manifest, new_run: Mapping, previous: Mapping | None, forward: Mapping) -> dict:
     provenance = new_run.get("provenance_json") or {}
     return {
@@ -252,6 +299,8 @@ def build_report(manifest, new_run: Mapping, previous: Mapping | None, forward: 
         "run_anterior": None if previous is None else {
             "id": previous["id"], "manifesto": previous["snapshot_id"], "corte": previous["snapshot_cutoff"],
         },
+        "carteira": _portfolio_changes(new_run, previous),
+        "zona_de_protecao": _protection_zone(new_run),
         "teste_para_frente": dict(forward),
     }
 
@@ -262,5 +311,59 @@ def write_report(directory: Path, report: Mapping) -> tuple[Path, Path]:
     json_path = directory / f"{manifest_id}.json"
     md_path = directory / f"{manifest_id}.md"
     json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    md_path.write_text("", encoding="utf-8")
+    md_path.write_text(render_markdown(report), encoding="utf-8")
     return json_path, md_path
+
+
+def _pct(value: Any) -> str:
+    return "—" if value is None else f"{value * 100:+.2f}%"
+
+
+def _list(items: Sequence[str]) -> str:
+    return ", ".join(items) if items else "—"
+
+
+def render_markdown(report: Mapping) -> str:
+    manifest, run, previous = report["manifesto"], report["run"], report["run_anterior"]
+    lines = [
+        f"# Ciclo mensal {manifest['id']}",
+        "",
+        "Gerado por `scripts/ciclo_mensal.py` (issue #87); os números vêm do JSON ao lado, com o mesmo nome.",
+        "",
+        f"- Manifesto: `{manifest['id']}`, data de corte {manifest['corte']}",
+        f"- Run Premium: `{run['id']}`, política `{run['politica']}`, semente {run['random_seed']}",
+        "- Carteira anterior: "
+        + (SEM_CARTEIRA_ANTERIOR if previous is None
+           else f"run `{previous['id']}` (manifesto `{previous['manifesto']}`, corte {previous['corte']})"),
+        "",
+        "## O que mudou na carteira",
+        "",
+        "| Classe | Ficaram | Entraram | Saíram |",
+        "|---|---:|---:|---:|",
+    ]
+    for label, _key, title in CLASSES:
+        count = report["carteira"][label]["contagem"]
+        lines.append(f"| {title} | {count['ficaram']} | {count['entraram']} | {count['sairam']} |")
+    lines.append("")
+    for label, _key, title in CLASSES:
+        change = report["carteira"][label]
+        lines.append(f"- {title}: entraram {_list(change['entraram'])}; saíram {_list(change['sairam'])}")
+    lines += ["", "## Zona de proteção", ""]
+    zone = report["zona_de_protecao"]
+    if zone is None:
+        lines.append("O run não registrou a zona de proteção.")
+    else:
+        lines.append(f"Titulares do run `{zone['run_titular']}`." if zone["run_titular"] else "Sem titulares.")
+        lines.append("")
+        for label, _key, title in CLASSES:
+            record = zone[label]
+            if record is None:
+                lines.append(f"- {title}: sem registro")
+                continue
+            swaps = ", ".join(f"{item['sai']} → {item['entra']}" for item in record["substituicoes"])
+            lines.append(
+                f"- {title} ({record['status']}): titulares que a zona manteve e o consenso teria tirado: "
+                f"{_list(record['mantidos_pela_zona'])}; substituições: {swaps or '—'}"
+            )
+    lines.append("")
+    return "\n".join(lines)

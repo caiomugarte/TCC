@@ -10,6 +10,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from sqlalchemy import select
 
@@ -100,6 +101,18 @@ class FakeForwardTest:
                 "manifesto_posterior": manifest.manifest_id}
 
 
+def frequencies_with_zone(prefix, n_assets, has_incumbents):
+    """Sem titulares, os n primeiros. Com titulares, um novo muito melhor (substitui o pior titular) e um novo só um
+    pouco melhor que o penúltimo titular: o consenso tiraria esse titular, a zona (delta 0,11) o mantém."""
+    incumbents = [f"{prefix}{index:02d}" for index in range(n_assets)]
+    strong, weak, tail = (f"{prefix}{n_assets + offset:02d}" for offset in range(3))
+    if not has_incumbents:
+        return {ticker: round(0.95 - 0.01 * index, 3) for index, ticker in enumerate([*incumbents, strong, weak, tail])}
+    scores = {strong: 0.99, weak: 0.79, tail: 0.10}
+    scores.update({ticker: round(0.80 - 0.005 * index, 3) for index, ticker in enumerate(incumbents)})
+    return scores
+
+
 class CicloMensalCase(unittest.TestCase):
     add_account = premium_run_tests.PremiumRunTests.add_account
     runner = premium_run_tests.PremiumRunTests.runner
@@ -107,6 +120,9 @@ class CicloMensalCase(unittest.TestCase):
     stored = premium_run_tests.PremiumRunTests.stored
 
     def setUp(self):
+        patcher = mock.patch.object(premium_run_tests, "frequencies_for", frequencies_with_zone)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         premium_run_tests.PremiumRunTests.setUp(self)
         self.registry = self.root / "registry"
         self.october = build_manifest(self.registry / "out", "mensal-2026-10-30", OUTUBRO)
@@ -180,6 +196,29 @@ class CicloMensalTests(CicloMensalCase):
         self.assertEqual(report["teste_para_frente"]["resultado"]["carteira"]["retorno_ponderado"], 0.0123)
         self.assertNotIn("cache_dir", report["teste_para_frente"]["resultado"])
         self.assertEqual(result.relatorio, report)
+
+    def test_relatorio_conta_o_que_ficou_entrou_e_saiu_por_classe_e_os_titulares_que_a_zona_manteve(self):
+        october = self.run_october()
+
+        self.ciclo()
+
+        report = self.report()
+        # 12 ações e 5 FIIs no perfil moderado: o novo forte entra no lugar do pior titular; o fraco não entra.
+        self.assertEqual(report["carteira"]["acoes"]["contagem"], {"ficaram": 11, "entraram": 1, "sairam": 1})
+        self.assertEqual(report["carteira"]["acoes"]["entraram"], ["S12"])
+        self.assertEqual(report["carteira"]["acoes"]["sairam"], ["S11"])
+        self.assertEqual(report["carteira"]["fiis"]["contagem"], {"ficaram": 4, "entraram": 1, "sairam": 1})
+        zone = report["zona_de_protecao"]
+        self.assertEqual(zone["run_titular"], october.run_id)
+        self.assertEqual(zone["acoes"]["status"], "applied")
+        self.assertEqual(zone["acoes"]["mantidos_pela_zona"], ["S10"])
+        self.assertEqual(zone["fiis"]["mantidos_pela_zona"], ["F03"])
+        self.assertEqual(zone["acoes"]["substituicoes"], [{"sai": "S11", "entra": "S12"}])
+
+        markdown = self.markdown()
+        self.assertIn("| Ações | 11 | 1 | 1 |", markdown)
+        self.assertIn("| FIIs | 4 | 1 | 1 |", markdown)
+        self.assertIn("S10", markdown)
 
 
 if __name__ == "__main__":
