@@ -1,8 +1,14 @@
 """Issue #84: criar e executar um run Premium sem a API de pé."""
 
+import contextlib
+import importlib.util
+import io
 import json
+import os
+import signal
 import socket
 import tempfile
+import time
 import unittest
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -324,6 +330,120 @@ class PremiumRunTests(unittest.TestCase):
 
         self.assertEqual(caught.exception.code, "run_failed")
         self.assertEqual(caught.exception.detail, "infeasible_constraints")
+
+
+def _load_cli():
+    path = Path(__file__).resolve().parents[2] / "scripts" / "premium_run.py"
+    spec = importlib.util.spec_from_file_location("premium_run_cli", path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class PremiumRunCliTests(unittest.TestCase):
+    """Cada código de saída da docstring de scripts/premium_run.py pelo caminho real."""
+
+    setUp = PremiumRunTests.setUp
+    tearDown = PremiumRunTests.tearDown
+    add_account = PremiumRunTests.add_account
+    runner = PremiumRunTests.runner
+    executor = PremiumRunTests.executor
+    stored = PremiumRunTests.stored
+
+    cli = _load_cli()
+
+    def main(self, *argv, runner=None):
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = self.cli.main(
+                list(argv),
+                session_factory=self.sessions,
+                manifest_loader=lambda: validate_manifest(SnapshotManifest.load(self.manifest_path)),
+                executor=self.executor(runner),
+            )
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def runs(self):
+        with self.sessions() as session:
+            return [(run.id, run.status, run.failure_code) for run in session.scalars(select(RecommendationRun))]
+
+    def test_0_cria_e_conclui_e_depois_reaproveita(self):
+        code, out, _err = self.main()
+        self.assertEqual(code, 0)
+        ((run_id, status, _),) = self.runs()
+        self.assertEqual(status, "completed")
+        self.assertIn(f"run {run_id} criado e concluído", out)
+
+        code, out, _err = self.main("--account", self.account_id)
+        self.assertEqual(code, 0)
+        self.assertIn(f"run {run_id} reaproveitado", out)
+        self.assertEqual(len(self.runs()), 1)
+
+    def test_0_force_cria_outro_run(self):
+        self.assertEqual(self.main()[0], 0)
+        self.assertEqual(self.main("--force")[0], 0)
+        self.assertEqual([status for _id, status, _code in self.runs()], ["completed", "completed"])
+
+    def test_2_argumento_invalido(self):
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(self.main("--nao-existe")[0], 2)
+        self.assertEqual(self.runs(), [])
+
+    def test_3_conta_ambigua_ou_invalida(self):
+        self.add_account("outra@example.com", plan="premium")
+        code, _out, err = self.main()
+        self.assertEqual(code, 3)
+        self.assertIn("--account", err)
+        self.assertEqual(self.main("--account", "nao-existe")[0], 3)
+        self.assertEqual(self.runs(), [])
+
+    def test_4_snapshot_indisponivel(self):
+        self.manifest_path.unlink()
+        code, _out, err = self.main()
+        self.assertEqual(code, 4)
+        self.assertIn("snapshot_unavailable", err)
+        self.assertEqual(self.runs(), [])
+
+    def test_5_run_failed(self):
+        def broken(*_args, **_kwargs):
+            raise RuntimeError("engine exploded")
+
+        code, _out, err = self.main(runner=broken)
+        self.assertEqual(code, 5)
+        self.assertIn("engine_error", err)
+        self.assertEqual([status for _id, status, _code in self.runs()], ["failed"])
+
+    def test_6_run_reaproveitado_em_execucao(self):
+        self.assertEqual(self.main()[0], 0)
+        with self.sessions() as session:
+            session.scalars(select(RecommendationRun)).one().status = "queued"
+            session.commit()
+        code, _out, err = self.main()
+        self.assertEqual(code, 6)
+        self.assertIn("--force", err)
+
+    def test_130_ctrl_c_marca_o_run_failed(self):
+        def interrupted(*_args, **_kwargs):
+            raise KeyboardInterrupt
+
+        self.assertEqual(self.main(runner=interrupted)[0], 130)
+        self.assertEqual([(status, code) for _id, status, code in self.runs()], [("failed", "interrupted")])
+
+    def test_130_sigterm_marca_o_run_failed_e_restaura_o_handler(self):
+        def unhandled(_signum, _frame):
+            raise AssertionError("o comando não tratou SIGTERM")
+
+        before = signal.signal(signal.SIGTERM, unhandled)
+        self.addCleanup(signal.signal, signal.SIGTERM, before)
+
+        def terminated(*_args, **_kwargs):
+            os.kill(os.getpid(), signal.SIGTERM)
+            time.sleep(1)
+            raise AssertionError("SIGTERM não interrompeu o run")
+
+        self.assertEqual(self.main(runner=terminated)[0], 130)
+        self.assertEqual([(status, code) for _id, status, code in self.runs()], [("failed", "interrupted")])
+        self.assertIs(signal.getsignal(signal.SIGTERM), unhandled)
 
 
 if __name__ == "__main__":
