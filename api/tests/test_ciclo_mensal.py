@@ -7,7 +7,9 @@ import io
 import json
 import os
 from pathlib import Path
+import signal
 import sys
+import time
 import unittest
 from unittest import mock
 
@@ -482,6 +484,24 @@ class CicloMensalCliTests(CicloMensalCase):
         self.assertEqual(code, 130)
         self.assertEqual([status for _id, _manifest, status in self.runs()], ["failed"])
         self.assertEqual((self.notified[0].etapa, self.notified[0].exit_code), ("run", 130))
+
+    def test_130_sigterm_no_run_marca_o_run_failed_avisa_e_restaura_o_handler(self):
+        def unhandled(_signum, _frame):
+            raise AssertionError("o ciclo não tratou SIGTERM")
+
+        before = signal.signal(signal.SIGTERM, unhandled)
+        self.addCleanup(signal.signal, signal.SIGTERM, before)
+
+        def terminated(*_args, **_kwargs):
+            os.kill(os.getpid(), signal.SIGTERM)
+            time.sleep(1)
+            raise AssertionError("SIGTERM não interrompeu o run")
+
+        code, _out, _err = self.main(runner=terminated)
+        self.assertEqual(code, 130)
+        self.assertEqual([status for _id, _manifest, status in self.runs()], ["failed"])
+        self.assertEqual((self.notified[0].etapa, self.notified[0].exit_code), ("run", 130))
+        self.assertIs(signal.getsignal(signal.SIGTERM), unhandled)
 
     def test_notificador_que_falha_nao_muda_o_codigo_de_saida(self):
         def broken(_result):
