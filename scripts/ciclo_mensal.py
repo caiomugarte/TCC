@@ -186,7 +186,7 @@ def ciclo_mensal(
         result.run_reaproveitado = outcome.reused
 
         current = ETAPA_TESTE
-        new_run, previous = _stage(
+        new_run, previous, incumbent = _stage(
             ETAPA_TESTE, lambda: _runs(session_factory, result.account_id, outcome.run_id, result.corte)
         )
         if previous is None:
@@ -197,7 +197,7 @@ def ciclo_mensal(
             forward = {"status": "medido", "resultado": _without_local_paths(measured)}
 
         current = ETAPA_RELATORIO
-        report = _stage(ETAPA_RELATORIO, lambda: build_report(manifest, new_run, previous, forward))
+        report = _stage(ETAPA_RELATORIO, lambda: build_report(manifest, new_run, previous, forward, incumbent))
         result.relatorio_json, result.relatorio_md = _stage(
             ETAPA_RELATORIO, lambda: write_report(Path(relatorio_dir), report)
         )
@@ -216,8 +216,9 @@ _RUN_FIELDS = ("id", "plan", "status", "snapshot_id", "snapshot_cutoff", "policy
                "provenance_json")
 
 
-def _runs(session_factory, account_id: str, run_id: str, cutoff: str) -> tuple[dict, dict | None]:
-    """O run novo e o run Premium concluído anterior da conta (corte menor que ``cutoff``, criado por último)."""
+def _runs(session_factory, account_id: str, run_id: str, cutoff: str) -> tuple[dict, dict | None, dict | None]:
+    """O run novo, o run Premium concluído anterior da conta (corte menor que ``cutoff``, criado por último; é o que o
+    teste para frente mede) e o run titular que a zona de proteção do run novo usou (``None`` sem titular gravado)."""
     from sqlalchemy import desc, select
 
     from app.db.models import RecommendationRun
@@ -236,8 +237,19 @@ def _runs(session_factory, account_id: str, run_id: str, cutoff: str) -> tuple[d
             .order_by(desc(RecommendationRun.created_at), desc(RecommendationRun.id))
             .limit(1)
         )
-        as_dict = lambda run: {name: getattr(run, name) for name in _RUN_FIELDS}  # noqa: E731
-        return as_dict(new_run), (as_dict(previous) if previous is not None else None)
+        incumbent_id = _incumbent_run_id(new_run.result_json)
+        incumbent = session.get(RecommendationRun, incumbent_id) if incumbent_id else None
+        as_dict = lambda run: None if run is None else {name: getattr(run, name) for name in _RUN_FIELDS}  # noqa: E731
+        return as_dict(new_run), as_dict(previous), as_dict(incumbent)
+
+
+def _zone_record(result_json: Any) -> Mapping | None:
+    zone = ((result_json or {}).get("provenance") or {}).get("protection_zone")
+    return zone if isinstance(zone, Mapping) else None
+
+
+def _incumbent_run_id(result_json: Any) -> str | None:
+    return (_zone_record(result_json) or {}).get("incumbent_run_id")
 
 
 def _without_local_paths(measured: Mapping) -> dict:
@@ -263,8 +275,8 @@ def _tickers(run: Mapping | None, key: str) -> list[str]:
 
 
 def _portfolio_changes(new_run: Mapping, previous: Mapping | None) -> dict:
-    """Por classe, os tickers comprados do run novo contra os do run anterior (quantity 0 não conta)."""
-    changes = {}
+    """Por classe, os tickers comprados do run novo contra os de ``previous`` (quantity 0 não conta)."""
+    changes: dict[str, Any] = {"run_comparado": None if previous is None else previous["id"]}
     for label, key, _title in CLASSES:
         now, before = set(_tickers(new_run, key)), set(_tickers(previous, key))
         groups = {"ficaram": sorted(now & before), "entraram": sorted(now - before), "sairam": sorted(before - now)}
@@ -275,9 +287,8 @@ def _portfolio_changes(new_run: Mapping, previous: Mapping | None) -> dict:
 def _protection_zone(new_run: Mapping) -> dict | None:
     """O que a zona de proteção do run novo fez; ``mantidos_pela_zona`` são os titulares mantidos que o consenso puro
     teria tirado."""
-    result = new_run.get("result_json") or {}
-    zone = (result.get("provenance") or {}).get("protection_zone")
-    if not isinstance(zone, Mapping):
+    zone = _zone_record(new_run.get("result_json"))
+    if zone is None:
         return None
     summary: dict[str, Any] = {"run_titular": zone.get("incumbent_run_id")}
     for label, key, _title in CLASSES:
@@ -295,7 +306,11 @@ def _protection_zone(new_run: Mapping) -> dict | None:
     return summary
 
 
-def build_report(manifest, new_run: Mapping, previous: Mapping | None, forward: Mapping) -> dict:
+def build_report(
+    manifest, new_run: Mapping, previous: Mapping | None, forward: Mapping, incumbent: Mapping | None = None
+) -> dict:
+    """``previous`` é a carteira medida no teste para frente; a mudança da carteira compara com ``incumbent``, o run
+    titular que a zona de proteção do run novo usou, e só cai em ``previous`` quando o run novo não gravou titular."""
     provenance = new_run.get("provenance_json") or {}
     return {
         "versao": VERSAO_RELATORIO,
@@ -309,7 +324,7 @@ def build_report(manifest, new_run: Mapping, previous: Mapping | None, forward: 
         "run_anterior": None if previous is None else {
             "id": previous["id"], "manifesto": previous["snapshot_id"], "corte": previous["snapshot_cutoff"],
         },
-        "carteira": _portfolio_changes(new_run, previous),
+        "carteira": _portfolio_changes(new_run, incumbent if incumbent is not None else previous),
         "zona_de_protecao": _protection_zone(new_run),
         "teste_para_frente": dict(forward),
     }
@@ -373,6 +388,12 @@ def _forward_section(forward: Mapping) -> list[str]:
     return lines
 
 
+def _compared_with(run_id: str | None) -> list[str]:
+    if run_id is None:
+        return []
+    return [f"Comparada com a carteira do run `{run_id}`.", ""]
+
+
 TABLE_HEADER = [
     "| Corte | Manifesto | Run | Período medido | Carteira | Peso igual | Ações | IBOV | FIIs | IFIX | CDI |",
     "|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|",
@@ -418,6 +439,7 @@ def render_markdown(report: Mapping, cycles: Sequence[Mapping] = ()) -> str:
         "",
         "## O que mudou na carteira",
         "",
+        *_compared_with(report["carteira"].get("run_comparado")),
         "| Classe | Ficaram | Entraram | Saíram |",
         "|---|---:|---:|---:|",
     ]

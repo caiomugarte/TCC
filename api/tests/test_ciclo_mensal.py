@@ -248,6 +248,32 @@ class CicloMensalTests(CicloMensalCase):
         self.assertEqual(self.forward.calls, [])
         self.assertEqual(self.report()["teste_para_frente"]["status"], "sem carteira anterior")
 
+    def test_mudanca_e_zona_comparam_com_o_run_titular_que_a_zona_usou_e_nao_com_o_de_corte_anterior(self):
+        october = self.run_october()
+        # Um run concluído do mesmo manifesto de novembro, de uma política antiga, antes do run do ciclo: é ele o
+        # último run Premium concluído da conta e portanto o titular da zona; o run de corte anterior segue outubro.
+        earlier = self.rodar(None, self.november)
+        with self.sessions() as session:
+            run = session.get(RecommendationRun, earlier.run_id)
+            run.policy_version = "politica-antiga"
+            run.result_json = {**run.result_json, "stocks": [
+                entry for entry in run.result_json["stocks"] if entry["ticker"] != "S00"]}
+            session.commit()
+
+        result = self.ciclo()
+
+        self.assertTrue(result.ok, result.erro)
+        self.assertNotEqual(result.run_id, earlier.run_id)
+        self.assertEqual(self.forward.calls, [(october.run_id, "mensal-2026-10-31")])
+        report = self.report()
+        self.assertEqual(report["run_anterior"]["id"], october.run_id)
+        self.assertEqual(report["zona_de_protecao"]["run_titular"], earlier.run_id)
+        self.assertEqual(report["carteira"]["run_comparado"], earlier.run_id)
+        self.assertEqual(report["carteira"]["acoes"]["entraram"], ["S00"])
+        self.assertEqual(report["carteira"]["acoes"]["sairam"], [])
+        self.assertEqual(report["carteira"]["fiis"]["contagem"], {"ficaram": 5, "entraram": 0, "sairam": 0})
+        self.assertIn(f"Comparada com a carteira do run `{earlier.run_id}`", self.markdown())
+
     def test_publicacao_falhada_para_o_ciclo_sem_chegar_ao_run(self):
         october = self.run_october()
         self.publish.error = PublishSnapshotError("sanidade", "acoes_com_score: 3; mínimo 40", check="acoes_com_score")
