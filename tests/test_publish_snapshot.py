@@ -198,6 +198,52 @@ class PublishSnapshotTests(unittest.TestCase):
         self.assertEqual(self.space.states(), {"mensal-2026-11-17": "published"})
         self.assertEqual(self.space.latest().manifest_id, "mensal-2026-11-17")
 
+    def assert_check_blocks_publish(self, check: str, stages: FakeStages, limits: SanityLimits = LIMITS):
+        self.space.publish(date(2026, 10, 15), FakeStages())
+
+        with self.assertRaises(PublishSnapshotError) as caught:
+            self.space.publish(date(2026, 11, 17), stages, limits)
+
+        self.assertEqual((caught.exception.stage, caught.exception.check), ("sanidade", check))
+        self.assertEqual(caught.exception.exit_code, 7)
+        self.assertEqual(self.space.latest().manifest_id, "mensal-2026-10-15")
+        self.assertEqual(self.space.states(), {"mensal-2026-10-15": "published", "mensal-2026-11-17": "validated"})
+
+    def test_too_few_scored_stocks_blocks_the_publish(self):
+        self.assert_check_blocks_publish("acoes_com_score", FakeStages(), LIMITS.__class__(
+            min_scored_stocks=31, min_eligible_fiis=5, max_universe_drop=0.20, max_cutoff_lag_days=5))
+
+    def test_too_few_eligible_fiis_blocks_the_publish(self):
+        # Liquidez de 1 milhão passa no moderado e no arrojado, não no conservador (2 milhões).
+        self.assert_check_blocks_publish("fiis_elegiveis", FakeStages(fii_liquidity="1000000"))
+
+    def test_an_index_series_ending_before_the_date_blocks_the_publish(self):
+        for series, name in (("ibovespa", "IBOV"), ("ifix", "IFIX"), ("di", "CDI")):
+            with self.subTest(series=series):
+                self.setUp()
+                self.assert_check_blocks_publish(
+                    "cobertura_indices", FakeStages(last={series: date(2026, 11, 6)}))
+
+    def test_a_stale_cutoff_from_another_class_series_blocks_the_publish(self):
+        self.assert_check_blocks_publish("defasagem_corte", FakeStages(last={"btc_usd": date(2026, 11, 6)}))
+
+    def test_a_stock_universe_drop_beyond_the_limit_blocks_the_publish(self):
+        self.assert_check_blocks_publish("queda_universo_acoes", FakeStages(stocks=23))
+
+    def test_a_fii_universe_drop_beyond_the_limit_blocks_the_publish(self):
+        self.assert_check_blocks_publish("queda_universo_fiis", FakeStages(fiis=15))
+
+    def test_a_drop_within_the_limit_publishes(self):
+        self.space.publish(date(2026, 10, 15), FakeStages())
+
+        result = self.space.publish(date(2026, 11, 17), FakeStages(stocks=24, fiis=16))
+
+        self.assertEqual(self.space.latest().manifest_id, "mensal-2026-11-17")
+        self.assertEqual({check.name: check.passed for check in result.checks}, {
+            "acoes_com_score": True, "fiis_elegiveis": True, "cobertura_indices": True, "defasagem_corte": True,
+            "queda_universo_acoes": True, "queda_universo_fiis": True,
+        })
+
     def test_a_retired_manifest_with_the_same_id_is_never_replaced(self):
         result = self.space.publish(date(2026, 11, 17), FakeStages())
         raw = json.loads(result.manifest_path.read_text(encoding="utf-8"))

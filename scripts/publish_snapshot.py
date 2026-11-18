@@ -52,6 +52,7 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
+import csv
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
@@ -227,7 +228,20 @@ def sanity_checks(manifest: SnapshotManifest, day: date, registry: Path, limits:
     """Todas as checagens de sanidade do manifesto validado de ``day`` (passando ou não)."""
     stock_csv = Path(manifest.selector_source_for("stock").resolved_path())
     fii_csv = Path(manifest.selector_source_for("fii").resolved_path())
-    return [_scored_stocks_check(stock_csv, limits)]
+    previous = _published(registry, lambda item: item.manifest_id != manifest.manifest_id)
+    return [
+        _scored_stocks_check(stock_csv, limits),
+        _eligible_fiis_check(fii_csv, limits),
+        _index_coverage_check(manifest, day, limits),
+        SanityCheck(
+            "defasagem_corte",
+            (day - manifest.cutoff_date).days <= limits.max_cutoff_lag_days,
+            f"corte {manifest.cutoff_date.isoformat()} para --date {day.isoformat()}; "
+            f"máximo {limits.max_cutoff_lag_days} dias",
+        ),
+        _universe_drop_check("queda_universo_acoes", "stock", manifest, previous, limits),
+        _universe_drop_check("queda_universo_fiis", "fii", manifest, previous, limits),
+    ]
 
 
 def _scored_stocks_check(stock_csv: Path, limits: SanityLimits) -> SanityCheck:
@@ -250,6 +264,66 @@ def _scored_stocks_check(stock_csv: Path, limits: SanityLimits) -> SanityCheck:
                 clean = apply_robustness_filter(clean)
             counts[band] = 0 if clean.empty else len(build_scores(clean, factor_weights=rules["factor_weights"]))
     return _minimum_check("acoes_com_score", counts, limits.min_scored_stocks)
+
+
+def _eligible_fiis_check(fii_csv: Path, limits: SanityLimits) -> SanityCheck:
+    """FIIs elegíveis (apply_fii_eligibility) com os filtros de cada perfil-âncora de FII_RULES."""
+    from app.services.premium_policy import FII_RULES
+    from fii_selection import FiiSelectionError, apply_fii_eligibility, load_fii_data
+
+    raw = load_fii_data(fii_csv)
+    counts = {}
+    for band, rules in FII_RULES.items():
+        try:
+            counts[band] = len(apply_fii_eligibility(raw.copy(), rules["filters"]))
+        except FiiSelectionError:  # nenhum FII passou
+            counts[band] = 0
+    return _minimum_check("fiis_elegiveis", counts, limits.min_eligible_fiis)
+
+
+INDEX_SERIES = {"brazilian_stocks": "IBOV", "fiis": "IFIX", "fixed_income": "CDI"}
+
+
+def _index_coverage_check(manifest: SnapshotManifest, day: date, limits: SanityLimits) -> SanityCheck:
+    """IBOV, IFIX e CDI com dado até a data de corte e no máximo ``max_cutoff_lag_days`` antes de --date.
+
+    O corte é a interseção das séries, então cada uma cobre o corte por construção; o que esta checagem pega é a
+    série que parou antes e arrastou o corte para trás, com o nome dela."""
+    from allocation_data import read_levels_csv
+
+    floor = day.toordinal() - limits.max_cutoff_lag_days
+    last = {}
+    for key, label in INDEX_SERIES.items():
+        levels = read_levels_csv(Path(manifest.source_for(key).resolved_path()))
+        last[label] = max(max(series) for series in levels.values())
+    late = [label for label, value in last.items() if value < manifest.cutoff_date or value.toordinal() < floor]
+    listed = ", ".join(f"{label} até {value.isoformat()}" for label, value in last.items())
+    return SanityCheck(
+        "cobertura_indices", not late,
+        f"{listed}; corte {manifest.cutoff_date.isoformat()}, --date {day.isoformat()}, "
+        f"máximo {limits.max_cutoff_lag_days} dias" + (f"; atrasadas: {', '.join(late)}" if late else ""),
+    )
+
+
+def _universe_drop_check(
+    name: str, role: str, manifest: SnapshotManifest, previous: SnapshotManifest | None, limits: SanityLimits,
+) -> SanityCheck:
+    """Linhas do CSV de seleção contra as do último snapshot publicado; queda acima de ``max_universe_drop`` reprova."""
+    current = _csv_rows(Path(manifest.selector_source_for(role).resolved_path()))
+    if previous is None:
+        return SanityCheck(name, True, f"{current} linhas; sem snapshot publicado anterior")
+    before = _csv_rows(Path(previous.selector_source_for(role).resolved_path()))
+    drop = 0.0 if before == 0 else (before - current) / before
+    return SanityCheck(
+        name, drop <= limits.max_universe_drop,
+        f"{current} linhas contra {before} em {previous.manifest_id} (queda {drop:.1%}); "
+        f"máximo {limits.max_universe_drop:.0%}",
+    )
+
+
+def _csv_rows(path: Path) -> int:
+    with path.open(encoding="utf-8-sig", newline="") as handle:
+        return sum(1 for _ in csv.DictReader(handle))
 
 
 def _minimum_check(name: str, counts: dict, minimum: int) -> SanityCheck:
