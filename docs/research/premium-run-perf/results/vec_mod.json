@@ -1,0 +1,70 @@
+{
+ "stocks": {
+  "m": 186,
+  "n_sectors": 10,
+  "params": {
+   "n_assets": 12,
+   "lambda_hhi": 0.25,
+   "hhi_max": null,
+   "max_per_segment": null
+  },
+  "runs": [
+   {
+    "seed": 3764915,
+    "t_orig": 14.915210352000031,
+    "t_vec": 0.4314173699995081,
+    "gens": 54,
+    "identical": true
+   },
+   {
+    "seed": 4135059266,
+    "t_orig": 15.097809443999722,
+    "t_vec": 0.4329865529998642,
+    "gens": 54,
+    "identical": true
+   },
+   {
+    "seed": 3209064485,
+    "t_orig": 19.37163870400036,
+    "t_vec": 0.5591547730000457,
+    "gens": 69,
+    "identical": true
+   }
+  ],
+  "speedup": 34.69098860397134
+ },
+ "fiis": {
+  "m": 57,
+  "n_sectors": 11,
+  "params": {
+   "n_assets": 5,
+   "lambda_hhi": 0.25,
+   "hhi_max": null,
+   "max_per_segment": 2
+  },
+  "runs": [
+   {
+    "seed": 2042985659,
+    "t_orig": 37.049201732000256,
+    "t_vec": 0.3979505360002804,
+    "gens": 79,
+    "identical": true
+   },
+   {
+    "seed": 587403756,
+    "t_orig": 50.39335195200056,
+    "t_vec": 0.5620336600004521,
+    "gens": 112,
+    "identical": true
+   },
+   {
+    "seed": 707799161,
+    "t_orig": 39.17870136900001,
+    "t_vec": 0.43537876099981077,
+    "gens": 87,
+    "identical": true
+   }
+  ],
+  "speedup": 90.74431452959341
+ }
+}

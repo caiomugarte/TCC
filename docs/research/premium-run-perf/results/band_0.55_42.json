@@ -1,0 +1,83 @@
+{
+ "profile": "moderado",
+ "score": 0.55,
+ "seed": 42,
+ "output": {
+  "stocks": [
+   "BRSR6",
+   "CURY3",
+   "EUCA4",
+   "FIQE3",
+   "ISAE4",
+   "LAVV3",
+   "MDNE3",
+   "POMO3",
+   "RDOR3",
+   "RIAA3",
+   "TAEE11",
+   "VULC3"
+  ],
+  "fiis": [
+   "MXRF11",
+   "KNCR11",
+   "XPML11",
+   "BTLG11",
+   "BRCR11"
+  ],
+  "classes": {
+   "brazilian_stocks": 0.1225,
+   "fiis": 0.1225,
+   "international": 0.1225,
+   "fixed_income": 0.51,
+   "crypto": 0.1225
+  }
+ },
+ "engines": {
+  "allocation": {
+   "ga": false,
+   "note": "ADR 0003: equal-weight allocation, no GA"
+  },
+  "stocks": {
+   "n_runs_effective": 150,
+   "runs_observed": 150,
+   "generations_total": 12780,
+   "generations_mean": 85.2,
+   "generations_min": 51,
+   "generations_max": 269,
+   "converged_early_runs": 150,
+   "fitness_cv": 0.06097430570764061,
+   "jaccard_mean": 0.14116948932613282,
+   "ga": true,
+   "run_count_configured": 150,
+   "generations_configured": 400,
+   "population_configured": 300,
+   "adaptive_mode": true,
+   "min_runs": 40,
+   "target_cv": 0.02,
+   "target_jaccard": 0.75,
+   "stability_target_met": false,
+   "stop_reason": "run_count"
+  },
+  "fiis": {
+   "n_runs_effective": 150,
+   "runs_observed": 150,
+   "generations_total": 13650,
+   "generations_mean": 91.0,
+   "generations_min": 51,
+   "generations_max": 191,
+   "converged_early_runs": 150,
+   "fitness_cv": 0.02364465610815253,
+   "jaccard_mean": 0.6074070523063811,
+   "ga": true,
+   "run_count_configured": 150,
+   "generations_configured": 400,
+   "population_configured": 300,
+   "adaptive_mode": true,
+   "min_runs": 40,
+   "target_cv": 0.02,
+   "target_jaccard": 0.75,
+   "stability_target_met": false,
+   "stop_reason": "run_count"
+  }
+ }
+}

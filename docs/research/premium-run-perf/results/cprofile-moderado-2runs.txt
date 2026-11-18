@@ -1,0 +1,100 @@
+         2697202298 function calls (1944247169 primitive calls) in 449.692 seconds
+
+   Ordered by: internal time
+   List reduced from 5868 to 40 due to restriction <40>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+745998849/329131  133.531    0.000  362.969    0.001 /usr/lib/python3.14/copy.py:110(deepcopy)
+164034849   91.672    0.000  150.941    0.000 /usr/lib/python3.14/copy.py:172(_deepcopy_list)
+987284/329131   36.226    0.000  362.518    0.001 /usr/lib/python3.14/copy.py:198(_deepcopy_dict)
+165022133   30.733    0.000   47.089    0.000 /usr/lib/python3.14/copy.py:212(_keep_alive)
+581380745   28.147    0.000   28.147    0.000 {method 'append' of 'list' objects}
+495398110   23.152    0.000   23.152    0.000 {built-in method builtins.id}
+330353657   19.622    0.000   19.622    0.000 {method 'get' of 'dict' objects}
+42425877/41994563    4.131    0.000    6.505    0.000 {built-in method builtins.isinstance}
+   304941    3.701    0.000    3.784    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pyarrow/compute.py:468(take)
+   816911    2.721    0.000  366.961    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/generic.py:6119(__finalize__)
+   141080    2.658    0.000   10.012    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/arrays/arrow/array.py:1864(value_counts)
+   661116    2.200    0.000   18.497    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/series.py:369(__init__)
+14086762/8245523    1.804    0.000    2.543    0.000 {built-in method builtins.len}
+    89700    1.751    0.000  429.191    0.005 /home/caio/Documents/projetos/TCC-research-perf/py/core/optimizer.py:120(fitness)
+   446447    1.740    0.000    5.987    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/arrays/arrow/array.py:778(__getitem__)
+2184116/1855094    1.556    0.000    4.105    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/generic.py:6196(__setattr__)
+  2042649    1.555    0.000    1.555    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+   663481    1.542    0.000    4.140    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/construction.py:531(sanitize_array)
+   588066    1.409    0.000    2.917    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/arrays/string_arrow.py:134(__init__)
+   141085    1.309    0.000    2.902    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/sorting.py:372(nargsort)
+   466161    1.136    0.000    2.610    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/array_algos/take.py:118(_take_nd_ndarray)
+   141080    1.123    0.000   41.260    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/algorithms.py:841(value_counts_internal)
+    89700    1.058    0.000    2.044    0.000 /home/caio/Documents/projetos/TCC-research-perf/py/core/optimizer.py:185(mutate)
+   304941    1.036    0.000    7.467    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/arrays/arrow/array.py:1625(take)
+    83776    0.970    0.000  127.573    0.002 /home/caio/Documents/projetos/TCC-research-perf/py/core/metrics.py:18(hhi_sector)
+  1057184    0.937    0.000    1.386    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/indexes/base.py:652(_simple_new)
+  5295665    0.927    0.000    2.184    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/dtypes/generic.py:43(_instancecheck)
+  1069324    0.910    0.000    1.153    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/generic.py:258(__init__)
+   729169    0.873    0.000    1.428    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/arrays/arrow/array.py:366(__init__)
+  5295665    0.849    0.000    1.225    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/dtypes/generic.py:38(_check)
+8673158/8673144    0.845    0.000    1.089    0.000 {built-in method builtins.getattr}
+   141080    0.835    0.000   10.877    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/series.py:3579(sort_values)
+   236219    0.813    0.000    1.663    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/internals/managers.py:1226(iget)
+    89762    0.761    0.000   11.796    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/internals/managers.py:813(reindex_indexer)
+   466152    0.750    0.000    0.797    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/dtypes/cast.py:451(maybe_promote)
+   702887    0.724    0.000   10.368    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/internals/blocks.py:995(take_nd)
+  1978/39    0.707    0.000  449.573   11.528 {method 'acquire' of '_thread.lock' objects}
+   520036    0.704    0.000    2.360    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/internals/managers.py:2053(from_array)
+   702938    0.640    0.000    8.822    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/array_algos/take.py:57(take_nd)
+   310873    0.633    0.000    0.769    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/dtypes/missing.py:223(_isna_array)
+
+
+         2697202298 function calls (1944247169 primitive calls) in 449.692 seconds
+
+   Ordered by: cumulative time
+   List reduced from 5868 to 50 due to restriction <50>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+   494/10    0.002    0.000  449.578   44.958 /usr/lib/python3.14/threading.py:651(wait)
+   494/10    0.005    0.000  449.574   44.957 /usr/lib/python3.14/threading.py:337(wait)
+  1978/39    0.707    0.000  449.573   11.528 {method 'acquire' of '_thread.lock' objects}
+      2/1    0.000    0.000  449.573  449.573 /usr/lib/python3.14/threading.py:1030(_bootstrap)
+      2/1    0.000    0.000  449.573  449.573 /home/caio/Documents/projetos/TCC-research-perf/scripts/benchmark_premium.py:248(run_profile)
+        1    0.000    0.000  449.572  449.572 /home/caio/Documents/projetos/TCC-research-perf/scripts/bench_measure.py:97(stop)
+        1    0.000    0.000  449.572  449.572 /usr/lib/python3.14/threading.py:1097(join)
+        1    0.000    0.000  448.489  448.489 {method 'join' of '_thread._ThreadHandle' objects}
+        4    0.000    0.000  440.955  110.239 /home/caio/Documents/projetos/TCC-research-perf/scripts/bench_measure.py:257(wrapper)
+        1    0.000    0.000  439.874  439.874 /usr/lib/python3.14/threading.py:1013(run)
+        1    0.000    0.000  439.874  439.874 /home/caio/Documents/projetos/TCC-research-perf/scripts/bench_measure.py:87(_run)
+        1    0.000    0.000  439.873  439.873 /home/caio/Documents/projetos/TCC-research-perf/api/app/adapters/premium_optimization.py:631(run_premium_optimization)
+    89700    1.751    0.000  429.191    0.005 /home/caio/Documents/projetos/TCC-research-perf/py/core/optimizer.py:120(fitness)
+   816911    2.721    0.000  366.961    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/generic.py:6119(__finalize__)
+745998849/329131  133.531    0.000  362.969    0.001 /usr/lib/python3.14/copy.py:110(deepcopy)
+987284/329131   36.226    0.000  362.518    0.001 /usr/lib/python3.14/copy.py:198(_deepcopy_dict)
+        1    0.000    0.000  332.658  332.658 /home/caio/Documents/projetos/TCC-research-perf/api/app/adapters/premium_optimization.py:69(_default_fii_engine)
+        1    0.000    0.000  332.658  332.658 /home/caio/Documents/projetos/TCC-research-perf/py/fii_selection.py:649(run_fii_selection)
+        2    0.000    0.000  325.932  162.966 /home/caio/Documents/projetos/TCC-research-perf/scripts/bench_measure.py:386(recording)
+   225140    0.499    0.000  259.144    0.001 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/frame.py:4337(__getitem__)
+   236997    0.144    0.000  259.053    0.001 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/frame.py:4292(_ixs)
+   235713    0.149    0.000  258.119    0.001 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/frame.py:4968(_get_item)
+   236219    0.261    0.000  256.512    0.001 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/frame.py:4956(_box_col_values)
+164034849   91.672    0.000  150.941    0.000 /usr/lib/python3.14/copy.py:172(_deepcopy_list)
+      459    0.002    0.000  131.362    0.286 /home/caio/Documents/projetos/TCC-research-perf/scripts/bench_measure.py:80(sample_now)
+      459    0.001    0.000  131.254    0.286 /home/caio/Documents/projetos/TCC-research-perf/scripts/bench_measure.py:69(<lambda>)
+      465    0.430    0.001  130.460    0.281 /home/caio/Documents/projetos/TCC-research-perf/scripts/bench_measure.py:41(read_proc_status_kb)
+    83776    0.970    0.000  127.573    0.002 /home/caio/Documents/projetos/TCC-research-perf/py/core/metrics.py:18(hhi_sector)
+   103617    0.159    0.000  118.430    0.001 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/indexing.py:1192(__getitem__)
+    92039    0.152    0.000  117.483    0.001 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/indexing.py:1740(_getitem_axis)
+    89707    0.113    0.000  114.826    0.001 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/indexing.py:1221(_getbool_axis)
+    89752    0.423    0.000  113.757    0.001 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/generic.py:3998(take)
+        1    0.000    0.000  107.214  107.214 /home/caio/Documents/projetos/TCC-research-perf/api/app/adapters/premium_optimization.py:47(_default_stock_engine)
+        1    0.000    0.000  107.214  107.214 /home/caio/Documents/projetos/TCC-research-perf/py/pipelines/multi_run.py:897(run_multi_execution_profile)
+        4    0.384    0.096   93.658   23.415 /home/caio/Documents/projetos/TCC-research-perf/py/core/optimizer.py:247(optimize)
+        2    0.000    0.000   76.526   38.263 /home/caio/Documents/projetos/TCC-research-perf/py/pipelines/multi_run.py:70(run_single_execution)
+        2    0.000    0.000   76.515   38.257 /home/caio/Documents/projetos/TCC-research-perf/py/core/optimizer.py:400(optimize_portfolio)
+165022133   30.733    0.000   47.089    0.000 /usr/lib/python3.14/copy.py:212(_keep_alive)
+   141080    0.090    0.000   41.545    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/base.py:1024(value_counts)
+   141080    1.123    0.000   41.260    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/algorithms.py:841(value_counts_internal)
+581380745   28.147    0.000   28.147    0.000 {method 'append' of 'list' objects}
+495398110   23.152    0.000   23.152    0.000 {built-in method builtins.id}
+330353657   19.622    0.000   19.622    0.000 {method 'get' of 'dict' objects}
+   661116    2.200    0.000   18.497    0.000 /home/caio/Documents/projetos/TCC/.venv/lib/python3.14/site-packages/pandas/core/series.py:369(__init__)
+        2    0.000    0.000   17.148    8.574 /home/caio/Documents/projetos/TCC-research-perf/py/fii_selection.py:524(_run_fii_execution)
+        2    0.000    0.000   17.144    8.572 /home/caio/Documents/projetos/TCC-research-perf/py/fii_selection.py:460(optimize_fii_portfolio)

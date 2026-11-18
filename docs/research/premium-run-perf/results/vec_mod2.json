@@ -1,0 +1,74 @@
+{
+ "stocks": {
+  "attrs_bytes": {
+   "exclusion_reasons": 6454,
+   "eligibility_filters": 54
+  },
+  "speedup_noattrs": 2.9885535112119666,
+  "m": 186,
+  "n_sectors": 10,
+  "params": {
+   "n_assets": 12,
+   "lambda_hhi": 0.25,
+   "hhi_max": null,
+   "max_per_segment": null
+  },
+  "runs": [
+   {
+    "seed": 3764915,
+    "t_orig": 15.747581852000621,
+    "t_vec": 0.4432076180000877,
+    "gens": 54,
+    "identical": true,
+    "t_noattrs": 5.089049964999504,
+    "identical_noattrs": true
+   },
+   {
+    "seed": 4135059266,
+    "t_orig": 14.768076702000144,
+    "t_vec": 0.43274076400030026,
+    "gens": 54,
+    "identical": true,
+    "t_noattrs": 5.12179566299983,
+    "identical_noattrs": true
+   }
+  ],
+  "speedup": 34.8372794345629
+ },
+ "fiis": {
+  "attrs_bytes": {
+   "exclusion_reasons": 60566,
+   "eligibility_filters": 66
+  },
+  "speedup_noattrs": 3.757592286968194,
+  "m": 57,
+  "n_sectors": 11,
+  "params": {
+   "n_assets": 5,
+   "lambda_hhi": 0.25,
+   "hhi_max": null,
+   "max_per_segment": 2
+  },
+  "runs": [
+   {
+    "seed": 2042985659,
+    "t_orig": 35.93589124600021,
+    "t_vec": 0.3999501859998418,
+    "gens": 79,
+    "identical": true,
+    "t_noattrs": 9.301579502000095,
+    "identical_noattrs": true
+   },
+   {
+    "seed": 587403756,
+    "t_orig": 50.97723229600069,
+    "t_vec": 0.5649728970001888,
+    "gens": 112,
+    "identical": true,
+    "t_noattrs": 13.828424209000332,
+    "identical_noattrs": true
+   }
+  ],
+  "speedup": 90.07259238920928
+ }
+}

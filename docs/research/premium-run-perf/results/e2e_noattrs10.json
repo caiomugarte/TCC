@@ -1,0 +1,65 @@
+{
+ "variant": "noattrs",
+ "profile": "moderado",
+ "runs": 10,
+ "adaptive": false,
+ "wall": 199.80057192300046,
+ "ga_time": 195.55396282900347,
+ "stages": {
+  "snapshot_load": 0.027314061000652146,
+  "allocation": 0.4293970580001769,
+  "stocks": 84.46218051599953,
+  "fiis": 114.87178458200015,
+  "composition": 0.0011052039990318008,
+  "total": 199.79178142099954
+ },
+ "engines": {
+  "allocation": {
+   "ga": false,
+   "note": "ADR 0003: equal-weight allocation, no GA"
+  },
+  "stocks": {
+   "n_runs_effective": 10,
+   "runs_observed": 10,
+   "generations_total": 780,
+   "generations_mean": 78.0,
+   "generations_min": 54,
+   "generations_max": 125,
+   "converged_early_runs": 10,
+   "fitness_cv": 0.047777292511391005,
+   "jaccard_mean": 0.1613255360623782,
+   "ga": true,
+   "run_count_configured": 10,
+   "generations_configured": 400,
+   "population_configured": 300,
+   "adaptive_mode": false,
+   "min_runs": 1,
+   "target_cv": 0.02,
+   "target_jaccard": 0.75,
+   "stability_target_met": false,
+   "stop_reason": "run_count"
+  },
+  "fiis": {
+   "n_runs_effective": 10,
+   "runs_observed": 10,
+   "generations_total": 963,
+   "generations_mean": 96.3,
+   "generations_min": 73,
+   "generations_max": 122,
+   "converged_early_runs": 10,
+   "fitness_cv": 0.014629264356124654,
+   "jaccard_mean": 0.6338624338624339,
+   "ga": true,
+   "run_count_configured": 10,
+   "generations_configured": 400,
+   "population_configured": 300,
+   "adaptive_mode": false,
+   "min_runs": 1,
+   "target_cv": 0.02,
+   "target_jaccard": 0.75,
+   "stability_target_met": false,
+   "stop_reason": "run_count"
+  }
+ },
+ "stocks": null
+}
