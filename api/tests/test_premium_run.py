@@ -17,7 +17,7 @@ from app.adapters.premium_optimization import run_premium_optimization
 from app.db.base import Base
 from app.db.models import Account, Entitlement, ProfileRecord, RecommendationRun
 from app.routers.recommendations import read_latest_completed_recommendation, read_recommendation
-from app.services.premium_executor import InProcessPremiumExecutor
+from app.services.premium_executor import InProcessPremiumExecutor, PremiumExecutor
 from app.services.premium_run import PremiumRunCommandError, run_premium
 
 from fetch_status_invest import OUTPUT_COLUMNS as STOCK_COLUMNS
@@ -277,6 +277,53 @@ class PremiumRunTests(unittest.TestCase):
 
         error = self.assert_refused("run_refused")
         self.assertEqual(error.detail, "snapshot_unavailable")
+
+    def test_ctrl_c_no_meio_do_calculo_marca_o_run_failed_e_propaga(self):
+        def interrupted(*_args, **_kwargs):
+            raise KeyboardInterrupt
+
+        with self.assertRaises(KeyboardInterrupt):
+            self.premium_run(executor=self.executor(interrupted))
+
+        with self.sessions() as session:
+            (run,) = session.scalars(select(RecommendationRun)).all()
+            self.assertEqual(run.status, "failed")
+            self.assertEqual(run.failure_code, "interrupted")
+            self.assertIsNone(run.result_json)
+
+    def test_run_interrompido_nao_bloqueia_o_proximo_sem_force(self):
+        def interrupted(*_args, **_kwargs):
+            raise KeyboardInterrupt
+
+        with self.assertRaises(KeyboardInterrupt):
+            self.premium_run(executor=self.executor(interrupted))
+
+        self.assertEqual(self.stored(self.premium_run().run_id).status, "completed")
+
+    def test_api_reiniciando_no_meio_do_run_vira_erro_claro_e_nao_sucesso(self):
+        def api_restarts_then_runs(*args, **kwargs):
+            # A API, ao subir, marca failed todo run queued/running (recover_stale).
+            PremiumExecutor(session_factory=self.sessions).recover_stale()
+            return self.runner(*args, **kwargs)
+
+        with self.assertRaises(PremiumRunCommandError) as caught:
+            self.premium_run(executor=self.executor(api_restarts_then_runs))
+
+        error = caught.exception
+        self.assertEqual(error.code, "run_failed")
+        self.assertEqual(error.detail, "worker_restarted")
+        self.assertIn("API", error.message)
+        self.assertEqual(self.stored(error.run_id).status, "failed")
+
+    def test_run_que_falha_no_calculo_vira_erro_com_o_codigo_da_falha(self):
+        def broken(*_args, **_kwargs):
+            raise RuntimeError("constraint infeasible")
+
+        with self.assertRaises(PremiumRunCommandError) as caught:
+            self.premium_run(executor=self.executor(broken))
+
+        self.assertEqual(caught.exception.code, "run_failed")
+        self.assertEqual(caught.exception.detail, "infeasible_constraints")
 
 
 if __name__ == "__main__":
