@@ -33,6 +33,9 @@ def _load_cli():
 
 ciclo = _load_cli()
 
+from publish_snapshot import PublishResult, PublishSnapshotError  # noqa: E402 - scripts/ entra no sys.path ao carregar o CLI
+from teste_para_frente import TesteParaFrenteError  # noqa: E402
+
 OUTUBRO = "2026-10-29"
 NOVEMBRO = "2026-10-30"
 
@@ -65,7 +68,7 @@ class FakePublish:
         if self.error is not None:
             raise self.error
         manifest = validate_manifest(SnapshotManifest.load(self.manifest_path))
-        return ciclo.PublishResult(manifest, self.manifest_path, reused=len(self.calls) > 1)
+        return PublishResult(manifest, self.manifest_path, reused=len(self.calls) > 1)
 
 
 TESTE_PARA_FRENTE = {
@@ -245,7 +248,7 @@ class CicloMensalTests(CicloMensalCase):
 
     def test_publicacao_falhada_para_o_ciclo_sem_chegar_ao_run(self):
         october = self.run_october()
-        self.publish.error = ciclo.PublishSnapshotError("sanidade", "acoes_com_score: 3; mínimo 40", check="acoes_com_score")
+        self.publish.error = PublishSnapshotError("sanidade", "acoes_com_score: 3; mínimo 40", check="acoes_com_score")
 
         result = self.ciclo()
 
@@ -275,7 +278,7 @@ class CicloMensalTests(CicloMensalCase):
         self.run_october()
 
         def unavailable(_run, _manifest):
-            raise ciclo.TesteParaFrenteError("o COTAHIST do cache vai até 2026-10-29")
+            raise TesteParaFrenteError("o COTAHIST do cache vai até 2026-10-29")
 
         self.forward = unavailable
         result = self.ciclo()
@@ -318,7 +321,7 @@ class CicloMensalTests(CicloMensalCase):
         measured = self.forward
 
         def unavailable(_run, _manifest):
-            raise ciclo.TesteParaFrenteError("COTAHIST desatualizado")
+            raise TesteParaFrenteError("COTAHIST desatualizado")
 
         self.forward = unavailable
         failed = self.ciclo()
@@ -458,7 +461,7 @@ class CicloMensalCliTests(CicloMensalCase):
         self.run_october()
 
         def unavailable(_run, _manifest):
-            raise ciclo.TesteParaFrenteError("COTAHIST desatualizado")
+            raise TesteParaFrenteError("COTAHIST desatualizado")
 
         code, _out, err = self.main(medir=unavailable)
         self.assertEqual(code, 6)

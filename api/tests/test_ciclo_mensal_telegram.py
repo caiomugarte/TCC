@@ -11,6 +11,7 @@ import urllib.error
 from tests.test_ciclo_mensal import CicloMensalCase, ciclo
 
 import aviso_telegram  # noqa: E402 - scripts/ entra no sys.path ao carregar scripts/ciclo_mensal.py
+from teste_para_frente import TesteParaFrenteError  # noqa: E402
 
 TOKEN = "123456:segredo-do-bot"
 ENV = {aviso_telegram.ENV_TOKEN: TOKEN, aviso_telegram.ENV_CHAT_ID: "4242"}
@@ -87,7 +88,7 @@ class MensagensTests(TelegramCase):
         self.run_october()
 
         def unavailable(_run, _manifest):
-            raise ciclo.TesteParaFrenteError("COTAHIST desatualizado")
+            raise TesteParaFrenteError("COTAHIST desatualizado")
 
         code, _out, _err = self.main(medir=unavailable)
 

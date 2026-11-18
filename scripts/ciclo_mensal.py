@@ -76,8 +76,7 @@ for _path in (PROJECT_ROOT / "py", PROJECT_ROOT / "api", PROJECT_ROOT / "scripts
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from publish_snapshot import PublishResult, PublishSnapshotError  # noqa: E402,F401
-from teste_para_frente import TesteParaFrenteError  # noqa: E402,F401
+from publish_snapshot import PublishResult  # noqa: E402
 
 EXIT_OK = 0
 EXIT_USAGE = 2
