@@ -15,6 +15,7 @@ import {
   startPremiumRecommendation,
 } from "@/lib/api-client";
 import { CRYPTO_SUGGESTION_WARNING } from "@/lib/api-types";
+import { staleSnapshotLabel } from "@/lib/snapshot-age";
 import type {
   AllocationClass,
   DroppedConstituent,
@@ -220,6 +221,8 @@ export function RecommendationView() {
   const inProgress = currentRun?.status === "queued" || currentRun?.status === "running";
   const failed = currentRun?.status === "failed";
   const completed = latestCompleted ?? (currentRun?.status === "completed" ? currentRun : null);
+  const staleSnapshot =
+    completed?.plan === "premium" ? staleSnapshotLabel(completed.snapshotCutoff, new Date()) : null;
   const statusLabel: Record<RecommendationStatus, string> = {
     queued: "Na fila",
     running: "Em processamento",
@@ -278,6 +281,8 @@ export function RecommendationView() {
             <p className="eyebrow">Resultado concluído · {completed.plan === "premium" ? "Premium" : "Basic"}</p>
             <h2 id="completed-title">Sua alocação por classe</h2>
           </div>
+
+          {staleSnapshot && <p className="notice" role="status">{staleSnapshot}</p>}
 
           <div className="allocation-grid">
             {completed.classes.map((item) => (
