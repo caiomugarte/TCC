@@ -295,6 +295,85 @@ class CicloMensalTests(CicloMensalCase):
         self.assertIn("--account", result.erro)
         self.assertEqual(self.publish.calls, [])
 
+    def test_retomada_com_a_mesma_data_reaproveita_manifesto_e_run_e_regrava_o_relatorio(self):
+        self.run_october()
+        first = self.ciclo()
+        json_bytes = (self.reports / "mensal-2026-10-31.json").read_bytes()
+        md_bytes = (self.reports / "mensal-2026-10-31.md").read_bytes()
+        (self.reports / "mensal-2026-10-31.md").write_text("estragado", encoding="utf-8")
+        calls = len(self.runner_calls)
+
+        again = self.ciclo()
+
+        self.assertTrue(again.ok, again.erro)
+        self.assertTrue(again.manifesto_reaproveitado)
+        self.assertEqual(again.run_id, first.run_id)
+        self.assertTrue(again.run_reaproveitado)
+        self.assertEqual(len(self.runner_calls), calls)
+        self.assertEqual(len(self.runs()), 2)
+        self.assertEqual((self.reports / "mensal-2026-10-31.json").read_bytes(), json_bytes)
+        self.assertEqual((self.reports / "mensal-2026-10-31.md").read_bytes(), md_bytes)
+
+    def test_retomada_depois_de_falha_no_teste_para_frente_nao_refaz_o_run(self):
+        self.run_october()
+        measured = self.forward
+
+        def unavailable(_run, _manifest):
+            raise ciclo.TesteParaFrenteError("COTAHIST desatualizado")
+
+        self.forward = unavailable
+        failed = self.ciclo()
+        calls = len(self.runner_calls)
+        self.forward = measured
+
+        resumed = self.ciclo()
+
+        self.assertTrue(resumed.ok, resumed.erro)
+        self.assertEqual(resumed.run_id, failed.run_id)
+        self.assertEqual(len(self.runner_calls), calls)
+        self.assertEqual(self.report()["teste_para_frente"]["status"], "medido")
+
+    def test_tabela_acumulada_vem_dos_jsons_de_ciclos_ordenada_pelo_corte(self):
+        self.reports.mkdir(parents=True)
+        later = {
+            "versao": 1,
+            "manifesto": {"id": "mensal-2026-12-15", "corte": "2026-12-14"},
+            "run": {"id": "run-dez"},
+            "teste_para_frente": {"status": "sem carteira anterior", "resultado": None},
+        }
+        earlier = {
+            "versao": 1,
+            "manifesto": {"id": "mensal-2026-09-15", "corte": "2026-09-14"},
+            "run": {"id": "run-set"},
+            "teste_para_frente": {"status": "medido", "resultado": {
+                **TESTE_PARA_FRENTE, "inicio": "2026-08-14", "fim": "2026-09-14",
+                "carteira": {"retorno_ponderado": -0.0425, "retorno_peso_igual": -0.04},
+            }},
+        }
+        for report in (later, earlier):
+            (self.reports / f"{report['manifesto']['id']}.json").write_text(json.dumps(report), encoding="utf-8")
+        self.run_october()
+
+        self.ciclo()
+
+        table = self.markdown().split("## Tabela acumulada", 1)[1]
+        rows = [line for line in table.splitlines() if line.startswith("| 20")]
+        self.assertEqual([row.split(" | ")[0] for row in rows], ["| 2026-09-14", "| 2026-10-30", "| 2026-12-14"])
+        self.assertIn("-4.25%", rows[0])
+        self.assertIn("+1.23%", rows[1])  # carteira ponderada deste ciclo
+        self.assertIn("+1.00%", rows[1])  # IBOV deste ciclo
+        self.assertIn("sem carteira anterior", rows[2])
+
+    def test_json_de_ciclo_ilegivel_falha_na_etapa_relatorio(self):
+        self.reports.mkdir(parents=True)
+        (self.reports / "lixo.json").write_text("{nao é json", encoding="utf-8")
+        self.run_october()
+
+        result = self.ciclo()
+
+        self.assertEqual((result.etapa, result.exit_code), ("relatorio", 7))
+        self.assertIn("lixo.json", result.erro)
+
 
 if __name__ == "__main__":
     unittest.main()

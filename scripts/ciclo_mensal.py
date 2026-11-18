@@ -307,13 +307,27 @@ def build_report(manifest, new_run: Mapping, previous: Mapping | None, forward: 
 
 
 def write_report(directory: Path, report: Mapping) -> tuple[Path, Path]:
+    """Grava ``<manifest_id>.json`` e depois ``.md``, este com a tabela acumulada de todos os JSONs de ``directory``."""
     directory.mkdir(parents=True, exist_ok=True)
     manifest_id = report["manifesto"]["id"]
     json_path = directory / f"{manifest_id}.json"
     md_path = directory / f"{manifest_id}.md"
     json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    md_path.write_text(render_markdown(report), encoding="utf-8")
+    md_path.write_text(render_markdown(report, load_cycles(directory)), encoding="utf-8")
     return json_path, md_path
+
+
+def load_cycles(directory: Path) -> list[dict]:
+    """Todos os relatórios de ciclo de ``directory``, ordenados pela data de corte (depois pelo id do manifesto)."""
+    cycles = []
+    for path in sorted(directory.glob("*.json")):
+        try:
+            cycle = json.loads(path.read_text(encoding="utf-8"))
+            key = (cycle["manifesto"]["corte"], cycle["manifesto"]["id"])
+        except (ValueError, KeyError, TypeError) as exc:
+            raise ValueError(f"{path.name} não é um relatório de ciclo legível: {exc}") from exc
+        cycles.append((key, cycle))
+    return [cycle for _key, cycle in sorted(cycles, key=lambda item: item[0])]
 
 
 def _pct(value: Any) -> str:
@@ -324,7 +338,63 @@ def _list(items: Sequence[str]) -> str:
     return ", ".join(items) if items else "—"
 
 
-def render_markdown(report: Mapping) -> str:
+def _forward_section(forward: Mapping) -> list[str]:
+    measured = forward.get("resultado")
+    if forward.get("status") != "medido" or not measured:
+        return [f"{SEM_CARTEIRA_ANTERIOR.capitalize()}: nada a medir neste ciclo."]
+    references = measured.get("referencias") or {}
+    portfolio = measured.get("carteira") or {}
+    lines = [
+        f"Carteira do run `{measured.get('run_id')}` de {measured.get('inicio')} a {measured.get('fim')}, retorno total "
+        "com proventos: ponderado pelos pesos da carteira e com peso igual dentro de cada classe.",
+        "",
+        "| Classe | Retorno | Peso igual | Referência |",
+        "|---|---:|---:|---|",
+    ]
+    for key, item in (measured.get("classes") or {}).items():
+        reference = item.get("referencia")
+        reference_text = f"{reference} {_pct(item.get('retorno_referencia'))}" if reference else item.get("fonte", "—")
+        lines.append(f"| {key} | {_pct(item.get('retorno_ponderado'))} | {_pct(item.get('retorno_peso_igual'))} "
+                     f"| {reference_text} |")
+    lines.append(f"| carteira | {_pct(portfolio.get('retorno_ponderado'))} | {_pct(portfolio.get('retorno_peso_igual'))} "
+                 f"| CDI {_pct((references.get('CDI') or {}).get('retorno'))} |")
+    missing = [ticker for item in (measured.get("classes") or {}).values() for ticker in item.get("sem_retorno") or []]
+    if missing:
+        lines += ["", f"Sem retorno (fora das médias, peso renormalizado): {_list(missing)}."]
+    return lines
+
+
+TABLE_HEADER = [
+    "| Corte | Manifesto | Run | Período medido | Carteira | Peso igual | Ações | IBOV | FIIs | IFIX | CDI |",
+    "|---|---|---|---|---:|---:|---:|---:|---:|---:|---:|",
+]
+
+
+def _table_row(cycle: Mapping) -> str:
+    manifest = cycle["manifesto"]
+    forward = cycle.get("teste_para_frente") or {}
+    measured = forward.get("resultado") if forward.get("status") == "medido" else None
+    run_id = (cycle.get("run") or {}).get("id")
+    if not measured:
+        return (f"| {manifest['corte']} | `{manifest['id']}` | `{run_id}` | {SEM_CARTEIRA_ANTERIOR} "
+                "| — | — | — | — | — | — | — |")
+    classes = measured.get("classes") or {}
+    references = measured.get("referencias") or {}
+    portfolio = measured.get("carteira") or {}
+    cells = [
+        _pct(portfolio.get("retorno_ponderado")),
+        _pct(portfolio.get("retorno_peso_igual")),
+        _pct((classes.get("brazilian_stocks") or {}).get("retorno_ponderado")),
+        _pct((references.get("IBOV") or {}).get("retorno")),
+        _pct((classes.get("fiis") or {}).get("retorno_ponderado")),
+        _pct((references.get("IFIX") or {}).get("retorno")),
+        _pct((references.get("CDI") or {}).get("retorno")),
+    ]
+    return (f"| {manifest['corte']} | `{manifest['id']}` | `{run_id}` | {measured.get('inicio')} a {measured.get('fim')} "
+            f"| {' | '.join(cells)} |")
+
+
+def render_markdown(report: Mapping, cycles: Sequence[Mapping] = ()) -> str:
     manifest, run, previous = report["manifesto"], report["run"], report["run_anterior"]
     lines = [
         f"# Ciclo mensal {manifest['id']}",
@@ -366,5 +436,17 @@ def render_markdown(report: Mapping) -> str:
                 f"- {title} ({record['status']}): titulares que a zona manteve e o consenso teria tirado: "
                 f"{_list(record['mantidos_pela_zona'])}; substituições: {swaps or '—'}"
             )
-    lines.append("")
+    lines += ["", "## Teste para frente da carteira anterior", ""]
+    lines += _forward_section(report["teste_para_frente"])
+    lines += [
+        "",
+        "## Tabela acumulada",
+        "",
+        "Todos os relatórios `*.json` deste diretório quando este relatório foi gravado; cada linha mede a carteira "
+        "do ciclo anterior até o corte da linha (Carteira: ponderada; Ações e FIIs: ponderados na classe).",
+        "",
+        *TABLE_HEADER,
+        *(_table_row(cycle) for cycle in cycles),
+        "",
+    ]
     return "\n".join(lines)
