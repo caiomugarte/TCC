@@ -476,6 +476,17 @@ com a mesma `D` reaproveita o manifesto e o run e regrava o relatório, byte a b
 do script tem as etapas, os caminhos configuráveis e os códigos de saída (0 concluído, 2 argumentos, 3 conta,
 4 publicação, 5 run, 6 teste para frente, 7 relatório, 130 interrompido).
 
+Aviso no Telegram (issue #88, `scripts/aviso_telegram.py`), ligado por padrão: no fim do ciclo, também quando ele
+falha ou é interrompido, o bot do Prumo manda o resumo (manifesto, o que ficou/entrou/saiu da carteira por classe e o
+teste para frente em uma linha por classe) ou a etapa, o código de saída e o erro. O bot e o chat vêm de duas
+variáveis de ambiente (o comando não lê `api/.env`; exporte-as no shell que roda o ciclo):
+
+- `PRUMO_TELEGRAM_BOT_TOKEN`: token do bot criado no BotFather.
+- `PRUMO_TELEGRAM_CHAT_ID`: id do chat que recebe o aviso (o chat do Caio com o bot).
+
+Sem uma delas, o ciclo segue e o stderr diz que o aviso não foi enviado. Uma falha no envio (rede, timeout de 10 s,
+token ou chat inválido) vira só uma linha no stderr, sem o token, e não muda o código de saída do ciclo.
+
 ## Walkthrough (manual)
 
 ```
