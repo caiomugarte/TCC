@@ -436,6 +436,36 @@ none of them.
 Then `build` with `--stock-provenance <out>/stocks.provenance.json
 --fii-provenance <out>/fiis.provenance.json`, `validate` and `publish`.
 
+## Snapshot do mês num comando (issue #85)
+
+`python3 scripts/publish_snapshot.py --date D --registry snapshots [--cache-root DIR] [--seed-cache DIR]
+[--limits JSON]` faz as três etapas acima de uma vez e só publica se tudo passar. Para chamar de outro código (o
+`ciclo-mensal` do #87), use `publish_snapshot.publish_snapshot(day, registry=..., cache_root=...)`: devolve
+`PublishResult` (manifesto publicado, caminho, `reused`, checagens) ou levanta `PublishSnapshotError` com `stage`,
+`check` e `exit_code`.
+
+- **Etapas**, paradas na primeira falha: `series` (`fetch_snapshot` sem as cestas `caio_*`, dez anos até `D`),
+  `selecao` (`create_selector_snapshot.create`), `build`, `validate`, `sanidade`, `publish`. O manifesto é
+  `mensal-D` e os dados vão para `data/mensal-D/series/` e `data/mensal-D/selecao/`. Antes do `publish` o manifesto
+  fica em `draft`/`validated`, que a API não seleciona: uma falha deixa o publicado anterior valendo.
+- **Checagens de sanidade** (`SanityLimits`, padrões no código, sobrescritos por `--limits`): ações com score e FIIs
+  elegíveis nos três perfis-âncora de `STOCK_RULES`/`FII_RULES` (o perfil de uma conta interpola entre eles);
+  IBOV, IFIX e CDI com dado até o corte e no máximo `max_cutoff_lag_days` antes de `D`; corte no máximo
+  `max_cutoff_lag_days` antes de `D` (pega SP500, BTC e PTAX parados); linhas de `stocks.csv` e `fiis.csv` sem queda
+  maior que `max_universe_drop` contra o último publicado. Padrões: 40 ações com score, 8 FIIs elegíveis, 5 dias,
+  20%. Referência: no `cvm-b3-2026-11-17` o perfil conservador tem 97 ações com score e 14 FIIs elegíveis.
+- **Data de corte e idempotência**: o corte é a última data comum das séries, não `D`. Já publicado = há manifesto
+  `published` com id `mensal-D` ou com corte igual a `D` (checado antes de buscar), ou com o mesmo corte efetivo que
+  as séries recém-buscadas dão (checado depois do `build`, antes de gravar; os dados buscados são apagados). Nos três
+  casos nada é refeito e o comando devolve esse manifesto com saída 0. Restos `draft`/`validated` de uma tentativa
+  falha com o mesmo id são apagados e refeitos; um `retired` com o mesmo id é saída 3.
+- **Cache de brutos**: o cache do pit_rebuild nunca renova um arquivo. Cada `D` usa `<cache-root>/D/` (padrão
+  `~/.cache/tcc-pit-rebuild-ciclos/D/`), semeado por hard link só com os anuais de anos até `ano(D) - 2` (DFP, ITR,
+  FCA, COTAHIST, informes de FII) do cache de ciclo anterior mais recente ou de `--seed-cache` no primeiro ciclo; o
+  resto (COTAHIST do ano, B3, cadastro, listagens) é baixado de novo. Uma retomada da mesma `D` reaproveita o cache.
+- Códigos de saída: 0 publicado ou já publicado, 1 cache não preparado, 2 argumentos, 3 registro ausente ou id
+  `retired`, 4 `series`, 5 `selecao`, 6 `build`/`validate`/`publish`, 7 checagem de sanidade.
+
 ## Walkthrough (manual)
 
 ```
