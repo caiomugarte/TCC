@@ -220,6 +220,30 @@ class CicloMensalTests(CicloMensalCase):
         self.assertIn("| FIIs | 4 | 1 | 1 |", markdown)
         self.assertIn("S10", markdown)
 
+    def test_sem_run_anterior_concluido_registra_sem_carteira_anterior_e_segue(self):
+        result = self.ciclo()
+
+        self.assertTrue(result.ok, result.erro)
+        self.assertEqual(self.forward.calls, [])
+        report = self.report()
+        self.assertIsNone(report["run_anterior"])
+        self.assertEqual(report["teste_para_frente"], {"status": "sem carteira anterior", "resultado": None})
+        self.assertEqual(report["carteira"]["acoes"]["contagem"], {"ficaram": 0, "entraram": 12, "sairam": 0})
+        self.assertIn("sem carteira anterior", self.markdown())
+
+    def test_run_anterior_do_mesmo_manifesto_nao_e_a_carteira_anterior(self):
+        october = self.run_october()
+        with self.sessions() as session:  # um run concluído de outro manifesto com o mesmo corte
+            run = session.get(RecommendationRun, october.run_id)
+            run.snapshot_id, run.snapshot_cutoff = "outro-2026-10-30", NOVEMBRO
+            session.commit()
+
+        result = self.ciclo()
+
+        self.assertTrue(result.ok, result.erro)
+        self.assertEqual(self.forward.calls, [])
+        self.assertEqual(self.report()["teste_para_frente"]["status"], "sem carteira anterior")
+
 
 if __name__ == "__main__":
     unittest.main()
