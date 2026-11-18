@@ -450,3 +450,151 @@ def render_markdown(report: Mapping, cycles: Sequence[Mapping] = ()) -> str:
         "",
     ]
     return "\n".join(lines)
+
+
+# --- CLI -------------------------------------------------------------------------------------------------------------
+
+
+Notificador = Callable[[CicloResult], None]
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    from publish_snapshot import DEFAULT_CACHE_ROOT
+    from teste_para_frente import DEFAULT_CACHE_ROOT as FORWARD_CACHE_ROOT
+
+    parser = argparse.ArgumentParser(
+        prog="ciclo_mensal",
+        description="Publica o snapshot do mês, refaz a carteira Premium, mede a anterior e grava o relatório.",
+    )
+    parser.add_argument("--date", required=True, metavar="YYYY-MM-DD", help="data do snapshot do mês")
+    parser.add_argument("--registry", default=os.environ.get("PREMIUM_SNAPSHOT_REGISTRY"),
+                        help="raiz do registro de snapshots (padrão: $PREMIUM_SNAPSHOT_REGISTRY)")
+    parser.add_argument("--account", help="id da conta; sem ele, a única conta Premium com perfil")
+    parser.add_argument("--database-url", default=os.environ.get("DATABASE_URL"),
+                        help="URL SQLAlchemy do banco (padrão: $DATABASE_URL, senão o banco padrão da API)")
+    parser.add_argument("--relatorio-dir", default=str(DEFAULT_RELATORIO_DIR),
+                        help=f"onde gravar o relatório do ciclo (padrão {DEFAULT_RELATORIO_DIR})")
+    parser.add_argument("--cache-root", default=str(DEFAULT_CACHE_ROOT),
+                        help=f"cache de brutos da publicação, um por data (padrão {DEFAULT_CACHE_ROOT})")
+    parser.add_argument("--seed-cache", help="cache de onde semear os anuais congelados (ver publish_snapshot)")
+    parser.add_argument("--limits", metavar="JSON", help="limites das checagens de sanidade (ver publish_snapshot)")
+    parser.add_argument("--cache-teste-para-frente", default=str(FORWARD_CACHE_ROOT),
+                        help=f"cache do teste para frente (padrão {FORWARD_CACHE_ROOT})")
+    return parser
+
+
+def _session_factory(database_url: str | None):
+    if database_url:
+        from sqlalchemy import create_engine
+        from sqlalchemy.orm import sessionmaker
+
+        return sessionmaker(bind=create_engine(database_url), autoflush=False, autocommit=False)
+    from app.db.session import SessionLocal
+
+    return SessionLocal
+
+
+def _database_label(session_factory) -> str:
+    bind = getattr(session_factory, "kw", {}).get("bind")
+    url = getattr(bind, "url", None)
+    return url.render_as_string(hide_password=True) if url is not None else "?"
+
+
+def _interrupt(_signum, _frame):
+    raise KeyboardInterrupt
+
+
+def _print_result(result: CicloResult) -> None:
+    if not result.ok:
+        print(f"ciclo_mensal: etapa {result.etapa}: {result.erro}", file=sys.stderr)
+        if result.etapa == ETAPA_PUBLICACAO:
+            print("ciclo_mensal: nenhum manifesto novo publicado; o anterior continua valendo", file=sys.stderr)
+        return
+    manifest_origin = "reaproveitado" if result.manifesto_reaproveitado else "publicado"
+    run_origin = "reaproveitado" if result.run_reaproveitado else "criado e concluído"
+    print(f"manifesto {result.manifest_id} (corte {result.corte}) {manifest_origin}")
+    print(f"run {result.run_id} {run_origin}")
+    print(f"teste para frente: {f'run {result.run_anterior_id}' if result.run_anterior_id else SEM_CARTEIRA_ANTERIOR}")
+    print(f"relatório {result.relatorio_json} e {result.relatorio_md.name}")
+
+
+def main(
+    argv: Sequence[str] | None = None,
+    *,
+    session_factory=None,
+    executor=None,
+    medir: Callable[[Mapping, Any], dict] | None = None,
+    notificar: Notificador | None = None,
+) -> int:
+    """Roda o ciclo; devolve o código de saída. ``session_factory``, ``executor`` e ``medir`` trocam banco, cálculo e
+    rede nos testes; ``notificar`` recebe o CicloResult no fim (ponto de extensão do aviso, issue #88)."""
+    try:
+        args = _build_parser().parse_args(argv)
+    except SystemExit as exc:
+        return int(exc.code or 0)
+    try:
+        day = date.fromisoformat(args.date)
+        if not args.registry:
+            raise ValueError("informe --registry ou PREMIUM_SNAPSHOT_REGISTRY")
+        registry, relatorio_dir = Path(args.registry).expanduser(), Path(args.relatorio_dir).expanduser()
+        if registry.resolve() == relatorio_dir.resolve():
+            raise ValueError("--relatorio-dir não pode ser o registro (todo *.json da raiz dele é lido como manifesto)")
+        from publish_snapshot import load_limits
+
+        limits = load_limits(Path(args.limits) if args.limits else None)
+    except (OSError, TypeError, ValueError) as exc:
+        print(f"ciclo_mensal: argumento inválido: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+
+    from app.services.premium_run import run_premium
+    from publish_snapshot import publish_snapshot
+    from snapshot_manifest import validate_manifest
+    from teste_para_frente import teste_para_frente
+
+    session_factory = session_factory or _session_factory(args.database_url)
+    print(f"ciclo_mensal: banco {_database_label(session_factory)}", file=sys.stderr)
+
+    def publicar(cycle_day: date) -> PublishResult:
+        return publish_snapshot(
+            cycle_day,
+            registry=registry,
+            cache_root=Path(args.cache_root).expanduser(),
+            seed_cache=Path(args.seed_cache).expanduser() if args.seed_cache else None,
+            limits=limits,
+        )
+
+    def rodar(account_id: str, manifest_path: Path):
+        return run_premium(
+            account_id,
+            session_factory=session_factory,
+            manifest_loader=lambda: validate_manifest(manifest_path),
+            executor=executor,
+        )
+
+    def medir_padrao(run: Mapping, manifest) -> dict:
+        return teste_para_frente(run, manifest, cache_dir=Path(args.cache_teste_para_frente).expanduser())
+
+    previous_sigterm = signal.signal(signal.SIGTERM, _interrupt)
+    try:
+        result = ciclo_mensal(
+            day,
+            session_factory=session_factory,
+            relatorio_dir=relatorio_dir,
+            publicar=publicar,
+            rodar=rodar,
+            medir=medir or medir_padrao,
+            account_id=args.account,
+        )
+    finally:
+        signal.signal(signal.SIGTERM, previous_sigterm)
+    _print_result(result)
+    if notificar is not None:
+        try:
+            notificar(result)
+        except Exception as exc:  # noqa: BLE001 - o aviso nunca muda o resultado do ciclo
+            print(f"ciclo_mensal: o aviso do fim do ciclo falhou: {type(exc).__name__}: {exc}", file=sys.stderr)
+    return result.exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

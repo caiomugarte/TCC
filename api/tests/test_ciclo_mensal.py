@@ -5,10 +5,9 @@ from datetime import date
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
-import shutil
 import sys
-import tempfile
 import unittest
 from unittest import mock
 
@@ -373,6 +372,121 @@ class CicloMensalTests(CicloMensalCase):
 
         self.assertEqual((result.etapa, result.exit_code), ("relatorio", 7))
         self.assertIn("lixo.json", result.erro)
+
+
+class CicloMensalCliTests(CicloMensalCase):
+    """Cada código de saída da docstring de scripts/ciclo_mensal.py pelo caminho real do main()."""
+
+    def setUp(self):
+        super().setUp()
+        # Registro com o manifesto de novembro já publicado na raiz: a publicação real o reaproveita sem rede.
+        self.cli_registry = self.root / "cli-registry"
+        build_manifest(self.cli_registry, "mensal-2026-10-31", NOVEMBRO)
+        self.notified = []
+
+    def main(self, *argv, runner=None, notificar="padrao", medir=None):
+        argv = list(argv) or ["--date", "2026-10-31", "--registry", str(self.cli_registry),
+                              "--relatorio-dir", str(self.reports)]
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = ciclo.main(
+                argv,
+                session_factory=self.sessions,
+                executor=self.executor(runner),
+                medir=medir or self.forward,
+                notificar=self.notified.append if notificar == "padrao" else notificar,
+            )
+        return code, stdout.getvalue(), stderr.getvalue()
+
+    def test_0_ciclo_concluido_avisa_o_notificador_uma_vez(self):
+        self.run_october()
+
+        code, out, _err = self.main()
+
+        self.assertEqual(code, 0)
+        self.assertIn("mensal-2026-10-31", out)
+        self.assertTrue((self.reports / "mensal-2026-10-31.md").is_file())
+        (result,) = self.notified
+        self.assertTrue(result.ok)
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.relatorio["manifesto"]["id"], "mensal-2026-10-31")
+
+    def test_2_argumentos_invalidos(self):
+        cases = {
+            "sem --date": ["--registry", str(self.cli_registry)],
+            "data ilegível": ["--date", "31/10/2026", "--registry", str(self.cli_registry)],
+            "relatório no registro": ["--date", "2026-10-31", "--registry", str(self.cli_registry),
+                                      "--relatorio-dir", str(self.cli_registry)],
+        }
+        for name, argv in cases.items():
+            with self.subTest(name), mock.patch.dict(os.environ, {}, clear=False):
+                os.environ.pop("PREMIUM_SNAPSHOT_REGISTRY", None)
+                self.assertEqual(self.main(*argv)[0], 2)
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("PREMIUM_SNAPSHOT_REGISTRY", None)
+            code, _out, err = self.main("--date", "2026-10-31")
+        self.assertEqual(code, 2)
+        self.assertIn("--registry", err)
+        self.assertEqual(self.notified, [])
+
+    def test_3_conta(self):
+        self.add_account("outra@example.com", plan="premium")
+        code, _out, err = self.main()
+        self.assertEqual(code, 3)
+        self.assertIn("etapa conta", err)
+        self.assertEqual(self.notified[0].etapa, "conta")
+
+    def test_4_publicacao_falhada(self):
+        empty = self.root / "registro-vazio-que-nao-existe"
+        code, _out, err = self.main("--date", "2026-10-31", "--registry", str(empty),
+                                    "--relatorio-dir", str(self.reports))
+        self.assertEqual(code, 4)
+        self.assertIn("etapa publicacao", err)
+        self.assertEqual(self.runs(), [])
+        (result,) = self.notified
+        self.assertEqual((result.ok, result.etapa), (False, "publicacao"))
+
+    def test_5_run_failed(self):
+        def broken(*_args, **_kwargs):
+            raise RuntimeError("engine exploded")
+
+        code, _out, err = self.main(runner=broken)
+        self.assertEqual(code, 5)
+        self.assertIn("engine_error", err)
+
+    def test_6_teste_para_frente(self):
+        self.run_october()
+
+        def unavailable(_run, _manifest):
+            raise ciclo.TesteParaFrenteError("COTAHIST desatualizado")
+
+        code, _out, err = self.main(medir=unavailable)
+        self.assertEqual(code, 6)
+        self.assertIn("COTAHIST", err)
+
+    def test_7_relatorio(self):
+        self.reports.mkdir(parents=True)
+        (self.reports / "lixo.json").write_text("[]", encoding="utf-8")
+        code, _out, err = self.main()
+        self.assertEqual(code, 7)
+        self.assertIn("lixo.json", err)
+
+    def test_130_ctrl_c_no_run_marca_o_run_failed_e_avisa(self):
+        def interrupted(*_args, **_kwargs):
+            raise KeyboardInterrupt
+
+        code, _out, _err = self.main(runner=interrupted)
+        self.assertEqual(code, 130)
+        self.assertEqual([status for _id, _manifest, status in self.runs()], ["failed"])
+        self.assertEqual((self.notified[0].etapa, self.notified[0].exit_code), ("run", 130))
+
+    def test_notificador_que_falha_nao_muda_o_codigo_de_saida(self):
+        def broken(_result):
+            raise RuntimeError("telegram fora do ar")
+
+        code, _out, err = self.main(notificar=broken)
+        self.assertEqual(code, 0)
+        self.assertIn("telegram fora do ar", err)
 
 
 if __name__ == "__main__":
