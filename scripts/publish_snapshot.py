@@ -39,14 +39,14 @@ como está (retomada da mesma data).
 Exit codes:
 
     0  manifesto publicado, ou já existia um publicado com a mesma data de corte (nada refeito)
-    1  arquivos não puderam ser lidos ou gravados (registro ou cache)
+    1  o cache de brutos da data não pôde ser preparado (inclusive --cache-root dentro de data/, snapshots/ ou
+       baselines/)
     2  argumentos inválidos
-    3  registro inexistente, ou mensal-<--date> já existe como retired
+    3  registro inexistente ou ilegível, ou mensal-<--date> já existe como retired ou legado
     4  etapa series falhou
     5  etapa selecao falhou
-    6  etapa build ou validate falhou
+    6  etapa build, validate ou publish do manifesto falhou
     7  uma checagem de sanidade reprovou
-    8  etapa publish falhou
 """
 
 from __future__ import annotations
@@ -54,7 +54,7 @@ from __future__ import annotations
 import argparse
 import csv
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date, datetime, timezone
 import json
 import os
@@ -78,6 +78,7 @@ from snapshot_registry import (  # noqa: E402
 )
 
 MANIFEST_PREFIX = "mensal-"
+DEFAULT_CACHE_ROOT = Path.home() / ".cache" / "tcc-pit-rebuild-ciclos"
 SERIES_YEARS = 10
 
 EXIT_OK = 0
@@ -88,7 +89,6 @@ EXIT_SERIES = 4
 EXIT_SELECTION = 5
 EXIT_MANIFEST = 6
 EXIT_SANITY = 7
-EXIT_PUBLISH = 8
 
 STAGE_EXIT = {
     "registro": EXIT_REGISTRY,
@@ -98,13 +98,19 @@ STAGE_EXIT = {
     "build": EXIT_MANIFEST,
     "validate": EXIT_MANIFEST,
     "sanidade": EXIT_SANITY,
-    "publish": EXIT_PUBLISH,
+    "publish": EXIT_MANIFEST,
 }
 
 
 @dataclass(frozen=True)
 class SanityLimits:
-    """Limites das checagens de sanidade antes do publish."""
+    """Limites das checagens de sanidade antes do publish (sobrescritos campo a campo por --limits JSON).
+
+    Calibração (cvm-b3-2026-11-17, perfil conservador, o mais restrito): 97 ações com score e 14 FIIs elegíveis.
+    O piso absoluto do perfil conservador é n_assets + k_offset da zona de proteção (10 + 6 ações, 4 + 3 FIIs);
+    40 e 8 ficam acima dele e bem abaixo do observado, para reprovar a coleta quebrada sem travar um mês normal.
+    5 dias cobrem fim de semana mais feriado (Carnaval).
+    """
 
     min_scored_stocks: int = 40
     min_eligible_fiis: int = 8
@@ -447,4 +453,77 @@ def _fetch_series(snapshot_dir: Path, start: date, end: date) -> None:
 
 
 def _create_selectors(out_dir: Path, day: date, cache_dir: Path) -> None:
-    raise NotImplementedError
+    from create_selector_snapshot import create
+    from pit_rebuild import cli
+
+    cache = cli._cache(cache_dir, offline=False, opener=None)
+    cache.verify()
+    create(out_dir, day, cache)
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="publish_snapshot",
+        description="Gera, valida, checa e publica o snapshot do mês (séries, seleção, build, validate, publish).",
+    )
+    parser.add_argument("--date", required=True, metavar="YYYY-MM-DD", help="data do snapshot (fim das séries e d da seleção)")
+    parser.add_argument("--registry", required=True, help="raiz do registro de snapshots")
+    parser.add_argument("--cache-root", default=str(DEFAULT_CACHE_ROOT),
+                        help=f"onde fica o cache de brutos de cada data (default {DEFAULT_CACHE_ROOT})")
+    parser.add_argument("--seed-cache", help="cache de onde semear os anuais congelados quando não há ciclo anterior "
+                        "em --cache-root (ex.: ~/.cache/tcc-pit-rebuild)")
+    parser.add_argument("--limits", metavar="JSON",
+                        help="arquivo JSON com campos de SanityLimits que substituem os padrões")
+    return parser
+
+
+def load_limits(path: Path | None) -> SanityLimits:
+    """Os limites padrão, com os campos do JSON em ``path`` por cima."""
+    if path is None:
+        return DEFAULT_LIMITS
+    overrides = json.loads(Path(path).read_text(encoding="utf-8"))
+    unknown = sorted(set(overrides) - set(DEFAULT_LIMITS.__dataclass_fields__))
+    if unknown:
+        raise ValueError(f"campos desconhecidos em --limits: {', '.join(unknown)}")
+    return replace(DEFAULT_LIMITS, **overrides)
+
+
+def main(argv: Sequence[str] | None = None, *, now=None, fetch_series=None, create_selectors=None) -> int:
+    """Roda o comando; devolve o código de saída. ``now``, ``fetch_series`` e ``create_selectors`` trocam o relógio e
+    a rede nos testes."""
+    try:
+        args = _build_parser().parse_args(argv)
+    except SystemExit as exc:
+        return int(exc.code or 0)
+    try:
+        day = date.fromisoformat(args.date)
+        limits = load_limits(Path(args.limits) if args.limits else None)
+    except (OSError, TypeError, ValueError) as exc:
+        print(f"publish_snapshot: argumento inválido: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+    try:
+        result = publish_snapshot(
+            day,
+            registry=Path(args.registry),
+            cache_root=Path(args.cache_root).expanduser(),
+            seed_cache=Path(args.seed_cache).expanduser() if args.seed_cache else None,
+            limits=limits,
+            now=now,
+            fetch_series=fetch_series,
+            create_selectors=create_selectors,
+        )
+    except PublishSnapshotError as exc:
+        print(f"publish_snapshot: {exc}; nenhum manifesto novo publicado", file=sys.stderr)
+        return exc.exit_code
+    manifest = result.manifest
+    if result.reused:
+        print(f"já publicado: {manifest.manifest_id} (corte {manifest.cutoff_date.isoformat()}); nada refeito")
+    else:
+        print(f"publicado {result.manifest_path} (corte {manifest.cutoff_date.isoformat()})")
+        for check in result.checks:
+            print(f"  {check.name}: {check.detail}")
+    return EXIT_OK
+
+
+if __name__ == "__main__":
+    sys.exit(main())

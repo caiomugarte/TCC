@@ -379,5 +379,87 @@ class CycleCacheTests(unittest.TestCase):
         self.assertTrue((space.cache_root / "2026-11-17" / "manifest.json").is_file())
 
 
+class CommandLineTests(unittest.TestCase):
+    """Os códigos de saída da docstring de scripts/publish_snapshot.py, pelo main real."""
+
+    def setUp(self):
+        self._directory = tempfile.TemporaryDirectory()
+        self.addCleanup(self._directory.cleanup)
+        self.root = Path(self._directory.name)
+        self.space = Workspace(self.root)
+        self.limits = self.root / "limits.json"
+        self.limits.write_text(json.dumps({"min_scored_stocks": 10, "min_eligible_fiis": 5}), encoding="utf-8")
+
+    def run_main(self, stages: FakeStages, *extra, day="2026-11-17"):
+        clock = datetime(2026, 11, 17, 12, tzinfo=timezone.utc)
+        out, err = io.StringIO(), io.StringIO()
+        argv = ["--date", day, "--registry", str(self.space.registry), "--cache-root", str(self.space.cache_root),
+                "--limits", str(self.limits), *extra]
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            code = publish_snapshot.main(argv, now=lambda: clock, fetch_series=stages.fetch_series,
+                                         create_selectors=stages.create_selectors)
+        return code, out.getvalue(), err.getvalue()
+
+    def test_exit_0_publishes_and_exit_0_again_is_the_no_op(self):
+        code, out, _ = self.run_main(FakeStages())
+        self.assertEqual(code, 0)
+        self.assertIn("publicado", out)
+        again = FakeStages()
+        code, out, _ = self.run_main(again)
+        self.assertEqual(code, 0)
+        self.assertIn("já publicado: mensal-2026-11-17", out)
+        self.assertEqual(again.fetch_calls, [])
+
+    def test_exit_1_when_the_cycle_cache_cannot_be_prepared(self):
+        self.space.cache_root.write_text("não é um diretório", encoding="utf-8")
+        code, _, err = self.run_main(FakeStages())
+        self.assertEqual(code, 1)
+        self.assertIn("etapa cache", err)
+
+    def test_exit_2_on_invalid_arguments(self):
+        for extra, day in (((), "2026-13-01"), (("--bogus",), "2026-11-17")):
+            with self.subTest(day=day, extra=extra):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    code, _, _ = self.run_main(FakeStages(), *extra, day=day)
+                self.assertEqual(code, 2)
+        self.limits.write_text(json.dumps({"min_score": 1}), encoding="utf-8")
+        code, _, err = self.run_main(FakeStages())
+        self.assertEqual(code, 2)
+        self.assertIn("min_score", err)
+
+    def test_exit_3_when_the_registry_does_not_exist(self):
+        self.space.registry.rmdir()
+        code, _, err = self.run_main(FakeStages())
+        self.assertEqual(code, 3)
+        self.assertIn("etapa registro", err)
+
+    def test_exit_4_when_the_series_fail(self):
+        stages = FakeStages()
+        stages.fetch_series = lambda *args: (_ for _ in ()).throw(ConnectionError("sem rede"))
+        code, _, err = self.run_main(stages)
+        self.assertEqual(code, 4)
+        self.assertIn("etapa series", err)
+
+    def test_exit_5_when_the_selection_fails(self):
+        stages = FakeStages()
+        stages.create_selectors = lambda *args: (_ for _ in ()).throw(RuntimeError("Status Invest fora"))
+        code, _, err = self.run_main(stages)
+        self.assertEqual(code, 5)
+        self.assertIn("etapa selecao", err)
+
+    def test_exit_6_when_the_manifest_cannot_be_built(self):
+        # Sem datas comuns entre as séries das classes, build_manifest recusa.
+        code, _, err = self.run_main(FakeStages(last={"ptax": date(2026, 10, 1)}))
+        self.assertEqual(code, 6)
+        self.assertIn("etapa build", err)
+        self.assertEqual(self.space.states(), {})
+
+    def test_exit_7_when_a_sanity_check_fails(self):
+        code, _, err = self.run_main(FakeStages(stocks=3))
+        self.assertEqual(code, 7)
+        self.assertIn("acoes_com_score", err)
+        self.assertEqual(self.space.states(), {"mensal-2026-11-17": "validated"})
+
+
 if __name__ == "__main__":
     unittest.main()
