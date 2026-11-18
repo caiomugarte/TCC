@@ -144,6 +144,31 @@ class RecommendationRepository:
             ).limit(1)
         )
 
+    def get_reusable(
+        self,
+        account_id: str,
+        profile_id: str,
+        *,
+        plan: str,
+        snapshot_id: str,
+        policy_version: str,
+    ) -> RecommendationRun | None:
+        """Latest non-failed run with the same account, profile, manifest and policy."""
+
+        return self.session.scalar(
+            select(RecommendationRun)
+            .where(
+                RecommendationRun.account_id == account_id,
+                RecommendationRun.profile_id == profile_id,
+                RecommendationRun.plan == plan,
+                RecommendationRun.snapshot_id == snapshot_id,
+                RecommendationRun.policy_version == policy_version,
+                RecommendationRun.status != "failed",
+            )
+            .order_by(desc(RecommendationRun.created_at), desc(RecommendationRun.id))
+            .limit(1)
+        )
+
     def get_latest_completed_for_profile(
         self,
         account_id: str,
