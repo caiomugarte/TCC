@@ -466,6 +466,16 @@ Then `build` with `--stock-provenance <out>/stocks.provenance.json
 - Códigos de saída: 0 publicado ou já publicado, 1 cache não preparado, 2 argumentos, 3 registro ausente ou id
   `retired`, 4 `series`, 5 `selecao`, 6 `build`/`validate`/`publish`, 7 checagem de sanidade.
 
+## Ciclo mensal num comando (issue #87)
+
+`DATABASE_URL=... python3 scripts/ciclo_mensal.py --date D --registry snapshots [--account ID]` encadeia a
+publicação acima, o run Premium da conta com o manifesto recém-publicado (`scripts/premium_run.py`) e o teste para
+frente da carteira anterior (`py/teste_para_frente.py`), e grava `docs/validation/ciclos/mensal-D.json` e `.md`. Para
+na primeira etapa que falha (`conta`, `publicacao`, `run`, `teste_para_frente`, `relatorio`) e diz qual. Rodar de novo
+com a mesma `D` reaproveita o manifesto e o run e regrava o relatório, byte a byte igual se nada mudou. A docstring
+do script tem as etapas, os caminhos configuráveis e os códigos de saída (0 concluído, 2 argumentos, 3 conta,
+4 publicação, 5 run, 6 teste para frente, 7 relatório, 130 interrompido).
+
 ## Walkthrough (manual)
 
 ```

@@ -122,11 +122,11 @@ class CicloResult:
 
 
 class _StageFailed(Exception):
-    def __init__(self, etapa: str, erro: str, exit_code: int | None = None):
+    def __init__(self, etapa: str, erro: str):
         super().__init__(erro)
         self.etapa = etapa
         self.erro = erro
-        self.exit_code = EXIT_BY_STAGE[etapa] if exit_code is None else exit_code
+        self.exit_code = EXIT_BY_STAGE[etapa]
 
 
 def _stage(etapa: str, action: Callable[[], Any]) -> Any:
