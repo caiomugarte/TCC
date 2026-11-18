@@ -203,6 +203,83 @@ class PremiumRecommendationServiceTests(unittest.TestCase):
             self.create(self.service(executor, manifest_id="manifest-setembro")).id, new.id
         )
 
+    def test_premium_new_policy_version_creates_new_run(self):
+        executor = ExecutorSpy()
+        old = self.create(self.service(executor, rules_version="premium-policy-old"))
+        RecommendationRepository(self.session).mark_running(old.id)
+        self.session.commit()
+
+        new = self.create(self.service(executor, rules_version="premium-policy-new"))
+
+        self.assertNotEqual(new.id, old.id)
+        self.assertEqual(new.policy_version, "premium-policy-new")
+        self.assertEqual(executor.submitted, [old.id, new.id])
+
+    def test_premium_failed_run_with_same_key_is_not_reused(self):
+        executor = ExecutorSpy()
+        service = self.service(executor)
+        first = self.create(service)
+        RecommendationRepository(self.session).mark_failed(first.id, "fixture", "failed")
+        self.session.commit()
+
+        second = self.create(service, force=False)
+
+        self.assertNotEqual(second.id, first.id)
+        self.assertEqual(second.status, "queued")
+        self.assertEqual(executor.submitted, [first.id, second.id])
+
+    def test_premium_force_always_creates_new_run(self):
+        executor = ExecutorSpy()
+        service = self.service(executor)
+        repository = RecommendationRepository(self.session)
+        queued = self.create(service)
+
+        forced_over_active = self.create(service, force=True)
+        repository.mark_running(forced_over_active.id)
+        repository.mark_completed(
+            forced_over_active.id, {"classes": [], "assumptions": [], "risks": []}
+        )
+        self.session.commit()
+        forced_over_completed = self.create(service, force=True)
+
+        ids = [queued.id, forced_over_active.id, forced_over_completed.id]
+        self.assertEqual(len(set(ids)), 3)
+        self.assertEqual(executor.submitted, ids)
+
+    def test_premium_reuse_needs_the_current_manifest(self):
+        executor = ExecutorSpy()
+        first = self.create(self.service(executor))
+
+        def broken_loader():
+            raise FileNotFoundError("registry missing")
+
+        service = PremiumRecommendationService(
+            manifest_loader=broken_loader,
+            manifest_validator=lambda value: value,
+            policy_resolver=fake_policy,
+            executor=executor,
+        )
+        with self.assertRaises(PremiumRecommendationError) as error:
+            self.create(service)
+
+        self.assertEqual(error.exception.code, "snapshot_unavailable")
+        self.assertEqual(executor.submitted, [first.id])
+
+    def test_find_reusable_run_exposes_the_reuse_rule(self):
+        executor = ExecutorSpy()
+        service = self.service(executor)
+        run = self.create(service)
+
+        found = service.find_reusable_run(
+            self.session, self.account.id, self.profile.id, "manifest-fixture"
+        )
+        missing = service.find_reusable_run(
+            self.session, self.account.id, self.profile.id, "manifest-outro"
+        )
+
+        self.assertEqual(found.id, run.id)
+        self.assertIsNone(missing)
+
     def test_active_run_reuse_is_scoped_to_plan(self):
         executor = ExecutorSpy()
         service = self.service(executor)
