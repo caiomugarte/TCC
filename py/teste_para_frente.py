@@ -40,7 +40,7 @@ Regras:
 Exit codes:
 
     0  resultado gravado (ou impresso)
-    2  uso inválido (argumentos, banco não informado, cache dentro de data/, snapshots/ ou baselines/)
+    2  uso inválido (argumentos, banco não informado, cache dentro de data, snapshots ou baselines)
     3  run ou manifesto não encontrado
     4  entrada inválida: run não concluído ou não Premium, carteira ilegível, manifesto inválido, não publicado ou
        sem data de corte posterior à do run, séries sem a data de início
