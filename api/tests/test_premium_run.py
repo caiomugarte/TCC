@@ -10,7 +10,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import sessionmaker
 
 from app.adapters.premium_optimization import run_premium_optimization
@@ -177,6 +177,106 @@ class PremiumRunTests(unittest.TestCase):
         self.assertEqual(stored.provenance_json["manifest_id"], "snapshot-2026-10-30")
         self.assertEqual(stored.provenance_json["manifest_path"], str(self.manifest_path))
         self.assertEqual(stored.snapshot_cutoff, "2026-10-30")
+
+    def test_com_run_anterior_concluido_a_zona_de_protecao_usa_a_carteira_dele(self):
+        with network_blocked():
+            first = self.premium_run()
+            second = self.premium_run(force=True)
+
+        self.assertNotEqual(second.run_id, first.run_id)
+        previous = self.stored(first.run_id)
+        current = self.stored(second.run_id)
+        self.assertEqual(current.status, "completed", current.failure_code)
+        zone = current.result_json["provenance"]["protection_zone"]
+        self.assertEqual(zone["incumbent_run_id"], first.run_id)
+        for key in ("stocks", "fiis"):
+            held = sorted(item["ticker"] for item in previous.result_json[key] if item.get("quantity") != 0)
+            self.assertEqual(zone[key]["status"], "applied")
+            self.assertEqual(zone[key]["incumbents"], held)
+
+    def test_mesma_chave_devolve_o_run_existente_sem_recalcular(self):
+        first = self.premium_run()
+        again = self.premium_run()
+
+        self.assertEqual(again.run_id, first.run_id)
+        self.assertFalse(first.reused)
+        self.assertTrue(again.reused)
+        self.assertEqual(len(self.runner_calls), 1)
+
+    def test_force_cria_e_executa_um_run_novo(self):
+        first = self.premium_run()
+        forced = self.premium_run(force=True)
+
+        self.assertNotEqual(forced.run_id, first.run_id)
+        self.assertFalse(forced.reused)
+        self.assertEqual(len(self.runner_calls), 2)
+        self.assertEqual(self.stored(forced.run_id).status, "completed")
+
+    def test_run_reaproveitado_ainda_em_execucao_nao_e_executado_de_novo(self):
+        first = self.premium_run()
+        with self.sessions() as session:
+            session.get(RecommendationRun, first.run_id).status = "running"
+            session.commit()
+
+        with self.assertRaises(PremiumRunCommandError) as caught:
+            self.premium_run()
+
+        self.assertEqual(caught.exception.code, "run_in_progress")
+        self.assertEqual(caught.exception.run_id, first.run_id)
+        self.assertEqual(len(self.runner_calls), 1)
+
+    def assert_refused(self, code, account_id=None):
+        with self.assertRaises(PremiumRunCommandError) as caught:
+            self.premium_run(account_id)
+        self.assertEqual(caught.exception.code, code)
+        self.assertEqual(self.runner_calls, [])
+        with self.sessions() as session:
+            self.assertEqual(session.scalars(select(RecommendationRun)).all(), [])
+        return caught.exception
+
+    def test_sem_account_ignora_contas_sem_premium_ativo_ou_sem_perfil(self):
+        self.add_account("basic@example.com", plan="basic")
+        self.add_account("canceled@example.com", plan="premium", status="canceled")
+        self.add_account("sem-perfil@example.com", plan="premium", profile=False)
+        self.add_account("sem-entitlement@example.com")
+
+        self.assertEqual(self.premium_run().account_id, self.account_id)
+
+    def test_sem_account_e_sem_conta_premium_com_perfil_falha(self):
+        with self.sessions() as session:
+            session.query(Entitlement).delete()
+            session.commit()
+
+        self.assert_refused("no_premium_account")
+
+    def test_sem_account_e_com_duas_contas_premium_falha_listando_as_duas(self):
+        other = self.add_account("outra@example.com", plan="premium", status="grace_period")
+
+        error = self.assert_refused("multiple_premium_accounts")
+        self.assertIn(self.account_id, error.message)
+        self.assertIn(other, error.message)
+
+    def test_account_escolhe_a_conta_entre_varias_premium(self):
+        other = self.add_account("outra@example.com", plan="premium")
+
+        self.assertEqual(self.premium_run(other).account_id, other)
+
+    def test_account_inexistente_sem_premium_ou_sem_perfil_falha(self):
+        basic = self.add_account("basic@example.com", plan="basic")
+        no_profile = self.add_account("sem-perfil@example.com", plan="premium", profile=False)
+        for account_id, code in (
+            ("nao-existe", "account_not_found"),
+            (basic, "account_not_premium"),
+            (no_profile, "account_without_profile"),
+        ):
+            with self.subTest(code=code):
+                self.assert_refused(code, account_id)
+
+    def test_snapshot_indisponivel_recusa_sem_criar_run(self):
+        self.manifest_path.unlink()
+
+        error = self.assert_refused("run_refused")
+        self.assertEqual(error.detail, "snapshot_unavailable")
 
 
 if __name__ == "__main__":
