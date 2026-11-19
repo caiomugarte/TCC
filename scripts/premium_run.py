@@ -24,6 +24,8 @@ processo até o fim; o comando só volta quando ele termina. Leva de 81 a 157 mi
 Exit codes:
 
     0    run completed: criado e executado agora, ou reaproveitado
+    1    erro inesperado (banco ilegível, travado ou sem as tabelas; falha de disco); a mensagem sai no stderr. Um
+         run que estava executando foi marcado failed pelo executor
     2    argumentos inválidos
     3    conta: --account inexistente, sem Premium ativo ou sem perfil; ou, sem --account, zero ou mais de uma
          conta Premium com perfil
@@ -47,6 +49,7 @@ for _path in (PROJECT_ROOT / "py", PROJECT_ROOT / "api"):
         sys.path.insert(0, str(_path))
 
 EXIT_OK = 0
+EXIT_UNEXPECTED = 1
 EXIT_USAGE = 2
 EXIT_ACCOUNT = 3
 EXIT_REFUSED = 4
@@ -116,6 +119,9 @@ def main(argv: Sequence[str] | None = None, *, session_factory=None, manifest_lo
     except KeyboardInterrupt:
         print("premium_run: interrompido; o run em execução, se havia um, foi marcado failed (interrupted)", file=sys.stderr)
         return EXIT_INTERRUPTED
+    except Exception as exc:  # noqa: BLE001 - todo erro fora dos previstos sai com 1, da tabela, sem traceback
+        print(f"premium_run: erro inesperado: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return EXIT_UNEXPECTED
     finally:
         signal.signal(signal.SIGTERM, previous_sigterm)
 

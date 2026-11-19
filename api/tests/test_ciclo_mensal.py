@@ -468,6 +468,19 @@ class CicloMensalCliTests(CicloMensalCase):
         self.assertIn("--registry", result.erro)
         self.assertEqual(self.runs(), [])
 
+    def test_2_database_url_ilegivel_avisa_o_notificador(self):
+        notified = []
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(stderr):
+            code = ciclo.main(["--date", "2026-10-31", "--registry", str(self.cli_registry),
+                               "--relatorio-dir", str(self.reports), "--database-url", "nao-e-url"],
+                              notificar=notified.append)
+
+        self.assertEqual(code, 2)
+        self.assertIn("--database-url", stderr.getvalue())
+        (result,) = notified
+        self.assertEqual((result.etapa, result.exit_code), ("argumentos", 2))
+
     def test_0_help_nao_avisa(self):
         code, out, _err = self.main("--help")
         self.assertEqual(code, 0)

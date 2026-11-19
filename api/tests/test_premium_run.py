@@ -387,6 +387,17 @@ class PremiumRunCliTests(unittest.TestCase):
         self.assertEqual(self.main("--force")[0], 0)
         self.assertEqual([status for _id, status, _code in self.runs()], ["completed", "completed"])
 
+    def test_1_erro_inesperado_sai_com_a_mensagem_sem_traceback(self):
+        empty = create_engine(f"sqlite:///{self.root / 'vazio.db'}")
+        self.addCleanup(empty.dispose)
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            code = self.cli.main([], session_factory=sessionmaker(bind=empty), manifest_loader=lambda: None)
+
+        self.assertEqual(code, 1)
+        self.assertIn("premium_run: erro inesperado: OperationalError", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
     def test_2_argumento_invalido(self):
         with contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(self.main("--nao-existe")[0], 2)

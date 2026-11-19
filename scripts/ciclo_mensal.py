@@ -530,9 +530,14 @@ def _build_parser() -> argparse.ArgumentParser:
 def _session_factory(database_url: str | None):
     if database_url:
         from sqlalchemy import create_engine
+        from sqlalchemy.exc import ArgumentError
         from sqlalchemy.orm import sessionmaker
 
-        return sessionmaker(bind=create_engine(database_url), autoflush=False, autocommit=False)
+        try:
+            engine = create_engine(database_url)
+        except ArgumentError as exc:
+            raise ValueError(f"--database-url: {exc}") from exc
+        return sessionmaker(bind=engine, autoflush=False, autocommit=False)
     from app.db.session import SessionLocal
 
     return SessionLocal
@@ -591,6 +596,7 @@ def main(
         from publish_snapshot import load_limits
 
         limits = load_limits(Path(args.limits) if args.limits else None)
+        session_factory = session_factory or _session_factory(args.database_url)
     except (_ArgumentosInvalidos, OSError, TypeError, ValueError) as exc:
         print(f"ciclo_mensal: argumento inválido: {exc}", file=sys.stderr)
         failure = CicloResult(data=day, etapa=ETAPA_ARGUMENTOS, erro=str(exc), exit_code=EXIT_USAGE)
@@ -602,7 +608,6 @@ def main(
     from snapshot_manifest import validate_manifest
     from teste_para_frente import teste_para_frente
 
-    session_factory = session_factory or _session_factory(args.database_url)
     print(f"ciclo_mensal: banco {_database_label(session_factory)}", file=sys.stderr)
 
     def publicar(cycle_day: date) -> PublishResult:
