@@ -27,7 +27,11 @@ Regras:
   caminho do coletor da #60; quando ela não alcança o início (histórico curto) ou falha, Yahoo, com o motivo.
 - Desdobramento, bonificação e grupamento de ações (``stockDividends`` da página da empresa na B3) com data-ex no
   intervalo multiplicam a quantidade de papéis: ``retorno = (P_fim * q_fim + soma(provento * q antes da data-ex)) /
-  P_início - 1``. Eventos de FIIs não são lidos.
+  P_início - 1``. Eventos de FIIs não são lidos: um FII cuja cota troca de ISIN no intervalo, ou cujo preço de fim
+  fica fora de ``[LIMITE_VARIACAO_COTA_FII, 1 / LIMITE_VARIACAO_COTA_FII]`` vezes o de início, sai marcado
+  ``possivel_evento_de_fii`` (desdobramento ou grupamento que a conta não vê).
+- Um ativo marcado ``eventos_indisponiveis``, ``sem_fonte_de_proventos`` ou ``possivel_evento_de_fii`` tem
+  ``retorno = None`` e fica fora das médias, como o ``sem_preco_fim``: a conta dele não estaria completa.
 - Pesos: ``sleeve_weight`` das linhas da carteira (as de ``quantity == 0`` não foram compradas e ficam de fora),
   renormalizados para somar 1 na classe. Classes: ``target_weight``. Internacional e cripto entram pelas séries do
   manifesto posterior em BRL (S&P 500 retorno total e BTC vezes PTAX); renda fixa pelo CDI.
@@ -81,6 +85,8 @@ EXIT_FONTE = 5
 
 VERSAO = 1
 IDADE_MAXIMA_PRECO_FIM_DIAS = 7
+LIMITE_VARIACAO_COTA_FII = 0.6
+MARCAS_SEM_RETORNO = frozenset({"eventos_indisponiveis", "sem_fonte_de_proventos", "possivel_evento_de_fii"})
 DEFAULT_CACHE_ROOT = Path.home() / ".cache" / "prumo" / "teste-para-frente"
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
@@ -327,6 +333,8 @@ class _Fontes:
             "preco_fim": fim[1] if fim else None,
         }
         eventos = [] if fii else self._eventos(ticker, marcas)
+        if fii and inicio is not None and fim is not None and self._possivel_evento_de_fii(ticker, inicio[1], fim[1]):
+            marcas.append("possivel_evento_de_fii")
         ativo["eventos"] = [
             {"tipo": evento.label, "multiplicador": evento.multiplier, "data_ex": data_ex.isoformat()}
             for evento, data_ex in eventos
@@ -352,8 +360,16 @@ class _Fontes:
             ativo["retorno_preco"] = fim[1] * quantidade(self.fim) / inicio[1] - 1
             recebido = sum(item.amount * quantidade(item.ex_date, inclusive=False) for item in proventos)
             ativo["retorno"] = (fim[1] * quantidade(self.fim) + recebido) / inicio[1] - 1
+        if MARCAS_SEM_RETORNO.intersection(marcas):
+            ativo["retorno"] = None
         ativo["marcas"] = marcas
         return ativo
+
+    def _possivel_evento_de_fii(self, ticker: str, preco_inicio: float, preco_fim: float) -> bool:
+        q = self.cotacoes
+        isins = {cotahist.isin(q, ticker, self.inicio), *cotahist.isins(q, ticker, self.inicio, self.fim)} - {None}
+        razao = preco_fim / preco_inicio
+        return len(isins) > 1 or not LIMITE_VARIACAO_COTA_FII <= razao <= 1 / LIMITE_VARIACAO_COTA_FII
 
     def _eventos(self, ticker: str, marcas: list[str]) -> list[tuple[dividends.StockEvent, date]]:
         empresa = self._empresa(ticker[:4])
@@ -475,11 +491,11 @@ def _classes(
 
 def _carteira(classes: Mapping[str, dict]) -> dict:
     resultado: dict[str, Any] = {}
-    for versao in ("retorno_ponderado", "retorno_peso_igual"):
+    for versao, cobertura in (("retorno_ponderado", "peso_coberto"), ("retorno_peso_igual", "peso_coberto_peso_igual")):
         medidas = [(item["peso_alvo"], item[versao]) for item in classes.values() if item[versao] is not None]
         peso = sum(peso for peso, _ in medidas)
         resultado[versao] = sum(peso * retorno for peso, retorno in medidas) / peso if peso > 0 else None
-        resultado["peso_coberto"] = peso
+        resultado[cobertura] = peso
     resultado["classes_sem_retorno"] = [chave for chave, item in classes.items() if item["retorno_ponderado"] is None]
     return resultado
 

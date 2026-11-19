@@ -272,6 +272,151 @@ class EventosSocietariosTest(Base):
         self.assertAlmostEqual(resultado["carteira"]["peso_coberto"], 0.4)  # internacional, renda fixa e cripto
 
 
+def yahoo(proventos: list[tuple[float, date]]) -> FakeResponse:
+    """Resposta do chart do Yahoo (events=div): (valor, data-ex)."""
+    from datetime import datetime, timezone
+
+    eventos = {str(i): {"amount": valor, "date": int(datetime(dia.year, dia.month, dia.day, tzinfo=timezone.utc).timestamp())}
+               for i, (valor, dia) in enumerate(proventos)}
+    return json_bytes({"chart": {"result": [{"events": {"dividends": eventos}}]}})
+
+
+def rota_yahoo(ticker: str) -> str:
+    return sources.yahoo_url(ticker, date(2026, 11, 28))
+
+
+class BordasDoIntervaloTest(Base):
+    """Data-ex no início fica de fora, no fim entra; evento no fim conta na quantidade final."""
+
+    def acao_com(self, preco_fim: float, *, eventos=None, proventos=None) -> dict:
+        self.linhas += [linha("AAA3", INICIO, 10.0, isin=ISIN_AAA), linha("AAA3", FIM, preco_fim, isin=ISIN_AAA)]
+        self.rotas[sources.b3_company_url("AAA3")] = empresa("AAA SA", eventos)
+        self.rotas[sources.b3_cash_url("AAA SA", 1)] = proventos_b3(proventos or [])
+        return self.calcular(run(stocks=[acao("AAA3", 1.0)]))["ativos"]["acoes"][0]
+
+    def test_provento_com_data_ex_no_inicio_fica_de_fora_e_no_fim_entra(self):
+        ativo = self.acao_com(10.0, proventos=[("ON", "0,30", "29/10/2026"),   # data-ex 30/10 = início
+                                               ("ON", "0,50", "26/11/2026")])  # data-ex 27/11 = fim
+
+        self.assertEqual(ativo["proventos"], [{"data_ex": "2026-11-27", "valor": 0.5}])
+        self.assertAlmostEqual(ativo["retorno"], 0.05)  # (10 + 0,50) / 10 - 1
+
+    def test_provento_no_dia_do_evento_paga_a_quantidade_de_antes(self):
+        ativo = self.acao_com(5.0, eventos=[
+            {"label": "DESDOBRAMENTO", "factor": "100,00", "lastDatePrior": "03/11/2026", "isinCode": ISIN_AAA},
+        ], proventos=[("ON", "0,20", "03/11/2026")])  # data-ex 10/11, a mesma do desdobramento
+
+        self.assertAlmostEqual(ativo["retorno"], 0.02)  # (2 × 5 + 1 × 0,20) / 10 - 1
+
+    def test_evento_com_data_ex_no_fim_conta_na_quantidade_final(self):
+        ativo = self.acao_com(5.0, eventos=[
+            {"label": "DESDOBRAMENTO", "factor": "100,00", "lastDatePrior": "26/11/2026", "isinCode": ISIN_AAA},
+        ])
+
+        self.assertEqual(ativo["eventos"][0]["data_ex"], "2026-11-27")
+        self.assertAlmostEqual(ativo["retorno_preco"], 0.0)  # 2 × 5 / 10 - 1
+
+
+class ReservaYahooTest(Base):
+    def test_acao_sem_historico_da_b3_usa_o_yahoo_com_o_motivo(self):
+        self.linhas += [linha("AAA3", INICIO, 10.0, isin=ISIN_AAA), linha("AAA3", FIM, 10.0, isin=ISIN_AAA)]
+        self.rotas[sources.b3_company_url("AAA3")] = empresa("AAA SA")
+        self.rotas[rota_yahoo("AAA3")] = yahoo([(0.40, date(2026, 11, 10)), (9.0, date(2026, 10, 1))])
+        ativo = self.calcular(run(stocks=[acao("AAA3", 1.0)]))["ativos"]["acoes"][0]
+
+        self.assertEqual((ativo["fonte_proventos"], ativo["motivo_fonte_proventos"]), ("yahoo", "b3_failed"))
+        self.assertAlmostEqual(ativo["retorno"], 0.04)
+
+    def test_unit_sem_registros_unt_usa_o_yahoo(self):
+        self.linhas += [linha("UUUU11", INICIO, 10.0, especi="UNT N2"), linha("UUUU11", FIM, 10.0, especi="UNT N2")]
+        self.rotas[sources.b3_company_url("UUUU")] = empresa("UUUU SA")
+        self.rotas[sources.b3_cash_url("UUUU SA", 1)] = proventos_b3([("ON", "5,00", "03/11/2026")])
+        self.rotas[rota_yahoo("UUUU11")] = yahoo([(0.30, date(2026, 11, 10))])
+        ativo = self.calcular(run(stocks=[acao("UUUU11", 1.0)]))["ativos"]["acoes"][0]
+
+        self.assertEqual((ativo["fonte_proventos"], ativo["motivo_fonte_proventos"]), ("yahoo", "unit_sem_registros_unt"))
+        self.assertAlmostEqual(ativo["retorno"], 0.03)
+
+    def test_fii_com_historico_curto_na_b3_usa_o_yahoo(self):
+        self.linhas += [linha("AAAA11", INICIO, 100.0, codbdi="12", especi="CI", isin=ISIN_FII),
+                        linha("AAAA11", FIM, 100.0, codbdi="12", especi="CI", isin=ISIN_FII)]
+        self.rotas[fii_sources.b3_fund_url("AAAA")] = fundo_b3(ISIN_FII, [("9,00", "03/11/2026")])  # começa depois do início
+        self.rotas[rota_yahoo("AAAA11")] = yahoo([(1.0, date(2026, 11, 10))])
+        ativo = self.calcular(run(fiis=[acao("AAAA11", 1.0)]))["ativos"]["fiis"][0]
+
+        self.assertEqual((ativo["fonte_proventos"], ativo["motivo_fonte_proventos"]), ("yahoo", "b3_short_history"))
+        self.assertAlmostEqual(ativo["retorno"], 0.01)
+
+
+class ContaIncompletaTest(Base):
+    """Um ativo cuja conta não está completa sai das médias em vez de entrar com um retorno errado."""
+
+    def test_acao_sem_fonte_de_proventos_fica_fora_da_media(self):
+        self.linhas += [linha("AAA3", INICIO, 10.0, isin=ISIN_AAA), linha("AAA3", FIM, 5.0, isin=ISIN_AAA),
+                        linha("BBB3", INICIO, 20.0), linha("BBB3", FIM, 22.0)]
+        self.rotas[sources.b3_company_url("AAA3")] = empresa("AAA SA")  # sem histórico da B3 nem Yahoo
+        self.rotas[sources.b3_company_url("BBB3")] = empresa("BBB SA")
+        self.rotas[sources.b3_cash_url("BBB SA", 1)] = proventos_b3([("ON", "1,00", "01/10/2026")])
+        resultado = self.calcular(run(stocks=[acao("AAA3", 0.5), acao("BBB3", 0.5)]))
+        ativos = {item["ticker"]: item for item in resultado["ativos"]["acoes"]}
+
+        self.assertEqual(ativos["AAA3"]["marcas"], ["sem_fonte_de_proventos"])
+        self.assertIsNone(ativos["AAA3"]["retorno"])
+        classe = resultado["classes"]["brazilian_stocks"]
+        self.assertEqual(classe["sem_retorno"], ["AAA3"])
+        self.assertAlmostEqual(classe["retorno_ponderado"], 0.10)
+        self.assertAlmostEqual(classe["peso_coberto"], 0.5)
+
+    def test_acao_sem_pagina_da_empresa_fica_fora_da_media(self):
+        self.linhas += [linha("AAA3", INICIO, 10.0, isin=ISIN_AAA), linha("AAA3", FIM, 5.0, isin=ISIN_AAA)]
+        self.rotas[rota_yahoo("AAA3")] = yahoo([])
+        ativo = self.calcular(run(stocks=[acao("AAA3", 1.0)]))["ativos"]["acoes"][0]
+
+        self.assertEqual(ativo["marcas"], ["eventos_indisponiveis"])
+        self.assertIsNone(ativo["retorno"])
+
+    def test_fii_com_queda_de_desdobramento_fica_marcado_e_fora_da_media(self):
+        self.linhas += [linha("AAAA11", INICIO, 100.0, codbdi="12", especi="CI", isin=ISIN_FII),
+                        linha("AAAA11", FIM, 10.0, codbdi="12", especi="CI", isin=ISIN_FII)]
+        self.rotas[fii_sources.b3_fund_url("AAAA")] = fundo_b3(ISIN_FII, [("0,90", "02/10/2026")])
+        resultado = self.calcular(run(fiis=[acao("AAAA11", 1.0)]))
+        ativo = resultado["ativos"]["fiis"][0]
+
+        self.assertEqual(ativo["marcas"], ["possivel_evento_de_fii"])
+        self.assertIsNone(ativo["retorno"])
+        self.assertIsNone(resultado["classes"]["fiis"]["retorno_ponderado"])
+
+    def test_fii_que_troca_de_isin_no_intervalo_fica_marcado(self):
+        self.linhas += [linha("AAAA11", INICIO, 100.0, codbdi="12", especi="CI", isin=ISIN_FII),
+                        linha("AAAA11", FIM, 101.0, codbdi="12", especi="CI", isin="BRAAAACTF001")]
+        self.rotas[fii_sources.b3_fund_url("AAAA")] = fundo_b3(ISIN_FII, [("0,90", "02/10/2026")])
+        ativo = self.calcular(run(fiis=[acao("AAAA11", 1.0)]))["ativos"]["fiis"][0]
+
+        self.assertIn("possivel_evento_de_fii", ativo["marcas"])
+        self.assertIsNone(ativo["retorno"])
+
+    def test_fii_com_variacao_normal_nao_e_marcado(self):
+        self.linhas += [linha("AAAA11", INICIO, 100.0, codbdi="12", especi="CI", isin=ISIN_FII),
+                        linha("AAAA11", FIM, 70.0, codbdi="12", especi="CI", isin=ISIN_FII)]
+        self.rotas[fii_sources.b3_fund_url("AAAA")] = fundo_b3(ISIN_FII, [("0,90", "02/10/2026")])
+        ativo = self.calcular(run(fiis=[acao("AAAA11", 1.0)]))["ativos"]["fiis"][0]
+
+        self.assertEqual(ativo["marcas"], [])
+        self.assertAlmostEqual(ativo["retorno"], -0.30)
+
+
+class CoberturaDaCarteiraTest(Base):
+    def test_cada_versao_da_carteira_tem_a_sua_cobertura(self):
+        # só a ação de peso 0 tem retorno: o ponderado da classe não existe, o de peso igual existe
+        self.linhas += [linha("AAA3", INICIO, 10.0, isin=ISIN_AAA), linha("BBB3", INICIO, 10.0), linha("BBB3", FIM, 11.0)]
+        self.rotas[sources.b3_company_url("BBB3")] = empresa("BBB SA")
+        self.rotas[sources.b3_cash_url("BBB SA", 1)] = proventos_b3([])
+        carteira = self.calcular(run(stocks=[acao("AAA3", 1.0), acao("BBB3", 0.0)]))["carteira"]
+
+        self.assertAlmostEqual(carteira["peso_coberto"], 0.4)  # internacional, renda fixa e cripto
+        self.assertAlmostEqual(carteira["peso_coberto_peso_igual"], 0.8)  # mais as ações
+
+
 class EntradaTest(Base):
     def assertFalha(self, erro, run_anterior, manifesto=None):
         with self.assertRaises(erro) as contexto:
