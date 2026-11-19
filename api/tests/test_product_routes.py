@@ -194,7 +194,7 @@ class ProductRouteTests(unittest.TestCase):
             )
         return response, coordinator
 
-    def save_completed_run(self, profile, *, plan="basic", result=None):
+    def save_completed_run(self, profile, *, plan="basic", result=None, snapshot_cutoff="2026-07-21"):
         repository = RecommendationRepository(self.session)
         run = repository.create_queued(
             account_id=profile.account_id,
@@ -203,7 +203,7 @@ class ProductRouteTests(unittest.TestCase):
             provenance={"plan": plan},
             plan=plan,
             snapshot_id=f"{plan}-fixture",
-            snapshot_cutoff="2026-07-21",
+            snapshot_cutoff=snapshot_cutoff,
             model_version=f"{plan}-v1",
         )
         repository.mark_running(run.id)
@@ -632,6 +632,21 @@ class ProductRouteTests(unittest.TestCase):
             status = read_recommendation(pending.id, self.account, self.session)
         self.assertEqual(latest.id, completed.id)
         self.assertEqual(status.status, "queued")
+
+    def test_premium_routes_expose_manifest_snapshot_cutoff(self):
+        profile = self.save_valid_profile()
+        self.session.add(Entitlement(account_id=self.account.id, plan="premium", status="active"))
+        record = self.save_completed_run(
+            profile, plan="premium", result=COMPLETED_BASIC_RESULT, snapshot_cutoff="2026-09-30"
+        )
+
+        for route, response in (
+            ("by id", read_recommendation(record.id, self.account, self.session)),
+            ("latest completed", read_latest_completed_recommendation(self.account, self.session)),
+        ):
+            with self.subTest(route=route):
+                body = response.model_dump(mode="json", by_alias=True)
+                self.assertEqual(body["snapshotCutoff"], "2026-09-30")
 
     def test_pre_change_result_json_reads_with_null_whole_unit_fields(self):
         profile = self.save_valid_profile()

@@ -450,7 +450,7 @@ def _fetch_portfolio_levels(
 
 def fetch_snapshot(
     snapshot_dir: Path,
-    portfolio_path: Path,
+    portfolio_path: Optional[Path],
     start_date: date,
     end_date: date,
     *,
@@ -458,22 +458,34 @@ def fetch_snapshot(
     timeout: int = 45,
     skip_tickers: Optional[Sequence[str]] = None,
 ) -> Mapping[str, object]:
+    """Busca as séries das classes (e, com ``portfolio_path``, a cesta legada ``caio_stocks``).
+
+    ``portfolio_path=None`` (#85, snapshot do mês): nenhuma ação da cesta é baixada e nem ``caio_stocks.csv`` nem a
+    fonte ``caio_stocks`` vão para o diretório; só as seis séries das classes e o ``metadata.json``.
+    """
     if start_date >= end_date:
         raise SnapshotFetchError("start date must be before end date")
 
-    portfolio_tickers = load_caio_tickers(portfolio_path)
+    portfolio_tickers: Tuple[str, ...] = ()
+    if portfolio_path is not None:
+        portfolio_tickers = load_caio_tickers(portfolio_path)
     fii_selected_tickers: Tuple[str, ...] = ()
     if fii_portfolio_path is not None:
         fii_selected_tickers = load_portfolio_tickers(fii_portfolio_path, "FII")
 
-    stock_levels, valid_tickers, skipped, skipped_reasons = _fetch_portfolio_levels(
-        portfolio_tickers,
-        start_date,
-        end_date,
-        label="Caio",
-        timeout=timeout,
-        skip_tickers=skip_tickers or (),
-    )
+    stock_levels: Dict[str, LevelSeries] = {}
+    valid_tickers: Tuple[str, ...] = ()
+    skipped: list[str] = []
+    skipped_reasons: Dict[str, str] = {}
+    if portfolio_path is not None:
+        stock_levels, valid_tickers, skipped, skipped_reasons = _fetch_portfolio_levels(
+            portfolio_tickers,
+            start_date,
+            end_date,
+            label="Caio",
+            timeout=timeout,
+            skip_tickers=skip_tickers or (),
+        )
 
     fii_levels: Dict[str, LevelSeries] = {}
     fii_valid_tickers: Tuple[str, ...] = ()
@@ -514,7 +526,8 @@ def fetch_snapshot(
 
     snapshot_dir.mkdir(parents=True, exist_ok=True)
     ranges = {}
-    ranges["caio_stocks.csv"] = _write_levels(snapshot_dir / "caio_stocks.csv", stock_levels)
+    if portfolio_path is not None:
+        ranges["caio_stocks.csv"] = _write_levels(snapshot_dir / "caio_stocks.csv", stock_levels)
     if fii_portfolio_path is not None:
         ranges["caio_fiis.csv"] = _write_levels(snapshot_dir / "caio_fiis.csv", fii_levels)
     ranges["ifix.csv"] = _write_levels(snapshot_dir / "ifix.csv", {"value": ifix})
@@ -527,13 +540,15 @@ def fetch_snapshot(
         snapshot_dir / "ibovespa.csv", {"value": ibovespa}
     )
     ranges["ptax.csv"] = _write_levels(snapshot_dir / "ptax.csv", {"value": ptax})
-    sources = {
-        "caio_stocks": {
+    sources = {}
+    if portfolio_path is not None:
+        sources["caio_stocks"] = {
             "provider": "Yahoo Finance chart API",
             "portfolio_path": str(portfolio_path),
             "selected_tickers": list(portfolio_tickers),
             "symbols": [f"{ticker}.SA" for ticker in valid_tickers],
-        },
+        }
+    sources |= {
         "sp500_total_return_usd": {"provider": "Yahoo Finance chart API", "symbol": "^SP500TR"},
         "btc_usd": {"provider": "Yahoo Finance chart API", "symbol": "BTC-USD"},
         "ibovespa": {
@@ -577,7 +592,7 @@ def fetch_snapshot(
         fii_skipped_tickers=fii_skipped,
         fii_skipped_ticker_reasons=fii_skipped_reasons,
         portfolio_artifacts={
-            "caio_stocks": str(portfolio_path),
+            **({"caio_stocks": str(portfolio_path)} if portfolio_path is not None else {}),
             **(
                 {"caio_fiis": str(fii_portfolio_path)}
                 if fii_portfolio_path is not None

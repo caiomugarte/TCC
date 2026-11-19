@@ -5,7 +5,7 @@ from pathlib import Path
 import hashlib
 import os
 from threading import RLock
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
@@ -19,6 +19,9 @@ from app.services.premium_policy import (
     PremiumPolicyError,
     resolve_recommendation_policy,
 )
+
+if TYPE_CHECKING:
+    from app.services.premium_executor import RunExecutor
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -123,7 +126,7 @@ class PremiumRecommendationService:
         manifest_validator: Callable[[object], object] = _default_manifest_validator,
         policy_resolver: Callable[..., object] = resolve_recommendation_policy,
         repository_factory: Callable[[Session], RecommendationRepository] = RecommendationRepository,
-        executor: object | None = None,
+        executor: RunExecutor | None = None,
         rules_version: str = POLICY_VERSION,
     ) -> None:
         self.manifest_loader = manifest_loader
@@ -146,21 +149,13 @@ class PremiumRecommendationService:
         account_id = account.id if isinstance(account, Account) else str(account)
         profile = self._profile(session, account_id, getattr(request, "profile_id", None))
         force = bool(getattr(request, "force", False))
-        reuse_terminal = plan == "premium" and not force
         repository = self.repository_factory(session)
 
-        with _RUN_CREATION_LOCK:
-            active = repository.get_latest_for_profile(
-                account_id,
-                profile.id,
-                plan=plan,
-                statuses=("queued", "running"),
-            )
-            latest = active or repository.get_latest_for_profile(
-                account_id, profile.id, plan=plan
-            )
-            if latest is not None and (active is not None or reuse_terminal):
-                return latest
+        if plan == "basic":
+            with _RUN_CREATION_LOCK:
+                active = self._active_basic_run(repository, account_id, profile.id)
+                if active is not None:
+                    return active
 
         try:
             manifest = self.manifest_validator(self.manifest_loader())
@@ -174,6 +169,12 @@ class PremiumRecommendationService:
 
         manifest_id = str(_manifest_value(manifest, "manifest_id") or "premium-snapshot")
         rules_version = BASIC_POLICY_VERSION if plan == "basic" else self.rules_version
+        reuse_by_key = plan == "premium" and not force
+        if reuse_by_key:
+            with _RUN_CREATION_LOCK:
+                reusable = self.find_reusable_run(session, account_id, profile.id, manifest_id)
+                if reusable is not None:
+                    return reusable
         seed = derive_premium_seed(account_id, profile.id, manifest_id, rules_version)
         hashes = _manifest_hashes(manifest)
         cutoff = _manifest_value(manifest, "cutoff_date")
@@ -213,17 +214,14 @@ class PremiumRecommendationService:
             "model_versions": dict(policy_provenance.get("model_versions", {})),
         }
         with _RUN_CREATION_LOCK:
-            active = repository.get_latest_for_profile(
-                account_id,
-                profile.id,
-                plan=plan,
-                statuses=("queued", "running"),
-            )
-            latest = active or repository.get_latest_for_profile(
-                account_id, profile.id, plan=plan
-            )
-            if latest is not None and (active is not None or reuse_terminal):
-                return latest
+            if plan == "basic":
+                existing = self._active_basic_run(repository, account_id, profile.id)
+            elif reuse_by_key:
+                existing = self.find_reusable_run(session, account_id, profile.id, manifest_id)
+            else:
+                existing = None
+            if existing is not None:
+                return existing
             run = repository.create_queued(
                 account_id=account_id,
                 profile_id=profile.id,
@@ -253,6 +251,35 @@ class PremiumRecommendationService:
                 session.refresh(failure)
             return failure
         return run
+
+    def find_reusable_run(
+        self,
+        session: Session,
+        account_id: str,
+        profile_id: str,
+        manifest_id: str,
+    ) -> RecommendationRun | None:
+        """Premium run that a new request with this key would reuse, or None.
+
+        The key is account, profile, manifest and the service policy version; a
+        run in any state except ``failed`` is reused. ``force`` skips this rule.
+        """
+
+        return self.repository_factory(session).get_reusable(
+            account_id,
+            profile_id,
+            plan="premium",
+            snapshot_id=manifest_id,
+            policy_version=self.rules_version,
+        )
+
+    @staticmethod
+    def _active_basic_run(
+        repository: RecommendationRepository, account_id: str, profile_id: str
+    ) -> RecommendationRun | None:
+        return repository.get_latest_for_profile(
+            account_id, profile_id, plan="basic", statuses=("queued", "running")
+        )
 
     def execute_run(self, run_id: str) -> None:
         (self.executor or _default_executor()).execute_run(run_id)

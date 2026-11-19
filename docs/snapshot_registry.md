@@ -436,6 +436,57 @@ none of them.
 Then `build` with `--stock-provenance <out>/stocks.provenance.json
 --fii-provenance <out>/fiis.provenance.json`, `validate` and `publish`.
 
+## Snapshot do mês num comando (issue #85)
+
+`python3 scripts/publish_snapshot.py --date D --registry snapshots [--cache-root DIR] [--seed-cache DIR]
+[--limits JSON]` faz as três etapas acima de uma vez e só publica se tudo passar. Para chamar de outro código (o
+`ciclo-mensal` do #87), use `publish_snapshot.publish_snapshot(day, registry=..., cache_root=...)`: devolve
+`PublishResult` (manifesto publicado, caminho, `reused`, checagens) ou levanta `PublishSnapshotError` com `stage`,
+`check` e `exit_code`.
+
+- **Etapas**, paradas na primeira falha: `series` (`fetch_snapshot` sem as cestas `caio_*`, dez anos até `D`),
+  `selecao` (`create_selector_snapshot.create`), `build`, `validate`, `sanidade`, `publish`. O manifesto é
+  `mensal-D` e os dados vão para `data/mensal-D/series/` e `data/mensal-D/selecao/`. Antes do `publish` o manifesto
+  fica em `draft`/`validated`, que a API não seleciona: uma falha deixa o publicado anterior valendo.
+- **Checagens de sanidade** (`SanityLimits`, padrões no código, sobrescritos por `--limits`): ações com score e FIIs
+  elegíveis nos três perfis-âncora de `STOCK_RULES`/`FII_RULES` (o perfil de uma conta interpola entre eles);
+  IBOV, IFIX e CDI com dado até o corte e no máximo `max_cutoff_lag_days` antes de `D`; corte no máximo
+  `max_cutoff_lag_days` antes de `D` (pega SP500, BTC e PTAX parados); linhas de `stocks.csv` e `fiis.csv` sem queda
+  maior que `max_universe_drop` contra o último publicado. Padrões: 40 ações com score, 8 FIIs elegíveis, 5 dias,
+  20%.
+- **Data de corte e idempotência**: o corte é a última data comum das séries, não `D`. Já publicado = há manifesto
+  `published` com id `mensal-D` ou com corte igual a `D` (checado antes de buscar), ou com o mesmo corte efetivo que
+  as séries recém-buscadas dão (checado depois do `build`, antes de gravar; os dados buscados são apagados). Nos três
+  casos nada é refeito e o comando devolve esse manifesto com saída 0. Restos `draft`/`validated` de uma tentativa
+  falha com o mesmo id são apagados e refeitos; um `retired` com o mesmo id é saída 3.
+- **Cache de brutos**: o cache do pit_rebuild nunca renova um arquivo. Cada `D` usa `<cache-root>/D/` (padrão
+  `~/.cache/tcc-pit-rebuild-ciclos/D/`), semeado por hard link só com os anuais de anos até `ano(D) - 2` (DFP, ITR,
+  FCA, COTAHIST, informes de FII) do cache de ciclo anterior mais recente ou de `--seed-cache` no primeiro ciclo; o
+  resto (COTAHIST do ano, B3, cadastro, listagens) é baixado de novo. Uma retomada da mesma `D` reaproveita o cache.
+- Códigos de saída: 0 publicado ou já publicado, 1 cache não preparado, 2 argumentos, 3 registro ausente ou id
+  `retired`, 4 `series`, 5 `selecao`, 6 `build`/`validate`/`publish`, 7 checagem de sanidade.
+
+## Ciclo mensal num comando (issue #87)
+
+`DATABASE_URL=... python3 scripts/ciclo_mensal.py --date D --registry snapshots [--account ID]` encadeia a
+publicação acima, o run Premium da conta com o manifesto recém-publicado (`scripts/premium_run.py`) e o teste para
+frente da carteira anterior (`py/teste_para_frente.py`), e grava `docs/validation/ciclos/mensal-D.json` e `.md`. Para
+na primeira etapa que falha (`conta`, `publicacao`, `run`, `teste_para_frente`, `relatorio`) e diz qual. Rodar de novo
+com a mesma `D` reaproveita o manifesto e o run e regrava o relatório, byte a byte igual se nada mudou. A docstring
+do script tem as etapas, os caminhos configuráveis e os códigos de saída (0 concluído, 2 argumentos, 3 conta,
+4 publicação, 5 run, 6 teste para frente, 7 relatório, 130 interrompido).
+
+Aviso no Telegram (issue #88, `scripts/aviso_telegram.py`), ligado por padrão: no fim do ciclo, também quando ele
+falha ou é interrompido, o bot do Prumo manda o resumo (manifesto, o que ficou/entrou/saiu da carteira por classe e o
+teste para frente em uma linha por classe) ou a etapa, o código de saída e o erro. O bot e o chat vêm de duas
+variáveis de ambiente (o comando não lê `api/.env`; exporte-as no shell que roda o ciclo):
+
+- `PRUMO_TELEGRAM_BOT_TOKEN`: token do bot criado no BotFather.
+- `PRUMO_TELEGRAM_CHAT_ID`: id do chat que recebe o aviso (o chat do Caio com o bot).
+
+Sem uma delas, o ciclo segue e o stderr diz que o aviso não foi enviado. Uma falha no envio (rede, timeout de 10 s,
+token ou chat inválido) vira só uma linha no stderr, sem o token, e não muda o código de saída do ciclo.
+
 ## Walkthrough (manual)
 
 ```
