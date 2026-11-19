@@ -230,6 +230,14 @@ _Evitar_: rebalanceamento (que é a restauração de pesos-alvo), reexecução
 Uma ação ou FII da carteira Premium anterior da conta, que a zona de proteção tenta manter enquanto continuar perto do topo do ranking.
 _Evitar_: posição real, ativo que o usuário tem na corretora
 
+**Seed**:
+A semente do sorteio do algoritmo genético que escolhe os papéis do Premium. Ela depende das respostas do perfil, do snapshot e da versão da política, nunca de quem é a pessoa: respostas iguais dão a mesma carteira.
+_Evitar_: semente por conta
+
+**Ruído**:
+A parte da carteira Premium que muda só por causa da seed, com os mesmos dados e o mesmo perfil.
+_Evitar_: tratar uma troca por ruído como sinal dos dados
+
 **Teste para frente**:
 A medida do retorno total que as escolhas de uma carteira Premium já entregue tiveram no período seguinte, até o snapshot posterior, comparado com IBOV, IFIX e CDI.
 _Evitar_: validação walk-forward, que testa a alocação entre classes reotimizando em janelas históricas
