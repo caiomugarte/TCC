@@ -1,0 +1,127 @@
+{
+ "prod_keys": [
+  "all_runs",
+  "best_individual",
+  "config",
+  "exclusion_reasons",
+  "metrics",
+  "n_runs",
+  "portfolio",
+  "profile",
+  "run_seeds",
+  "seed",
+  "selected_tickers",
+  "sleeve_weights",
+  "weights",
+  "workspace",
+  "workspaces"
+ ],
+ "prod_runs": [
+  {
+   "tickers": [
+    "ABCB4",
+    "ALUP11",
+    "BEEF3",
+    "BRAV3",
+    "CAML3",
+    "CURY3",
+    "EUCA4",
+    "LAVV3",
+    "PGMN3",
+    "SMTO3",
+    "TAEE11",
+    "TAEE4"
+   ],
+   "fitness": 4.647535919536087
+  },
+  {
+   "tickers": [
+    "BBSE3",
+    "BMOB3",
+    "BRAV3",
+    "CPFE3",
+    "CURY3",
+    "DIRR3",
+    "FIQE3",
+    "HAPV3",
+    "KLBN11",
+    "MDNE3",
+    "MOTV3",
+    "TAEE11"
+   ],
+   "fitness": 4.546522911986861
+  },
+  {
+   "tickers": [
+    "ABCB4",
+    "CAML3",
+    "CBAV3",
+    "CLSC4",
+    "FIQE3",
+    "LAVV3",
+    "RANI3",
+    "RDOR3",
+    "RECV3",
+    "TAEE11",
+    "TGMA3",
+    "WIZC3"
+   ],
+   "fitness": 4.501693829156024
+  }
+ ],
+ "mine": [
+  {
+   "tickers": [
+    "ABCB4",
+    "ALUP11",
+    "BEEF3",
+    "BRAV3",
+    "CAML3",
+    "CURY3",
+    "EUCA4",
+    "LAVV3",
+    "PGMN3",
+    "SMTO3",
+    "TAEE11",
+    "TAEE4"
+   ],
+   "fitness": 4.647535919536087
+  },
+  {
+   "tickers": [
+    "BBSE3",
+    "BMOB3",
+    "BRAV3",
+    "CPFE3",
+    "CURY3",
+    "DIRR3",
+    "FIQE3",
+    "HAPV3",
+    "KLBN11",
+    "MDNE3",
+    "MOTV3",
+    "TAEE11"
+   ],
+   "fitness": 4.546522911986861
+  },
+  {
+   "tickers": [
+    "ABCB4",
+    "CAML3",
+    "CBAV3",
+    "CLSC4",
+    "FIQE3",
+    "LAVV3",
+    "RANI3",
+    "RDOR3",
+    "RECV3",
+    "TAEE11",
+    "TGMA3",
+    "WIZC3"
+   ],
+   "fitness": 4.501693829156024
+  }
+ ],
+ "equal": true,
+ "t_prod_s": 3.043403843003034
+}

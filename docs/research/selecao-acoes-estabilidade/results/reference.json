@@ -1,0 +1,97 @@
+{
+ "optimum": {
+  "fitness_dp": 7.143557925603346,
+  "fitness_ga": 7.143557925603346,
+  "tickers": [
+   "ABCB4",
+   "BBSE3",
+   "BEEF3",
+   "BRAV3",
+   "CURY3",
+   "EUCA4",
+   "FIQE3",
+   "ISAE4",
+   "LAVV3",
+   "MILS3",
+   "POMO3",
+   "RDOR3"
+  ],
+  "per_sector": {
+   "Financeiro": 2,
+   "Comunica\u00e7\u00f5es": 1,
+   "Materiais B\u00e1sicos": 1,
+   "Petr\u00f3leo. G\u00e1s e Biocombust\u00edveis": 1,
+   "Sa\u00fade": 1,
+   "Utilidade P\u00fablica": 1,
+   "Consumo C\u00edclico": 2,
+   "Bens Industriais": 2,
+   "Consumo n\u00e3o C\u00edclico": 1
+  }
+ },
+ "optimum_dedup": {
+  "fitness_dp": 7.143557925603346,
+  "fitness_ga": 7.143557925603346,
+  "tickers": [
+   "ABCB4",
+   "BBSE3",
+   "BEEF3",
+   "BRAV3",
+   "CURY3",
+   "EUCA4",
+   "FIQE3",
+   "ISAE4",
+   "LAVV3",
+   "MILS3",
+   "POMO3",
+   "RDOR3"
+  ],
+  "per_sector": {
+   "Financeiro": 2,
+   "Comunica\u00e7\u00f5es": 1,
+   "Materiais B\u00e1sicos": 1,
+   "Petr\u00f3leo. G\u00e1s e Biocombust\u00edveis": 1,
+   "Sa\u00fade": 1,
+   "Utilidade P\u00fablica": 1,
+   "Consumo C\u00edclico": 2,
+   "Bens Industriais": 2,
+   "Consumo n\u00e3o C\u00edclico": 1
+  }
+ },
+ "top_n": {
+  "fitness_ga": 7.111528781752568,
+  "tickers": [
+   "ABCB4",
+   "BBSE3",
+   "BEEF3",
+   "BRAV3",
+   "CURY3",
+   "EUCA4",
+   "FIQE3",
+   "ISAE4",
+   "MILS3",
+   "POMO3",
+   "POMO4",
+   "RDOR3"
+  ],
+  "score_sum": 7.528195448419235
+ },
+ "top_n_dedup": {
+  "fitness_ga": 7.143557925603346,
+  "tickers": [
+   "ABCB4",
+   "BBSE3",
+   "BEEF3",
+   "BRAV3",
+   "CURY3",
+   "EUCA4",
+   "FIQE3",
+   "ISAE4",
+   "LAVV3",
+   "MILS3",
+   "POMO3",
+   "RDOR3"
+  ],
+  "score_sum": 7.518557925603346
+ },
+ "universe": 169
+}
