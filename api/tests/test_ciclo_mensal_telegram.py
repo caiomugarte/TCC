@@ -96,7 +96,7 @@ class MensagensTests(TelegramCase):
         (text,) = self.sent()
         self.assertIn("falhou", text.splitlines()[0])
         self.assertIn("Etapa: teste_para_frente (saída 6)", text)
-        self.assertIn("Erro: COTAHIST desatualizado", text)
+        self.assertIn("Erro: TesteParaFrenteError: COTAHIST desatualizado", text)
         self.assertIn("Manifesto mensal-2026-10-31", text)
 
     def test_argumento_invalido_envia_a_etapa_argumentos(self):

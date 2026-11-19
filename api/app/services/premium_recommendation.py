@@ -5,7 +5,7 @@ from pathlib import Path
 import hashlib
 import os
 from threading import RLock
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
@@ -19,6 +19,9 @@ from app.services.premium_policy import (
     PremiumPolicyError,
     resolve_recommendation_policy,
 )
+
+if TYPE_CHECKING:
+    from app.services.premium_executor import RunExecutor
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -123,7 +126,7 @@ class PremiumRecommendationService:
         manifest_validator: Callable[[object], object] = _default_manifest_validator,
         policy_resolver: Callable[..., object] = resolve_recommendation_policy,
         repository_factory: Callable[[Session], RecommendationRepository] = RecommendationRepository,
-        executor: object | None = None,
+        executor: RunExecutor | None = None,
         rules_version: str = POLICY_VERSION,
     ) -> None:
         self.manifest_loader = manifest_loader

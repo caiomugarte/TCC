@@ -403,6 +403,7 @@ class CicloMensalTests(CicloMensalCase):
 
         self.assertEqual((result.etapa, result.exit_code), ("relatorio", 7))
         self.assertIn("lixo.json", result.erro)
+        self.assertEqual([path.name for path in self.reports.iterdir()], ["lixo.json"])  # nada gravado pela metade
 
 
 class CicloMensalCliTests(CicloMensalCase):

@@ -77,7 +77,7 @@ for _path in (PROJECT_ROOT / "py", PROJECT_ROOT / "api", PROJECT_ROOT / "scripts
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))
 
-from publish_snapshot import PublishResult  # noqa: E402
+from publish_snapshot import PublishResult, run_stage  # noqa: E402
 
 EXIT_OK = 0
 EXIT_USAGE = 2
@@ -139,13 +139,7 @@ class _StageFailed(Exception):
 
 
 def _stage(etapa: str, action: Callable[[], Any]) -> Any:
-    try:
-        return action()
-    except (KeyboardInterrupt, _StageFailed):
-        raise
-    except Exception as exc:  # noqa: BLE001 - toda falha da etapa vira erro com o nome da etapa
-        message = getattr(exc, "message", None) or str(exc) or type(exc).__name__
-        raise _StageFailed(etapa, message) from exc
+    return run_stage(etapa, action, _StageFailed)
 
 
 def ciclo_mensal(
@@ -331,13 +325,18 @@ def build_report(
 
 
 def write_report(directory: Path, report: Mapping) -> tuple[Path, Path]:
-    """Grava ``<manifest_id>.json`` e depois ``.md``, este com a tabela acumulada de todos os JSONs de ``directory``."""
+    """Grava ``<manifest_id>.json`` e depois ``.md``, este com a tabela acumulada de todos os JSONs de ``directory``.
+
+    Os outros JSONs são lidos antes de gravar: um ilegível para o ciclo sem deixar o JSON novo sem o ``.md``."""
     directory.mkdir(parents=True, exist_ok=True)
     manifest_id = report["manifesto"]["id"]
     json_path = directory / f"{manifest_id}.json"
     md_path = directory / f"{manifest_id}.md"
-    json_path.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    md_path.write_text(render_markdown(report, load_cycles(directory)), encoding="utf-8")
+    content = json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+    others = [cycle for cycle in load_cycles(directory) if cycle["manifesto"]["id"] != manifest_id]
+    cycles = sorted([*others, json.loads(content)], key=_cycle_key)
+    json_path.write_text(content, encoding="utf-8")
+    md_path.write_text(render_markdown(report, cycles), encoding="utf-8")
     return json_path, md_path
 
 
@@ -347,11 +346,15 @@ def load_cycles(directory: Path) -> list[dict]:
     for path in sorted(directory.glob("*.json")):
         try:
             cycle = json.loads(path.read_text(encoding="utf-8"))
-            key = (cycle["manifesto"]["corte"], cycle["manifesto"]["id"])
+            _cycle_key(cycle)
         except (ValueError, KeyError, TypeError) as exc:
             raise ValueError(f"{path.name} não é um relatório de ciclo legível: {exc}") from exc
-        cycles.append((key, cycle))
-    return [cycle for _key, cycle in sorted(cycles, key=lambda item: item[0])]
+        cycles.append(cycle)
+    return sorted(cycles, key=_cycle_key)
+
+
+def _cycle_key(cycle: Mapping) -> tuple[str, str]:
+    return cycle["manifesto"]["corte"], cycle["manifesto"]["id"]
 
 
 def _pct(value: Any) -> str:

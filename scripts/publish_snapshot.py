@@ -51,6 +51,8 @@ Exit codes:
 
 from __future__ import annotations
 
+from typing import Any
+
 import argparse
 import csv
 from collections.abc import Callable, Sequence
@@ -145,13 +147,17 @@ def manifest_id_for(day: date) -> str:
     return f"{MANIFEST_PREFIX}{day.isoformat()}"
 
 
-def _run_stage(stage: str, action: Callable[[], object]):
+def run_stage(stage: str, action: Callable[[], Any], error: Callable[[str, str], Exception] = PublishSnapshotError) -> Any:
+    """``action()``; qualquer falha vira ``error(stage, mensagem)``, menos uma que já é do tipo de ``error``.
+
+    A mensagem é o ``message`` da exceção, quando ela tem um, ou ``Tipo: texto``."""
     try:
         return action()
-    except PublishSnapshotError:
-        raise
     except Exception as exc:  # noqa: BLE001 - toda falha da etapa vira erro com o nome da etapa
-        raise PublishSnapshotError(stage, f"{type(exc).__name__}: {exc}") from exc
+        if isinstance(error, type) and isinstance(exc, error):
+            raise
+        raise error(stage, getattr(exc, "message", None) or f"{type(exc).__name__}: {exc}") from exc
+
 
 
 def publish_snapshot(
@@ -189,12 +195,12 @@ def publish_snapshot(
     _clear_failed_attempt(target, data_dir)
 
     start = _years_before(day, SERIES_YEARS)
-    _run_stage("series", lambda: fetch_series(series_dir, start, day))
-    cache_dir = _run_stage("cache", lambda: prepare_cycle_cache(Path(cache_root), day, seed_cache=seed_cache))
-    _run_stage("selecao", lambda: create_selectors(selection_dir, day, cache_dir))
+    run_stage("series", lambda: fetch_series(series_dir, start, day))
+    cache_dir = run_stage("cache", lambda: prepare_cycle_cache(Path(cache_root), day, seed_cache=seed_cache))
+    run_stage("selecao", lambda: create_selectors(selection_dir, day, cache_dir))
 
     created_at = clock().isoformat()
-    payload = _run_stage("build", lambda: build_manifest(
+    payload = run_stage("build", lambda: build_manifest(
         registry_root=registry,
         manifest_id=manifest_id,
         created_at=created_at,
@@ -208,20 +214,20 @@ def publish_snapshot(
     if same_cutoff is not None:
         shutil.rmtree(data_dir)
         return PublishResult(same_cutoff, Path(same_cutoff.manifest_path), reused=True)
-    _run_stage("build", lambda: write_manifest_atomic(target, payload))
+    run_stage("build", lambda: write_manifest_atomic(target, payload))
 
     def validate() -> None:
         validate_manifest(SnapshotManifest.load(target))
         rewrite_envelope(target, lambda raw: transition_state(raw, "validate", at=clock().isoformat()))
 
-    _run_stage("validate", validate)
-    checks = _run_stage("sanidade", lambda: sanity_checks(SnapshotManifest.load(target), day, registry, limits))
+    run_stage("validate", validate)
+    checks = run_stage("sanidade", lambda: sanity_checks(SnapshotManifest.load(target), day, registry, limits))
     failed = [check for check in checks if not check.passed]
     if failed:
         raise PublishSnapshotError(
             "sanidade", "; ".join(f"{check.name}: {check.detail}" for check in failed), check=failed[0].name,
         )
-    _run_stage("publish", lambda: rewrite_envelope(
+    run_stage("publish", lambda: rewrite_envelope(
         target, lambda raw: transition_state(raw, "publish", at=clock().isoformat())))
     return PublishResult(SnapshotManifest.load(target), target, reused=False, checks=tuple(checks))
 
@@ -344,7 +350,7 @@ def _minimum_check(name: str, counts: dict, minimum: int) -> SanityCheck:
 def _clear_failed_attempt(target: Path, data_dir: Path) -> None:
     """Apaga o manifesto draft/validated e os dados de uma tentativa anterior que falhou com o mesmo id."""
     if target.exists():
-        state = _run_stage("registro", lambda: SnapshotManifest.load(target).state)
+        state = run_stage("registro", lambda: SnapshotManifest.load(target).state)
         if state not in ("draft", "validated"):
             raise PublishSnapshotError(
                 "registro", f"{target.name} já existe como {state or 'legado'}; escolha outra --date ou outro registro",
@@ -356,7 +362,7 @@ def _clear_failed_attempt(target: Path, data_dir: Path) -> None:
 
 def _published(registry: Path, predicate: Callable[[SnapshotManifest], bool]) -> SnapshotManifest | None:
     """O publicado mais recente (corte, criação, id) que satisfaz ``predicate``, ou None."""
-    manifests = _run_stage("registro", lambda: SnapshotRegistry(registry).manifests())
+    manifests = run_stage("registro", lambda: SnapshotRegistry(registry).manifests())
     matches = [manifest for manifest in manifests if manifest.state == "published" and predicate(manifest)]
     if not matches:
         return None
