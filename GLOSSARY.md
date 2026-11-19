@@ -220,6 +220,16 @@ _Evitar_: liquidez corrente para bancos
 O conjunto de ações contra o qual um papel é normalizado: o setor da B3 e, no setor "Financeiro", o subsetor, desde que tenha papéis elegíveis de pelo menos 3 empresas (a raiz de 4 letras do ticker: as classes de uma empresa contam como uma).
 _Evitar_: comparar um banco com uma empresa de outro tipo
 
+## Seleção de FIIs
+
+**Tipo de FII**:
+A natureza de um FII pela composição do ativo informada à CVM: tijolo (imóveis), papel (CRI, CRA, LCI e afins) ou fundo de fundos (cotas de FII), quando um desses blocos tem pelo menos 60% do ativo; sem bloco com 60%, o fundo é híbrido. Um FII só é comparado com outros do mesmo tipo.
+_Evitar_: mandato, classificação de site (Status Invest, Funds Explorer)
+
+**Veredito do seletor**:
+A decisão, para cada pessoa, entre receber FIIs escolhidos pelo Prumo ou o ETF de IFIX, conforme os fundos que o seletor teria escolhido para ela ganhem ou não do IFIX nos anos que a otimização não viu.
+_Evitar_: veredito por perfil genérico
+
 ## Premium
 
 **Ciclo mensal**:
