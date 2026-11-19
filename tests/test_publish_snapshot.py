@@ -192,9 +192,13 @@ class PublishSnapshotTests(unittest.TestCase):
             self.space.publish(date(2026, 11, 17), FakeStages(stocks=3))
         self.assertEqual(caught.exception.stage, "sanidade")
         self.assertEqual(self.space.states(), {"mensal-2026-11-17": "validated"})
+        leftover = self.space.registry / "data" / "mensal-2026-11-17" / "series" / "sobra.csv"
+        leftover.parent.mkdir(parents=True, exist_ok=True)
+        leftover.write_text("date,value\n", encoding="utf-8")
 
         result = self.space.publish(date(2026, 11, 17), FakeStages())
 
+        self.assertFalse(leftover.exists())
         self.assertFalse(result.reused)
         self.assertEqual(self.space.states(), {"mensal-2026-11-17": "published"})
         self.assertEqual(self.space.latest().manifest_id, "mensal-2026-11-17")
