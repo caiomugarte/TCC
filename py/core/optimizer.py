@@ -153,6 +153,85 @@ class GeneticAlgorithm:
 
         return total_score - self.lambda_hhi * hhi * self.n_assets
 
+    def fitness_batch(self, df: pd.DataFrame, population) -> np.ndarray:
+        """Fitness da população inteira, igual bit a bit a ``fitness`` em cada cromossomo."""
+
+        return self._evaluate_population(self._fitness_inputs(df), population)
+
+    def _fitness_inputs(self, df: pd.DataFrame) -> tuple:
+        """Extrai do DataFrame só os arrays que o fitness usa.
+
+        Feito uma vez por ``optimize``: cada operação do pandas sobre o ``df_ranked``
+        copia em profundidade o ``df.attrs``, e era isso que tomava o tempo do run.
+        """
+
+        # sum() do pandas ignora SCORE vazio, o que equivale a somar 0 no lugar dele.
+        scores = np.nan_to_num(df["SCORE"].to_numpy(dtype=float), nan=0.0, posinf=np.inf, neginf=-np.inf)
+        if "SETOR" not in df.columns:
+            if self.max_per_segment is not None:
+                raise ValueError("max_per_segment requires a SETOR column")
+            return scores, None, 0
+        # factorize marca SETOR vazio com -1, que value_counts também deixa de fora.
+        codes, sectors = pd.factorize(df["SETOR"].to_numpy())
+        return scores, codes, len(sectors)
+
+    def _evaluate_population(self, inputs: tuple, population) -> np.ndarray:
+        scores, codes, n_sectors = inputs
+        chromosomes = np.asarray(population).astype(bool)
+        result = np.full(len(chromosomes), -np.inf)
+        right_size = chromosomes.sum(axis=1) == self.n_assets
+        if not right_size.any():
+            return result
+
+        n = self.n_assets
+        # nonzero percorre cada linha em ordem crescente de coluna, a mesma ordem do df.iloc[mask].
+        selected = np.nonzero(chromosomes[right_size])[1].reshape(-1, n)
+        total_score = scores[selected].sum(axis=1)
+        rows = len(selected)
+
+        if codes is None:
+            hhi = np.full(rows, np.nan)
+            over_cap = np.zeros(rows, dtype=bool)
+        else:
+            selected_codes = codes[selected]
+            counts = np.zeros((rows, n_sectors + 1), dtype=np.int64)
+            # Coluna extra para o SETOR vazio (-1), descartada logo abaixo.
+            np.add.at(counts, (np.repeat(np.arange(rows), n), selected_codes.ravel() + 1), 1)
+            counts = counts[:, 1:]
+            over_cap = (
+                counts.max(axis=1, initial=0) > self.max_per_segment
+                if self.max_per_segment is not None
+                else np.zeros(rows, dtype=bool)
+            )
+            hhi = self._hhi_rows(counts)
+
+        fitness = total_score - self.lambda_hhi * hhi * n
+        infeasible = over_cap
+        if self.hhi_max is not None:
+            infeasible = infeasible | ~np.isfinite(hhi) | (hhi > self.hhi_max + 1e-12)
+        fitness[infeasible] = -np.inf
+        result[right_size] = fitness
+        return result
+
+    @staticmethod
+    def _hhi_rows(counts: np.ndarray) -> np.ndarray:
+        """HHI de cada linha somado como ``hhi_sector``.
+
+        ``value_counts(normalize=True)`` divide pelos setores preenchidos e ordena por
+        contagem decrescente; somar ``(contagem/total)²`` nessa ordem, só com os setores
+        presentes, reproduz o float bit a bit. Com outra ordem ou com zeros no meio, a
+        soma em pares do numpy arredonda diferente.
+        """
+
+        ordered = -np.sort(-counts, axis=1)
+        totals = ordered.sum(axis=1)
+        hhi = np.zeros(len(ordered))
+        for row, (sector_counts, total) in enumerate(zip(ordered, totals)):
+            if total:
+                present = sector_counts[sector_counts > 0]
+                hhi[row] = float(((present / total) ** 2).sum())
+        return hhi
+
     def crossover(
         self,
         parent1: np.ndarray,
@@ -260,6 +339,7 @@ class GeneticAlgorithm:
         """
         m = len(df_ranked)
         population = self.initialize_population(m)
+        fitness_inputs = self._fitness_inputs(df_ranked)
 
         best_fitness = -np.inf
         best_chrom = None
@@ -270,10 +350,7 @@ class GeneticAlgorithm:
 
         for generation in range(self.generations):
             # Avalia fitness
-            scores = np.array([
-                self.fitness(df_ranked, chrom)
-                for chrom in population
-            ])
+            scores = self._evaluate_population(fitness_inputs, population)
             gen_best_idx = int(scores.argmax())
             current_best = scores[gen_best_idx]
             gen_best_chrom = population[gen_best_idx].copy()
