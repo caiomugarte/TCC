@@ -100,6 +100,18 @@ class FitnessBatchEquivalenceTests(unittest.TestCase):
                 )
                 self._assert_identical(ga, frame, population)
 
+    def test_hhi_one_ulp_above_hhi_max_stays_feasible(self):
+        # Contagens 2, 2, 1 dão HHI 0.3600000000000001: só a tolerância de 1e-12 o aceita com hhi_max 0,36.
+        frame = pd.DataFrame({
+            "TICKER": ["A", "B", "C", "D", "E", "F"],
+            "SETOR": ["Papéis", "Papéis", "Lajes", "Lajes", "Híbrido", "Híbrido"],
+            "SCORE": [0.9, 0.8, 0.7, 0.6, 0.5, 0.4],
+        })
+        population = [np.array([1, 1, 1, 1, 1, 0]), np.array([1, 1, 1, 0, 1, 1])]
+        ga = GeneticAlgorithm(n_assets=5, lambda_hhi=0.3, generations=1, pop_size=2, random_seed=0, hhi_max=0.36)
+        self.assertTrue(np.isfinite(ga.fitness_batch(frame, population)).all())
+        self._assert_identical(ga, frame, population)
+
     def test_frame_without_setor_column(self):
         frame = _frame(20, FII_SEGMENTS, 6).drop(columns="SETOR")
         population = _population(len(frame), 5, 200, seed=9)

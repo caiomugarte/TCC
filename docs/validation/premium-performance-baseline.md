@@ -197,7 +197,7 @@ runs.
   Nos outros cinco seletores o JSON registra `stop_reason: run_count`.
 - **O custo por geração ficou entre 4,7 e 10,5 ms** e cresce do conservador
   para o arrojado: ações 6,71 / 8,34 / 10,49 ms e FIIs 4,69 / 5,28 /
-  7,29 ms por geração (conservador / moderado / arrojado). Por run, ações
+  7,30 ms por geração (conservador / moderado / arrojado). Por run, ações
   0,57 / 0,72 / 0,79 s. O fitness deixou de dominar; o que sobra por geração
   é seleção, crossover e o `mutate` (um `random.random()` por gene em
   Python), que a #95 manteve para não mudar o consumo do RNG, mais o custo
@@ -228,8 +228,10 @@ número mais honesto é o custo por geração:
   o fitness em lote com o `GeneticAlgorithm.fitness` cromossomo a cromossomo
   (com e sem teto por segmento, com `hhi_max`, com cromossomos inviáveis e de
   tamanho errado) e fixa a carteira, o fitness e as gerações do `optimize`
-  capturados antes da mudança. Nos `df_ranked` reais deste snapshot (ações e
-  FIIs do moderado), 120 mil avaliações deram arrays idênticos.
+  capturados antes da mudança. Numa checagem local, não commitada, nos
+  `df_ranked` reais deste snapshot (ações e FIIs do moderado, com e sem os
+  tetos), 120 mil avaliações deram arrays idênticos; a prova commitada é o
+  teste, com frames sintéticos.
 - As gerações desta execução são as mesmas do protótipo da pesquisa #90
   (`docs/research/premium-run-perf.md`, branch `research/premium-run-perf`),
   que rodou o mesmo snapshot e a mesma seed com o fitness vetorizado por
