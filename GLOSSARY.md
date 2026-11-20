@@ -226,6 +226,18 @@ _Evitar_: comparar um banco com uma empresa de outro tipo
 A natureza de um FII pela composição do ativo informada à CVM: tijolo (imóveis), papel (CRI, CRA, LCI e afins) ou fundo de fundos (cotas de FII), quando um desses blocos tem pelo menos 60% do ativo; sem bloco com 60%, o fundo é híbrido. Um FII só é comparado com outros do mesmo tipo.
 _Evitar_: mandato, classificação de site (Status Invest, Funds Explorer)
 
+**Segmento de FII**:
+O uso predominante dos imóveis de um FII numa data (logística, escritórios, shoppings, renda urbana, agro e outros), tirado só do que o fundo tinha informado à CVM até ali. Todo FII de papel é um segmento só. Serve para medir a concentração da carteira, não para comparar fundos.
+_Evitar_: segmento de site (Status Invest, Funds Explorer), setor do inquilino, "desenvolvimento" ou "misto" como segmento
+
+**Receita do seletor**:
+Os pesos dos grupos de indicadores (renda, valor, liquidez, porte e risco, custo, crescimento e qualidade) que formam o score de um FII. É escolhida para cada pessoa, todo ano, olhando só os anos anteriores.
+_Evitar_: pesos das ações aplicados aos FIIs, tabela fixa por perfil
+
+**Walk-forward do seletor**:
+O teste do método de escolha de FIIs de uma pessoa no passado: em cada ano, a receita é escolhida só com os anos anteriores, e a carteira de cada mês é a que o GA entregaria com as regras dela. Julga o método, não os pesos de hoje.
+_Evitar_: referência retrospectiva, aplicar a receita de hoje aos anos passados
+
 **Veredito do seletor**:
 A decisão anual, para cada pessoa, entre receber FIIs escolhidos pelo Prumo ou o ETF de FIIs. Os fundos ganham quando a carteira inteira da pessoa com eles rende mais que a mesma carteira com o ETF, somando todos os anos que a otimização não viu, sem sair dos limites de risco dela.
 _Evitar_: veredito por perfil genérico, ganhar ano a ano, comparar só a fatia de FIIs
@@ -250,4 +262,4 @@ _Evitar_: tratar uma troca por ruído como sinal dos dados
 
 **Teste para frente**:
 A medida do retorno total que as escolhas de uma carteira Premium já entregue tiveram no período seguinte, até o snapshot posterior, comparado com IBOV, IFIX e CDI.
-_Evitar_: validação walk-forward, que testa a alocação entre classes reotimizando em janelas históricas
+_Evitar_: validação walk-forward e walk-forward do seletor, que reotimizam em janelas históricas
