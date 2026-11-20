@@ -227,8 +227,8 @@ A natureza de um FII pela composição do ativo informada à CVM: tijolo (imóve
 _Evitar_: mandato, classificação de site (Status Invest, Funds Explorer)
 
 **Veredito do seletor**:
-A decisão, para cada pessoa, entre receber FIIs escolhidos pelo Prumo ou o ETF de IFIX, conforme os fundos que o seletor teria escolhido para ela ganhem ou não do IFIX nos anos que a otimização não viu.
-_Evitar_: veredito por perfil genérico
+A decisão anual, para cada pessoa, entre receber FIIs escolhidos pelo Prumo ou o ETF de FIIs. Os fundos ganham quando a carteira inteira da pessoa com eles rende mais que a mesma carteira com o ETF, somando todos os anos que a otimização não viu, sem sair dos limites de risco dela.
+_Evitar_: veredito por perfil genérico, ganhar ano a ano, comparar só a fatia de FIIs
 
 ## Premium
 
